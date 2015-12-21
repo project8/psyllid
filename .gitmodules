@@ -1,0 +1,3 @@
+[submodule "midge"]
+	path = midge
+	url = https://github.com/project8/midge
