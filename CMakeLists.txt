@@ -21,11 +21,15 @@ message( STATUS "midge project name: ${midge_project_name}" )
 
 
 # add include directories
+include_directories( BEFORE
+    utility
+)
 
 # build core library
 midge_build_library()
 
 # build this project
+add_subdirectory( utility )
 
 # build core executable
 midge_build_executables()
