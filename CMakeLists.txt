@@ -31,5 +31,7 @@ midge_build_library()
 # build this project
 add_subdirectory( utility )
 
+add_subdirectory( test )
+
 # build core executable
 midge_build_executables()
