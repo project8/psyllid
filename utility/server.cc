@@ -12,8 +12,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+using namespace midge;
+
 namespace psyllid
 {
+    int server::f_last_errno = 0;
+
     server::server( const int& a_port ) :
             f_socket( 0 ),
             f_address( nullptr )
@@ -27,18 +31,27 @@ namespace psyllid
 
         //prepare address
         f_address->sin_family = AF_INET;
-        f_address->sin_addr.s_addr = INADDR_ANY;
+        f_address->sin_addr.s_addr = htonl( INADDR_ANY );
         f_address->sin_port = htons( a_port );
 
         //MTINFO( psyllidmsg, "address prepared..." );
 
         //open socket
-        f_socket = ::socket( AF_INET, SOCK_STREAM, 0 );
+        f_socket = ::socket( AF_INET, SOCK_DGRAM, 0 );
         if( f_socket < 0 )
         {
             throw midge::error() << "[server] could not create socket:\n\t" << strerror( errno );
             return;
         }
+
+        /* setsockopt: Handy debugging trick that lets
+           * us rerun the server immediately after we kill it;
+           * otherwise we have to wait about 20 secs.
+           * Eliminates "ERROR on binding: Address already in use" error.
+           */
+        //int optval = 1;
+        //::setsockopt( f_socket, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
+
 
         //msg_normal( psyllidmsg, "socket open..." );
 
@@ -49,15 +62,7 @@ namespace psyllid
             return;
         }
 
-        //msg_normal( psyllidmsg, "socket bound..." );
-
-        //start listening
-        if( ::listen( f_socket, 10 ) < 0 )
-        {
-            throw midge::error() << "[server] listen failed:\n\t" << strerror( errno );
-        }
-
-        //msg_normal( psyllidmsg, "listening..." );
+        psyllidmsg( s_normal ) << "Ready to receive messages" << eom;
 
         return;
     }
@@ -71,28 +76,26 @@ namespace psyllid
         ::close( f_socket );
     }
 
-    connection* server::get_connection()
+    ssize_t server::recv( char* a_message, size_t a_size, int flags, int& ret_errno )
     {
-        int t_socket = 0;
-        sockaddr_in* t_address = nullptr;
-
-        //initialize the new address
-        socklen_t t_address_length = sizeof(sockaddr_in);
-        t_address = new sockaddr_in();
-        ::memset( t_address, 0, t_address_length );
-
-        //accept a connection
-        //blocks the thread while waiting for an incoming connection
-        t_socket = ::accept( f_socket, (sockaddr*) (t_address), &t_address_length );
-        if( t_socket < 0 )
+        ssize_t t_recv_size = ::recv( f_socket, (void*)a_message, a_size, flags );
+        if( t_recv_size > 0 )
         {
-            throw midge::error() << "[server] could not accept connection:\n\t" << strerror( errno );
+            return t_recv_size;
         }
-
-        //MTINFO( mtlog, "connection accepted..." );
-
-        //return a new connection
-        return new connection( t_socket, t_address );
+        f_last_errno = errno;
+        ret_errno = errno;
+        if( t_recv_size == 0 && f_last_errno != EWOULDBLOCK && f_last_errno != EAGAIN )
+        {
+            throw midge::error() << "No message present";
+        }
+        else if( t_recv_size < 0 )
+        {
+            throw midge::error() << "Unable to receive; error message: " << strerror( f_last_errno ) << "\n";
+        }
+        // at this point t_recv_size must be 0, and errno is either EWOULDBLOCK or EAGAIN,
+        // which means that there was no data available to receive, but nothing seems to be wrong with the connection
+        return t_recv_size;
     }
 
 }

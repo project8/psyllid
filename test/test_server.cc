@@ -6,6 +6,7 @@
  */
 
 
+#include "error.hh"
 #include "psyllidmsg.hh"
 #include "server.hh"
 
@@ -18,15 +19,11 @@ int main()
 {
     try
     {
-        server t_server( 23529 );
+        server t_server( 23530 );
 
         psyllidmsg( s_normal ) << "Server is listening" <<eom;
 
         psyllidmsg( s_normal ) << "Waiting for connections . . ." << eom;
-
-        connection* t_connection = t_server.get_connection();
-
-        psyllidmsg( s_normal ) << "Connection open" << eom;
 
         const size_t t_buff_size = 1024;
         char* t_data = new char[ t_buff_size ];
@@ -35,7 +32,7 @@ int main()
         while( t_size_received >= 0 )
         {
             psyllidmsg( s_normal ) << "Waiting for a message" << eom;
-            t_size_received = t_connection->recv( t_data, t_buff_size, 0 );
+            t_size_received = t_server.recv( t_data, t_buff_size, 0 );
             if( t_size_received > 0 )
             {
                 psyllidmsg( s_normal ) << "Message received: " << t_data << eom;
@@ -50,10 +47,6 @@ int main()
     catch( error& e )
     {
         psyllidmsg( s_error ) << "Exception caught: " << e.what() << eom;
-    }
-    catch( closed_connection& e )
-    {
-        psyllidmsg( s_error ) << "Connection closed" << eom;
     }
 
 }
