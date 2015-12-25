@@ -1,7 +1,7 @@
 #include "server.hh"
 
 #include "error.hh"
-#include "psyllidmsg.hh"
+#include "pmsg.hh"
 
 #include <errno.h>
 #include <stdio.h>
@@ -22,7 +22,7 @@ namespace psyllid
             f_socket( 0 ),
             f_address( nullptr )
     {
-        //msg_normal( psyllidmsg, "opening server socket on port <" << a_port << ">" );
+        //msg_normal( pmsg, "opening server socket on port <" << a_port << ">" );
 
         //initialize address
         socklen_t t_socket_length = sizeof(sockaddr_in);
@@ -34,7 +34,7 @@ namespace psyllid
         f_address->sin_addr.s_addr = htonl( INADDR_ANY );
         f_address->sin_port = htons( a_port );
 
-        //MTINFO( psyllidmsg, "address prepared..." );
+        //MTINFO( pmsg, "address prepared..." );
 
         //open socket
         f_socket = ::socket( AF_INET, SOCK_DGRAM, 0 );
@@ -53,7 +53,7 @@ namespace psyllid
         //::setsockopt( f_socket, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
 
 
-        //msg_normal( psyllidmsg, "socket open..." );
+        //msg_normal( pmsg, "socket open..." );
 
         //bind socket
         if( ::bind( f_socket, (const sockaddr*) (f_address), t_socket_length ) < 0 )
@@ -62,7 +62,7 @@ namespace psyllid
             return;
         }
 
-        psyllidmsg( s_normal ) << "Ready to receive messages" << eom;
+        pmsg( s_normal ) << "Ready to receive messages" << eom;
 
         return;
     }

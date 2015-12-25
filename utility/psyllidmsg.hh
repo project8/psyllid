@@ -1,8 +1,8 @@
-#ifndef _PSYLLID_PSYLLIDMSG_HH_
-#define _PSYLLID_PSYLLIDMSG_HH_
+#ifndef PSYLLID_PSYLLIDMSG_HH_
+#define PSYLLID_PSYLLIDMSG_HH_
 
 #include "message.hh"
 
-message_declare( psyllidmsg );
+message_declare( pmsg );
 
 #endif /* _PSYLLID_PSYLLIDMSG_HH_ */

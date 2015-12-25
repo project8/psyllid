@@ -1,3 +1,3 @@
 #include "psyllidmsg.hh"
 
-message_define( psyllidmsg, psyllid, psyllid )
+message_define( pmsg, psyllid, psyllid )
