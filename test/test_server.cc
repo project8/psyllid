@@ -7,7 +7,7 @@
 
 
 #include "error.hh"
-#include "pmsg.hh"
+#include "psyllidmsg.hh"
 #include "server.hh"
 
 

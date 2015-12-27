@@ -1,7 +1,7 @@
 #include "server.hh"
 
 #include "error.hh"
-#include "pmsg.hh"
+#include "psyllidmsg.hh"
 
 #include <errno.h>
 #include <stdio.h>
