@@ -22,6 +22,8 @@ message( STATUS "midge project name: ${midge_project_name}" )
 
 # add include directories
 include_directories( BEFORE
+    data
+    nodes
     utility
 )
 
@@ -30,6 +32,8 @@ midge_build_library()
 
 # build this project
 add_subdirectory( utility )
+add_subdirectory( data )
+add_subdirectory( nodes )
 
 add_subdirectory( test )
 
