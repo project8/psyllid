@@ -82,7 +82,7 @@ namespace psyllid
                     t_time_data->set_id( t_id );
                     t_freq_data->set_id( t_id++ );
 
-                    pmsg( s_normal ) << "Data received (" << t_size_received << " bytes): " <<
+                    pmsg( s_debug ) << "Data received (" << t_size_received << " bytes): " <<
                             (int)t_time_data->time_value() << "(" << t_time_data->get_id() << ") --> " <<
                             t_freq_data->freq_value() << "(" << t_freq_data->get_id() << ")" << eom;
 
