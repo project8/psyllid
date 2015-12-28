@@ -30,16 +30,18 @@ namespace psyllid
     void udp_receiver::initialize()
     {
         out_buffer< 0 >().initialize( f_length );
+        out_buffer< 1 >().initialize( f_length );
         return;
     }
 
     void udp_receiver::execute()
     {
-        roach_packet* t_current_data;
-
-        t_current_data = out_stream< 0 >().data();
+        time_data* t_time_data = out_stream< 0 >().data();
+        freq_data* t_freq_data = out_stream< 1 >().data();
 
         // do any preparation of the data
+
+        count_t t_id = 0;
 
         try
         {
@@ -50,15 +52,20 @@ namespace psyllid
             std::unique_ptr< char[] > t_data( new char[ f_udp_buffer_size ] );
 
             out_stream< 0 >().set( stream::s_start );
+            out_stream< 1 >().set( stream::s_start );
 
             ssize_t t_size_received = 0;
             while( t_size_received >= 0 )
             {
-                if( (out_stream< 0 >().get() == stream::s_stop) || (false /* some other condition for stopping */) )
+                if( (out_stream< 0 >().get() == stream::s_stop) ||
+                        (out_stream< 1 >().get() == stream::s_stop) ||
+                        (false /* some other condition for stopping */) )
                 {
                     pmsg( s_normal ) << "UDP Receiver is stopping" << eom;
                     out_stream< 0 >().set( stream::s_stop );
+                    out_stream< 1 >().set( stream::s_stop );
                     out_stream< 0 >().set( stream::s_exit );
+                    out_stream< 1 >().set( stream::s_exit );
                     return;
                 }
 
@@ -68,17 +75,21 @@ namespace psyllid
 
                 if( t_size_received > 0 )
                 {
-                    t_current_data = out_stream< 0 >().data();
+                    t_time_data = out_stream< 0 >().data();
+                    t_freq_data = out_stream< 1 >().data();
 
-                    memcpy( &t_current_data->time_value(), t_data.get(), sizeof( int8_t ) );
-                    memcpy( &t_current_data->freq_value(), t_data.get() + sizeof( int8_t ), sizeof( real_t ) );
+                    memcpy( &t_time_data->time_value(), t_data.get(), sizeof( int8_t ) );
+                    memcpy( &t_freq_data->freq_value(), t_data.get() + sizeof( int8_t ), sizeof( real_t ) );
 
-                    pmsg( s_normal ) << "Data received (" << t_size_received << " bytes): " << (int)t_current_data->time_value() << " --> " << t_current_data->freq_value() << eom;
+                    t_time_data->set_id( t_id );
+                    t_freq_data->set_id( t_id++ );
 
-
-                    // load the data object
+                    pmsg( s_normal ) << "Data received (" << t_size_received << " bytes): " <<
+                            (int)t_time_data->time_value() << "(" << t_time_data->get_id() << ") --> " <<
+                            t_freq_data->freq_value() << "(" << t_freq_data->get_id() << ")" << eom;
 
                     out_stream< 0 >().set( stream::s_run );
+                    out_stream< 1 >().set( stream::s_run );
 
                 }
                 else if( t_size_received == 0 )
@@ -89,7 +100,9 @@ namespace psyllid
                 {
                     pmsg( s_error ) << "An error occurred while receiving a packet" << eom;
                     out_stream< 0 >().set( stream::s_stop );
+                    out_stream< 1 >().set( stream::s_stop );
                     out_stream< 0 >().set( stream::s_exit );
+                    out_stream< 1 >().set( stream::s_exit );
                     return;
                 }
             }
@@ -98,7 +111,9 @@ namespace psyllid
         {
             pmsg( s_error ) << "Exception caught: " << e.what() << eom;
             out_stream< 0 >().set( stream::s_stop );
+            out_stream< 1 >().set( stream::s_stop );
             out_stream< 0 >().set( stream::s_exit );
+            out_stream< 1 >().set( stream::s_exit );
         }
 
         return;
@@ -107,6 +122,7 @@ namespace psyllid
     void udp_receiver::finalize()
     {
         out_buffer< 0 >().finalize();
+        out_buffer< 1 >().finalize();
         return;
     }
 

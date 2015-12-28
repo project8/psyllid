@@ -3,11 +3,15 @@
 ########
 
 set( headers
+    freq_data.hh
     roach_packet.hh
+    time_data.hh
 )
 
 set( sources
+    freq_data.cc
     roach_packet.cc
+    time_data.cc
 )
 
 set( dependencies

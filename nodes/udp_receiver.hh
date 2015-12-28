@@ -5,10 +5,11 @@
  *      Author: nsoblath
  */
 
-#ifndef PSYLLID_UDP_RECEIVER_HH_
-#define PSYLLID_UDP_RECEIVER_HH_
+#ifndef NODES_UDP_RECEIVER_HH_
+#define NODES_UDP_RECEIVER_HH_
 
-#include "roach_packet.hh"
+#include "freq_data.hh"
+#include "time_data.hh"
 
 #include "macros.hh"
 #include "producer.hh"
@@ -19,7 +20,7 @@ namespace psyllid
 {
 
     class udp_receiver :
-            public _producer< udp_receiver, typelist_1( roach_packet ) >
+            public _producer< udp_receiver, typelist_2( time_data, freq_data ) >
     {
         public:
             udp_receiver();

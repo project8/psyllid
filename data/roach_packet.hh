@@ -9,6 +9,7 @@
 #define DATA_ROACH_PACKET_HH_
 
 #include "macros.hh"
+#include "types.hh"
 
 namespace psyllid
 {
@@ -19,8 +20,8 @@ namespace psyllid
             roach_packet();
             virtual ~roach_packet();
 
-            referrable( double, time_value );
-            referrable( double, freq_value );
+            referrable( int8_t, time_value );
+            referrable( midge::real_t, freq_value );
     };
 
 } /* namespace psyllid */
