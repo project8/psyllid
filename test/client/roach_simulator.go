@@ -40,7 +40,7 @@ func main() {
     	bytesErr = binary.Write( buffer, binary.LittleEndian, fft )
     	CheckError(bytesErr)
 
-    	fmt.Printf( "Sending: % x\n", buffer )
+    	fmt.Printf( "Sending: %v --> %v, % x\n", dig, fft, buffer )
 
         _,err := Conn.Write(buffer.Bytes())
         if err != nil {

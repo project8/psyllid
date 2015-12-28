@@ -19,8 +19,8 @@ namespace psyllid
             roach_packet();
             virtual ~roach_packet();
 
-            accessible( double, time_value );
-            accessible( double, freq_value );
+            referrable( double, time_value );
+            referrable( double, freq_value );
     };
 
 } /* namespace psyllid */

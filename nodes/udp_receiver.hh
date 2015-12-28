@@ -28,6 +28,7 @@ namespace psyllid
         public:
             accessible( count_t, length );
             accessible( count_t, port );
+            accessible( size_t, udp_buffer_size );
 
         public:
             virtual void initialize();
