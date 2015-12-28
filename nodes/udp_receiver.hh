@@ -11,7 +11,6 @@
 #include "freq_data.hh"
 #include "time_data.hh"
 
-#include "macros.hh"
 #include "producer.hh"
 
 using namespace midge;

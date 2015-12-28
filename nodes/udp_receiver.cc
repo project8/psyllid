@@ -36,10 +36,8 @@ namespace psyllid
 
     void udp_receiver::execute()
     {
-        time_data* t_time_data = out_stream< 0 >().data();
-        freq_data* t_freq_data = out_stream< 1 >().data();
-
-        // do any preparation of the data
+        time_data* t_time_data = nullptr;
+        freq_data* t_freq_data = nullptr;
 
         count_t t_id = 0;
 

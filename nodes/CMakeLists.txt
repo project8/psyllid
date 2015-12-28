@@ -3,10 +3,12 @@
 ########
 
 set( headers
+    single_value_trigger.hh
     udp_receiver.hh
 )
 
 set( sources
+    single_value_trigger.cc
     udp_receiver.cc
 )
 

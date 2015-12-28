@@ -6,12 +6,14 @@ set( headers
     freq_data.hh
     roach_packet.hh
     time_data.hh
+    trigger_flag.hh
 )
 
 set( sources
     freq_data.cc
     roach_packet.cc
     time_data.cc
+    trigger_flag.cc
 )
 
 set( dependencies
