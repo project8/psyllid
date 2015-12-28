@@ -6,6 +6,8 @@
  */
 
 #include "udp_receiver.hh"
+
+#include "psyllidmsg.hh"
 #include "server.hh"
 
 namespace psyllid
