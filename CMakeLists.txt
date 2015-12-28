@@ -35,7 +35,8 @@ add_subdirectory( utility )
 add_subdirectory( data )
 add_subdirectory( nodes )
 
+add_subdirectory( applications )
 add_subdirectory( test )
 
 # build core executable
-midge_build_executables()
+#midge_build_executables()
