@@ -3,6 +3,8 @@
  *
  *  Created on: Dec 22, 2015
  *      Author: nsoblath
+ *
+ *  Suggested UDP client: string_msg_client.go
  */
 
 
@@ -22,8 +24,6 @@ int main()
         server t_server( 23530 );
 
         pmsg( s_normal ) << "Server is listening" <<eom;
-
-        pmsg( s_normal ) << "Waiting for connections . . ." << eom;
 
         const size_t t_buff_size = 1024;
         char* t_data = new char[ t_buff_size ];

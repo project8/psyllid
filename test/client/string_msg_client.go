@@ -1,13 +1,11 @@
 package main
  
 import (
-	"bytes"
-	"encoding/binary"
     "fmt"
-    "math"
     "net"
     "os"
     "time"
+    "strconv"
 )
  
 func CheckError(err error) {
@@ -26,28 +24,21 @@ func main() {
  
     Conn, err := net.DialUDP("udp", nil, ServerAddr)
     CheckError(err)
+ 
     defer Conn.Close()
-
-    var dig int8 = 0
+    i := 0
     for {
-    	buffer := new( bytes.Buffer )
-    	
-    	var fft float64 = math.Sin( float64(dig) * math.Pi / 16.0 )
-
-    	bytesErr := binary.Write( buffer, binary.LittleEndian, dig )
-    	CheckError(bytesErr)
-
-    	bytesErr = binary.Write( buffer, binary.LittleEndian, fft )
-    	CheckError(bytesErr)
-
-    	fmt.Printf( "Sending: % x\n", buffer )
-
-        _,err := Conn.Write(buffer.Bytes())
+        msg := strconv.Itoa(i)
+        i++
+        buf := []byte(msg)
+        _,err := Conn.Write(buf)
         if err != nil {
-            fmt.Println("Unable to send buffer:", err)
+            fmt.Println(msg, err)
         }
         time.Sleep(time.Second * 1)
-
-        dig++
     }
 }
+
+
+
+
