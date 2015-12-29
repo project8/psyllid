@@ -9,6 +9,7 @@ set( midge_test_dependencies
 )
 
 set( midge_test_programs
+    test_event_builder
     test_server
     test_udp_receiver
 )
