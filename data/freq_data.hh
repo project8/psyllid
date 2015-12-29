@@ -11,6 +11,12 @@
 #include "macros.hh"
 #include "types.hh"
 
+#include <vector>
+using std::vector;
+
+#include <memory>
+using std::unique_ptr;
+
 namespace psyllid
 {
 
@@ -22,7 +28,7 @@ namespace psyllid
 
         public:
             accessible( midge::count_t, id );
-            referrable( midge::real_t, freq_value );
+            referrable( unique_ptr< vector< midge::real_t > >, array );
     };
 
 } /* namespace psyllid */

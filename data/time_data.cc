@@ -12,7 +12,7 @@ namespace psyllid
 
     time_data::time_data() :
             f_id( 0 ),
-            f_time_value( 0 )
+            f_array( new vector< int8_t >() )
     {
     }
 

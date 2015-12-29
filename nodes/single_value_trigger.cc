@@ -48,10 +48,10 @@ namespace psyllid
 
             if( t_in_command == stream::s_run )
             {
-                t_trigger_flag->set_flag( t_freq_data->freq_value() >= f_threshold );
+                t_trigger_flag->set_flag( (*t_freq_data->array())[0] >= f_threshold );
                 t_trigger_flag->set_id( t_freq_data->get_id() );
 
-                pmsg( s_debug ) << "Data " << t_trigger_flag->get_id() << " at " << t_freq_data->freq_value() << " resulted in flag <" << t_trigger_flag->get_flag() << ">" << eom;
+                pmsg( s_debug ) << "Data " << t_trigger_flag->get_id() << " at " << (*t_freq_data->array())[0] << " resulted in flag <" << t_trigger_flag->get_flag() << ">" << eom;
 
                 out_stream< 0 >().set( stream::s_run );
                 continue;

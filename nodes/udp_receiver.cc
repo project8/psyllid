@@ -49,6 +49,12 @@ namespace psyllid
 
             std::unique_ptr< char[] > t_data( new char[ f_udp_buffer_size ] );
 
+            //t_time_data = out_stream< 0 >().data();
+            //t_time_data->array()->resize( 1 );
+
+            //t_freq_data = out_stream< 1 >().data();
+            //t_freq_data->array()->resize( 1 );
+
             out_stream< 0 >().set( stream::s_start );
             out_stream< 1 >().set( stream::s_start );
 
@@ -74,17 +80,20 @@ namespace psyllid
                 if( t_size_received > 0 )
                 {
                     t_time_data = out_stream< 0 >().data();
-                    t_freq_data = out_stream< 1 >().data();
+                    t_time_data->array()->resize( 1 );
 
-                    memcpy( &t_time_data->time_value(), t_data.get(), sizeof( int8_t ) );
-                    memcpy( &t_freq_data->freq_value(), t_data.get() + sizeof( int8_t ), sizeof( real_t ) );
+                    t_freq_data = out_stream< 1 >().data();
+                    t_freq_data->array()->resize( 1 );
+
+                    memcpy( t_time_data->array()->data(), t_data.get(), sizeof( int8_t ) );
+                    memcpy( t_freq_data->array()->data(), t_data.get() + sizeof( int8_t ), sizeof( real_t ) );
 
                     t_time_data->set_id( t_id );
                     t_freq_data->set_id( t_id++ );
 
                     pmsg( s_debug ) << "Data received (" << t_size_received << " bytes): " <<
-                            (int)t_time_data->time_value() << "(" << t_time_data->get_id() << ") --> " <<
-                            t_freq_data->freq_value() << "(" << t_freq_data->get_id() << ")" << eom;
+                            (int)(*t_time_data->array())[0] << "(" << t_time_data->get_id() << ") --> " <<
+                            (*t_freq_data->array())[0] << "(" << t_freq_data->get_id() << ")" << eom;
 
                     out_stream< 0 >().set( stream::s_run );
                     out_stream< 1 >().set( stream::s_run );
