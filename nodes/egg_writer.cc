@@ -33,22 +33,6 @@ namespace psyllid
 
         while( true )
         {
-            t_time_command = in_stream< 0 >().get();
-            t_time_data = in_stream< 0 >().data();
-
-            if( t_time_command == stream::s_start )
-            {
-                // prepare the egg file
-            }
-
-            if( t_time_command == stream::s_run )
-            {
-
-            }
-        }
-
-        while( true )
-        {
             /*
              * In most cases the time and event commands should be matched.
              * There is one exception: the event stream could be stopped (after it reaches its last triggered event)
@@ -61,10 +45,14 @@ namespace psyllid
 
             if( t_event_command == stream::s_stop )
             {
+                pmsg( s_debug ) << "Event stream has stopped; advancing the time stream" << eom;
+
                 while( t_time_command != stream::s_stop )
                 {
                     t_time_command = in_stream< 0 >().get();
                 }
+
+                pmsg( s_debug ) << "Closing the egg file" << eom;
 
                 //TODO: close the egg file
 
@@ -81,6 +69,8 @@ namespace psyllid
 
             if( t_event_command == stream::s_start )
             {
+                pmsg( s_debug ) << "Preparing egg file" << eom;
+
                 //TODO: prepare egg file
 
                 continue;
@@ -88,6 +78,8 @@ namespace psyllid
 
             if( t_event_command == stream::s_run )
             {
+                pmsg( s_debug ) << "Writing an event to the egg file" << eom;
+
                 count_t t_time_id = t_time_data->get_id();
                 if( t_time_id != t_event_data->get_start_id() )
                 {
