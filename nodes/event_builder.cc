@@ -108,7 +108,7 @@ namespace psyllid
                         }
                         f_end_untriggered = t_current_id;
 
-                        if( f_start_untriggered - f_end_untriggered + 1 > f_skip_tolerance )
+                        if( f_end_untriggered - f_start_untriggered + 1 > f_skip_tolerance )
                         {
                             pmsg( s_debug ) << "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() << eom;
                             // turn skip into event-stop
