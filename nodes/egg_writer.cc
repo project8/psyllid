@@ -113,9 +113,11 @@ namespace psyllid
                     ++i_chan_psyllid;
                 }
 
+                t_monarch->WriteHeader();
+
                 t_bytes_per_record = t_time_data->get_array_n_bytes();
 
-                t_monarch_stream = t_monarch->GetStream( 0 );
+                t_monarch_stream = t_monarch->GetStream( t_stream_num );
                 t_monarch_record = t_monarch_stream->GetStreamRecord();
 
                 continue;
@@ -127,9 +129,15 @@ namespace psyllid
                 t_is_new_event = true;
 
                 count_t t_time_id = t_time_data->get_id();
-                if( t_time_id != t_event_data->get_start_id() )
+                count_t t_start_id = t_event_data->get_start_id();
+                if( t_time_id > t_start_id )
                 {
-                    throw error() << "Time stream is not at the start of the current event";
+                    throw error() << "Time stream is past the start of the current event";
+                }
+                while( t_time_id < t_start_id )
+                {
+                    t_time_command = in_stream< 0 >().get();
+                    t_start_id = t_event_data->get_start_id();
                 }
 
                 count_t t_event_end_id = t_event_data->get_end_id();

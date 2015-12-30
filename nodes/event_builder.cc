@@ -47,6 +47,7 @@ namespace psyllid
 
             if( t_in_command == stream::s_start )
             {
+                pmsg( s_debug ) << "Starting the event builder" << eom;
                 out_stream< 0 >().set( stream::s_start );
                 continue;
             }
@@ -54,6 +55,7 @@ namespace psyllid
             if( t_in_command == stream::s_run )
             {
                 count_t t_current_id = t_trigger_flag->get_id();
+                pmsg( s_debug ) << "Event builder received id " << t_current_id << eom;
                 if( f_state == state_t::idle )
                 {
                     if( t_trigger_flag->get_flag() )

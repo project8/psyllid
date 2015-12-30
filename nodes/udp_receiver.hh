@@ -26,7 +26,8 @@ namespace psyllid
             virtual ~udp_receiver();
 
         public:
-            accessible( count_t, length );
+            accessible( count_t, time_length );
+            accessible( count_t, freq_length );
             accessible( count_t, port );
             accessible( size_t, udp_buffer_size );
 

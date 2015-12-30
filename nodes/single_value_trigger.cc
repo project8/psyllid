@@ -42,6 +42,7 @@ namespace psyllid
 
             if( t_in_command == stream::s_start )
             {
+                pmsg( s_debug ) << "Starting the svt output" << eom;
                 out_stream< 0 >().set( stream::s_start );
                 continue;
             }

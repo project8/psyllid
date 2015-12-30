@@ -17,7 +17,8 @@ namespace psyllid
 {
 
     udp_receiver::udp_receiver() :
-            f_length( 10 ),
+            f_time_length( 10 ),
+            f_freq_length( 10 ),
             f_port( 23530 ),
             f_udp_buffer_size( 1024 )
     {
@@ -29,8 +30,8 @@ namespace psyllid
 
     void udp_receiver::initialize()
     {
-        out_buffer< 0 >().initialize( f_length );
-        out_buffer< 1 >().initialize( f_length );
+        out_buffer< 0 >().initialize( f_time_length );
+        out_buffer< 1 >().initialize( f_freq_length );
         return;
     }
 
