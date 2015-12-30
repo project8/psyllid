@@ -26,7 +26,7 @@ set( dependencies
 ###########
 
 add_library( _psyllid_nodes ${sources} )
-target_link_libraries( _psyllid_nodes ${dependencies} ${midge_library} ${midge_external_libraries} )
+target_link_libraries( _psyllid_nodes ${dependencies} ${midge_library} ${EXTERNAL_LIBRARIES} )
 
 pbuilder_install_headers( ${headers} )
 

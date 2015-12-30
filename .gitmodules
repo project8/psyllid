@@ -1,3 +1,6 @@
 [submodule "midge"]
 	path = midge
 	url = https://github.com/project8/midge
+[submodule "monarch"]
+	path = monarch
+	url = https://github.com/project8/monarch

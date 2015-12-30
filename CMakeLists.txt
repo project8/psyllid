@@ -19,6 +19,19 @@ message( STATUS "midge project name: ${midge_project_name}" )
 # dependencies #
 ################
 
+# Midge
+midge_build_library()
+
+
+# Monarch
+add_subdirectory( monarch )
+pbuilder_add_submodule_libraries( ${Monarch_LIBRARIES} )
+include_directories( ${Monarch_DEP_INCLUDE_DIRS} )
+
+
+###########
+# psyllid #
+###########
 
 # add include directories
 include_directories( BEFORE
@@ -27,8 +40,6 @@ include_directories( BEFORE
     utility
 )
 
-# build core library
-midge_build_library()
 
 # build this project
 add_subdirectory( utility )
@@ -38,5 +49,3 @@ add_subdirectory( nodes )
 add_subdirectory( applications )
 add_subdirectory( test )
 
-# build core executable
-#midge_build_executables()
