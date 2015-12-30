@@ -47,6 +47,7 @@ namespace psyllid
 
             void execute()
             {
+                // this line produces a warning in clang and some versions of gcc; it's a known bug in the compilers
                 array< bool, 20 > t_flags = { 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1 };
 
                 out_stream< 0 >().set( stream::s_start );

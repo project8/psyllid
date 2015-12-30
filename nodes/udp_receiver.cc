@@ -98,10 +98,12 @@ namespace psyllid
                     out_stream< 0 >().set( stream::s_run );
                     out_stream< 1 >().set( stream::s_run );
 
+                    continue;
                 }
                 else if( t_size_received == 0 )
                 {
                     pmsg( s_debug ) << "No message received & no error present" << eom;
+                    continue;
                 }
                 else
                 {
