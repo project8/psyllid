@@ -7,6 +7,12 @@
 
 #include "egg_writer.hh"
 
+#include "psyllidmsg.hh"
+
+#include "M3Monarch.hh"
+
+using namespace monarch3;
+
 namespace psyllid
 {
 
@@ -31,6 +37,15 @@ namespace psyllid
         id_range_event* t_event_data = nullptr;
         time_data* t_time_data = nullptr;
 
+        Monarch3* t_monarch = nullptr;
+        M3Header* t_monarch_header = nullptr;
+        M3Stream* t_monarch_stream = nullptr;
+        M3Record* t_monarch_record = nullptr;
+
+        unsigned t_stream_num = 0;
+        count_t t_bytes_per_record = 0;
+        bool t_is_new_event = true;
+
         while( true )
         {
             /*
@@ -54,7 +69,7 @@ namespace psyllid
 
                 pmsg( s_debug ) << "Closing the egg file" << eom;
 
-                //TODO: close the egg file
+                t_monarch->FinishWriting();
 
                 continue;
             }
@@ -72,6 +87,36 @@ namespace psyllid
                 pmsg( s_debug ) << "Preparing egg file" << eom;
 
                 //TODO: prepare egg file
+                string t_filename( "test_file.egg" );
+                t_monarch = Monarch3::OpenForWriting( t_filename );
+                if( t_monarch == nullptr )
+                {
+                    throw error() << "Unable to open the egg file <" << t_filename << ">";
+                }
+
+                t_monarch_header = t_monarch->GetHeader();
+                // to set:
+                //   run duration
+                //   timestamp
+                //   description
+
+
+                vector< unsigned > t_chan_vec;
+                t_stream_num = t_monarch_header->AddStream( "Psyllid - ROACH2", 100, 1, 1, 1, sDigitizedUS, 8, sBitsAlignedLeft, &t_chan_vec );
+
+                unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
+                for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
+                {
+                    t_monarch_header->GetChannelHeaders()[ *it ].SetVoltageOffset( 0. );
+                    t_monarch_header->GetChannelHeaders()[ *it ].SetVoltageRange( 0.5 );
+                    t_monarch_header->GetChannelHeaders()[ *it ].SetDACGain( 1. );
+                    ++i_chan_psyllid;
+                }
+
+                t_bytes_per_record = t_time_data->get_array_n_bytes();
+
+                t_monarch_stream = t_monarch->GetStream( 0 );
+                t_monarch_record = t_monarch_stream->GetStreamRecord();
 
                 continue;
             }
@@ -79,6 +124,7 @@ namespace psyllid
             if( t_event_command == stream::s_run )
             {
                 pmsg( s_debug ) << "Writing an event to the egg file" << eom;
+                t_is_new_event = true;
 
                 count_t t_time_id = t_time_data->get_id();
                 if( t_time_id != t_event_data->get_start_id() )
@@ -89,7 +135,8 @@ namespace psyllid
                 count_t t_event_end_id = t_event_data->get_end_id();
                 while( true )
                 {
-                    //TODO: write time data t_time_id to file
+                    memcpy( t_monarch_record->GetData(), t_time_data->array()->data(), t_bytes_per_record );
+                    t_monarch_stream->WriteRecord( t_is_new_event );
 
                     if( t_time_id == t_event_end_id ) break;
 
@@ -101,6 +148,8 @@ namespace psyllid
 
                     t_time_data = in_stream< 0 >().data();
                     t_time_id = t_time_data->get_id();
+
+                    t_is_new_event = false;
                 }
 
                 continue;

@@ -23,13 +23,26 @@ namespace psyllid
     class time_data
     {
         public:
+            typedef int8_t value_type;
+            typedef vector< value_type > array_type;
+
+        public:
             time_data();
             virtual ~time_data();
 
         public:
             accessible( midge::count_t, id );
-            referrable( unique_ptr< vector< int8_t > >, array );
+            referrable( unique_ptr< array_type >, array );
+
+        public:
+            midge::count_t get_array_n_bytes() const;
     };
+
+
+    inline midge::count_t time_data::get_array_n_bytes() const
+    {
+        return f_array->size() * sizeof( value_type );
+    }
 
 } /* namespace psyllid */
 
