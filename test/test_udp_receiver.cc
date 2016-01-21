@@ -8,7 +8,7 @@
  */
 
 
-#include "error.hh"
+#include "midge_error.hh"
 #include "psyllidmsg.hh"
 #include "udp_receiver.hh"
 

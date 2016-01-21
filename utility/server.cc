@@ -1,7 +1,8 @@
 #include "server.hh"
 
-#include "error.hh"
 #include "psyllidmsg.hh"
+
+#include "midge_error.hh"
 
 #include <errno.h>
 #include <stdio.h>
@@ -40,7 +41,7 @@ namespace psyllid
         f_socket = ::socket( AF_INET, SOCK_DGRAM, 0 );
         if( f_socket < 0 )
         {
-            throw midge::error() << "[server] could not create socket:\n\t" << strerror( errno );
+            throw ::midge::error() << "[server] could not create socket:\n\t" << strerror( errno );
             return;
         }
 

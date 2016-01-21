@@ -2,18 +2,20 @@
 # test #
 ########
 
-set( midge_test_dependencies
-    _psyllid_utility
-    _psyllid_data
-    _psyllid_nodes
-)
+if( Psyllid_ENABLE_TESTING )
 
-set( midge_test_programs
-    test_event_builder
-    test_server
-    test_udp_receiver
-)
+    set( lib_dependencies
+        PsyllidUtility
+        PsyllidData
+        PsyllidNodes
+    )
+    
+    set( programs
+        test_event_builder
+        test_server
+        test_udp_receiver
+    )
+    
+    pbuilder_executables( programs lib_dependencies )
 
-midge_executables( test )
-
-
+endif( Psyllid_ENABLE_TESTING )

@@ -2,17 +2,22 @@ cmake_minimum_required (VERSION 3.0)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project (psyllid VERSION 0.1.0)
+project( Psyllid VERSION 0.1.0)
 
-include( midge/cmake/MidgeUtility.cmake )
-midge_prepare_project()
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
+include( PackageBuilder )
 
-message( STATUS "midge project name: ${midge_project_name}" )
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/cmake )
+include( MidgeUtility )
+
+pbuilder_prepare_project()
+
 
 #########
 # flags #
 #########
 
+set_option( USE_CPP11 TRUE )
 
 
 ################
@@ -20,13 +25,13 @@ message( STATUS "midge project name: ${midge_project_name}" )
 ################
 
 # Midge
-midge_build_library()
+pbuilder_add_submodule( Midge midge )
 
+# Dripline
+pbuilder_add_submodule( Dripline dripline/cpp )
 
 # Monarch
-add_subdirectory( monarch )
-pbuilder_add_submodule_libraries( ${Monarch_LIBRARIES} )
-include_directories( ${Monarch_DEP_INCLUDE_DIRS} )
+pbuilder_add_submodule( Monarch monarch )
 
 
 ###########
@@ -48,4 +53,3 @@ add_subdirectory( nodes )
 
 add_subdirectory( applications )
 add_subdirectory( test )
-

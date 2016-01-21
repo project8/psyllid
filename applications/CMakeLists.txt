@@ -2,16 +2,18 @@
 # applications #
 ################
 
-set( midge_apps_dependencies
-    _psyllid_utility
-    _psyllid_data
-    _psyllid_nodes
-)
+if( Psyllid_ENABLE_EXECUTABLES )
 
-set( midge_apps_programs
-    single_value_daq
-)
+    set( lib_dependencies 
+        PsyllidUtility
+        PsyllidData
+        PsyllidNodes
+    )
+    
+    set( programs
+        single_value_daq
+    )
+    
+    pbuilder_executables( programs lib_dependencies )
 
-midge_executables( apps )
-
-
+endif( Psyllid_ENABLE_EXECUTABLES )

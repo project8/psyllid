@@ -17,11 +17,6 @@ set( sources
 # library #
 ###########
 
-add_library( _psyllid_utility ${sources} )
-target_link_libraries( _psyllid_utility ${midge_library} ${midge_external_libraries} )
-
+midge_library( PsyllidUtility sources dependencies )
 pbuilder_install_headers( ${headers} )
-
-pbuilder_install_libraries( _psyllid_utility )
-
 
