@@ -3,10 +3,14 @@
 ###########
 
 set( headers
+    daq_control.hh
+    node_manager.hh
     request_receiver.hh
 )
 
 set( sources
+    daq_control.cc
+    node_manager.cc
     request_receiver.cc
 )
 

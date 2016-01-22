@@ -12,20 +12,21 @@
 
 #include "midge.hh"
 
+#include "logger.hh"
+
 #include <memory>
+
 using std::unique_ptr;
 
 using namespace midge;
 using namespace psyllid;
 
+LOGGER( plog, "single_value_daq" );
+
 int main()
 {
     try
     {
-        messages* t_messages = messages::get_instance();
-        t_messages->set_terminal_severity( s_debug );
-        t_messages->set_terminal_stream( &std::cout );
-
         //unique_ptr< ::midge::midge > t_root;
         ::midge::midge* t_root = new ::midge::midge();
 
@@ -61,7 +62,7 @@ int main()
     }
     catch( std::exception& e )
     {
-        std::cerr << "Exception caught: " << e.what() << std::endl;
+        ERROR( plog, "Exception caught: " << e.what() );
     }
 
     return 0;
