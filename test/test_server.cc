@@ -9,13 +9,14 @@
 
 
 #include "midge_error.hh"
-#include "psyllidmsg.hh"
 #include "server.hh"
 
-
+#include "logger.hh"
 
 using namespace midge;
 using namespace psyllid;
+
+LOGGER( plog, "test_server" );
 
 int main()
 {
@@ -23,7 +24,7 @@ int main()
     {
         server t_server( 23530 );
 
-        pmsg( s_normal ) << "Server is listening" << eom;
+        INFO( plog, "Server is listening" );
 
         const size_t t_buff_size = 1024;
         char* t_data = new char[ t_buff_size ];
@@ -31,22 +32,22 @@ int main()
         ssize_t t_size_received = 0;
         while( t_size_received >= 0 )
         {
-            pmsg( s_normal ) << "Waiting for a message" << eom;
+            INFO( plog, "Waiting for a message" );
             t_size_received = t_server.recv( t_data, t_buff_size, 0 );
             if( t_size_received > 0 )
             {
-                pmsg( s_normal ) << "Message received: " << t_data << eom;
+                INFO( plog, "Message received: " << t_data );
             }
             else
             {
-                pmsg( s_debug ) << "No message received & no error present" << eom;
+                DEBUG( plog, "No message received & no error present" );
             }
         }
 
     }
     catch( error& e )
     {
-        pmsg( s_error ) << "Exception caught: " << e.what() << eom;
+        ERROR( plog, "Exception caught: " << e.what() );
     }
 
 }

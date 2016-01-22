@@ -13,21 +13,19 @@
 
 #include "transformer.hh"
 
-using namespace midge;
-
 namespace psyllid
 {
 
     class single_value_trigger :
-            public _transformer< single_value_trigger, typelist_1( freq_data ), typelist_1( trigger_flag ) >
+            public midge::_transformer< single_value_trigger, typelist_1( freq_data ), typelist_1( trigger_flag ) >
     {
         public:
             single_value_trigger();
             virtual ~single_value_trigger();
 
         public:
-            accessible( count_t, length );
-            accessible( real_t, threshold );
+            accessible( uint64_t, length );
+            accessible( double, threshold );
 
         public:
             void initialize();

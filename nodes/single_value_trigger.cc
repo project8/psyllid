@@ -7,10 +7,13 @@
 
 #include "single_value_trigger.hh"
 
-#include "psyllidmsg.hh"
+#include "logger.hh"
+
+using midge::stream;
 
 namespace psyllid
 {
+    LOGGER( plog, "single_value_trigger" );
 
     single_value_trigger::single_value_trigger() :
             f_length( 10 ),
@@ -42,7 +45,7 @@ namespace psyllid
 
             if( t_in_command == stream::s_start )
             {
-                pmsg( s_debug ) << "Starting the svt output" << eom;
+                DEBUG( plog, "Starting the svt output" );
                 out_stream< 0 >().set( stream::s_start );
                 continue;
             }
@@ -52,7 +55,7 @@ namespace psyllid
                 t_trigger_flag->set_flag( (*t_freq_data->array())[0] >= f_threshold );
                 t_trigger_flag->set_id( t_freq_data->get_id() );
 
-                pmsg( s_debug ) << "Data " << t_trigger_flag->get_id() << " at " << (*t_freq_data->array())[0] << " resulted in flag <" << t_trigger_flag->get_flag() << ">" << eom;
+                DEBUG( plog, "Data " << t_trigger_flag->get_id() << " at " << (*t_freq_data->array())[0] << " resulted in flag <" << t_trigger_flag->get_flag() << ">" );
 
                 out_stream< 0 >().set( stream::s_run );
                 continue;

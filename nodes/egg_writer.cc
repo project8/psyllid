@@ -7,14 +7,20 @@
 
 #include "egg_writer.hh"
 
-#include "psyllidmsg.hh"
+#include "logger.hh"
 
 #include "M3Monarch.hh"
 
 using namespace monarch3;
 
+using midge::stream;
+
+using std::string;
+using std::vector;
+
 namespace psyllid
 {
+    LOGGER( plog, "egg_writer" );
 
     egg_writer::egg_writer()
     {
@@ -31,8 +37,8 @@ namespace psyllid
 
     void egg_writer::execute()
     {
-        enum_t t_event_command = stream::s_none;
-        enum_t t_time_command = stream::s_none;
+        midge::enum_t t_event_command = stream::s_none;
+        midge::enum_t t_time_command = stream::s_none;
 
         id_range_event* t_event_data = nullptr;
         time_data* t_time_data = nullptr;
@@ -43,7 +49,7 @@ namespace psyllid
         M3Record* t_monarch_record = nullptr;
 
         unsigned t_stream_num = 0;
-        count_t t_bytes_per_record = 0;
+        uint64_t t_bytes_per_record = 0;
         bool t_is_new_event = true;
 
         while( true )
@@ -60,14 +66,14 @@ namespace psyllid
 
             if( t_event_command == stream::s_stop )
             {
-                pmsg( s_debug ) << "Event stream has stopped; advancing the time stream" << eom;
+                DEBUG( plog, "Event stream has stopped; advancing the time stream" );
 
                 while( t_time_command != stream::s_stop )
                 {
                     t_time_command = in_stream< 0 >().get();
                 }
 
-                pmsg( s_debug ) << "Closing the egg file" << eom;
+                DEBUG( plog, "Closing the egg file" );
 
                 t_monarch->FinishWriting();
 
@@ -76,7 +82,7 @@ namespace psyllid
 
             if( t_time_command != t_event_command )
             {
-                throw error() << "Time and event stream commands are mismatched: " << t_time_command << " (time) vs " << t_event_command << " (event)";
+                throw midge::error() << "Time and event stream commands are mismatched: " << t_time_command << " (time) vs " << t_event_command << " (event)";
             }
 
             t_time_data = in_stream< 0 >().data();
@@ -84,14 +90,14 @@ namespace psyllid
 
             if( t_event_command == stream::s_start )
             {
-                pmsg( s_debug ) << "Preparing egg file" << eom;
+                DEBUG( plog, "Preparing egg file" );
 
                 //TODO: prepare egg file
                 string t_filename( "test_file.egg" );
                 t_monarch = Monarch3::OpenForWriting( t_filename );
                 if( t_monarch == nullptr )
                 {
-                    throw error() << "Unable to open the egg file <" << t_filename << ">";
+                    throw midge::error() << "Unable to open the egg file <" << t_filename << ">";
                 }
 
                 t_monarch_header = t_monarch->GetHeader();
@@ -125,14 +131,14 @@ namespace psyllid
 
             if( t_event_command == stream::s_run )
             {
-                pmsg( s_debug ) << "Writing an event to the egg file" << eom;
+                DEBUG( plog, "Writing an event to the egg file" );
                 t_is_new_event = true;
 
-                count_t t_time_id = t_time_data->get_id();
-                count_t t_start_id = t_event_data->get_start_id();
+                uint64_t t_time_id = t_time_data->get_id();
+                uint64_t t_start_id = t_event_data->get_start_id();
                 if( t_time_id > t_start_id )
                 {
-                    throw error() << "Time stream is past the start of the current event";
+                    throw midge::error() << "Time stream is past the start of the current event";
                 }
                 while( t_time_id < t_start_id )
                 {
@@ -140,7 +146,7 @@ namespace psyllid
                     t_start_id = t_event_data->get_start_id();
                 }
 
-                count_t t_event_end_id = t_event_data->get_end_id();
+                uint64_t t_event_end_id = t_event_data->get_end_id();
                 while( true )
                 {
                     memcpy( t_monarch_record->GetData(), t_time_data->array()->data(), t_bytes_per_record );
@@ -151,7 +157,7 @@ namespace psyllid
                     t_time_command = in_stream< 0 >().get();
                     if( t_time_command != stream::s_run )
                     {
-                        throw error() << "Time stream stopped mid-event; time_id: " << t_time_id;
+                        throw midge::error() << "Time stream stopped mid-event; time_id: " << t_time_id;
                     }
 
                     t_time_data = in_stream< 0 >().data();

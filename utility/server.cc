@@ -1,8 +1,8 @@
 #include "server.hh"
 
-#include "psyllidmsg.hh"
-
 #include "midge_error.hh"
+
+#include "logger.hh"
 
 #include <errno.h>
 #include <stdio.h>
@@ -13,7 +13,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-using namespace midge;
+LOGGER( plog, "server" );
 
 namespace psyllid
 {
@@ -63,7 +63,7 @@ namespace psyllid
             return;
         }
 
-        pmsg( s_normal ) << "Ready to receive messages" << eom;
+        INFO( plog, "Ready to receive messages" );
 
         return;
     }

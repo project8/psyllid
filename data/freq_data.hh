@@ -8,14 +8,11 @@
 #ifndef DATA_FREQ_DATA_HH_
 #define DATA_FREQ_DATA_HH_
 
-#include "macros.hh"
-#include "types.hh"
+#include "member_variables.hh"
 
 #include <vector>
-using std::vector;
 
 #include <memory>
-using std::unique_ptr;
 
 namespace psyllid
 {
@@ -27,8 +24,8 @@ namespace psyllid
             virtual ~freq_data();
 
         public:
-            accessible( midge::count_t, id );
-            referrable( unique_ptr< vector< midge::real_t > >, array );
+            mv_accessible( uint64_t, id );
+            mv_referrable( std::unique_ptr< std::vector< double > >, array );
     };
 
 } /* namespace psyllid */

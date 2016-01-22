@@ -14,24 +14,21 @@
 #include "trigger_flag.hh"
 
 #include <vector>
-using std::vector;
-
-using namespace midge;
 
 namespace psyllid
 {
 
     class event_builder :
-            public _transformer< event_builder, typelist_1( trigger_flag ), typelist_1( id_range_event ) >
+            public midge::_transformer< event_builder, typelist_1( trigger_flag ), typelist_1( id_range_event ) >
     {
         public:
             event_builder();
             virtual ~event_builder();
 
         public:
-            accessible( count_t, length );
-            accessible( count_t, pretrigger );
-            accessible( count_t, skip_tolerance );
+            accessible( uint64_t, length );
+            accessible( uint64_t, pretrigger );
+            accessible( uint64_t, skip_tolerance );
 
         public:
             virtual void initialize();
@@ -42,13 +39,13 @@ namespace psyllid
             enum class state_t { idle, triggered };
             state_t f_state;
 
-            count_t f_start_untriggered;
-            count_t f_end_untriggered;
-            vector< count_t > f_untriggered_buffer;
+            uint64_t f_start_untriggered;
+            uint64_t f_end_untriggered;
+            std::vector< uint64_t > f_untriggered_buffer;
 
         public:
             bool is_triggered() const;
-            const vector< count_t >& untriggered_buffer() const;
+            const std::vector< uint64_t >& untriggered_buffer() const;
 
     };
 
@@ -58,7 +55,7 @@ namespace psyllid
         return f_state == state_t::triggered;
     }
 
-    inline const vector< count_t >& event_builder::untriggered_buffer() const
+    inline const std::vector< uint64_t >& event_builder::untriggered_buffer() const
     {
         return f_untriggered_buffer;
     }

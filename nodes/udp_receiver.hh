@@ -13,22 +13,20 @@
 
 #include "producer.hh"
 
-using namespace midge;
-
 namespace psyllid
 {
 
     class udp_receiver :
-            public _producer< udp_receiver, typelist_2( time_data, freq_data ) >
+            public midge::_producer< udp_receiver, typelist_2( time_data, freq_data ) >
     {
         public:
             udp_receiver();
             virtual ~udp_receiver();
 
         public:
-            accessible( count_t, time_length );
-            accessible( count_t, freq_length );
-            accessible( count_t, port );
+            accessible( uint64_t, time_length );
+            accessible( uint64_t, freq_length );
+            accessible( uint64_t, port );
             accessible( size_t, udp_buffer_size );
 
         public:

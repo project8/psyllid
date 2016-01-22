@@ -13,13 +13,11 @@
 
 #include "consumer.hh"
 
-using namespace midge;
-
 namespace psyllid
 {
 
     class egg_writer :
-            public _consumer< egg_writer, typelist_2( time_data, id_range_event ) >
+            public midge::_consumer< egg_writer, typelist_2( time_data, id_range_event ) >
     {
         public:
             egg_writer();

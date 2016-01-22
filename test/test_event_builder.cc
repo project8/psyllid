@@ -17,16 +17,21 @@
 #include "event_builder.hh"
 #include "midge.hh"
 #include "producer.hh"
-#include "psyllidmsg.hh"
+
+#include "logger.hh"
 
 #include <array>
+
 using std::array;
 
+using midge::stream;
+
+LOGGER( plog, "test_event_builder" );
 
 namespace psyllid
 {
     class test_producer :
-            public _producer< test_producer, typelist_1( trigger_flag ) >
+            public midge::_producer< test_producer, typelist_1( trigger_flag ) >
     {
         public:
             test_producer() :
@@ -36,7 +41,7 @@ namespace psyllid
             virtual ~test_producer() {}
 
         public:
-            accessible( count_t, length );
+            accessible( uint64_t, length );
 
         public:
             void initialize()
@@ -52,14 +57,14 @@ namespace psyllid
 
                 out_stream< 0 >().set( stream::s_start );
 
-                for( count_t t_id = 0; t_id < t_flags.size(); ++t_id )
+                for( uint64_t t_id = 0; t_id < t_flags.size(); ++t_id )
                 {
                     trigger_flag* t_flag_data = out_stream< 0 >().data();
 
                     t_flag_data->set_id( t_id );
                     t_flag_data->set_flag( t_flags[ t_id ] );
 
-                    pmsg( s_debug ) << "Sending: " << t_id << ", " << t_flags[t_id] << eom;
+                    DEBUG( plog, "Sending: " << t_id << ", " << t_flags[t_id] );
 
                     out_stream< 0 >().set( stream::s_run );
                 }
@@ -86,11 +91,7 @@ using namespace midge;
 
 int main()
 {
-    messages* t_messages = messages::get_instance();
-    t_messages->set_terminal_severity( s_debug );
-    t_messages->set_terminal_stream( &cout );
-
-    pmsg( s_normal ) << "Preparing" << eom;
+    INFO( plog, "Preparing" );
 
     ::midge::midge* t_root = new ::midge::midge();
 
@@ -106,13 +107,13 @@ int main()
 
     t_root->join( "tp.out_0:eb.in_0" );
 
-    pmsg( s_normal ) << "Expecting the following events: 1-8, 9-15, 17-19" << eom;
+    INFO( plog, "Expecting the following events: 1-8, 9-15, 17-19" );
 
-    pmsg( s_normal ) << "Starting execution" << eom;
+    INFO( plog, "Starting execution" );
 
     t_root->run( "tp:eb" );
 
-    pmsg( s_normal ) << "All done!" << eom;
+    INFO( plog, "All done!" );
 
     delete t_root;
 

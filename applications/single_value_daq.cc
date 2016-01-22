@@ -24,7 +24,7 @@ int main()
     {
         messages* t_messages = messages::get_instance();
         t_messages->set_terminal_severity( s_debug );
-        t_messages->set_terminal_stream( &cout );
+        t_messages->set_terminal_stream( &std::cout );
 
         //unique_ptr< ::midge::midge > t_root;
         ::midge::midge* t_root = new ::midge::midge();

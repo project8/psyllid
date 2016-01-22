@@ -9,31 +9,33 @@
 
 
 #include "midge_error.hh"
-#include "psyllidmsg.hh"
 #include "udp_receiver.hh"
 
+#include "logger.hh"
 
 
 using namespace midge;
 using namespace psyllid;
 
+LOGGER( plog, "test_udp_receiver" );
+
 int main()
 {
     try
     {
-        pmsg( s_normal ) << "Creating receiver" << eom;
+        INFO( plog, "Creating receiver" );
 
         udp_receiver t_receiver;
 
-        pmsg( s_normal ) << "Initializing receiver" << eom;
+        INFO( plog, "Initializing receiver" );
 
         t_receiver.initialize();
 
-        pmsg( s_normal ) << "Running receiver" << eom;
+        INFO( plog, "Running receiver" );
 
         t_receiver.execute();
 
-        pmsg( s_normal ) << "Finalizing receiver" << eom;
+        INFO( plog, "Finalizing receiver" );
 
         t_receiver.finalize();
 
@@ -41,7 +43,7 @@ int main()
     }
     catch( error& e )
     {
-        pmsg( s_error ) << "Exception caught: " << e.what() << eom;
+        ERROR( plog, "Exception caught: " << e.what() );
         return -1;
     }
 

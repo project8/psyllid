@@ -3,11 +3,9 @@
 ###########
 
 set( headers
-    psyllidmsg.hh
     server.hh
 )
 set( sources
-    psyllidmsg.cc
     server.cc
 )
 

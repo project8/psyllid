@@ -8,8 +8,7 @@
 #ifndef DATA_ID_RANGE_EVENT_HH_
 #define DATA_ID_RANGE_EVENT_HH_
 
-#include "macros.hh"
-#include "types.hh"
+#include "member_variables.hh"
 
 namespace psyllid
 {
@@ -21,8 +20,8 @@ namespace psyllid
             virtual ~id_range_event();
 
         public:
-            accessible( midge::count_t, start_id );
-            accessible( midge::count_t, end_id );
+            mv_accessible( uint64_t, start_id );
+            mv_accessible( uint64_t, end_id );
     };
 
 } /* namespace psyllid */

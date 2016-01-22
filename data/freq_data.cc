@@ -12,7 +12,7 @@ namespace psyllid
 
     freq_data::freq_data() :
             f_id( 0 ),
-            f_array( new vector< midge::real_t >() )
+            f_array( new std::vector< double >() )
     {
     }
 

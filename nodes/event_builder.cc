@@ -7,10 +7,13 @@
 
 #include "event_builder.hh"
 
-#include "psyllidmsg.hh"
+#include "logger.hh"
+
+using midge::stream;
 
 namespace psyllid
 {
+    LOGGER( plog, "event_builder" );
 
     event_builder::event_builder() :
             f_length( 10 ),
@@ -47,15 +50,15 @@ namespace psyllid
 
             if( t_in_command == stream::s_start )
             {
-                pmsg( s_debug ) << "Starting the event builder" << eom;
+                DEBUG( plog, "Starting the event builder" );
                 out_stream< 0 >().set( stream::s_start );
                 continue;
             }
 
             if( t_in_command == stream::s_run )
             {
-                count_t t_current_id = t_trigger_flag->get_id();
-                pmsg( s_debug ) << "Event builder received id " << t_current_id << eom;
+                uint64_t t_current_id = t_trigger_flag->get_id();
+                DEBUG( plog, "Event builder received id " << t_current_id );
                 if( f_state == state_t::idle )
                 {
                     if( t_trigger_flag->get_flag() )
@@ -110,7 +113,7 @@ namespace psyllid
 
                         if( f_end_untriggered - f_start_untriggered + 1 > f_skip_tolerance )
                         {
-                            pmsg( s_debug ) << "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() << eom;
+                            DEBUG( plog, "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() );
                             // turn skip into event-stop
                             f_state = state_t::idle;
                             // the current event is done; advance the output stream
@@ -120,7 +123,7 @@ namespace psyllid
                     }
                 }
 
-                //pmsg( s_debug ) << "Data " << t_trigger_flag->get_id() << " at " << (*t_freq_data->array())[0] << " resulted in flag <" << t_trigger_flag->get_flag() << ">" << eom;
+                //DEBUG( plog, "Data " << t_trigger_flag->get_id() << " at " << (*t_freq_data->array())[0] << " resulted in flag <" << t_trigger_flag->get_flag() << ">" );
 
                 //out_stream< 0 >().set( stream::s_run );
                 continue;
@@ -130,7 +133,7 @@ namespace psyllid
             {
                 if( f_state == state_t::triggered )
                 {
-                    pmsg( s_debug ) << "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() << eom;
+                    DEBUG( plog, "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() );
                     f_state = state_t::idle;
                     out_stream< 0 >().set( stream::s_run );
                 }
@@ -146,7 +149,7 @@ namespace psyllid
             {
                 if( f_state == state_t::triggered )
                 {
-                    pmsg( s_debug ) << "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() << eom;
+                    DEBUG( plog, "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() );
                     f_state = state_t::idle;
                     out_stream< 0 >().set( stream::s_run );
                 }

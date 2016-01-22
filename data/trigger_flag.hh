@@ -8,8 +8,7 @@
 #ifndef DATA_TRIGGER_FLAG_HH_
 #define DATA_TRIGGER_FLAG_HH_
 
-#include "macros.hh"
-#include "types.hh"
+#include "member_variables.hh"
 
 namespace psyllid
 {
@@ -21,8 +20,8 @@ namespace psyllid
             virtual ~trigger_flag();
 
         public:
-            accessible( bool, flag );
-            accessible( midge::count_t, id );
+            mv_accessible( bool, flag );
+            mv_accessible( uint64_t, id );
     };
 
 } /* namespace psyllid */
