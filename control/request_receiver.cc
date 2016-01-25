@@ -30,9 +30,9 @@ namespace mantis
 
     LOGGER( plog, "request_receiver" );
 
-    request_receiver::request_receiver( run_server* a_run_server, config_manager* a_conf_mgr, acq_request_db* a_acq_request_db, server_worker* a_server_worker ) :
-            callable(),
+    request_receiver::request_receiver( std::shared_ptr< node_manager > a_node_manager, std::shared_ptr< daq_control > a_daq_control ) :
             hub(),
+            cancelable(),
             f_listen_timeout_ms( 100 ),
             f_run_server( a_run_server ),
             f_conf_mgr( a_conf_mgr ),

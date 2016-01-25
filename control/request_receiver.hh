@@ -1,51 +1,41 @@
 #ifndef PSYLLID_REQUEST_RECEIVER_HH_
 #define PSYLLID_REQUEST_RECEIVER_HH_
 
-#include "mt_callable.hh"
-
 #include "hub.hh"
 
 #include "param.hh"
 
-#include "SimpleAmqpClient/Envelope.h"
+#include "cancelable.hh"
 
 #include <atomic>
 
 
-namespace mantis
+namespace psyllid
 {
 
-    class acq_request_db;
-    class buffer;
+    class node_manager;
+    class daq_control;
     class condition;
-    class config_manager;
-    class device_manager;
-    class msg_request;
-    class run_server;
-    class server_worker;
 
-
-    class request_receiver : public callable, public dripline::hub
+    class request_receiver : public dripline::hub, public midge::cancelable
     {
         public:
-            request_receiver( run_server* a_run_server, config_manager* a_conf_mgr, acq_request_db* a_acq_request_db, server_worker* a_server_worker );
+            request_receiver( std::shared_ptr< node_manager > a_node_manager, std::shared_ptr< daq_control > a_daq_control );
             virtual ~request_receiver();
 
             void execute();
             void cancel();
 
         private:
-            virtual bool do_run_request( const request_ptr_t a_request, reply_package& a_reply_pkg );
-            virtual bool do_get_request( const request_ptr_t a_request, reply_package& a_reply_pkg );
-            virtual bool do_set_request( const request_ptr_t a_request, reply_package& a_reply_pkg );
-            virtual bool do_cmd_request( const request_ptr_t a_request, reply_package& a_reply_pkg );
+            virtual bool do_run_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
+            virtual bool do_get_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
+            virtual bool do_set_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
+            virtual bool do_cmd_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
 
             int f_listen_timeout_ms;
 
-            run_server* f_run_server;
-            config_manager* f_conf_mgr;
-            acq_request_db* f_acq_request_db;
-            server_worker* f_server_worker;
+            std::shared_ptr< node_manager > f_node_manager;
+            std::shared_ptr< daq_control > f_daq_control;
 
         public:
             enum status
