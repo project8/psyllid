@@ -7,11 +7,11 @@
 namespace psyllid
 {
 
-    class server
+    class udp_server
     {
         public:
-            server( const int& a_port );
-            virtual ~server();
+            udp_server( const int& a_port );
+            virtual ~udp_server();
 
             //ssize_t send( const char* a_message, size_t a_size, int flags = 0, int& ret_errno = f_last_errno );
             ssize_t recv( char* a_message, size_t a_size, int flags = 0, int& ret_errno = f_last_errno );

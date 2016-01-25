@@ -8,9 +8,8 @@
  */
 
 
+#include "udp_server.hh"
 #include "midge_error.hh"
-#include "server.hh"
-
 #include "logger.hh"
 
 using namespace midge;

@@ -7,11 +7,10 @@
 
 #include "udp_receiver.hh"
 
-#include "server.hh"
-
 #include "logger.hh"
 
 #include <memory>
+#include "udp_server.hh"
 
 using midge::stream;
 
@@ -48,7 +47,7 @@ namespace psyllid
 
         try
         {
-            server t_server( f_port );
+            udp_server t_server( f_port );
 
             DEBUG( plog, "Server is listening" );
 

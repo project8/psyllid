@@ -1,0 +1,31 @@
+/*
+ * psyllid_version.cc
+ *
+ *  Created on: Mar 21, 2014
+ *      Author: nsoblath
+ */
+
+#include "psyllid_version.hh"
+
+#include "logger.hh" // for TOSTRING macro
+
+namespace psyllid
+{
+    version::version() :
+            scarab::version_semver()
+    {
+        f_major_ver = @Psyllid_VERSION_MAJOR@;
+        f_minor_ver = @Psyllid_VERSION_MINOR@;
+        f_patch_ver = @Psyllid_VERSION_PATCH@;
+        f_version = TOSTRING(@Psyllid_VERSION@);
+        f_package = TOSTRING(@Psyllid_PACKAGE_NAME@);
+        f_commit = TOSTRING(@Psyllid_GIT_COMMIT@);
+    }
+
+    version::~version()
+    {
+    }
+
+} /* namespace psyllid */
+
+

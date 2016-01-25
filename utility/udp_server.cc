@@ -1,5 +1,3 @@
-#include "server.hh"
-
 #include "midge_error.hh"
 
 #include "logger.hh"
@@ -12,6 +10,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include "udp_server.hh"
 
 LOGGER( plog, "server" );
 
