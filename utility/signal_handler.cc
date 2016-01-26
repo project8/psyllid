@@ -9,7 +9,9 @@
 
 #include "logger.hh"
 
-#include "error.hh"
+#include "psyllid_error.hh"
+
+#include "cancelable.hh"
 
 #include <signal.h>
 #ifndef _WIN32
@@ -32,7 +34,7 @@ namespace psyllid
     {
         if( ! f_handling_sig_int && signal( SIGINT, signal_handler::handler_cancel_threads ) == SIG_ERR )
         {
-            throw midge::error() << "Unable to handle SIGINT\n";
+            throw error() << "Unable to handle SIGINT\n";
         }
         else
         {
@@ -42,7 +44,7 @@ namespace psyllid
 #ifndef _WIN32
         if( ! f_handling_sig_quit && signal( SIGQUIT, signal_handler::handler_cancel_threads ) == SIG_ERR )
         {
-            throw midge::error() << "Unable to handle SIGQUIT\n";
+            throw error() << "Unable to handle SIGQUIT\n";
         }
         else
         {
@@ -51,7 +53,7 @@ namespace psyllid
 
         if( signal(SIGPIPE, SIG_IGN) == SIG_ERR )
         {
-            throw midge::error() << "Unable to ignore SIGPIPE\n";
+            throw error() << "Unable to ignore SIGPIPE\n";
         }
 #endif
     }
@@ -100,7 +102,7 @@ namespace psyllid
         f_got_exit_signal = true;
         while( ! f_cancelers.empty() )
         {
-            f_cancelers.begin()->cancel();
+            (*f_cancelers.begin())->cancel();
             f_cancelers.erase( f_cancelers.begin() );
 #ifndef _WIN32
             usleep( 100 );

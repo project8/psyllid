@@ -1,10 +1,8 @@
 #include <iostream>
 
 #include "psyllid_error.hh"
-using std::cout;
-using std::endl;
 
-namespace midge
+namespace psyllid
 {
 
     error::error() :

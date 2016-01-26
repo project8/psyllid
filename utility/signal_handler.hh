@@ -8,11 +8,14 @@
 #ifndef PSYLLID_SIGNAL_HANDLER_HH_
 #define PSYLLID_SIGNAL_HANDLER_HH_
 
-#include "cancelable.hh"
-
 #include <memory>
 #include <mutex>
 #include <set>
+
+namespace midge
+{
+    class cancelable;
+}
 
 namespace psyllid
 {

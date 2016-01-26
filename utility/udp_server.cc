@@ -1,4 +1,5 @@
 #include "midge_error.hh"
+#include "udp_server.hh"
 
 #include "logger.hh"
 
@@ -10,19 +11,18 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include "udp_server.hh"
 
-LOGGER( plog, "server" );
+LOGGER( plog, "udp_server" );
 
 namespace psyllid
 {
-    int server::f_last_errno = 0;
+    int udp_server::f_last_errno = 0;
 
-    server::server( const int& a_port ) :
+    udp_server::udp_server( const int& a_port ) :
             f_socket( 0 ),
             f_address( nullptr )
     {
-        //msg_normal( pmsg, "opening server socket on port <" << a_port << ">" );
+        //msg_normal( pmsg, "opening udp_server socket on port <" << a_port << ">" );
 
         //initialize address
         socklen_t t_socket_length = sizeof(sockaddr_in);
@@ -40,12 +40,12 @@ namespace psyllid
         f_socket = ::socket( AF_INET, SOCK_DGRAM, 0 );
         if( f_socket < 0 )
         {
-            throw ::midge::error() << "[server] could not create socket:\n\t" << strerror( errno );
+            throw ::midge::error() << "[udp_server] could not create socket:\n\t" << strerror( errno );
             return;
         }
 
         /* setsockopt: Handy debugging trick that lets
-           * us rerun the server immediately after we kill it;
+           * us rerun the udp_server immediately after we kill it;
            * otherwise we have to wait about 20 secs.
            * Eliminates "ERROR on binding: Address already in use" error.
            */
@@ -58,7 +58,7 @@ namespace psyllid
         //bind socket
         if( ::bind( f_socket, (const sockaddr*) (f_address), t_socket_length ) < 0 )
         {
-            throw midge::error() << "[server] could not bind socket:\n\t" << strerror( errno );
+            throw midge::error() << "[udp_server] could not bind socket:\n\t" << strerror( errno );
             return;
         }
 
@@ -67,16 +67,16 @@ namespace psyllid
         return;
     }
 
-    server::~server()
+    udp_server::~udp_server()
     {
-        //clean up server address
+        //clean up udp_server address
         delete f_address;
 
-        //close server socket
+        //close udp_server socket
         ::close( f_socket );
     }
 
-    ssize_t server::recv( char* a_message, size_t a_size, int flags, int& ret_errno )
+    ssize_t udp_server::recv( char* a_message, size_t a_size, int flags, int& ret_errno )
     {
         ssize_t t_recv_size = ::recv( f_socket, (void*)a_message, a_size, flags );
         if( t_recv_size > 0 )

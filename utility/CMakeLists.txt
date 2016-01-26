@@ -9,7 +9,7 @@ set( headers
     udp_server.hh
 )
 set( sources
-    psyllid_error.hh
+    psyllid_error.cc
     signal_handler.cc
     udp_server.cc
 )
