@@ -5,17 +5,43 @@
  *      Author: nsoblath
  */
 
-#ifndef DATA_TIME_DATA_HH_
-#define DATA_TIME_DATA_HH_
+#ifndef PSYLLID_TIME_DATA_HH_
+#define PSYLLID_TIME_DATA_HH_
 
-#include "member_variables.hh"
+#include "roach_packet.hh"
 
-#include <vector>
-#include <memory>
 
 namespace psyllid
 {
 
+    class time_data : public roach_packet_data
+    {
+        public:
+            time_data();
+            virtual ~time_data();
+
+        public:
+            typedef char iq_t[2];
+
+            const iq_t* get_array() const;
+            size_t get_array_size() const;
+
+        private:
+            iq_t* f_array;
+            size_t f_array_size;
+    };
+
+    inline const time_data::iq_t* time_data::get_array() const
+    {
+        return f_array;
+    }
+
+    inline size_t time_data::get_array_size() const
+    {
+        return f_array_size;
+    }
+
+/*
     class time_data
     {
         public:
@@ -39,7 +65,8 @@ namespace psyllid
     {
         return f_array->size() * sizeof( value_type );
     }
+*/
 
 } /* namespace psyllid */
 
-#endif /* DATA_TIME_DATA_HH_ */
+#endif /* PSYLLID_TIME_DATA_HH_ */

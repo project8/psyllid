@@ -11,8 +11,9 @@ namespace psyllid
 {
 
     freq_data::freq_data() :
-            f_id( 0 ),
-            f_array( new std::vector< double >() )
+            roach_packet_data(),
+            f_array( reinterpret_cast< const iq_t* >( f_packet.f_data ) ),
+            f_array_size( PAYLOAD_SIZE / 2 )
     {
     }
 

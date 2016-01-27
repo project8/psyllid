@@ -5,18 +5,43 @@
  *      Author: nsoblath
  */
 
-#ifndef DATA_FREQ_DATA_HH_
-#define DATA_FREQ_DATA_HH_
+#ifndef PSYLLID_FREQ_DATA_HH_
+#define PSYLLID_FREQ_DATA_HH_
 
-#include "member_variables.hh"
+#include "roach_packet.hh"
 
-#include <vector>
-
-#include <memory>
 
 namespace psyllid
 {
 
+    class freq_data : public roach_packet_data
+    {
+        public:
+            freq_data();
+            virtual ~freq_data();
+
+        public:
+            typedef char iq_t[2];
+
+            const iq_t* get_array() const;
+            size_t get_array_size() const;
+
+        private:
+            iq_t* f_array;
+            size_t f_array_size;
+    };
+
+    inline const freq_data::iq_t* freq_data::get_array() const
+    {
+        return f_array;
+    }
+
+    inline size_t freq_data::get_array_size() const
+    {
+        return f_array_size;
+    }
+
+    /*
     class freq_data
     {
         public:
@@ -27,7 +52,8 @@ namespace psyllid
             mv_accessible( uint64_t, id );
             mv_referrable( std::unique_ptr< std::vector< double > >, array );
     };
+    */
 
 } /* namespace psyllid */
 
-#endif /* DATA_FREQ_DATA_HH_ */
+#endif /* PSYLLID_FREQ_DATA_HH_ */

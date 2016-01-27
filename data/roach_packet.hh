@@ -5,11 +5,12 @@
  *      Author: nsoblath
  */
 
-#ifndef DATA_ROACH_PACKET_HH_
-#define DATA_ROACH_PACKET_HH_
+#ifndef PSYLLID_ROACH_PACKET_HH_
+#define PSYLLID_ROACH_PACKET_HH_
 
 #include <cinttypes>
 
+// number of samples in the roach_packet f_data array
 #define PAYLOAD_SIZE 8192 // 1KB
 
 namespace psyllid
@@ -30,9 +31,92 @@ namespace psyllid
         uint64_t f_reserved_1:63;
         uint64_t f_freq_not_time:1;
         // payload
-        char f_data[PAYLOAD_SIZE];
+        char f_data[ PAYLOAD_SIZE ];
     };
+
+    class roach_packet_data
+    {
+        public:
+            roach_packet_data();
+            virtual ~roach_packet_data();
+
+        public:
+            uint32_t get_unix_time() const;
+            uint32_t get_pkt_in_batch() const;
+            uint32_t get_digital_id() const;
+            uint32_t get_if_id() const;
+            uint32_t get_user_data_1() const;
+            uint32_t get_user_data_0() const;
+            uint64_t get_reserved_0() const;
+            uint64_t get_reserved_1() const;
+            bool get_freq_not_time() const;
+
+            const char* get_raw_array() const;
+            size_t get_raw_array_size() const;
+
+        public:
+            char* get_packet_ptr() const;
+
+        private:
+            roach_packet f_packet;
+    };
+
+
+    inline uint32_t roach_packet_data::get_unix_time() const
+    {
+        return f_packet.f_unix_time;
+    }
+
+    inline uint32_t roach_packet_data::get_pkt_in_batch() const
+    {
+        return f_packet.f_pkt_in_batch;
+    }
+
+    inline uint32_t roach_packet_data::get_digital_id() const
+    {
+        return f_packet.f_digital_id();
+    }
+
+    inline uint32_t roach_packet_data::get_if_id() const
+    {
+        return f_packet.f_if_id;
+    }
+
+    inline uint32_t roach_packet_data::get_user_data_1() const
+    {
+        return f_packet.f_user_data_1;
+    }
+
+    inline uint32_t roach_packet_data::get_user_data_0() const
+    {
+        return f_packet.f_user_data_0;
+    }
+
+    inline uint64_t roach_packet_data::get_reserved_0() const
+    {
+        return f_packet.f_reserved_0;
+    }
+
+    inline uint64_t roach_packet_data::get_reserved_1() const
+    {
+        return f_packet.f_reserved_1;
+    }
+
+    inline bool roach_packet_data::get_freq_not_time() const
+    {
+        return f_packet.f_freq_not_time;
+    }
+
+    inline const char* roach_packet_data::get_raw_array() const
+    {
+        return f_packet.f_data;
+    }
+
+    inline size_t roach_packet_data::get_raw_array_size() const
+    {
+        return PAYLOAD_SIZE;
+    }
 
 } /* namespace psyllid */
 
-#endif /* DATA_ROACH_PACKET_HH_ */
+#endif /* PSYLLID_ROACH_PACKET_HH_ */
