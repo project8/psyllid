@@ -5,12 +5,11 @@
  *      Author: nsoblath
  */
 
+#include "diptera.hh"
 #include "egg_writer.hh"
 #include "event_builder.hh"
 #include "single_value_trigger.hh"
 #include "udp_receiver.hh"
-
-#include "midge.hh"
 
 #include "logger.hh"
 
@@ -27,8 +26,8 @@ int main()
 {
     try
     {
-        //unique_ptr< ::midge::midge > t_root;
-        ::midge::midge* t_root = new ::midge::midge();
+        //unique_ptr< ::midge::diptera > t_root;
+        ::midge::diptera* t_root = new ::midge::diptera();
 
         udp_receiver* t_udpr = new udp_receiver();
         t_udpr->set_name( "udpr" );

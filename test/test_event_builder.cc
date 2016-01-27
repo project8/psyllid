@@ -14,8 +14,8 @@
  */
 
 
+#include "diptera.hh"
 #include "event_builder.hh"
-#include "midge.hh"
 #include "producer.hh"
 
 #include "logger.hh"
