@@ -13,7 +13,6 @@ set( headers
 set( sources
     freq_data.cc
     id_range_event.cc
-    roach_packet.cc
     time_data.cc
     trigger_flag.cc
 )
