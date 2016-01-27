@@ -14,9 +14,10 @@
 
 using midge::stream;
 
-
 namespace psyllid
 {
+    REGISTER_NODE( udp_receiver, "udp-receiver" );
+
     LOGGER( plog, "udp_receiver" );
 
     udp_receiver::udp_receiver() :

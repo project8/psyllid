@@ -13,6 +13,8 @@ using midge::stream;
 
 namespace psyllid
 {
+    REGISTER_NODE( single_value_trigger, "single-value-trigger" );
+
     LOGGER( plog, "single_value_trigger" );
 
     single_value_trigger::single_value_trigger() :

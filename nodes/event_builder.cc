@@ -13,6 +13,8 @@ using midge::stream;
 
 namespace psyllid
 {
+    REGISTER_NODE( event_builder, "event-builder" );
+
     LOGGER( plog, "event_builder" );
 
     event_builder::event_builder() :

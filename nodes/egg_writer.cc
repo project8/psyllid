@@ -20,6 +20,8 @@ using std::vector;
 
 namespace psyllid
 {
+    REGISTER_NODE( egg_writer, "egg-writer" );
+
     LOGGER( plog, "egg_writer" );
 
     egg_writer::egg_writer()
