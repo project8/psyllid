@@ -40,6 +40,7 @@ pbuilder_add_submodule( Monarch monarch )
 
 # add include directories
 include_directories( BEFORE
+    control
     data
     nodes
     utility
@@ -50,6 +51,7 @@ include_directories( BEFORE
 add_subdirectory( utility )
 add_subdirectory( data )
 add_subdirectory( nodes )
+add_subdirectory( control )
 
 add_subdirectory( applications )
 add_subdirectory( test )

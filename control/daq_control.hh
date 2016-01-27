@@ -15,9 +15,12 @@
 #include "cancelable.hh"
 
 #include <atomic>
+#include <memory>
 
 namespace psyllid
 {
+    class daq_worker;
+    class node_manager;
 
     class daq_control : public midge::cancelable
     {
@@ -30,7 +33,7 @@ namespace psyllid
             };
 
         public:
-            daq_control();
+            daq_control( std::shared_ptr< node_manager > a_mgr );
             virtual ~daq_control();
 
             /// Start a run
@@ -42,6 +45,8 @@ namespace psyllid
 
         private:
             void do_cancellation();
+
+            std::shared_ptr< node_manager > f_node_manager;
 
             std::shared_ptr< daq_worker > f_daq_worker;
             std::mutex f_worker_mutex;

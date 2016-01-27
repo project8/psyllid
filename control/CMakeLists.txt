@@ -4,6 +4,8 @@
 
 set( headers
     daq_control.hh
+    daq_worker.hh
+    node_config_preset.hh
     node_manager.hh
     request_receiver.hh
     run_server.hh
@@ -11,6 +13,8 @@ set( headers
 
 set( sources
     daq_control.cc
+    daq_worker.cc
+    node_config_preset.cc
     node_manager.cc
     request_receiver.cc
     run_server.cc

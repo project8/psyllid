@@ -58,11 +58,11 @@ namespace psyllid
 
         std::unique_lock< std::mutex > t_lock( f_component_mutex );
 
-        // daq control
-        f_daq_control.reset( new daq_control() );
-
         // node manager
         f_node_manager.reset( new node_manager() );
+
+        // daq control
+        f_daq_control.reset( new daq_control( f_node_manager ) );
 
         // request receiver
         f_request_receiver.reset( new request_receiver( f_node_manager, f_daq_control ) );
