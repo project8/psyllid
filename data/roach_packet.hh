@@ -57,7 +57,7 @@ namespace psyllid
         public:
             char* get_packet_ptr() const;
 
-        private:
+        protected:
             roach_packet f_packet;
     };
 
@@ -74,7 +74,7 @@ namespace psyllid
 
     inline uint32_t roach_packet_data::get_digital_id() const
     {
-        return f_packet.f_digital_id();
+        return f_packet.f_digital_id;
     }
 
     inline uint32_t roach_packet_data::get_if_id() const
