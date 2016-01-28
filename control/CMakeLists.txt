@@ -7,6 +7,7 @@ set( headers
     daq_worker.hh
     node_config_preset.hh
     node_manager.hh
+    persistant_store.hh
     request_receiver.hh
     run_server.hh
 )
@@ -16,6 +17,7 @@ set( sources
     daq_worker.cc
     node_config_preset.cc
     node_manager.cc
+    persistant_store.cc
     request_receiver.cc
     run_server.cc
 )

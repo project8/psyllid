@@ -21,7 +21,7 @@ namespace psyllid
 
             const char* what() const throw ();
 
-        private:
+        protected:
             std::string f_message;
     };
 
