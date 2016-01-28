@@ -11,7 +11,8 @@ namespace psyllid
 {
 
     persistent_store::persistent_store() :
-            f_storage()
+            f_storage(),
+            f_storage_mutex()
     {
     }
 
@@ -21,6 +22,7 @@ namespace psyllid
 
     void persistent_store::dump( const std::string& a_label )
     {
+        std::unique_lock< std::mutex > t_lock( f_storage_mutex );
         storage_it_t t_item_it = f_storage.find( a_label );
         if( t_item_it != f_storage.end() )
         {

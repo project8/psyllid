@@ -12,6 +12,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 
 namespace psyllid
@@ -106,11 +107,14 @@ namespace psyllid
             typedef storage_t::iterator storage_it_t;
 
             storage_t f_storage;
+            std::mutex f_storage_mutex;
     };
 
     template< typename x_type >
     void persistent_store::store( const std::string& a_label, std::shared_ptr< x_type > an_item )
     {
+        std::unique_lock< std::mutex > t_lock( f_storage_mutex );
+
         storage_it_t t_item_it = f_storage.find( a_label );
         if( t_item_it != f_storage.end() )
         {
@@ -124,6 +128,8 @@ namespace psyllid
     template< typename x_type >
     std::shared_ptr< x_type > persistent_store::retrieve( const std::string& a_label )
     {
+        std::unique_lock< std::mutex > t_lock( f_storage_mutex );
+
         storage_it_t t_item_it = f_storage.find( a_label );
         if( t_item_it == f_storage.end() )
         {
@@ -144,6 +150,7 @@ namespace psyllid
 
     inline bool persistent_store::has( const std::string& a_label ) const
     {
+        std::unique_lock< std::mutex > t_lock( f_storage_mutex );
         return f_storage.find( a_label ) != f_storage.end();
     }
 
