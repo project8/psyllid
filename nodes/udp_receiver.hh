@@ -12,6 +12,7 @@
 #include "time_data.hh"
 
 #include "producer.hh"
+#include "shared_cancel.hh"
 
 namespace psyllid
 {
@@ -31,7 +32,7 @@ namespace psyllid
 
         public:
             virtual void initialize();
-            virtual void execute();
+            virtual void execute( midge::shared_cancel_t a_canceled );
             virtual void finalize();
 
     };

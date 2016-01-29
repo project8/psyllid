@@ -3,6 +3,7 @@
 ###########
 
 set( headers
+    byte_swap.hh
     psyllid_error.hh
     psyllid_version.hh
     signal_handler.hh

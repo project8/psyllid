@@ -16,7 +16,8 @@
 namespace psyllid
 {
 
-    struct roach_packet {
+    struct roach_packet
+    {
         // first 64bit word
         uint32_t f_unix_time;
         uint32_t f_pkt_in_batch:20;
@@ -33,6 +34,18 @@ namespace psyllid
         // payload
         char f_data[ PAYLOAD_SIZE ];
     };
+
+    struct raw_roach_packet
+    {
+      uint64_t f_word_0;
+      uint64_t f_word_1;
+      uint64_t f_word_2;
+      uint64_t f_word_3;
+      char f_data[ PAYLOAD_SIZE ];
+    };
+
+    void byteswap_inplace( raw_roach_packet* a_pkt );
+
 
     class roach_packet_data
     {
@@ -55,7 +68,8 @@ namespace psyllid
             size_t get_raw_array_size() const;
 
         public:
-            char* get_packet_ptr() const;
+            const roach_packet& packet() const;
+            roach_packet& packet();
 
         protected:
             roach_packet f_packet;
@@ -115,6 +129,16 @@ namespace psyllid
     inline size_t roach_packet_data::get_raw_array_size() const
     {
         return PAYLOAD_SIZE;
+    }
+
+    inline const roach_packet& roach_packet_data::packet() const
+    {
+        return f_packet;
+    }
+
+    inline roach_packet& roach_packet_data::packet()
+    {
+        return f_packet;
     }
 
 } /* namespace psyllid */
