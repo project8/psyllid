@@ -38,7 +38,15 @@ namespace psyllid
 
         f_midge = a_node_mgr->get_midge();
 
-        f_midge->run( a_node_mgr->get_node_run_str() );
+        try
+        {
+            f_midge->run( a_node_mgr->get_node_run_str() );
+        }
+        catch( midge::error& e )
+        {
+            a_ex_ptr = std::current_exception();
+            return;
+        }
 
         return;
     }
