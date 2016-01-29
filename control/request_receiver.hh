@@ -8,7 +8,7 @@
 #include "cancelable.hh"
 
 #include <atomic>
-
+#include <memory>
 
 namespace psyllid
 {

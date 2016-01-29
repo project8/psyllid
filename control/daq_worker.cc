@@ -11,6 +11,7 @@
 #include "psyllid_error.hh"
 
 #include "diptera.hh"
+#include "midge_error.hh"
 
 namespace psyllid
 {

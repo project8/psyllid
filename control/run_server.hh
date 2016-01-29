@@ -19,6 +19,11 @@
 #include <atomic>
 #include <mutex>
 
+namespace scarab
+{
+    class version;
+}
+
 namespace psyllid
 {
     class daq_control;

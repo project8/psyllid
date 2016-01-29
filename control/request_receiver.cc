@@ -1,17 +1,8 @@
 
 #include "request_receiver.hh"
 
-/*
-#include "mt_acq_request_db.hh"
-#include "mt_acq_request.hh"
-#include "mt_buffer.hh"
-#include "mt_config_manager.hh"
-#include "mt_api.hh"
-#include "mt_exception.hh"
-#include "mt_parser.hh"
-#include "mt_run_server.hh"
-#include "mt_server_worker.hh"
-*/
+#include "daq_control.hh"
+#include "node_manager.hh"
 
 #include "logger.hh"
 #include "parsable.hh"
@@ -25,7 +16,7 @@ using dripline::retcode_t;
 
 
 
-namespace mantis
+namespace psyllid
 {
 
     LOGGER( plog, "request_receiver" );
@@ -34,33 +25,14 @@ namespace mantis
             hub(),
             cancelable(),
             f_listen_timeout_ms( 100 ),
-            f_run_server( a_run_server ),
-            f_conf_mgr( a_conf_mgr ),
-            f_acq_request_db( a_acq_request_db ),
-            f_server_worker( a_server_worker ),
+            f_node_manager( a_node_manager ),
+            f_daq_control( a_daq_control ),
             f_status( k_initialized )
     {
     }
 
     request_receiver::~request_receiver()
     {
-        /* can't do this, because the amqp connection may already be broken, in which case this results in a segmentation fault
-        if( f_broker != NULL )
-        {
-            if( ! f_consumer_tag.empty() )
-            {
-                DEBUG( mtlog, "Canceling consume of tag <" << f_consumer_tag << ">" );
-                f_broker->get_connection().amqp()->BasicCancel( f_consumer_tag );
-                f_consumer_tag.clear();
-            }
-            if( ! f_queue_name.empty() )
-            {
-                DEBUG( mtlog, "Deleting queue <" << f_queue_name << ">" );
-                f_broker->get_connection().amqp()->DeleteQueue( f_queue_name, false );
-                f_queue_name.clear();
-            }
-        }
-        */
     }
 
     void request_receiver::execute()
@@ -76,7 +48,7 @@ namespace mantis
                               t_broker_node->get_value( "queue" ),
                               ".project8_authentications.json" ) )
         {
-            ERROR( mtlog, "Unable to complete dripline setup" );
+            ERROR( plog, "Unable to complete dripline setup" );
             f_run_server->quit_server();
             return;
         }
@@ -85,22 +57,22 @@ namespace mantis
 
         start();
 
-        INFO( mtlog, "Waiting for incoming messages" );
+        INFO( plog, "Waiting for incoming messages" );
 
         f_status.store( k_listening );
 
-        while( ! f_canceled.load() )
+        while( ! cancelable::f_canceled.load() )
         {
             // blocking call to wait for incoming message
             listen( f_listen_timeout_ms );
         }
 
-        INFO( mtlog, "No longer waiting for messages" );
+        INFO( plog, "No longer waiting for messages" );
 
         stop();
 
         f_status.store( k_done );
-        DEBUG( mtlog, "Request receiver is done" );
+        DEBUG( plog, "Request receiver is done" );
 
         return;
     }
@@ -152,7 +124,7 @@ namespace mantis
 
     bool request_receiver::do_cmd_request( const request_ptr_t a_request, reply_package& a_reply_pkg )
     {
-        DEBUG( mtlog, "Cmd request received" );
+        DEBUG( plog, "Cmd request received" );
 
         // get the instruction before checking the lockout key authentication because we need to have the exception for
         // the unlock instruction that allows us to force the unlock.
@@ -200,7 +172,7 @@ namespace mantis
         }
         else
         {
-            WARN( mtlog, "Instruction <" << t_instruction << "> not understood" );
+            WARN( plog, "Instruction <" << t_instruction << "> not understood" );
             return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Instruction <" + t_instruction + "> not understood" );;
         }
     }
@@ -209,10 +181,11 @@ namespace mantis
 
     void request_receiver::cancel()
     {
-        DEBUG( mtlog, "Canceling request receiver" );
-        if( ! f_canceled.load() )
+        DEBUG( plog, "Canceling request receiver" );
+        if( ! cancelable::f_canceled.load() )
         {
-            f_canceled.store( true );
+            cancelable::f_canceled.store( true );
+            service::f_canceled.store( true );
             f_status.store( k_canceled );
             return;
         }

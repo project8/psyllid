@@ -107,7 +107,7 @@ namespace psyllid
             typedef storage_t::iterator storage_it_t;
 
             storage_t f_storage;
-            std::mutex f_storage_mutex;
+            mutable std::mutex f_storage_mutex;
     };
 
     template< typename x_type >

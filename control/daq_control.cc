@@ -42,7 +42,7 @@ namespace psyllid
 
         if( f_daq_worker )
         {
-            throw run_error() << "Run may be in the process of starting or stoping already (daq_worker exists)";
+            throw run_error() << "Run may be in the process of starting or stopping already (daq_worker exists)";
         }
 
         f_daq_worker.reset( new daq_worker( ) );
