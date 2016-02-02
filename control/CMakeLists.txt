@@ -10,6 +10,7 @@ set( headers
     persistent_store.hh
     request_receiver.hh
     run_server.hh
+    server_config.hh
 )
 
 set( sources
@@ -20,6 +21,7 @@ set( sources
     persistent_store.cc
     request_receiver.cc
     run_server.cc
+    server_config.cc
 )
 
 set( dependencies

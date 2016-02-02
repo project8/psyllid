@@ -21,7 +21,7 @@
 
 namespace scarab
 {
-    class version;
+    class version_semver;
 }
 
 namespace psyllid
@@ -33,7 +33,7 @@ namespace psyllid
     class run_server : public midge::cancelable
     {
         public:
-            run_server( const scarab::param_node& a_node, const std::shared_ptr< scarab::version > a_version );
+            run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semver > a_version );
             virtual ~run_server();
 
             void execute();
@@ -41,6 +41,8 @@ namespace psyllid
             void quit_server();
 
             int get_return() const;
+
+            const scarab::param_node& get_config() const;
 
             bool handle_get_server_status_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
 
@@ -51,7 +53,7 @@ namespace psyllid
             virtual void do_cancellation();
 
             scarab::param_node f_config;
-            const std::shared_ptr< scarab::version > f_version;
+            const std::shared_ptr< scarab::version_semver > f_version;
 
             int f_return;
 
@@ -86,6 +88,11 @@ namespace psyllid
     inline int run_server::get_return() const
     {
         return f_return;
+    }
+
+    inline const scarab::param_node& run_server::get_config() const
+    {
+        return f_config;
     }
 
     inline run_server::status run_server::get_status() const

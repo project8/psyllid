@@ -8,6 +8,8 @@
 #ifndef PSYLLID_DAQ_WORKER_HH_
 #define PSYLLID_DAQ_WORKER_HH_
 
+#include "node_manager.hh" // for midge_package
+
 #include "cancelable.hh"
 
 #include <memory>
@@ -19,6 +21,7 @@ namespace midge
 
 namespace psyllid
 {
+    class midge_package;
     class node_manager;
 
     class daq_worker : public midge::cancelable
@@ -32,7 +35,7 @@ namespace psyllid
         private:
             virtual void do_cancellation();
 
-            std::shared_ptr< midge::diptera > f_midge;
+            midge_package f_midge_pkg;
     };
 
 } /* namespace psyllid */

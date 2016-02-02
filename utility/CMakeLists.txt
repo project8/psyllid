@@ -4,12 +4,17 @@
 
 set( headers
     byte_swap.hh
+    configurator.hh
+    parser.hh
+    psyllid_constants.hh
     psyllid_error.hh
     psyllid_version.hh
     signal_handler.hh
     udp_server.hh
 )
 set( sources
+    configurator.cc
+    parser.cc
     psyllid_error.cc
     signal_handler.cc
     udp_server.cc

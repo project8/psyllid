@@ -7,6 +7,7 @@
 
 #include "run_server.hh"
 
+#include "psyllid_constants.hh"
 #include "daq_control.hh"
 #include "daq_worker.hh"
 #include "node_manager.hh"
@@ -22,13 +23,13 @@ using dripline::request_ptr_t;
 using dripline::hub;
 
 using scarab::param_node;
-using scarab::version;
+using scarab::version_semver;
 
 namespace psyllid
 {
     LOGGER( plog, "run_server" );
 
-    run_server::run_server( const scarab::param_node& a_node, const std::shared_ptr< scarab::version > a_version ) :
+    run_server::run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semver > a_version ) :
             f_config( a_node ),
             f_version( a_version ),
             f_return( RETURN_ERROR ),
@@ -65,7 +66,7 @@ namespace psyllid
         f_daq_control.reset( new daq_control( f_node_manager ) );
 
         // request receiver
-        f_request_receiver.reset( new request_receiver( f_node_manager, f_daq_control ) );
+        f_request_receiver.reset( new request_receiver( this, f_node_manager, f_daq_control ) );
 
         t_lock.unlock();
 
@@ -99,9 +100,9 @@ namespace psyllid
     void run_server::do_cancellation()
     {
         std::unique_lock< std::mutex > t_lock( f_component_mutex );
-        f_request_receiver.cancel();
-        f_daq_control.cancel();
-        f_node_manager.cancel();
+        f_request_receiver->cancel();
+        f_daq_control->cancel();
+        //f_node_manager->cancel();
         return;
     }
 
@@ -115,6 +116,7 @@ namespace psyllid
 
     bool run_server::handle_get_server_status_request( const request_ptr_t, hub::reply_package& a_reply_pkg )
     {
+        /*
         param_node* t_server_node = new param_node();
         t_server_node->add( "status", new param_value( run_server::interpret_status( get_status() ) ) );
 
@@ -145,10 +147,13 @@ namespace psyllid
         a_reply_pkg.f_payload.add( "server", t_server_node );
 
         return a_reply_pkg.send_reply( retcode_t::success, "Server status request succeeded" );
+        */
+        return a_reply_pkg.send_reply( retcode_t::message_error_invalid_method, "Server status request not yet supported" );
     }
 
     bool run_server::handle_stop_all_request( const request_ptr_t, hub::reply_package& a_reply_pkg )
     {
+        /*
         param_node* t_server_node = new param_node();
         t_server_node->add( "status", new param_value( run_server::interpret_status( get_status() ) ) );
 
@@ -179,6 +184,8 @@ namespace psyllid
         a_reply_pkg.f_payload.add( "server", t_server_node );
 
         return a_reply_pkg.send_reply( retcode_t::success, "Server status request succeeded" );
+        */
+        return a_reply_pkg.send_reply( retcode_t::message_error_invalid_method, "Stop-all request not yet supported" );
     }
 
     bool run_server::handle_quit_server_request( const request_ptr_t, hub::reply_package& a_reply_pkg )

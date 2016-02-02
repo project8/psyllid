@@ -12,7 +12,7 @@
 
 namespace psyllid
 {
-
+    class run_server;
     class node_manager;
     class daq_control;
     class condition;
@@ -20,7 +20,7 @@ namespace psyllid
     class request_receiver : public dripline::hub, public midge::cancelable
     {
         public:
-            request_receiver( std::shared_ptr< node_manager > a_node_manager, std::shared_ptr< daq_control > a_daq_control );
+            request_receiver( run_server* a_run_server, std::shared_ptr< node_manager > a_node_manager, std::shared_ptr< daq_control > a_daq_control );
             virtual ~request_receiver();
 
             void execute();
@@ -34,6 +34,7 @@ namespace psyllid
 
             int f_listen_timeout_ms;
 
+            run_server* f_run_server;
             std::shared_ptr< node_manager > f_node_manager;
             std::shared_ptr< daq_control > f_daq_control;
 

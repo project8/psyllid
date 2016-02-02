@@ -8,10 +8,12 @@ if( Psyllid_ENABLE_EXECUTABLES )
         PsyllidUtility
         PsyllidData
         PsyllidNodes
+        PsyllidControl
     )
     
     set( programs
-        single_value_daq
+        #single_value_daq
+        psyllid
     )
     
     pbuilder_executables( programs lib_dependencies )

@@ -14,6 +14,8 @@
 
 #include "cancelable.hh"
 
+#include "hub.hh"
+
 #include <atomic>
 #include <memory>
 
@@ -41,7 +43,14 @@ namespace psyllid
             /// Can throw psyllid::error; daq_control object will NOT be usable
             void do_run();
 
+            void stop_run();
+
             mv_atomic( bool, is_running );
+
+        public:
+            bool handle_start_run_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+
+            bool handle_stop_run_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
 
         private:
             void do_cancellation();

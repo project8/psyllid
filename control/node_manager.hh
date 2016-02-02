@@ -10,8 +10,12 @@
 
 #include "diptera.hh"
 
+#include "hub.hh"
+
 #include <map>
+#include <mutex>
 #include <set>
+#include <utility>
 
 namespace scarab
 {
@@ -20,6 +24,45 @@ namespace scarab
 
 namespace psyllid
 {
+
+    class midge_package
+    {
+        public:
+            typedef std::shared_ptr< midge::diptera > midge_ptr_t;
+
+            midge_package() :
+                f_midge(),
+                f_lock()
+            {}
+            midge_package( const midge_package& ) = delete;
+            midge_package( midge_package&& a_orig ) :
+                f_midge( std::move( a_orig.f_midge ) ),
+                f_lock( std::move( a_orig.f_lock ) )
+            {}
+            ~midge_package() {}
+
+            midge_package& operator=( const midge_package& ) = delete;
+            midge_package& operator=( midge_package&& a_rhs )
+            {
+                f_midge = std::move( a_rhs.f_midge );
+                a_rhs.f_midge.reset();
+                f_lock = std::move( a_rhs.f_lock );
+                a_rhs.f_lock.release();
+                return *this;
+            }
+
+            midge::diptera* operator->() const { return f_midge.get(); }
+
+        private:
+            friend class node_manager;
+            midge_package( midge_ptr_t a_midge, std::mutex& a_mutex ) :
+                f_midge( a_midge ),
+                f_lock( a_mutex )
+            {}
+
+            midge_ptr_t f_midge;
+            std::unique_lock< std::mutex > f_lock;
+    };
 
     class node_manager
     {
@@ -41,13 +84,22 @@ namespace psyllid
 
             void reset_midge(); // throws psyllid::error in the event of an error configuring midge
             bool must_reset_midge() const;
-            midge_ptr_t get_midge() const;
+
+            midge_package get_midge() const;
 
             std::string get_node_run_str() const;
 
+        public:
+            bool handle_apply_preset_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+
+            bool handle_get_node_config_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+
         private:
+            mutable std::mutex f_manager_mutex;
+
             midge_ptr_t f_midge;
             bool f_must_reset_midge;
+            mutable std::mutex f_midge_mutex;
 
             typedef std::map< std::string, std::string > nodes_t;
             typedef std::set< std::string > connections_t;
@@ -58,6 +110,7 @@ namespace psyllid
 
     inline void node_manager::add_node( const std::string& a_node_type, const std::string& a_node_name )
     {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
         f_must_reset_midge = true;
         f_nodes.insert( nodes_t::value_type( a_node_name, a_node_type ) );
         return;
@@ -65,6 +118,7 @@ namespace psyllid
 
     inline void node_manager::remove_node( const std::string& a_node_name )
     {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
         f_must_reset_midge = true;
         f_nodes.erase( a_node_name );
         return;
@@ -72,24 +126,22 @@ namespace psyllid
 
     inline void node_manager::add_connection( const std::string& a_connection )
     {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
         f_must_reset_midge = true;
         f_connections.insert( a_connection );
     }
 
     inline void node_manager::remove_connection( const std::string& a_connection )
     {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
         f_must_reset_midge = true;
         f_connections.erase( a_connection );
     }
 
     inline bool node_manager::must_reset_midge() const
     {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
         return f_must_reset_midge;
-    }
-
-    inline node_manager::midge_ptr_t node_manager::get_midge() const
-    {
-        return f_midge;
     }
 
 } /* namespace psyllid */

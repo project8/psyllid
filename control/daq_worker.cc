@@ -13,11 +13,14 @@
 #include "diptera.hh"
 #include "midge_error.hh"
 
+#include "logger.hh"
+
 namespace psyllid
 {
+    LOGGER( plog, "daq_worker" );
 
     daq_worker::daq_worker() :
-            f_midge()
+            f_midge_pkg()
     {
     }
 
@@ -27,6 +30,7 @@ namespace psyllid
 
     void daq_worker::execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr )
     {
+        DEBUG( plog, "DAQ worker is executing" );
         try
         {
             if( a_node_mgr->must_reset_midge() ) a_node_mgr->reset_midge();
@@ -37,11 +41,12 @@ namespace psyllid
             return;
         }
 
-        f_midge = a_node_mgr->get_midge();
+        f_midge_pkg = a_node_mgr->get_midge();
 
         try
         {
-            f_midge->run( a_node_mgr->get_node_run_str() );
+            DEBUG( plog, "Starting midge" );
+            f_midge_pkg->run( a_node_mgr->get_node_run_str() );
         }
         catch( midge::error& e )
         {
@@ -49,12 +54,15 @@ namespace psyllid
             return;
         }
 
+        DEBUG( plog, "DAQ worker finished" );
+
         return;
     }
 
     void daq_worker::do_cancellation()
     {
-        f_midge->cancel();
+        DEBUG( plog, "Canceling DAQ worker" );
+        f_midge_pkg->cancel();
         return;
     }
 
