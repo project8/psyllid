@@ -12,7 +12,7 @@
 namespace psyllid
 {
     version::version() :
-            scarab::version_semver()
+            scarab::version_semantic()
     {
         f_major_ver = @Psyllid_VERSION_MAJOR@;
         f_minor_ver = @Psyllid_VERSION_MINOR@;

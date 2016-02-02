@@ -8,11 +8,11 @@
 #ifndef PSYLLID_VERSION_HH_
 #define PSYLLID_VERSION_HH_
 
-#include "scarab_version.hh"
+#include "dripline_version.hh"
 
 namespace psyllid
 {
-    class version : public scarab::version_semver
+    class version : public scarab::version_semantic
     {
         public:
             version();
