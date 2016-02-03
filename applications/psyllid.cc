@@ -36,8 +36,6 @@ int main( int argc, char** argv )
         server_config t_sc;
         configurator t_configurator( argc, argv, &t_sc );
 
-        //std::shared_ptr< scarab::version_semver > t_version_ptr( static_cast< scarab::version_semver* >( new version() ) );
-
         // Run the server
         run_server the_server( t_configurator.config(), std::shared_ptr< scarab::version_semantic >( new version() ) );
 
