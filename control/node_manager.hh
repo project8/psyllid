@@ -8,6 +8,8 @@
 #ifndef PSYLLID_NODE_MANAGER_HH_
 #define PSYLLID_NODE_MANAGER_HH_
 
+#include "locked_resource.hh"
+
 #include "diptera.hh"
 
 #include "hub.hh"
@@ -24,45 +26,8 @@ namespace scarab
 
 namespace psyllid
 {
-
-    class midge_package
-    {
-        public:
-            typedef std::shared_ptr< midge::diptera > midge_ptr_t;
-
-            midge_package() :
-                f_midge(),
-                f_lock()
-            {}
-            midge_package( const midge_package& ) = delete;
-            midge_package( midge_package&& a_orig ) :
-                f_midge( std::move( a_orig.f_midge ) ),
-                f_lock( std::move( a_orig.f_lock ) )
-            {}
-            ~midge_package() {}
-
-            midge_package& operator=( const midge_package& ) = delete;
-            midge_package& operator=( midge_package&& a_rhs )
-            {
-                f_midge = std::move( a_rhs.f_midge );
-                a_rhs.f_midge.reset();
-                f_lock = std::move( a_rhs.f_lock );
-                a_rhs.f_lock.release();
-                return *this;
-            }
-
-            midge::diptera* operator->() const { return f_midge.get(); }
-
-        private:
-            friend class node_manager;
-            midge_package( midge_ptr_t a_midge, std::mutex& a_mutex ) :
-                f_midge( a_midge ),
-                f_lock( a_mutex )
-            {}
-
-            midge_ptr_t f_midge;
-            std::unique_lock< std::mutex > f_lock;
-    };
+    class node_manager;
+    typedef locked_resource< midge::diptera, node_manager > midge_package;
 
     class node_manager
     {

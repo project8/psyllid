@@ -21,7 +21,7 @@
 
 namespace scarab
 {
-    class version_semver;
+    class version_semantic;
 }
 
 namespace psyllid
@@ -33,7 +33,7 @@ namespace psyllid
     class run_server : public midge::cancelable
     {
         public:
-            run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semver > a_version );
+            run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semantic > a_version );
             virtual ~run_server();
 
             void execute();
@@ -53,7 +53,7 @@ namespace psyllid
             virtual void do_cancellation();
 
             scarab::param_node f_config;
-            const std::shared_ptr< scarab::version_semver > f_version;
+            const std::shared_ptr< scarab::version_semantic > f_version;
 
             int f_return;
 

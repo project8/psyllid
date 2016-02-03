@@ -5,6 +5,7 @@
 set( headers
     byte_swap.hh
     configurator.hh
+    locked_resource.hh
     parser.hh
     psyllid_constants.hh
     psyllid_error.hh

@@ -23,13 +23,13 @@ using dripline::request_ptr_t;
 using dripline::hub;
 
 using scarab::param_node;
-using scarab::version_semver;
+using scarab::version_semantic;
 
 namespace psyllid
 {
     LOGGER( plog, "run_server" );
 
-    run_server::run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semver > a_version ) :
+    run_server::run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semantic > a_version ) :
             f_config( a_node ),
             f_version( a_version ),
             f_return( RETURN_ERROR ),

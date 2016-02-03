@@ -25,7 +25,7 @@ set_version( psyllid, version );
 int main( int argc, char** argv )
 {
     INFO( plog, "Welcome to Psyllid\n\n" <<
-            "\t\t            |  | _)      | \n" <<
+            "\t\t                    |  | _)      | \n" <<
             "\t\t__ \\    __|  |   |  |  |  |   _` | \n" <<
             "\t\t|   | \\__ \\  |   |  |  |  |  (   | \n" <<
             "\t\t.__/  ____/ \\__, | _| _| _| \\__,_| \n" <<
@@ -36,10 +36,10 @@ int main( int argc, char** argv )
         server_config t_sc;
         configurator t_configurator( argc, argv, &t_sc );
 
-        std::shared_ptr< scarab::version_semver > t_version_ptr( static_cast< scarab::version_semver* >( new version() ) );
+        //std::shared_ptr< scarab::version_semver > t_version_ptr( static_cast< scarab::version_semver* >( new version() ) );
 
         // Run the server
-        run_server the_server( t_configurator.config(), t_version_ptr );
+        run_server the_server( t_configurator.config(), std::shared_ptr< scarab::version_semantic >( new version() ) );
 
         the_server.execute();
 

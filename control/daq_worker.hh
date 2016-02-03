@@ -21,7 +21,6 @@ namespace midge
 
 namespace psyllid
 {
-    class midge_package;
     class node_manager;
 
     class daq_worker : public midge::cancelable
