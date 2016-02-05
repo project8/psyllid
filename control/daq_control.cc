@@ -10,7 +10,12 @@
 #include "daq_worker.hh"
 #include "node_manager.hh"
 
+#include "thread.hh"
+
 #include "logger.hh"
+
+#include <chrono>
+#include <condition_variable>
 
 using dripline::request_ptr_t;
 using dripline::hub;
@@ -24,10 +29,12 @@ namespace psyllid
 
     daq_control::daq_control( std::shared_ptr< node_manager > a_mgr ) :
             cancelable(),
-            f_is_running( false ),
+            f_condition(),
+            f_daq_mutex(),
             f_node_manager( a_mgr ),
             f_daq_worker(),
-            f_worker_mutex()
+            f_worker_mutex(),
+            f_status( status::initialized )
     {
     }
 
@@ -35,7 +42,121 @@ namespace psyllid
     {
     }
 
-    void daq_control::do_run()
+    void daq_control::execute()
+    {
+        while( ! f_canceled.load() )
+        {
+            status t_status = get_status();
+            if( t_status == status::initialized )
+            {
+                std::unique_lock< std::mutex > t_lock( f_daq_mutex );
+                f_condition.wait_for( t_lock, std::chrono::seconds(1) );
+            }
+            else if( t_status == status::activating )
+            {
+                std::unique_lock< std::mutex > t_lock( f_worker_mutex );
+
+                if( f_daq_worker )
+                {
+                    throw error() << "DAQ worker already exists for some unknown reason";
+                }
+
+                DEBUG( plog, "Creating new DAQ worker" );
+                f_daq_worker.reset( new daq_worker( ) );
+
+                std::exception_ptr t_ex_ptr;
+                std::function< void() > t_notifier = [this](){ notify_run_stopped(); };
+
+                DEBUG( plog, "Starting DAQ worker" );
+                f_worker_thread.bind_start( f_daq_worker.get(), &daq_worker::execute, f_node_manager, t_ex_ptr, t_notifier );
+                f_worker_thread.start();
+                set_status( status::idle );
+                t_lock.unlock();
+
+                INFO( plog, "DAQ control is now active, and in the idle state" );
+
+                f_worker_thread.join();
+
+                INFO( plog, "DAQ control is shutting down" );
+                t_lock.lock();
+
+                if( get_status() == status::running )
+                {
+                    ERROR( plog, "DAQ worker quit while run was in progress" );
+                    set_status( status::done );
+                }
+                f_daq_worker.reset();
+                t_lock.unlock();
+
+                if( t_ex_ptr )
+                {
+                    set_status( status::error );
+                    std::rethrow_exception( t_ex_ptr );
+                }
+            }
+            else if( t_status == status::idle )
+            {
+                ERROR( plog, "DAQ control status is idle in the outer execution loop!" );
+                break;
+            }
+            else if( t_status == status::deactivating )
+            {
+                set_status( status::initialized );
+            }
+            else if( t_status == status::done || t_status == status::error )
+            {
+                INFO( plog, "Exiting DAQ control" );
+                break;
+            }
+        }
+        return;
+    }
+
+    void daq_control::activate()
+    {
+        DEBUG( plog, "Activating DAQ control" );
+
+        if( f_canceled.load() )
+        {
+            throw error() << "DAQ control has been canceled";
+        }
+
+        if( get_status() != status::initialized )
+        {
+            throw status_error() << "DAQ control is not in the initialized state";
+        }
+
+        set_status( status::activating );
+        f_condition.notify_one();
+
+        return;
+    }
+
+    void daq_control::deactivate()
+    {
+        DEBUG( plog, "Deactivating DAQ" );
+
+        if( f_canceled )
+        {
+            throw error() << "DAQ control has been canceled";
+        }
+
+        if( get_status() != status::idle )
+        {
+            throw status_error() << "Invalid state for deactivating: <" + daq_control::interpret_status( get_status() ) + ">; DAQ control must be in idle state";
+        }
+
+        std::unique_lock< std::mutex > t_lock( f_worker_mutex );
+        set_status( status::deactivating );
+        if( f_daq_worker )
+        {
+            f_daq_worker->cancel();
+        }
+
+        return;
+    }
+
+    void daq_control::start_run()
     {
         DEBUG( plog, "Preparing for run" );
 
@@ -44,42 +165,29 @@ namespace psyllid
             throw error() << "daq_control has been canceled";
         }
 
-        if( f_is_running.load() )
+        if( get_status() != status::idle )
         {
-            throw run_error() << "Run already in progress";
+            throw status_error() << "DAQ control must be in the idle state to start a run";
         }
 
         std::unique_lock< std::mutex > t_lock( f_worker_mutex );
 
-        if( f_daq_worker )
+        if( ! f_daq_worker )
         {
-            throw run_error() << "Run may be in the process of starting or stopping already (daq_worker exists)";
+            cancel();
+            throw error() << "DAQ worker doesn't exist!";
         }
-
-        DEBUG( plog, "Creating new DAQ worker" );
-        f_daq_worker.reset( new daq_worker( ) );
-
-        f_is_running.store( true );
-        std::exception_ptr t_ex_ptr;
-        midge::thread t_worker_thread;
 
         INFO( plog, "Starting run" );
-        t_worker_thread.start( f_daq_worker.get(), &daq_worker::execute, f_node_manager, t_ex_ptr );
-        t_lock.unlock();
-
-        DEBUG( plog, "Waiting for worker thread to finish" );
-        t_worker_thread.join();
-
-        INFO( plog, "Run has ended" );
-        t_lock.lock();
-        f_is_running.store( false );
-        f_daq_worker.reset();
-        t_lock.unlock();
-
-        if( t_ex_ptr )
+        try
         {
-            std::rethrow_exception( t_ex_ptr );
+            f_daq_worker->start_run();
         }
+        catch( error& e )
+        {
+            throw run_error() << e.what();
+        }
+        set_status( status::running );
 
         return;
     }
@@ -87,9 +195,39 @@ namespace psyllid
     void daq_control::stop_run()
     {
         INFO( plog, "Run stop requested" );
-        if( ! get_is_running() ) return;
+
+        if( get_status() != status::running ) return;
 
         std::unique_lock< std::mutex > t_lock( f_worker_mutex );
+
+        if( ! f_daq_worker )
+        {
+            cancel();
+            throw error() << "DAQ worker doesn't exist!";
+        }
+
+        try
+        {
+            f_daq_worker->stop_run();
+        }
+        catch( error& e )
+        {
+            throw run_error() << e.what();
+        }
+        set_status( status::idle );
+
+        return;
+    }
+
+    void daq_control::notify_run_stopped()
+    {
+        set_status( status::idle );
+    }
+
+    void daq_control::do_cancellation()
+    {
+        DEBUG( plog, "Canceling DAQ control" );
+        set_status( status::canceled );
         if( f_daq_worker )
         {
             f_daq_worker->cancel();
@@ -97,22 +235,37 @@ namespace psyllid
         return;
     }
 
-    void daq_control::do_cancellation()
+    bool daq_control::handle_activate_daq_control( const request_ptr_t, hub::reply_package& a_reply_pkg )
     {
-        DEBUG( plog, "Canceling DAQ control" );
-        std::unique_lock< std::mutex > t_lock( f_worker_mutex );
-        if( f_daq_worker )
+        try
         {
-            f_daq_worker->cancel();
+            activate();
+            return a_reply_pkg.send_reply( retcode_t::success, "DAQ control activated" );
         }
-        return;
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to activate DAQ control: " ) + e.what() );
+        }
+    }
+
+    bool daq_control::handle_deactivate_daq_control( const request_ptr_t, hub::reply_package& a_reply_pkg )
+    {
+        try
+        {
+            deactivate();
+            return a_reply_pkg.send_reply( retcode_t::success, "DAQ control deactivated" );
+        }
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to deactivate DAQ control: " ) + e.what() );
+        }
     }
 
     bool daq_control::handle_start_run_request( const request_ptr_t, hub::reply_package& a_reply_pkg )
     {
         try
         {
-            do_run();
+            start_run();
             return a_reply_pkg.send_reply( retcode_t::success, "Run started" );
         }
         catch( run_error& e )
@@ -123,19 +276,43 @@ namespace psyllid
 
     bool daq_control::handle_stop_run_request( const request_ptr_t, hub::reply_package& a_reply_pkg )
     {
-        if( get_is_running() )
+        try
         {
-            try
-            {
-                stop_run();
-                return a_reply_pkg.send_reply( retcode_t::success, "Run stopped" );
-            }
-            catch( run_error& e )
-            {
-                return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to stop run: " ) + e.what() );
-            }
+            stop_run();
+            return a_reply_pkg.send_reply( retcode_t::success, "Run stopped" );
         }
-        return a_reply_pkg.send_reply( retcode_t::success, "Run was not underway" );
+        catch( run_error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to stop run: " ) + e.what() );
+        }
+    }
+
+
+    std::string daq_control::interpret_status( status a_status )
+    {
+        switch( a_status )
+        {
+            case status::initialized:
+                return std::string( "Initialized" );
+                break;
+            case status::idle:
+                return std::string( "Idle" );
+                break;
+            case status::running:
+                return std::string( "Running" );
+                break;
+            case status::canceled:
+                return std::string( "Canceled" );
+                break;
+            case status::done:
+                return std::string( "Done" );
+                break;
+            case status::error:
+                return std::string( "Error" );
+                break;
+            default:
+                return std::string( "Unknown" );
+        }
     }
 
 

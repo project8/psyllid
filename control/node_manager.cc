@@ -11,6 +11,7 @@
 #include "psyllid_error.hh"
 
 #include "midge_error.hh"
+#include "node.hh"
 
 #include "factory.hh"
 #include "logger.hh"
@@ -56,11 +57,25 @@ namespace psyllid
 
         if( t_preset == nullptr )
         {
-            throw error() << "Unable to create preset called <" << a_name << ">";
+            throw error() << "Unable to create preset called <" << a_name << ">. The name may not be registered or there may be a typo.";
         }
 
-        t_preset->set_nodes( this );
-        t_preset->set_connections( this );
+        f_nodes.clear();
+        f_connections.clear();
+
+        typedef node_config_preset::nodes_t preset_nodes_t;
+        const preset_nodes_t& t_new_nodes = t_preset->get_nodes();
+        for( preset_nodes_t::const_iterator t_node_it = t_new_nodes.begin(); t_node_it != t_new_nodes.end(); ++t_node_it )
+        {
+            _add_node( t_node_it->second, t_node_it->first );
+        }
+
+        typedef node_config_preset::connections_t preset_conn_t;
+        const preset_conn_t& t_new_connections = t_preset->get_connections();
+        for( preset_conn_t::const_iterator t_conn_it = t_new_connections.begin(); t_conn_it != t_new_connections.end(); ++t_conn_it )
+        {
+            _add_connection( *t_conn_it );
+        }
 
         return;
     }

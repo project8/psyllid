@@ -24,7 +24,8 @@ namespace psyllid
             f_time_length( 10 ),
             f_freq_length( 10 ),
             f_port( 23530 ),
-            f_udp_buffer_size( sizeof( roach_packet ) )
+            f_udp_buffer_size( sizeof( roach_packet ) ),
+            f_paused( false )
     {
     }
 
@@ -39,7 +40,7 @@ namespace psyllid
         return;
     }
 
-    void udp_receiver::execute( midge::shared_cancel_t a_canceled )
+    void udp_receiver::execute()
     {
         time_data* t_time_data = nullptr;
         freq_data* t_freq_data = nullptr;
@@ -56,19 +57,41 @@ namespace psyllid
             out_stream< 1 >().set( stream::s_start );
 
             ssize_t t_size_received = 0;
-            while( t_size_received >= 0 && ! a_canceled->load() )
+            while( t_size_received >= 0 )
             {
+                if( f_canceled ) break;
+
+                if( f_paused )
+                {
+                    if( have_instruction() && use_instruction() == midge::instruction::resume )
+                    {
+                        DEBUG( plog, "UDP receiver resuming" )
+                        f_paused = false;
+                    }
+                }
+                else
+                {
+                    if( have_instruction() && use_instruction() == midge::instruction::pause )
+                    {
+                        DEBUG( plog, "UDP receiver pausing" );
+                        f_paused = true;
+                    }
+                }
+
                 if( (out_stream< 0 >().get() == stream::s_stop) ||
                         (out_stream< 1 >().get() == stream::s_stop) ||
                         (false /* some other condition for stopping */) )
                 {
-                    INFO( plog, "UDP Receiver is stopping" );
+                    WARN( plog, "Output stream(s) have stop condition" );
                     break;
                 }
 
                 INFO( plog, "Waiting for ROACH packets" );
 
                 t_size_received = t_server.recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
+
+                if( f_canceled ) break;
+                if( f_paused ) continue;
 
                 if( t_size_received > 0 )
                 {
@@ -111,6 +134,9 @@ namespace psyllid
                     break;
                 }
             }
+
+            INFO( plog, "UDP receiver is exiting" );
+
             // normal exit condition
             out_stream< 0 >().set( stream::s_stop );
             out_stream< 1 >().set( stream::s_stop );

@@ -30,6 +30,11 @@ namespace psyllid
         t_amqp_node->add( "listen-timeout-ms", new param_value( 100 ) );
         add( "amqp", t_amqp_node );
 
+        param_node* t_daq_node = new param_node();
+        t_daq_node->add( "activate-at-startup", new param_value( true ) );
+        t_daq_node->add( "preset", new param_value( "roach" ) );
+        add( "daq", t_daq_node );
+
     }
 
     server_config::~server_config()

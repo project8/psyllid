@@ -39,7 +39,7 @@ namespace psyllid
             virtual ~node_manager();
 
             //bool configure( const scarab::param_node* a_node );
-            void use_preset( const std::string& a_name );
+            void use_preset( const std::string& a_name ); // can thrown psyllid::error
 
             void add_node( const std::string& a_node_type, const std::string& a_node_name );
             void remove_node( const std::string& a_node_name );
@@ -60,6 +60,11 @@ namespace psyllid
             bool handle_get_node_config_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
 
         private:
+            // not thread-safe
+            void _add_node( const std::string& a_node_type, const std::string& a_node_name );
+            // not thread-safe
+            void _add_connection( const std::string& a_connection );
+
             mutable std::mutex f_manager_mutex;
 
             midge_ptr_t f_midge;
@@ -76,8 +81,7 @@ namespace psyllid
     inline void node_manager::add_node( const std::string& a_node_type, const std::string& a_node_name )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
-        f_must_reset_midge = true;
-        f_nodes.insert( nodes_t::value_type( a_node_name, a_node_type ) );
+        _add_node( a_node_type, a_node_name );
         return;
     }
 
@@ -92,8 +96,8 @@ namespace psyllid
     inline void node_manager::add_connection( const std::string& a_connection )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
-        f_must_reset_midge = true;
-        f_connections.insert( a_connection );
+        _add_connection( a_connection );
+        return;
     }
 
     inline void node_manager::remove_connection( const std::string& a_connection )
@@ -108,6 +112,21 @@ namespace psyllid
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
         return f_must_reset_midge;
     }
+
+    inline void node_manager::_add_node( const std::string& a_node_type, const std::string& a_node_name )
+    {
+        f_must_reset_midge = true;
+        f_nodes.insert( nodes_t::value_type( a_node_name, a_node_type ) );
+        return;
+    }
+
+    inline void node_manager::_add_connection( const std::string& a_connection )
+    {
+        f_must_reset_midge = true;
+        f_connections.insert( a_connection );
+        return;
+    }
+
 
 } /* namespace psyllid */
 

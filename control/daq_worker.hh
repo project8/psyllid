@@ -12,6 +12,7 @@
 
 #include "cancelable.hh"
 
+#include <functional>
 #include <memory>
 
 namespace midge
@@ -29,12 +30,17 @@ namespace psyllid
             daq_worker();
             virtual ~daq_worker();
 
-            void execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr );
+            void execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr, std::function< void() > a_notifier );
+
+            void start_run();
+            void stop_run();
 
         private:
             virtual void do_cancellation();
 
             midge_package f_midge_pkg;
+
+            std::function< void() > f_stop_notifier;
     };
 
 } /* namespace psyllid */

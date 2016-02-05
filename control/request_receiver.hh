@@ -24,13 +24,14 @@ namespace psyllid
             virtual ~request_receiver();
 
             void execute();
-            void cancel();
 
         private:
             virtual bool do_run_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
             virtual bool do_get_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
             virtual bool do_set_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
             virtual bool do_cmd_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
+
+            virtual void do_cancellation();
 
             int f_listen_timeout_ms;
 

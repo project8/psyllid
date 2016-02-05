@@ -20,7 +20,8 @@ namespace psyllid
     LOGGER( plog, "daq_worker" );
 
     daq_worker::daq_worker() :
-            f_midge_pkg()
+            f_midge_pkg(),
+            f_stop_notifier()
     {
     }
 
@@ -28,7 +29,7 @@ namespace psyllid
     {
     }
 
-    void daq_worker::execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr )
+    void daq_worker::execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr, std::function< void() > a_notifier )
     {
         DEBUG( plog, "DAQ worker is executing" );
         try
@@ -43,6 +44,14 @@ namespace psyllid
 
         f_midge_pkg = a_node_mgr->get_midge();
 
+        if( ! f_midge_pkg.have_lock() )
+        {
+            a_ex_ptr = std::make_exception_ptr( error() << "Could not get midge resource" );
+            return;
+        }
+
+        f_stop_notifier = a_notifier;
+
         try
         {
             DEBUG( plog, "Starting midge" );
@@ -51,13 +60,36 @@ namespace psyllid
         catch( midge::error& e )
         {
             a_ex_ptr = std::current_exception();
-            return;
         }
+
+        a_notifier = nullptr;
 
         DEBUG( plog, "DAQ worker finished" );
 
         return;
     }
+
+    void daq_worker::start_run()
+    {
+        if( ! f_midge_pkg.have_lock() )
+        {
+            throw error() << "Do not have midge resource";
+        }
+        f_midge_pkg->instruct( midge::instruction::resume );
+        return;
+    }
+
+    void daq_worker::stop_run()
+    {
+        if( ! f_midge_pkg.have_lock() )
+        {
+            throw error() << "Do not have midge resource";
+        }
+        f_midge_pkg->instruct( midge::instruction::pause );
+        if( f_stop_notifier ) f_stop_notifier();
+        return;
+    }
+
 
     void daq_worker::do_cancellation()
     {

@@ -14,6 +14,8 @@
 #include "request_receiver.hh"
 #include "signal_handler.hh"
 
+#include "thread.hh"
+
 #include "logger.hh"
 
 #include <signal.h> // for raise()
@@ -57,28 +59,61 @@ namespace psyllid
         // configuration manager
         //config_manager t_config_mgr( f_config, &t_dev_mgr );
 
+        const param_node* t_daq_node = f_config.node_at( "daq" );
+        if( t_daq_node == nullptr )
+        {
+            ERROR( plog, "No DAQ node present in the master config" );
+            return;
+        }
+
         std::unique_lock< std::mutex > t_lock( f_component_mutex );
 
         // node manager
+        DEBUG( plog, "Creating node manager" );
         f_node_manager.reset( new node_manager() );
+        if( t_daq_node->has( "preset" ) && ! t_daq_node->get_value( "preset" ).empty() )
+        {
+            try
+            {
+                f_node_manager->use_preset( t_daq_node->get_value( "preset" ) );
+            }
+            catch( error& e )
+            {
+                WARN( plog, "Unable to apply DAQ preset: " << e.what() << "\n" <<
+                        "DAQ is not configured" );
+            }
+        }
 
         // daq control
+        DEBUG( plog, "Creating DAQ control" );
         f_daq_control.reset( new daq_control( f_node_manager ) );
+        midge::thread t_daq_control_thread;
+        t_daq_control_thread.bind_start( f_daq_control.get(), &daq_control::execute );
 
         // request receiver
+        DEBUG( plog, "Creating request receiver" );
         f_request_receiver.reset( new request_receiver( this, f_node_manager, f_daq_control ) );
+        midge::thread t_receiver_thread;
+        t_receiver_thread.bind_start( f_request_receiver.get(), &request_receiver::execute );
 
         t_lock.unlock();
 
         INFO( plog, "Starting threads" );
 
-        midge::thread t_receiver_thread;
-        t_receiver_thread.start( f_request_receiver.get(), &request_receiver::execute );
+        t_daq_control_thread.start();
+        t_receiver_thread.start();
+
+        if( t_daq_node->get_value< bool >( "activate-on-startup", false ) )
+        {
+            DEBUG( plog, "Activating DAQ control at startup" );
+            f_daq_control->activate();
+        }
 
         set_status( k_running );
         INFO( plog, "running..." );
 
         t_receiver_thread.join();
+        t_daq_control_thread.join();
 
         t_sig_hand.remove_cancelable( this );
 
@@ -99,7 +134,7 @@ namespace psyllid
 
     void run_server::do_cancellation()
     {
-        std::unique_lock< std::mutex > t_lock( f_component_mutex );
+        DEBUG( plog, "Canceling run server" );
         f_request_receiver->cancel();
         f_daq_control->cancel();
         //f_node_manager->cancel();

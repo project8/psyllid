@@ -32,8 +32,11 @@ namespace psyllid
 
         public:
             virtual void initialize();
-            virtual void execute( midge::shared_cancel_t a_canceled );
+            virtual void execute();
             virtual void finalize();
+
+        private:
+            bool f_paused;
 
     };
 

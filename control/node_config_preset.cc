@@ -8,6 +8,7 @@
 #include "node_config_preset.hh"
 
 #include "node_manager.hh"
+#include "psyllid_error.hh"
 
 namespace psyllid
 {
@@ -22,23 +23,25 @@ namespace psyllid
     {
     }
 
-    void node_config_preset::set_nodes( node_manager* a_manager ) const
+    void node_config_preset::node( const std::string& a_type, const std::string& a_name )
     {
-        for( nodes_t::const_iterator t_node_it = f_nodes.begin(); t_node_it != f_nodes.end(); ++t_node_it )
+        if( f_nodes.find( a_name ) != f_nodes.end() )
         {
-            a_manager->add_node( t_node_it->second, t_node_it->first );
+            throw error() << "Invalid preset: node is already present: <" + a_name + "> of type <" + a_type + ">";
         }
+        f_nodes.insert( nodes_t::value_type( a_type, a_name ) );
         return;
     }
 
-    void node_config_preset::set_connections( node_manager* a_manager ) const
+    void node_config_preset::connection( const std::string& a_conn )
     {
-        for( connections_t::const_iterator t_conn_it = f_connections.begin(); t_conn_it != f_connections.end(); ++t_conn_it )
+        if( f_connections.find( a_conn ) != f_connections.end() )
         {
-            a_manager->add_connection( *t_conn_it );
+            throw error() << "Invalid preset; connection is already present: <" + a_conn + ">";
         }
-        return;
+        f_connections.insert( a_conn );
     }
+
 
 
 } /* namespace psyllid */

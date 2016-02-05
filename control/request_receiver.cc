@@ -78,7 +78,12 @@ namespace psyllid
         f_listen_timeout_ms = t_broker_node->get_value< int >( "listen-timeout-ms", f_listen_timeout_ms );
 
         // start the service
-        start();
+        if( ! start() )
+        {
+            ERROR( plog, "Unable to start the dripline service" );
+            f_run_server->quit_server();
+            return;
+        }
 
         INFO( plog, "Waiting for incoming messages" );
 
@@ -155,6 +160,14 @@ namespace psyllid
         {
             return f_daq_control->handle_stop_run_request( a_request, a_reply_pkg );
         }
+        else if( t_instruction == "activate-daq" )
+        {
+            return f_daq_control->handle_activate_daq_control( a_request, a_reply_pkg );
+        }
+        else if( t_instruction == "deactivate-daq" )
+        {
+            return f_daq_control->handle_deactivate_daq_control( a_request, a_reply_pkg );
+        }
         else if( t_instruction == "stop-all" )
         {
             return f_run_server->handle_stop_all_request( a_request, a_reply_pkg );
@@ -170,18 +183,11 @@ namespace psyllid
         }
     }
 
-
-
-    void request_receiver::cancel()
+    void request_receiver::do_cancellation()
     {
         DEBUG( plog, "Canceling request receiver" );
-        if( ! cancelable::f_canceled.load() )
-        {
-            cancelable::f_canceled.store( true );
-            service::f_canceled.store( true );
-            f_status.store( k_canceled );
-            return;
-        }
+        service::f_canceled.store( true );
+        f_status.store( k_canceled );
         return;
     }
 
