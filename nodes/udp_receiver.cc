@@ -100,6 +100,9 @@ namespace psyllid
                     byteswap_inplace( reinterpret_cast< raw_roach_packet* >( t_buffer_ptr.get() ) );
                     roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( t_buffer_ptr.get() );
 
+                    raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( t_buffer_ptr.get() );
+                    DEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
+
                     if( t_roach_packet->f_freq_not_time )
                     {
                         // packet is frequency data
@@ -119,6 +122,7 @@ namespace psyllid
                         memcpy( &t_time_data->packet(), t_roach_packet, f_udp_buffer_size );
 
                         DEBUG( plog, "Time data received (" << t_size_received << " bytes):  chan = " << t_time_data->get_digital_id() <<
+                               "  time = " << t_time_data->get_unix_time() <<
                                "  id = " << t_time_data->get_pkt_in_batch() );
 
                         out_stream< 0 >().set( stream::s_run );

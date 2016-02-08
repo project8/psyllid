@@ -39,23 +39,24 @@ type RoachPacket struct {
 	// reserved1 = 63 bits
 	// freqNotTime = 1 bit
 	unixTime, pktInBatch, digitalID, ifID, userData1, userData0 uint32
-	reserved0, reserved1, freqNotTime uint64
+	reserved0, reserved1 uint64
+	freqNotTime uint8
 	payload [PayloadSize]int8
 }
 
 func (roachPkt *RoachPacket)PackInto( rawPkt *RawPacket ) {
 	(*rawPkt).word0 = uint64((*roachPkt).unixTime) |
-						(uint64((*roachPkt).pktInBatch) >> 32) |
-						(uint64((*roachPkt).digitalID) >> 52) |
-						(uint64((*roachPkt).ifID) >> 58)
+						(uint64((*roachPkt).pktInBatch) << 32) |
+						(uint64((*roachPkt).digitalID) << 52) |
+						(uint64((*roachPkt).ifID) << 58)
 
 	(*rawPkt).word1 = uint64((*roachPkt).userData1) | 
-						(uint64((*roachPkt).userData1) >> 32)
+						(uint64((*roachPkt).userData1) << 32)
 
 	(*rawPkt).word2 = (*roachPkt).reserved0
 
 	(*rawPkt).word3 = (*roachPkt).reserved1 |
-						((*roachPkt).freqNotTime >> 63)
+						(uint64((*roachPkt).freqNotTime) << 63)
 
 	rawPayloadSlice := (*rawPkt).payload[:]
 	roachPayloadSlice := (*roachPkt).payload[:]
@@ -99,6 +100,8 @@ func main() {
 
 		// convert roachPkt to rawPkt
 		(&roachPkt).PackInto( &rawPkt )
+
+		fmt.Printf( "Raw packet header: %x, %x, %x, %x\n", rawPkt.word0, rawPkt.word1, rawPkt.word2, rawPkt.word3 )
 
 		// write to the bytes buffer
 		bytesErr := binary.Write( buffer, binary.BigEndian, rawPkt )

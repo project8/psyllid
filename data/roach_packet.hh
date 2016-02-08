@@ -30,7 +30,7 @@ namespace psyllid
         uint64_t f_reserved_0;
         // fourth 64bit word
         uint64_t f_reserved_1:63;
-        uint64_t f_freq_not_time:1;
+        uint8_t f_freq_not_time:1;
         // payload
         char f_data[ PAYLOAD_SIZE ];
     };
