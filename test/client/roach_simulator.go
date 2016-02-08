@@ -91,28 +91,35 @@ func main() {
 	var packetCounter uint32 = 0;
 	const packetCounterMax uint32 = 390625;
 
-	for {
-		buffer := new( bytes.Buffer )
+	buffer := new( bytes.Buffer )
 		
+	for {
 		// fill roachPkt
 		roachPkt.unixTime = uint32(time.Now().Unix())
 		roachPkt.pktInBatch = packetCounter
 
-		// convert roachPkt to rawPkt
-		(&roachPkt).PackInto( &rawPkt )
+		for i := 0; i < 2; i++ {
+			roachPkt.freqNotTime = uint8(i)
 
-		fmt.Printf( "Raw packet header: %x, %x, %x, %x\n", rawPkt.word0, rawPkt.word1, rawPkt.word2, rawPkt.word3 )
+			// convert roachPkt to rawPkt
+			(&roachPkt).PackInto( &rawPkt )
 
-		// write to the bytes buffer
-		bytesErr := binary.Write( buffer, binary.BigEndian, rawPkt )
-		CheckError(bytesErr)
+			fmt.Printf( "Raw packet header: %x, %x, %x, %x\n", rawPkt.word0, rawPkt.word1, rawPkt.word2, rawPkt.word3 )
 
-		fmt.Printf( "Sending: time = %v,  id = %v\n", roachPkt.unixTime, roachPkt.pktInBatch )
+			// write to the bytes buffer
+			buffer.Reset()
+			bytesErr := binary.Write( buffer, binary.BigEndian, rawPkt )
+			CheckError(bytesErr)
 
-		// send over the UDP connection
-		_,err := Conn.Write(buffer.Bytes())
-		if err != nil {
-			fmt.Println("Unable to send buffer:", err)
+			fmt.Printf( "Sending (%v bytes): time = %v,  id = %v,  freqNotTime = %v\n", buffer.Len(), roachPkt.unixTime, roachPkt.pktInBatch, roachPkt.freqNotTime )
+
+			// send over the UDP connection
+			_,err := Conn.Write(buffer.Bytes())
+			if err != nil {
+				fmt.Println("Unable to send buffer:", err)
+			}
+
+			time.Sleep(time.Millisecond * 10)
 		}
 		time.Sleep(time.Second * 1)
 
