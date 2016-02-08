@@ -104,7 +104,7 @@ func main() {
 		bytesErr := binary.Write( buffer, binary.BigEndian, rawPkt )
 		CheckError(bytesErr)
 
-		fmt.Printf( "Sending: %v, %v\n", roachPkt.unixTime, roachPkt.pktInBatch )
+		fmt.Printf( "Sending: time = %v,  id = %v\n", roachPkt.unixTime, roachPkt.pktInBatch )
 
 		// send over the UDP connection
 		_,err := Conn.Write(buffer.Bytes())

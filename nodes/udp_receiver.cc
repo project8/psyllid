@@ -42,6 +42,8 @@ namespace psyllid
 
     void udp_receiver::execute()
     {
+        DEBUG( plog, "Executing the UDP receiver" );
+
         time_data* t_time_data = nullptr;
         freq_data* t_freq_data = nullptr;
 
@@ -105,6 +107,7 @@ namespace psyllid
                         memcpy( &t_freq_data->packet(), t_roach_packet, f_udp_buffer_size );
 
                         DEBUG( plog, "Frequency data received (" << t_size_received << " bytes):  chan = " << t_freq_data->get_digital_id() <<
+                               "  time = " << t_freq_data->get_unix_time() <<
                                "  id = " << t_freq_data->get_pkt_in_batch() );
 
                         out_stream< 1 >().set( stream::s_run );
