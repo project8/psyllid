@@ -42,7 +42,7 @@ namespace psyllid
     {
     }
 
-    void daq_control::execute()
+    void daq_control::execute( std::exception_ptr a_ex_ptr )
     {
         while( ! f_canceled.load() )
         {
@@ -64,11 +64,11 @@ namespace psyllid
                 DEBUG( plog, "Creating new DAQ worker" );
                 f_daq_worker.reset( new daq_worker( ) );
 
-                std::exception_ptr t_ex_ptr;
+                std::exception_ptr t_worker_ex_ptr;
                 std::function< void() > t_notifier = [this](){ notify_run_stopped(); };
 
                 DEBUG( plog, "Starting DAQ worker" );
-                f_worker_thread.bind_start( f_daq_worker.get(), &daq_worker::execute, f_node_manager, t_ex_ptr, t_notifier );
+                f_worker_thread.bind_start( f_daq_worker.get(), &daq_worker::execute, f_node_manager, t_worker_ex_ptr, t_notifier );
                 f_worker_thread.start();
                 set_status( status::idle );
                 t_lock.unlock();
@@ -88,24 +88,29 @@ namespace psyllid
                 f_daq_worker.reset();
                 t_lock.unlock();
 
-                if( t_ex_ptr )
+                if( t_worker_ex_ptr )
                 {
                     set_status( status::error );
-                    std::rethrow_exception( t_ex_ptr );
+                    a_ex_ptr = t_worker_ex_ptr;
                 }
             }
             else if( t_status == status::idle )
             {
-                ERROR( plog, "DAQ control status is idle in the outer execution loop!" );
-                break;
+                a_ex_ptr = std::make_exception_ptr( error() << "DAQ control status is idle in the outer execution loop!" );
+                set_status( status::error );
             }
             else if( t_status == status::deactivating )
             {
                 set_status( status::initialized );
             }
-            else if( t_status == status::done || t_status == status::error )
+            else if( t_status == status::done )
             {
                 INFO( plog, "Exiting DAQ control" );
+                break;
+            }
+            else if( t_status == status::error )
+            {
+                if( ! a_ex_ptr ) std::make_exception_ptr( error() << "DAQ control is in an error state" );
                 break;
             }
         }

@@ -86,9 +86,10 @@ namespace psyllid
 
         // daq control
         DEBUG( plog, "Creating DAQ control" );
+        std::exception_ptr t_dc_ex_ptr;
         f_daq_control.reset( new daq_control( f_node_manager ) );
         midge::thread t_daq_control_thread;
-        t_daq_control_thread.bind_start( f_daq_control.get(), &daq_control::execute );
+        t_daq_control_thread.bind_start( f_daq_control.get(), &daq_control::execute, t_dc_ex_ptr );
 
         // request receiver
         DEBUG( plog, "Creating request receiver" );
@@ -112,8 +113,21 @@ namespace psyllid
         set_status( k_running );
         INFO( plog, "running..." );
 
-        t_receiver_thread.join();
         t_daq_control_thread.join();
+        if( t_dc_ex_ptr )
+        {
+            try
+            {
+                std::rethrow_exception( t_dc_ex_ptr );
+            }
+            catch( error& e )
+            {
+                ERROR( plog, "Exception caught from DAQ control: " << e.what() );
+                cancel();
+            }
+        }
+
+        t_receiver_thread.join();
 
         t_sig_hand.remove_cancelable( this );
 
