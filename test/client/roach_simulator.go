@@ -77,32 +77,53 @@ func main() {
 	defer Conn.Close()
 
 	var rawPkt RawPacket
-	roachPkt := RoachPacket{
+	timePkt := RoachPacket{
 		digitalID: 0,
 		ifID: 0,
 		freqNotTime: 0,
 	}
+	freqPkt := RoachPacket{
+		digitalID: 0,
+		ifID: 0,
+		freqNotTime: 1,
+	}
 
 	// fill the payload
 	for i := 0; i < int(PayloadSize); i++ {
-		roachPkt.payload[i] = int8(256.0 * math.Sin( float64(i) * math.Pi / 16.0 ))
+		timePkt.payload[i] = int8(256.0 * math.Sin( float64(i) * math.Pi / 16.0 ))
+		freqPkt.payload[i] = int8(1)
 	}
 
-	var packetCounter uint32 = 0;
-	const packetCounterMax uint32 = 390625;
+	var packetCounter uint32 = 0
+	const packetCounterMax uint32 = 390625
 
 	buffer := new( bytes.Buffer )
+
+	var signalCounter uint8 = 0
+	const signalCounterMax uint8 = 15
+	const signalTrigger uint8 = 14
 		
 	for {
-		// fill roachPkt
-		roachPkt.unixTime = uint32(time.Now().Unix())
-		roachPkt.pktInBatch = packetCounter
 
 		for i := 0; i < 2; i++ {
-			roachPkt.freqNotTime = uint8(i)
-
-			// convert roachPkt to rawPkt
-			(&roachPkt).PackInto( &rawPkt )
+			// convert the appropriate roach packet to rawPkt
+			if i == 0 {
+				timePkt.unixTime = uint32(time.Now().Unix())
+				timePkt.pktInBatch = packetCounter
+				(&timePkt).PackInto( &rawPkt )
+				fmt.Printf( "Sending (%v bytes): time = %v,  id = %v,  freqNotTime = %v\n", buffer.Len(), timePkt.unixTime, timePkt.pktInBatch, timePkt.freqNotTime )
+			} else {
+				freqPkt.unixTime = uint32(time.Now().Unix())
+				freqPkt.pktInBatch = packetCounter
+				if signalCounter == signalTrigger {
+					freqPkt.payload[3] = 100
+					fmt.Printf( "Trigger!\n" )
+				} else {
+					freqPkt.payload[3] = 1
+				}
+				(&freqPkt).PackInto( &rawPkt )
+				fmt.Printf( "Sending (%v bytes): time = %v,  id = %v,  freqNotTime = %v\n", buffer.Len(), freqPkt.unixTime, freqPkt.pktInBatch, freqPkt.freqNotTime )
+			}
 
 			fmt.Printf( "Raw packet header: %x, %x, %x, %x\n", rawPkt.word0, rawPkt.word1, rawPkt.word2, rawPkt.word3 )
 
@@ -111,14 +132,11 @@ func main() {
 			bytesErr := binary.Write( buffer, binary.BigEndian, rawPkt )
 			CheckError(bytesErr)
 
-			fmt.Printf( "Sending (%v bytes): time = %v,  id = %v,  freqNotTime = %v\n", buffer.Len(), roachPkt.unixTime, roachPkt.pktInBatch, roachPkt.freqNotTime )
-
 			// send over the UDP connection
-			_,err := Conn.Write(buffer.Bytes())
+			_, err := Conn.Write(buffer.Bytes())
 			if err != nil {
 				fmt.Println("Unable to send buffer:", err)
 			}
-
 			time.Sleep(time.Millisecond * 10)
 		}
 		time.Sleep(time.Second * 1)
@@ -126,6 +144,11 @@ func main() {
 		packetCounter++
 		if packetCounter == packetCounterMax {
 			packetCounter = 0
+		}
+
+		signalCounter++
+		if signalCounter == signalCounterMax {
+			signalCounter = 0
 		}
 
 	}
