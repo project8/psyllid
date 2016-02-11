@@ -32,7 +32,7 @@ namespace psyllid
         uint64_t f_reserved_1:63;
         uint8_t f_freq_not_time:1;
         // payload
-        char f_data[ PAYLOAD_SIZE ];
+        int8_t f_data[ PAYLOAD_SIZE ];
     };
 
     struct raw_roach_packet
@@ -64,7 +64,7 @@ namespace psyllid
             uint64_t get_reserved_1() const;
             bool get_freq_not_time() const;
 
-            const char* get_raw_array() const;
+            const int8_t* get_raw_array() const;
             size_t get_raw_array_size() const;
 
         public:
@@ -121,7 +121,7 @@ namespace psyllid
         return f_packet.f_freq_not_time;
     }
 
-    inline const char* roach_packet_data::get_raw_array() const
+    inline const int8_t* roach_packet_data::get_raw_array() const
     {
         return f_packet.f_data;
     }

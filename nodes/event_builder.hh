@@ -19,7 +19,7 @@ namespace psyllid
 {
 
     class event_builder :
-            public midge::_transformer< event_builder, typelist_1( trigger_flag ), typelist_1( id_range_event ) >
+            public midge::_transformer< event_builder, typelist_1( trigger_flag ), typelist_1( trigger_flag ) >
     {
         public:
             event_builder();
@@ -36,8 +36,12 @@ namespace psyllid
             virtual void finalize();
 
         private:
-            enum class state_t { idle, triggered };
+            void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_flag );
+
+            enum class state_t { untriggered, triggered };
             state_t f_state;
+
+            const uint64_t f_invalid_id;
 
             uint64_t f_start_untriggered;
             uint64_t f_end_untriggered;
@@ -58,6 +62,14 @@ namespace psyllid
     inline const std::vector< uint64_t >& event_builder::untriggered_buffer() const
     {
         return f_untriggered_buffer;
+    }
+
+    inline void event_builder::advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_flag )
+    {
+         a_write_flag->set_id( a_id );
+         a_write_flag->set_flag( a_flag );
+         out_stream< 0 >().set( midge::stream::s_run );
+         return;
     }
 
 } /* namespace psyllid */

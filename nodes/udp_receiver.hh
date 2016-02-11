@@ -17,6 +17,29 @@
 namespace psyllid
 {
 
+    /*!
+     @class udp-receiver
+     @author N. S. Oblath
+
+     @brief A UDP server to receive ROACH packets.
+
+     @details
+
+
+     Parameter setting is not thread-safe.  Executing is thread-safe.
+
+     Node type: "udp-receiver"
+
+     Available configuration values:
+     - "time-length": uint -- The size of the output time-data buffer
+     - "freq-length": uint -- The size of the output frequency-data buffer
+     - "port": uint -- The port number to listen on for packets
+     - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed
+
+     Output Streams:
+     - 0: time_data
+     - 1: freq_data
+    */
     class udp_receiver :
             public midge::_producer< udp_receiver, typelist_2( time_data, freq_data ) >
     {

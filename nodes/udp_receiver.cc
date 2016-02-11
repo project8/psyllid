@@ -112,7 +112,9 @@ namespace psyllid
                         DEBUG( plog, "Frequency data received (" << t_size_received << " bytes):  chan = " << t_freq_data->get_digital_id() <<
                                "  time = " << t_freq_data->get_unix_time() <<
                                "  id = " << t_freq_data->get_pkt_in_batch() <<
-                               "  freqNotTime = " << t_freq_data->get_freq_not_time() );
+                               "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
+                               "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
+                        DEBUG( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
 
                         out_stream< 1 >().set( stream::s_run );
                     }
@@ -125,7 +127,9 @@ namespace psyllid
                         DEBUG( plog, "Time data received (" << t_size_received << " bytes):  chan = " << t_time_data->get_digital_id() <<
                                "  time = " << t_time_data->get_unix_time() <<
                                "  id = " << t_time_data->get_pkt_in_batch() <<
-                               "  freqNotTime = " << t_time_data->get_freq_not_time() );
+                               "  freqNotTime = " << t_time_data->get_freq_not_time() <<
+                               "  bin 0 [0] = " << (unsigned)t_time_data->get_array()[ 0 ][ 0 ] );
+                        DEBUG( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
 
                         out_stream< 0 >().set( stream::s_run );
                     }

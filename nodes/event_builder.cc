@@ -9,6 +9,8 @@
 
 #include "logger.hh"
 
+#include <limits>
+
 using midge::stream;
 
 namespace psyllid
@@ -21,9 +23,10 @@ namespace psyllid
             f_length( 10 ),
             f_pretrigger( 0 ),
             f_skip_tolerance( 0 ),
-            f_state( state_t::idle ),
-            f_start_untriggered( 1 ),
-            f_end_untriggered( 0 ),
+            f_state( state_t::untriggered ),
+            f_invalid_id( std::numeric_limits< uint64_t >::max() ),
+            f_start_untriggered( f_invalid_id ),
+            f_end_untriggered( f_invalid_id ),
             f_untriggered_buffer()
     {
     }
@@ -42,13 +45,14 @@ namespace psyllid
     {
         midge::enum_t t_in_command = stream::s_none;
         trigger_flag* t_trigger_flag = nullptr;
-        id_range_event* t_id_range = nullptr;
+        trigger_flag* t_write_flag = nullptr;
 
         while( true )
         {
             t_in_command = in_stream< 0 >().get();
+
             t_trigger_flag = in_stream< 0 >().data();
-            t_id_range = out_stream< 0 >().data();
+            t_write_flag = out_stream< 0 >().data();
 
             if( t_in_command == stream::s_start )
             {
@@ -61,52 +65,68 @@ namespace psyllid
             {
                 uint64_t t_current_id = t_trigger_flag->get_id();
                 DEBUG( plog, "Event builder received id " << t_current_id );
-                if( f_state == state_t::idle )
+                if( f_state == state_t::untriggered )
                 {
+                    // not triggered prior to the current packet
+
                     if( t_trigger_flag->get_flag() )
                     {
                         // start new event
+                        DEBUG( plog, "Starting new event" );
+
                         f_state = state_t::triggered;
-                        if( f_start_untriggered > f_end_untriggered /*f_untriggered_buffer.empty()*/ )
+                        if( f_start_untriggered == f_invalid_id )
                         {
                             // there's no pretrigger available
-                            t_id_range->set_start_id( t_current_id );
+                            advance_output_stream( t_write_flag, t_current_id, true );
                         }
                         else
                         {
                             // add in the pretrigger
-                            t_id_range->set_start_id( std::max( f_end_untriggered - f_pretrigger + 1, f_start_untriggered ) );
+
+                            // send write_flag == true for pre-trigger and current id
+                            for( uint32_t t_id = std::max( f_end_untriggered - f_pretrigger + 1, f_start_untriggered );
+                                    t_id <= t_current_id; ++t_id )
+                            {
+                                advance_output_stream( t_write_flag, std::max( f_end_untriggered - f_pretrigger + 1, f_start_untriggered ), true );
+                            }
+                            f_start_untriggered = f_invalid_id;
+                            f_end_untriggered = f_invalid_id;
                         }
-                        t_id_range->set_end_id( t_current_id );
                     }
                     else
                     {
                         // still untriggered
-                        //f_untriggered_buffer.push_back( t_trigger_flag->get_id() );
-                        // we can presume that f_start_untriggered is correct
+                        DEBUG( plog, "Continuing to be untriggered" );
+
+                        if( f_start_untriggered == f_invalid_id )
+                        {
+                            f_start_untriggered = t_current_id;
+                        }
                         f_end_untriggered = t_current_id;
+
+                        uint64_t t_intended_start_untriggered = f_end_untriggered - f_pretrigger + 1;
+                        while( f_start_untriggered < t_intended_start_untriggered )
+                        {
+                            advance_output_stream( t_write_flag, f_start_untriggered, false );
+                            ++f_start_untriggered;
+                        }
                     }
                 }
                 else
                 {
-                    // currently triggered
+                    // already triggered prior to the current packet
+
                     if( t_trigger_flag->get_flag() )
                     {
                         // continue the current event
-                        // we can assume the start_id is correct
-                        t_id_range->set_end_id( t_current_id );
-
-                        if( f_start_untriggered < f_end_untriggered )
-                        {
-                            // finished a skip span
-                            f_end_untriggered = 0;
-                            f_start_untriggered = 1;
-                        }
+                        DEBUG( plog, "Continuing the event" );
+                        advance_output_stream( t_write_flag, t_current_id, true );
                     }
                     else
                     {
                         // stop/skip
-                        if( f_start_untriggered > f_end_untriggered )
+                        if( f_start_untriggered == f_invalid_id )
                         {
                             // brand-new untriggered span
                             f_start_untriggered = t_current_id;
@@ -115,11 +135,17 @@ namespace psyllid
 
                         if( f_end_untriggered - f_start_untriggered + 1 > f_skip_tolerance )
                         {
-                            DEBUG( plog, "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() );
+                            DEBUG( plog, "Finished event" );
                             // turn skip into event-stop
-                            f_state = state_t::idle;
-                            // the current event is done; advance the output stream
-                            out_stream< 0 >().set( stream::s_run );
+                            f_state = state_t::untriggered;
+
+                            // in case the skip is larger than the pretrigger, we need to catch up handling the untriggered packets
+                            uint64_t t_intended_start_untriggered = f_end_untriggered - f_pretrigger + 1;
+                            while( f_start_untriggered < t_intended_start_untriggered )
+                            {
+                                advance_output_stream( t_write_flag, f_start_untriggered, false );
+                                ++f_start_untriggered;
+                            }
                         }
 
                     }
@@ -133,15 +159,10 @@ namespace psyllid
 
             if( t_in_command == stream::s_stop )
             {
-                if( f_state == state_t::triggered )
-                {
-                    DEBUG( plog, "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() );
-                    f_state = state_t::idle;
-                    out_stream< 0 >().set( stream::s_run );
-                }
+                f_end_untriggered = f_invalid_id;
+                f_start_untriggered = f_invalid_id;
 
-                f_end_untriggered = 0;
-                f_start_untriggered = 1;
+                f_state = state_t::untriggered;
 
                 out_stream< 0 >().set( stream::s_stop );
                 continue;
@@ -149,15 +170,10 @@ namespace psyllid
 
             if( t_in_command == stream::s_exit )
             {
-                if( f_state == state_t::triggered )
-                {
-                    DEBUG( plog, "Finished event: " << t_id_range->get_start_id() << " - " << t_id_range->get_end_id() );
-                    f_state = state_t::idle;
-                    out_stream< 0 >().set( stream::s_run );
-                }
+                f_end_untriggered = f_invalid_id;
+                f_start_untriggered = f_invalid_id;
 
-                f_end_untriggered = 0;
-                f_start_untriggered = 1;
+                f_state = state_t::untriggered;
 
                 out_stream< 0 >().set( stream::s_exit );
                 break;

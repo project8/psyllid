@@ -10,6 +10,8 @@
 
 #include "member_variables.hh"
 
+#include <cstdint>
+
 namespace psyllid
 {
 

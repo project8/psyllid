@@ -21,7 +21,7 @@ namespace psyllid
             virtual ~time_data();
 
         public:
-            typedef char iq_t[2];
+            typedef int8_t iq_t[2];
 
             const iq_t* get_array() const;
             size_t get_array_size() const;
