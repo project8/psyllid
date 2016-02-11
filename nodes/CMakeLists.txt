@@ -3,6 +3,7 @@
 ########
 
 set( headers
+    butterfly_house.hh
     #egg_writer.hh
     event_builder.hh
     #single_value_trigger.hh
@@ -12,6 +13,7 @@ set( headers
 )
 
 set( sources
+    butterfly_house.cc
     #egg_writer.cc
     event_builder.cc
     #single_value_trigger.cc
