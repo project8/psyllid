@@ -7,7 +7,7 @@ if( Psyllid_ENABLE_TESTING )
     set( lib_dependencies
         PsyllidUtility
         PsyllidData
-        PsyllidNodes
+        PsyllidDAQ
     )
     
     set( programs

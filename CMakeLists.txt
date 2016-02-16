@@ -42,7 +42,7 @@ pbuilder_add_submodule( Monarch monarch )
 include_directories( BEFORE
     control
     data
-    nodes
+    daq
     utility
 )
 
@@ -50,7 +50,7 @@ include_directories( BEFORE
 # build this project
 add_subdirectory( utility )
 add_subdirectory( data )
-add_subdirectory( nodes )
+add_subdirectory( daq )
 add_subdirectory( control )
 
 add_subdirectory( applications )

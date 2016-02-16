@@ -5,8 +5,8 @@
  *      Author: nsoblath
  */
 
-#ifndef NODES_EGG_WRITER_HH_
-#define NODES_EGG_WRITER_HH_
+#ifndef PSYLLID_EGG_WRITER_HH_
+#define PSYLLID_EGG_WRITER_HH_
 
 #include "trigger_flag.hh"
 #include "time_data.hh"
@@ -34,4 +34,4 @@ namespace psyllid
 
 } /* namespace psyllid */
 
-#endif /* NODES_EGG_WRITER_HH_ */
+#endif /* PSYLLID_EGG_WRITER_HH_ */

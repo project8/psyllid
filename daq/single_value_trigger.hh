@@ -5,8 +5,8 @@
  *      Author: nsoblath
  */
 
-#ifndef NODES_SINGLE_VALUE_TRIGGER_HH_
-#define NODES_SINGLE_VALUE_TRIGGER_HH_
+#ifndef PSYLLID_SINGLE_VALUE_TRIGGER_HH_
+#define PSYLLID_SINGLE_VALUE_TRIGGER_HH_
 
 #include "freq_data.hh"
 #include "trigger_flag.hh"
@@ -36,4 +36,4 @@ namespace psyllid
 
 } /* namespace psyllid */
 
-#endif /* NODES_SINGLE_VALUE_TRIGGER_HH_ */
+#endif /* PSYLLID_SINGLE_VALUE_TRIGGER_HH_ */

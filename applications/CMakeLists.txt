@@ -7,7 +7,7 @@ if( Psyllid_ENABLE_EXECUTABLES )
     set( lib_dependencies 
         PsyllidUtility
         PsyllidData
-        PsyllidNodes
+        PsyllidDAQ
         PsyllidControl
     )
     

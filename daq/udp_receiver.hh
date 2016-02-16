@@ -5,8 +5,8 @@
  *      Author: nsoblath
  */
 
-#ifndef NODES_UDP_RECEIVER_HH_
-#define NODES_UDP_RECEIVER_HH_
+#ifndef PSYLLID_UDP_RECEIVER_HH_
+#define PSYLLID_UDP_RECEIVER_HH_
 
 #include "freq_data.hh"
 #include "time_data.hh"
@@ -65,4 +65,4 @@ namespace psyllid
 
 } /* namespace psyllid */
 
-#endif /* NODES_UDP_RECEIVER_HH_ */
+#endif /* PSYLLID_UDP_RECEIVER_HH_ */

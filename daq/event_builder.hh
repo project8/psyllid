@@ -5,8 +5,8 @@
  *      Author: nsoblath
  */
 
-#ifndef NODES_EVENT_BUILDER_HH_
-#define NODES_EVENT_BUILDER_HH_
+#ifndef PSYLLID_EVENT_BUILDER_HH_
+#define PSYLLID_EVENT_BUILDER_HH_
 
 #include "transformer.hh"
 
@@ -74,4 +74,4 @@ namespace psyllid
 
 } /* namespace psyllid */
 
-#endif /* NODES_EVENT_BUILDER_HH_ */
+#endif /* PSYLLID_EVENT_BUILDER_HH_ */
