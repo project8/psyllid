@@ -8,6 +8,7 @@ set( headers
     event_builder.hh
     #single_value_trigger.hh
     frequency_mask_trigger.hh
+    monarch3_wrap.hh
     roach_config.hh
     udp_receiver.hh
 )
@@ -18,6 +19,7 @@ set( sources
     event_builder.cc
     #single_value_trigger.cc
     frequency_mask_trigger.cc
+    monarch3_wrap.cc
     roach_config.cc
     udp_receiver.cc
 )

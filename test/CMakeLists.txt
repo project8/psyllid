@@ -11,8 +11,9 @@ if( Psyllid_ENABLE_TESTING )
     )
     
     set( programs
-        test_event_builder
-        test_server
+        #test_event_builder
+        test_monarch3_write
+        #test_server
         test_udp_receiver
     )
     

@@ -23,11 +23,9 @@ namespace psyllid
             typedef x_resource resource_t;
 
             locked_resource();
-            locked_resource( const locked_resource& ) = delete;
             locked_resource( locked_resource&& a_orig );
             virtual ~locked_resource();
 
-            locked_resource& operator=( const locked_resource& ) = delete;
             locked_resource& operator=( locked_resource&& a_rhs );
 
             resource_t* operator->() const;
@@ -37,6 +35,9 @@ namespace psyllid
         private:
             friend x_parent;
             locked_resource( resource_ptr_t a_resource, x_mutex& a_mutex );
+
+            locked_resource( const locked_resource& ) = delete;
+            locked_resource& operator=( const locked_resource& ) = delete;
 
             resource_ptr_t f_resource;
             x_lock f_lock;

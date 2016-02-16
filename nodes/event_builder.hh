@@ -36,7 +36,7 @@ namespace psyllid
             virtual void finalize();
 
         private:
-            void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_flag );
+            void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
 
             enum class state_t { untriggered, triggered };
             state_t f_state;
@@ -64,10 +64,10 @@ namespace psyllid
         return f_untriggered_buffer;
     }
 
-    inline void event_builder::advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_flag )
+    inline void event_builder::advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag )
     {
          a_write_flag->set_id( a_id );
-         a_write_flag->set_flag( a_flag );
+         a_write_flag->set_flag( a_trig_flag );
          out_stream< 0 >().set( midge::stream::s_run );
          return;
     }
