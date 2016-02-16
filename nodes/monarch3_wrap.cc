@@ -207,6 +207,7 @@ namespace psyllid
             try
             {
                 f_monarch->WriteHeader();
+                DEBUG( plog, "Header written for file <" << f_monarch->GetHeader()->GetFilename() << ">" );
             }
             catch( monarch3::M3Exception& e )
             {
@@ -245,12 +246,14 @@ namespace psyllid
             throw error() << "Stream number <" << a_stream_no << "> was not found";
         }
         t_stream_it->second->finish();
+        DEBUG( plog, "Finished stream <" << a_stream_no << ">" );
         f_stream_wraps.erase( t_stream_it );
 
         if( a_finish_if_streams_done && f_stream_wraps.empty() )
         {
             try
             {
+                DEBUG( plog, "All streams complete; automatically finishing file <" << f_monarch->GetHeader()->GetFilename() << ">" );
                 finish_file_nolock();
             }
             catch( error& e )
@@ -284,6 +287,7 @@ namespace psyllid
             try
             {
                 f_monarch->WriteHeader();
+                DEBUG( plog, "Header written for file <" << f_monarch->GetHeader()->GetFilename() << ">" );
             }
             catch( monarch3::M3Exception& e )
             {
@@ -297,6 +301,7 @@ namespace psyllid
                 throw error() << "Streams have not all been finished";
             }
         }
+        INFO( plog, "Finished writing file <" << f_monarch->GetHeader()->GetFilename() << ">" );
         f_monarch->FinishWriting();
         set_stage( monarch_stage::finished );
         f_monarch.reset();

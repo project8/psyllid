@@ -1,10 +1,10 @@
-########
-# data #
-########
+#######
+# daq #
+#######
 
 set( headers
     butterfly_house.hh
-    #egg_writer.hh
+    egg_writer.hh
     event_builder.hh
     #single_value_trigger.hh
     frequency_mask_trigger.hh
@@ -15,7 +15,7 @@ set( headers
 
 set( sources
     butterfly_house.cc
-    #egg_writer.cc
+    egg_writer.cc
     event_builder.cc
     #single_value_trigger.cc
     frequency_mask_trigger.cc
@@ -34,5 +34,5 @@ set( dependencies
 # library #
 ###########
 
-midge_library( PsyllidNodes sources dependencies )
+midge_library( PsyllidDAQ sources dependencies )
 pbuilder_install_headers( ${headers} )

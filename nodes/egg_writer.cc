@@ -8,6 +8,7 @@
 #include "egg_writer.hh"
 
 #include "butterfly_house.hh"
+#include "psyllid_error.hh"
 
 #include "logger.hh"
 
@@ -52,7 +53,7 @@ namespace psyllid
         uint64_t t_bytes_per_record = PAYLOAD_SIZE;
         unsigned t_stream_no = 0;
         bool t_is_new_event = true;
-        bool t_was_triggered = false;
+        //bool t_was_triggered = false;
 
         while( true )
         {
@@ -75,7 +76,7 @@ namespace psyllid
 
                 DEBUG( plog, "Closing the egg file" );
 
-                t_monarch_ptr->finish_stream( t_stream_no );
+                t_monarch_ptr->finish_stream( t_stream_no, true );
 
                 continue;
             }
@@ -100,7 +101,7 @@ namespace psyllid
                     //   description
 
                     vector< unsigned > t_chan_vec;
-                    t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2", 100, 1, 1, 1, monarch3::sDigitizedUS, 8, monarch3::sBitsAlignedLeft, &t_chan_vec );
+                    t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2", 100, PAYLOAD_SIZE / 2, 2, 1, monarch3::sDigitizedUS, 8, monarch3::sBitsAlignedLeft, &t_chan_vec );
 
                     unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
                     for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
@@ -136,7 +137,7 @@ namespace psyllid
                     while( t_time_id < t_trig_id )
                     {
                         t_time_command = in_stream< 0 >().get();
-                        t_time_data = in_stream< 1 >().data();
+                        t_time_data = in_stream< 0 >().data();
                         t_time_id = t_time_data->get_pkt_in_batch();
                     }
                     while( t_time_id > t_trig_id )

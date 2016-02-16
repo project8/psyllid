@@ -6,7 +6,7 @@
  */
 
 #include "diptera.hh"
-//#include "egg_writer.hh"
+#include "egg_writer.hh"
 #include "event_builder.hh"
 #include "frequency_mask_trigger.hh"
 #include "udp_receiver.hh"
@@ -21,6 +21,14 @@ using namespace midge;
 using namespace psyllid;
 
 LOGGER( plog, "roach_daq_1chan" );
+
+cancelable* f_cancelable = nullptr;
+
+void cancel( int )
+{
+    if( f_cancelable != nullptr ) f_cancelable->cancel();
+    return;
+}
 
 int main()
 {
@@ -44,18 +52,25 @@ int main()
         t_eb->set_pretrigger( 1 );
         t_eb->set_skip_tolerance( 0 );
         t_root->add( t_eb );
-/*
+
         egg_writer* t_ew = new egg_writer();
         t_ew->set_name( "ew" );
         // set parameters
         t_root->add( t_ew );
-*/
-        //t_root->join( "udpr.out_0:ew.in_0" );
+
+        t_root->join( "udpr.out_0:ew.in_0" );
         t_root->join( "udpr.out_1:fmt.in_0" );
         t_root->join( "fmt.out_0:eb.in_0" );
-        //t_root->join( "eb.out_0:ew.in_1" );
+        t_root->join( "eb.out_0:ew.in_1" );
 
-        t_root->run( "udpr:fmt:eb"/*:ew"*/ );
+        // set up signal handling for canceling with ctrl-c
+        f_cancelable = t_udpr;
+        signal( SIGINT, cancel );
+
+        t_root->run( "udpr:fmt:eb:ew" );
+
+        // un-setup signal handling
+        f_cancelable = nullptr;
 
         delete t_root;
     }

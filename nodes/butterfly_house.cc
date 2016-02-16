@@ -7,13 +7,13 @@
 
 #include "butterfly_house.hh"
 
-//#include "logger.hh"
+#include "logger.hh"
 
 #include "psyllid_error.hh"
 
 namespace psyllid
 {
-    //LOGGER( plog, "butterfly_house" );
+    LOGGER( plog, "butterfly_house" );
 
 
     butterfly_house::butterfly_house() :
@@ -32,9 +32,10 @@ namespace psyllid
         try
         {
             auto t_mwp_it = f_butterflies.find( a_filename );
-            if( t_mwp_it != f_butterflies.end() )
+            if( t_mwp_it == f_butterflies.end() )
             {
                 monarch_wrap_ptr t_mwp( new monarch_wrapper( a_filename ) );
+                INFO( plog, "Created egg3 file <" << a_filename << ">" );
                 f_butterflies.insert( bf_value_t( a_filename, t_mwp ) );
                 return t_mwp;
             }
