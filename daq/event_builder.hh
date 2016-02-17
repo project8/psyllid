@@ -13,7 +13,7 @@
 #include "id_range_event.hh"
 #include "trigger_flag.hh"
 
-#include <vector>
+#include <deque>
 
 namespace psyllid
 {
@@ -38,18 +38,16 @@ namespace psyllid
         private:
             void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
 
-            enum class state_t { untriggered, triggered };
+            enum class state_t { filling_pretrigger, untriggered, untriggered_nopt, new_trigger, triggered };
             state_t f_state;
 
-            const uint64_t f_invalid_id;
-
-            uint64_t f_start_untriggered;
-            uint64_t f_end_untriggered;
-            std::vector< uint64_t > f_untriggered_buffer;
+            std::deque< uint64_t > f_pretrigger_buffer;
 
         public:
             bool is_triggered() const;
-            const std::vector< uint64_t >& untriggered_buffer() const;
+
+            typedef std::deque< uint64_t > pretrigger_buffer_t;
+            const pretrigger_buffer_t& pretrigger_buffer() const;
 
     };
 
@@ -59,17 +57,9 @@ namespace psyllid
         return f_state == state_t::triggered;
     }
 
-    inline const std::vector< uint64_t >& event_builder::untriggered_buffer() const
+    inline const std::deque< uint64_t >& event_builder::pretrigger_buffer() const
     {
-        return f_untriggered_buffer;
-    }
-
-    inline void event_builder::advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag )
-    {
-         a_write_flag->set_id( a_id );
-         a_write_flag->set_flag( a_trig_flag );
-         out_stream< 0 >().set( midge::stream::s_run );
-         return;
+        return f_pretrigger_buffer;
     }
 
 } /* namespace psyllid */

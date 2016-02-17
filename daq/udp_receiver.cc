@@ -151,8 +151,11 @@ namespace psyllid
             INFO( plog, "UDP receiver is exiting" );
 
             // normal exit condition
+            DEBUG( plog, "Stopping output streams" );
             out_stream< 0 >().set( stream::s_stop );
             out_stream< 1 >().set( stream::s_stop );
+
+            DEBUG( plog, "Exiting output streams" );
             out_stream< 0 >().set( stream::s_exit );
             out_stream< 1 >().set( stream::s_exit );
             return;
@@ -160,8 +163,12 @@ namespace psyllid
         catch( midge::error& e )
         {
             ERROR( plog, "Exception caught: " << e.what() );
+
+            DEBUG( plog, "Stopping output streams" );
             out_stream< 0 >().set( stream::s_stop );
             out_stream< 1 >().set( stream::s_stop );
+
+            DEBUG( plog, "Exiting output streams" );
             out_stream< 0 >().set( stream::s_exit );
             out_stream< 1 >().set( stream::s_exit );
         }

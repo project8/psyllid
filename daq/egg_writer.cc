@@ -58,25 +58,28 @@ namespace psyllid
         while( true )
         {
             t_time_command = in_stream< 0 >().get();
+            DEBUG( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
+
             t_trig_command = in_stream< 1 >().get();
+            DEBUG( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
 
             if( t_time_command != t_trig_command )
             {
-                throw midge::error() << "Time and event stream commands are mismatched: " << t_time_command << " (time) vs " << t_trig_command << " (trigger)";
+                throw midge::error() << "Time and event stream commands are mismatched: " <<
+                        t_time_command << " (time, at stream index " << in_stream< 0 >().get_current_index() << ") vs " <<
+                        t_trig_command << " (trigger, at stream index " << in_stream< 0 >().get_current_index() << ")";
             }
 
             if( t_trig_command == stream::s_stop )
             {
-                DEBUG( plog, "Event stream has stopped; advancing the time stream" );
+                DEBUG( plog, "Egg writer is stopping" );
 
-                while( t_time_command != stream::s_stop )
+                if( t_swrap_ptr )
                 {
-                    t_time_command = in_stream< 0 >().get();
+                    DEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
+                    t_monarch_ptr->finish_stream( t_stream_no, true );
+                    t_swrap_ptr.reset();
                 }
-
-                DEBUG( plog, "Closing the egg file" );
-
-                t_monarch_ptr->finish_stream( t_stream_no, true );
 
                 continue;
             }
@@ -115,7 +118,7 @@ namespace psyllid
                 }
                 catch( error& e )
                 {
-                    throw error() << "Unable to prepare the egg file <" << t_filename << ">: " << e.what();
+                    throw midge::error() << "Unable to prepare the egg file <" << t_filename << ">: " << e.what();
                 }
 
                 continue;
@@ -125,6 +128,7 @@ namespace psyllid
             {
                 if( ! t_swrap_ptr )
                 {
+                    DEBUG( plog, "Getting stream <" << t_stream_no << ">" );
                     t_swrap_ptr = t_monarch_ptr->get_stream( t_stream_no );
                     t_record_ptr = t_swrap_ptr->stream().GetStreamRecord();
                 }
@@ -134,28 +138,31 @@ namespace psyllid
 
                 if( t_time_id != t_trig_id )
                 {
+                    DEBUG( plog, "Mismatch between time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
                     while( t_time_id < t_trig_id )
                     {
+                        DEBUG( plog, "Moving time stream forward" );
                         t_time_command = in_stream< 0 >().get();
                         t_time_data = in_stream< 0 >().data();
                         t_time_id = t_time_data->get_pkt_in_batch();
                     }
                     while( t_time_id > t_trig_id )
                     {
+                        DEBUG( plog, "Moving trig stream forward" );
                         t_trig_command = in_stream< 1 >().get();
                         t_trig_data = in_stream< 1 >().data();
                         t_trig_id = t_trig_data->get_id();
                     }
                     if( t_time_id != t_trig_id )
                     {
-                        throw error() << "Unable to match time and trigger streams";
+                        throw midge::error() << "Unable to match time and trigger streams";
                     }
                 }
 
 
                 if( t_trig_data->get_flag() )
                 {
-                    DEBUG( plog, "Triggered packet" );
+                    DEBUG( plog, "Triggered packet, id <" << t_trig_data->get_id() << ">" );
 
                     if( t_is_new_event ) DEBUG( plog, "New event" );
                     memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
@@ -164,7 +171,7 @@ namespace psyllid
                 }
                 else
                 {
-                    DEBUG( plog, "Untriggered packet" );
+                    DEBUG( plog, "Untriggered packet, id <" << t_trig_data->get_id() << ">" );
                     t_is_new_event = true;
                 }
 
@@ -173,7 +180,16 @@ namespace psyllid
 
             if( t_trig_command == stream::s_exit )
             {
-                return;
+                DEBUG( plog, "Egg writer is exiting" );
+
+                if( t_swrap_ptr )
+                {
+                    DEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
+                    t_monarch_ptr->finish_stream( t_stream_no, true );
+                    t_swrap_ptr.reset();
+                }
+
+                break;
             }
         }
 

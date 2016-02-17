@@ -99,13 +99,14 @@ namespace psyllid
         while( true )
         {
             t_in_command = in_stream< 0 >().get();
+            DEBUG( plog, "FMT reading stream at index " << in_stream< 0 >().get_current_index() );
 
             t_freq_data = in_stream< 0 >().data();
             t_trigger_flag = out_stream< 0 >().data();
 
             if( t_in_command == stream::s_start )
             {
-                DEBUG( plog, "Starting the FMT output" );
+                DEBUG( plog, "Starting the FMT output at stream index " << out_stream< 0 >().get_current_index() );
                 out_stream< 0 >().set( stream::s_start );
                 continue;
             }
@@ -123,19 +124,21 @@ namespace psyllid
 
             if( t_in_command == stream::s_stop )
             {
+                DEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
                 out_stream< 0 >().set( stream::s_stop );
                 continue;
             }
 
             if( t_in_command == stream::s_exit )
             {
+                DEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
                 out_stream< 0 >().set( stream::s_exit );
                 break;
             }
         }
     }
 
-    void frequency_mask_trigger::exe_add_to_mask( freq_data* a_freq_data, trigger_flag* )
+    void frequency_mask_trigger::exe_add_to_mask( freq_data* a_freq_data, trigger_flag* a_trigger_flag )
     {
         static unsigned s_array_size = f_mask.size();
 
@@ -147,13 +150,13 @@ namespace psyllid
             t_real = a_freq_data->get_array()[ i_bin ][ 0 ];
             t_imag = a_freq_data->get_array()[ i_bin ][ 1 ];
             f_mask[ i_bin ] = f_mask[ i_bin ] + t_real*t_real + t_imag*t_imag;
-#ifndef NDEBUG
+/*#ifndef NDEBUG
             if( i_bin < 5 )
             {
                 WARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
                         ";  mask = " << f_mask[ i_bin ] );
             }
-#endif
+#endif*/
         }
 
         ++f_n_summed;
@@ -164,8 +167,15 @@ namespace psyllid
             calculate_mask();
         }
 
+        // advance the output stream with the trigger set to false
+        // since something else is presumably looking at the time stream, and it needs to stay synchronized
+        a_trigger_flag->set_id( a_freq_data->get_pkt_in_batch() );
+        a_trigger_flag->set_flag( false );
+
         f_mask_mutex.unlock();
 
+        DEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
+        out_stream< 0 >().set( stream::s_run );
         return;
     }
 
@@ -177,22 +187,24 @@ namespace psyllid
 
         f_mask_mutex.lock();
 
+        a_trigger_flag->set_flag( false );
+
         double t_real, t_imag;
         for( unsigned i_bin = 0; i_bin < s_array_size; ++i_bin )
         {
             t_real = a_freq_data->get_array()[ i_bin ][ 0 ];
             t_imag = a_freq_data->get_array()[ i_bin ][ 1 ];
-#ifndef NDEBUG
+/*#ifndef NDEBUG
             if( i_bin < 5 )
             {
                 WARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
                         ";  mask = " << f_mask[ i_bin ] );
             }
-#endif
+#endif*/
+            a_trigger_flag->set_id( a_freq_data->get_pkt_in_batch() );
             if( t_real*t_real + t_imag*t_imag >= f_mask[ i_bin ] )
             {
                 a_trigger_flag->set_flag( true );
-                a_trigger_flag->set_id( a_freq_data->get_pkt_in_batch() );
                 DEBUG( plog, "Data " << a_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << a_trigger_flag->get_flag() << ">" << '\n' <<
                        "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << f_mask[ i_bin ] );
                 break;
@@ -201,6 +213,7 @@ namespace psyllid
 
         f_mask_mutex.unlock();
 
+        DEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
         out_stream< 0 >().set( stream::s_run );
         return;
     }
@@ -221,13 +234,13 @@ namespace psyllid
         double t_multiplier = f_threshold_snr / (double)f_n_summed;
         for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
         {
-#ifndef NDEBUG
+/*#ifndef NDEBUG
             if( i_bin < 5 )
             {
                 WARN( plog, "Bin " << i_bin << " -- threshold snr = " << f_threshold_snr << ";  n_summed = " << f_n_summed << ";  multiplier = " << t_multiplier <<
                         ";  summed value = " << f_mask[ i_bin ] << ";  final mask = " << f_mask[ i_bin ] * t_multiplier );
             }
-#endif
+#endif*/
             f_mask[ i_bin ] = f_mask[ i_bin ] * t_multiplier;
         }
 
