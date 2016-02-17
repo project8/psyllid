@@ -13,13 +13,13 @@
 #include "psyllid_error.hh"
 
 #include "cancelable.hh"
-#include "thread.hh"
 
 #include "hub.hh"
 
 #include <atomic>
 #include <condition_variable>
 #include <memory>
+#include <thread>
 
 namespace psyllid
 {
@@ -91,7 +91,7 @@ namespace psyllid
 
             std::shared_ptr< daq_worker > f_daq_worker;
             std::mutex f_worker_mutex;
-            midge::thread f_worker_thread;
+            std::thread f_worker_thread;
 
         public:
             enum class status

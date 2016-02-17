@@ -34,6 +34,7 @@ namespace psyllid
             f_node_manager( a_mgr ),
             f_daq_worker(),
             f_worker_mutex(),
+            f_worker_thread(),
             f_status( status::initialized )
     {
     }
@@ -68,8 +69,7 @@ namespace psyllid
                 std::function< void() > t_notifier = [this](){ notify_run_stopped(); };
 
                 DEBUG( plog, "Starting DAQ worker" );
-                f_worker_thread.bind_start( f_daq_worker.get(), &daq_worker::execute, f_node_manager, t_worker_ex_ptr, t_notifier );
-                f_worker_thread.start();
+                f_worker_thread = std::thread( &daq_worker::execute, f_daq_worker.get(), f_node_manager, t_worker_ex_ptr, t_notifier );
                 set_status( status::idle );
                 t_lock.unlock();
 

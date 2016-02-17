@@ -14,11 +14,10 @@
 #include "request_receiver.hh"
 #include "signal_handler.hh"
 
-#include "thread.hh"
-
 #include "logger.hh"
 
 #include <signal.h> // for raise()
+#include <thread>
 
 using dripline::retcode_t;
 using dripline::request_ptr_t;
@@ -88,21 +87,17 @@ namespace psyllid
         DEBUG( plog, "Creating DAQ control" );
         std::exception_ptr t_dc_ex_ptr;
         f_daq_control.reset( new daq_control( f_node_manager ) );
-        midge::thread t_daq_control_thread;
-        t_daq_control_thread.bind_start( f_daq_control.get(), &daq_control::execute, t_dc_ex_ptr );
 
         // request receiver
         DEBUG( plog, "Creating request receiver" );
         f_request_receiver.reset( new request_receiver( this, f_node_manager, f_daq_control ) );
-        midge::thread t_receiver_thread;
-        t_receiver_thread.bind_start( f_request_receiver.get(), &request_receiver::execute );
+
+        std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get(), t_dc_ex_ptr );
+        std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
         t_lock.unlock();
 
         INFO( plog, "Starting threads" );
-
-        t_daq_control_thread.start();
-        t_receiver_thread.start();
 
         if( t_daq_node->get_value< bool >( "activate-on-startup", false ) )
         {
@@ -114,6 +109,7 @@ namespace psyllid
         INFO( plog, "running..." );
 
         t_daq_control_thread.join();
+        WARN( plog, "passed daq control thread join" );
         if( t_dc_ex_ptr )
         {
             try
@@ -128,16 +124,11 @@ namespace psyllid
         }
 
         t_receiver_thread.join();
+        WARN( plog, "passed receiver thread join" );
 
         t_sig_hand.remove_cancelable( this );
 
         set_status( k_done );
-
-        t_lock.lock();
-        f_request_receiver.reset();
-        f_daq_control.reset();
-        f_node_manager.reset();
-        t_lock.unlock();
 
         INFO( plog, "Threads stopped" );
 
