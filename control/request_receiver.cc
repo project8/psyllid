@@ -1,8 +1,6 @@
 
 #include "request_receiver.hh"
 
-#include "daq_control.hh"
-#include "node_manager.hh"
 #include "run_server.hh"
 
 #include "logger.hh"
@@ -25,15 +23,15 @@ namespace psyllid
 
     LOGGER( plog, "request_receiver" );
 
-    request_receiver::request_receiver( run_server* a_run_server,
-                                        std::shared_ptr< node_manager > a_node_manager,
-                                        std::shared_ptr< daq_control > a_daq_control ) :
+    request_receiver::request_receiver( run_server* a_run_server) :
             hub(),
             cancelable(),
+            f_run_handler(),
+            f_get_handlers(),
+            f_set_handlers(),
+            f_cmd_handlers(),
             f_listen_timeout_ms( 100 ),
             f_run_server( a_run_server ),
-            f_node_manager( a_node_manager ),
-            f_daq_control( a_daq_control ),
             f_status( k_initialized )
     {
     }
@@ -42,9 +40,76 @@ namespace psyllid
     {
     }
 
+    void request_receiver::set_run_handler( const handler_func_t& a_func )
+    {
+        f_run_handler = a_func;
+        DEBUG( plog, "Set RUN handler" );
+        return;
+    }
+
+    void request_receiver::register_get_handler( const std::string& a_key, const handler_func_t& a_func )
+    {
+        f_get_handlers[ a_key ] = a_func;
+        DEBUG( plog, "Set GET handler for <" << a_key << ">" );
+        return;
+    }
+
+    void request_receiver::register_set_handler( const std::string& a_key, const handler_func_t& a_func )
+    {
+        f_set_handlers[ a_key ] = a_func;
+        DEBUG( plog, "Set SET handler for <" << a_key << ">" );
+        return;
+    }
+
+    void request_receiver::register_cmd_handler( const std::string& a_key, const handler_func_t& a_func )
+    {
+        f_cmd_handlers[ a_key ] = a_func;
+        DEBUG( plog, "Set CMD handler for <" << a_key << ">" );
+        return;
+    }
+
+    void request_receiver::remove_get_handler( const std::string& a_key )
+    {
+        if( f_get_handlers.erase( a_key ) == 0 )
+        {
+            WARN( plog, "GET handler <" << a_key << "> was not present; nothing was removed" );
+        }
+        else
+        {
+            DEBUG( plog, "GET handler <" << a_key << "> was removed" );
+        }
+        return;
+    }
+
+    void request_receiver::remove_set_handler( const std::string& a_key )
+    {
+        if( f_set_handlers.erase( a_key ) == 0 )
+        {
+            WARN( plog, "SET handler <" << a_key << "> was not present; nothing was removed" );
+        }
+        else
+        {
+            DEBUG( plog, "SET handler <" << a_key << "> was removed" );
+        }
+        return;
+    }
+
+    void request_receiver::remove_cmd_handler( const std::string& a_key )
+    {
+        if( f_cmd_handlers.erase( a_key ) == 0 )
+        {
+            WARN( plog, "CMD handler <" << a_key << "> was not present; nothing was removed" );
+        }
+        else
+        {
+            DEBUG( plog, "CMD handler <" << a_key << "> was removed" );
+        }
+        return;
+    }
+
     void request_receiver::execute()
     {
-        f_status.store( k_starting );
+        set_status( k_starting );
 
         std::string t_exchange_name;
         const param_node* t_broker_node = f_run_server->get_config().node_at( "amqp" );
@@ -87,7 +152,7 @@ namespace psyllid
 
         INFO( plog, "Waiting for incoming messages" );
 
-        f_status.store( k_listening );
+        set_status( k_listening );
 
         while( ! cancelable::f_canceled.load() )
         {
@@ -99,7 +164,7 @@ namespace psyllid
 
         stop();
 
-        f_status.store( k_done );
+        set_status( k_done );
         DEBUG( plog, "Request receiver is done" );
 
         return;
@@ -107,25 +172,21 @@ namespace psyllid
 
     bool request_receiver::do_run_request( const request_ptr_t a_request, reply_package& a_reply_pkg )
     {
-        return f_daq_control->handle_start_run_request( a_request, a_reply_pkg );
+        return f_run_handler( a_request, a_reply_pkg );
     }
 
     bool request_receiver::do_get_request( const request_ptr_t a_request, reply_package& a_reply_pkg )
     {
         std::string t_query_type = a_request->get_parsed_rks()->begin()->first;
 
-        if( t_query_type == "node-config" )
+        try
         {
-            return f_node_manager->handle_get_node_config_request( a_request, a_reply_pkg );
+            return f_get_handlers.at( t_query_type )( a_request, a_reply_pkg );
         }
-        else if( t_query_type == "server-status" )
+        catch( std::out_of_range& e )
         {
-            return f_run_server->handle_get_server_status_request( a_request, a_reply_pkg );
-        }
-        else
-        {
-            WARN( plog, "Get query type <" << t_query_type << "> not understood" );
-            return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Unrecognized query type or no query type provided: <" + t_query_type + ">" );
+            WARN( plog, "GET query type <" << t_query_type << "> was not understood (" << e.what() << ")" );
+            return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Unrecognized query type or no query type provided: <" + t_query_type + ">" );;
         }
     }
 
@@ -133,19 +194,13 @@ namespace psyllid
     {
         std::string t_set_type = a_request->get_parsed_rks()->begin()->first;
 
-        if( t_set_type == "daq-preset" )
+        try
         {
-            return f_node_manager->handle_apply_preset_request( a_request, a_reply_pkg );
+            return f_get_handlers.at( t_set_type )( a_request, a_reply_pkg );
         }
-        /*
-        else if( t_set_type == "node" )
+        catch( std::out_of_range& e )
         {
-
-        }
-        */
-        else
-        {
-            WARN( plog, "Set request <" << t_set_type << "> not understood" );
+            WARN( plog, "SET request <" << t_set_type << "> not understood (" << e.what() << ")" );
             return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Unrecognized set request type or no set request type provided: <" + t_set_type + ">" );
         }
     }
@@ -156,29 +211,13 @@ namespace psyllid
         // the unlock instruction that allows us to force the unlock.
         std::string t_instruction = a_request->get_parsed_rks()->begin()->first;
 
-        if( t_instruction == "stop-run" )
+        try
         {
-            return f_daq_control->handle_stop_run_request( a_request, a_reply_pkg );
+            return f_get_handlers.at( t_instruction )( a_request, a_reply_pkg );
         }
-        else if( t_instruction == "activate-daq" )
+        catch( std::out_of_range& e )
         {
-            return f_daq_control->handle_activate_daq_control( a_request, a_reply_pkg );
-        }
-        else if( t_instruction == "deactivate-daq" )
-        {
-            return f_daq_control->handle_deactivate_daq_control( a_request, a_reply_pkg );
-        }
-        else if( t_instruction == "stop-all" )
-        {
-            return f_run_server->handle_stop_all_request( a_request, a_reply_pkg );
-        }
-        else if( t_instruction == "quit-psyllid" )
-        {
-            return f_run_server->handle_quit_server_request( a_request, a_reply_pkg );
-        }
-        else
-        {
-            WARN( plog, "Instruction <" << t_instruction << "> not understood" );
+            WARN( plog, "CMD instruction <" << t_instruction << "> not understood (" << e.what() << ")" );
             return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Instruction <" + t_instruction + "> not understood" );;
         }
     }
@@ -187,7 +226,7 @@ namespace psyllid
     {
         DEBUG( plog, "Canceling request receiver" );
         service::f_canceled.store( true );
-        f_status.store( k_canceled );
+        set_status( k_canceled );
         return;
     }
 

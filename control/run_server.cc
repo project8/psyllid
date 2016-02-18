@@ -90,14 +90,33 @@ namespace psyllid
 
         // request receiver
         DEBUG( plog, "Creating request receiver" );
-        f_request_receiver.reset( new request_receiver( this, f_node_manager, f_daq_control ) );
+        f_request_receiver.reset( new request_receiver( this ) );
 
+        using namespace std::placeholders;
+
+        // set the run request handler
+        f_request_receiver->set_run_handler( std::bind( &daq_control::handle_start_run_request, f_daq_control, _1, _2 ) );
+
+        // add get request handlers
+        f_request_receiver->register_get_handler( "node-config", std::bind( &node_manager::handle_get_node_config_request, f_node_manager, _1, _2 ) );
+        f_request_receiver->register_get_handler( "server-status", std::bind( &run_server::handle_get_server_status_request, this, _1, _2 ) );
+
+        // add set request handlers
+        f_request_receiver->register_set_handler( "daq-preset", std::bind( &node_manager::handle_apply_preset_request, f_node_manager, _1, _2 ) );
+
+        // add cmd request handlers
+        f_request_receiver->register_cmd_handler( "stop-run", std::bind( &daq_control::handle_stop_run_request, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_cmd_handler( "activate-daq", std::bind( &daq_control::handle_activate_daq_control, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_cmd_handler( "deactivate-daq", std::bind( &daq_control::handle_deactivate_daq_control, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_cmd_handler( "stop-all", std::bind( &run_server::handle_stop_all_request, this, _1, _2 ) );
+        f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1, _2 ) );
+
+        // start threads
+        INFO( plog, "Starting threads" );
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get(), t_dc_ex_ptr );
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
         t_lock.unlock();
-
-        INFO( plog, "Starting threads" );
 
         if( t_daq_node->get_value< bool >( "activate-on-startup", false ) )
         {
@@ -106,10 +125,9 @@ namespace psyllid
         }
 
         set_status( k_running );
-        INFO( plog, "running..." );
+        INFO( plog, "Running..." );
 
         t_daq_control_thread.join();
-        WARN( plog, "passed daq control thread join" );
         if( t_dc_ex_ptr )
         {
             try
@@ -124,7 +142,6 @@ namespace psyllid
         }
 
         t_receiver_thread.join();
-        WARN( plog, "passed receiver thread join" );
 
         t_sig_hand.remove_cancelable( this );
 

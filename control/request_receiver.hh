@@ -8,20 +8,31 @@
 #include "cancelable.hh"
 
 #include <atomic>
+#include <functional>
 #include <memory>
+#include <unordered_map>
 
 namespace psyllid
 {
     class run_server;
-    class node_manager;
-    class daq_control;
-    class condition;
 
     class request_receiver : public dripline::hub, public midge::cancelable
     {
+        private:
+            typedef std::function< bool( const dripline::request_ptr_t, reply_package& ) > handler_func_t;
+
         public:
-            request_receiver( run_server* a_run_server, std::shared_ptr< node_manager > a_node_manager, std::shared_ptr< daq_control > a_daq_control );
+            request_receiver( run_server* a_run_server );
             virtual ~request_receiver();
+
+            void set_run_handler( const handler_func_t& a_func );
+            void register_get_handler( const std::string& a_key, const handler_func_t& a_func );
+            void register_set_handler( const std::string& a_key, const handler_func_t& a_func );
+            void register_cmd_handler( const std::string& a_key, const handler_func_t& a_func );
+
+            void remove_get_handler( const std::string& a_key );
+            void remove_set_handler( const std::string& a_key );
+            void remove_cmd_handler( const std::string& a_key );
 
             void execute();
 
@@ -33,11 +44,16 @@ namespace psyllid
 
             virtual void do_cancellation();
 
+            handler_func_t f_run_handler;
+
+            typedef std::unordered_map< std::string, handler_func_t > handler_funcs_t;
+            handler_funcs_t f_get_handlers;
+            handler_funcs_t f_set_handlers;
+            handler_funcs_t f_cmd_handlers;
+
             int f_listen_timeout_ms;
 
             run_server* f_run_server;
-            std::shared_ptr< node_manager > f_node_manager;
-            std::shared_ptr< daq_control > f_daq_control;
 
         public:
             enum status
