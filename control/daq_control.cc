@@ -10,12 +10,11 @@
 #include "daq_worker.hh"
 #include "node_manager.hh"
 
-#include "thread.hh"
-
 #include "logger.hh"
 
 #include <chrono>
 #include <condition_variable>
+#include <thread>
 
 using dripline::request_ptr_t;
 using dripline::hub;
