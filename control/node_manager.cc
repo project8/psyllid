@@ -37,7 +37,6 @@ namespace psyllid
             f_manager_mutex(),
             f_midge( new diptera() ),
             f_must_reset_midge( false ),
-            f_midge_mutex(),
             f_nodes(),
             f_connections()
     {
@@ -45,6 +44,11 @@ namespace psyllid
 
     node_manager::~node_manager()
     {
+        while( ! f_nodes.empty() )
+        {
+            delete f_nodes.begin()->second;
+            f_nodes.erase( f_nodes.begin() );
+        }
     }
 
     void node_manager::use_preset( const std::string& a_name )
@@ -80,38 +84,69 @@ namespace psyllid
         return;
     }
 
+    void node_manager::configure_node( const std::string& a_node_name, const scarab::param_node& a_config )
+    {
+        std::unique_lock< std::mutex > t_mgr_lock( f_manager_mutex );
+        try
+        {
+            f_nodes.at( a_node_name )->configure( a_config );
+            return;
+        }
+        catch( std::out_of_range& e )
+        {
+            throw error() << "Cannot configure node; node named <" << a_node_name << "> is not present";
+        }
+    }
+
+    void node_manager::replace_node_config( const std::string& a_node_name, const scarab::param_node& a_config )
+    {
+        std::unique_lock< std::mutex > t_mgr_lock( f_manager_mutex );
+        try
+        {
+            f_nodes.at( a_node_name )->replace_config( a_config );
+            return;
+        }
+        catch( std::out_of_range& e )
+        {
+            throw error() << "Cannot replace node config; node named <" << a_node_name << "> is not present";
+        }
+    }
+
+    void node_manager::dump_node_config( const std::string& a_node_name, scarab::param_node& a_config )
+    {
+        std::unique_lock< std::mutex > t_mgr_lock( f_manager_mutex );
+        try
+        {
+            f_nodes.at( a_node_name )->dump_config( a_config );
+            return;
+        }
+        catch( std::out_of_range& e )
+        {
+            throw error() << "Cannot dump node config; node named <" << a_node_name << "> is not present";
+        }
+    }
+
     void node_manager::reset_midge()
     {
-        std::unique_lock< std::mutex > t_mdg_lock( f_midge_mutex );
         std::unique_lock< std::mutex > t_mgr_lock( f_manager_mutex );
 
         f_must_reset_midge = true;
 
         f_midge.reset( new diptera() );
 
-        scarab::factory< midge::node >* t_node_factory = scarab::factory< midge::node >::get_instance();
-
         for( nodes_t::const_iterator t_node_it = f_nodes.begin(); t_node_it != f_nodes.end(); ++t_node_it )
         {
-            string t_node_name = t_node_it->first;
-            string t_node_type = t_node_it->second;
-
-            midge::node* t_new_node = t_node_factory->create( t_node_type );
-            if( t_new_node == NULL )
-            {
-                throw error() << "Unable to create node of type <" << t_node_type << ">";
-            }
-            t_new_node->set_name( t_node_name );
+            midge::node* t_new_node = t_node_it->second->build();
 
             try
             {
                 f_midge->add( t_new_node );
-                INFO( plog, "Added node <" << t_node_name << "> of type <" << t_node_type << ">" );
+                INFO( plog, "Added node <" << t_node_it->first << ">" );
             }
             catch( midge::error& e )
             {
                 delete t_new_node;
-                throw error() << "Unable to add processor <" << t_node_name << ">: " << e.what();
+                throw error() << "Unable to add processor <" << t_node_it->first << ">: " << e.what();
             }
         }
 
@@ -149,14 +184,29 @@ namespace psyllid
 
     midge_package node_manager::get_midge() const
     {
-        if( f_midge_mutex.try_lock() ) f_midge_mutex.unlock();
+        if( f_manager_mutex.try_lock() ) f_manager_mutex.unlock();
         else
         {
             WARN( plog, "Midge is already in use; waiting for resource availability" );
         }
 
-        return midge_package( f_midge, f_midge_mutex );
+        return midge_package( f_midge, f_manager_mutex );
     }
+
+
+    void node_manager::_add_node( const std::string& a_node_type, const std::string& a_node_name )
+    {
+        f_must_reset_midge = true;
+        node_binding* t_binding = scarab::factory< node_binding >::get_instance()->create( a_node_type );
+        if( t_binding == nullptr )
+        {
+            throw error() << "Cannot find binding for node type <" << a_node_type << ">";
+        }
+        f_nodes.insert( nodes_t::value_type( a_node_name, t_binding ) );
+        return;
+    }
+
+
 
 
 

@@ -5,6 +5,7 @@
 set( headers
     daq_control.hh
     daq_worker.hh
+    node_binding.hh
     node_config_preset.hh
     node_manager.hh
     persistent_store.hh
@@ -16,6 +17,7 @@ set( headers
 set( sources
     daq_control.cc
     daq_worker.cc
+    node_binding.cc
     node_config_preset.cc
     node_manager.cc
     persistent_store.cc

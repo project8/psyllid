@@ -9,6 +9,7 @@
 #define PSYLLID_NODE_MANAGER_HH_
 
 #include "locked_resource.hh"
+#include "node_binding.hh"
 
 #include "diptera.hh"
 
@@ -43,9 +44,15 @@ namespace psyllid
 
             void add_node( const std::string& a_node_type, const std::string& a_node_name );
             void remove_node( const std::string& a_node_name );
+            void clear_nodes();
+
+            void configure_node( const std::string& a_node_name, const scarab::param_node& a_config );
+            void replace_node_config( const std::string& a_node_name, const scarab::param_node& a_config );
+            void dump_node_config( const std::string& a_node_name, scarab::param_node& a_config );
 
             void add_connection( const std::string& a_connection );
             void remove_connection( const std::string& a_connection );
+            void clear_connections();
 
             void reset_midge(); // throws psyllid::error in the event of an error configuring midge
             bool must_reset_midge() const;
@@ -69,9 +76,8 @@ namespace psyllid
 
             midge_ptr_t f_midge;
             bool f_must_reset_midge;
-            mutable std::mutex f_midge_mutex;
 
-            typedef std::map< std::string, std::string > nodes_t;
+            typedef std::map< std::string, node_binding* > nodes_t;
             typedef std::set< std::string > connections_t;
 
             nodes_t f_nodes;
@@ -93,6 +99,14 @@ namespace psyllid
         return;
     }
 
+    inline void node_manager::clear_nodes()
+    {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
+        f_nodes.clear();
+        f_must_reset_midge = true;
+        return;
+    }
+
     inline void node_manager::add_connection( const std::string& a_connection )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
@@ -107,17 +121,17 @@ namespace psyllid
         f_connections.erase( a_connection );
     }
 
+    inline void node_manager::clear_connections()
+    {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
+        f_connections.clear();
+        return;
+    }
+
     inline bool node_manager::must_reset_midge() const
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
         return f_must_reset_midge;
-    }
-
-    inline void node_manager::_add_node( const std::string& a_node_type, const std::string& a_node_name )
-    {
-        f_must_reset_midge = true;
-        f_nodes.insert( nodes_t::value_type( a_node_name, a_node_type ) );
-        return;
     }
 
     inline void node_manager::_add_connection( const std::string& a_connection )
