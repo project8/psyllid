@@ -16,7 +16,7 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE( udp_receiver, "udp-receiver" );
+    REGISTER_NODE_AND_BUILDER( udp_receiver, "udp-receiver" );
 
     LOGGER( plog, "udp_receiver" );
 
@@ -184,5 +184,25 @@ namespace psyllid
         out_buffer< 1 >().finalize();
         return;
     }
+
+
+    udp_receiver_builder::udp_receiver_builder() :
+            _node_builder< udp_receiver >()
+    {
+    }
+
+    udp_receiver_builder::~udp_receiver_builder()
+    {
+    }
+
+    void udp_receiver_builder::apply_config( udp_receiver* a_node, const scarab::param_node& a_config )
+    {
+        a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );
+        a_node->set_freq_length( a_config.get_value( "freq-length", a_node->get_freq_length() ) );
+        a_node->set_port( a_config.get_value( "port", a_node->get_port() ) );
+        a_node->set_udp_buffer_size( a_config.get_value( "udp-buffer-size", a_node->get_udp_buffer_size() ) );
+        return;
+    }
+
 
 } /* namespace psyllid */

@@ -9,6 +9,7 @@
 #define PSYLLID_UDP_RECEIVER_HH_
 
 #include "freq_data.hh"
+#include "node_builder.hh"
 #include "time_data.hh"
 
 #include "producer.hh"
@@ -61,6 +62,16 @@ namespace psyllid
         private:
             bool f_paused;
 
+    };
+
+    class udp_receiver_builder : public _node_builder< udp_receiver >
+    {
+        public:
+            udp_receiver_builder();
+            virtual ~udp_receiver_builder();
+
+        private:
+            virtual void apply_config( udp_receiver* a_node, const scarab::param_node& a_config );
     };
 
 } /* namespace psyllid */

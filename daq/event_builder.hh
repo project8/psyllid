@@ -11,6 +11,7 @@
 #include "transformer.hh"
 
 #include "id_range_event.hh"
+#include "node_builder.hh"
 #include "trigger_flag.hh"
 
 #include <deque>
@@ -61,6 +62,18 @@ namespace psyllid
     {
         return f_pretrigger_buffer;
     }
+
+
+    class event_builder_builder : public _node_builder< event_builder >
+    {
+        public:
+            event_builder_builder();
+            virtual ~event_builder_builder();
+
+        private:
+            virtual void apply_config( event_builder* a_node, const scarab::param_node& a_config );
+    };
+
 
 } /* namespace psyllid */
 

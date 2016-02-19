@@ -23,7 +23,8 @@ namespace psyllid
 
     LOGGER( plog, "egg_writer" );
 
-    egg_writer::egg_writer()
+    egg_writer::egg_writer() :
+            f_file_size_limit_mb()
     {
     }
 
@@ -200,6 +201,23 @@ namespace psyllid
     {
         return;
     }
+
+
+    egg_writer_builder::egg_writer_builder() :
+            _node_builder< egg_writer >()
+    {
+    }
+
+    egg_writer_builder::~egg_writer_builder()
+    {
+    }
+
+    void egg_writer_builder::apply_config( egg_writer* a_node, const scarab::param_node& a_config )
+    {
+        a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
+        return;
+    }
+
 
 
 } /* namespace psyllid */

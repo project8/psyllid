@@ -11,6 +11,7 @@
 #include "transformer.hh"
 
 #include "freq_data.hh"
+#include "node_builder.hh"
 #include "trigger_flag.hh"
 
 #include "member_variables.hh"
@@ -103,6 +104,18 @@ namespace psyllid
             mv_accessible_noset( status, status );
 
     };
+
+
+    class frequency_mask_trigger_builder : public _node_builder< frequency_mask_trigger >
+    {
+        public:
+            frequency_mask_trigger_builder();
+            virtual ~frequency_mask_trigger_builder();
+
+        private:
+            virtual void apply_config( frequency_mask_trigger* a_node, const scarab::param_node& a_config );
+    };
+
 
 } /* namespace psyllid */
 

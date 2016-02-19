@@ -330,4 +330,23 @@ namespace psyllid
         return;
     }
 
+
+    event_builder_builder::event_builder_builder() :
+            _node_builder< event_builder >()
+    {
+    }
+
+    event_builder_builder::~event_builder_builder()
+    {
+    }
+
+    void event_builder_builder::apply_config( event_builder* a_node, const scarab::param_node& a_config )
+    {
+        a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
+        a_node->set_pretrigger( a_config.get_value( "pretrigger", a_node->get_pretrigger() ) );
+        a_node->set_skip_tolerance( a_config.get_value( "skip-tolerance", a_node->get_skip_tolerance() ) );
+        return;
+    }
+
+
 } /* namespace psyllid */

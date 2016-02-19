@@ -8,6 +8,7 @@
 #ifndef PSYLLID_EGG_WRITER_HH_
 #define PSYLLID_EGG_WRITER_HH_
 
+#include "node_builder.hh"
 #include "trigger_flag.hh"
 #include "time_data.hh"
 
@@ -24,6 +25,7 @@ namespace psyllid
             virtual ~egg_writer();
 
         public:
+            mv_accessible( unsigned, file_size_limit_mb );
 
         public:
             virtual void initialize();
@@ -31,6 +33,18 @@ namespace psyllid
             virtual void finalize();
 
     };
+
+
+    class egg_writer_builder : public _node_builder< egg_writer >
+    {
+        public:
+            egg_writer_builder();
+            virtual ~egg_writer_builder();
+
+        private:
+            virtual void apply_config( egg_writer* a_node, const scarab::param_node& a_config );
+    };
+
 
 } /* namespace psyllid */
 

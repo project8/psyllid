@@ -9,7 +9,7 @@
 #define PSYLLID_NODE_MANAGER_HH_
 
 #include "locked_resource.hh"
-#include "node_binding.hh"
+#include "node_builder.hh"
 
 #include "diptera.hh"
 
@@ -77,7 +77,7 @@ namespace psyllid
             midge_ptr_t f_midge;
             bool f_must_reset_midge;
 
-            typedef std::map< std::string, node_binding* > nodes_t;
+            typedef std::map< std::string, node_builder* > nodes_t;
             typedef std::set< std::string > connections_t;
 
             nodes_t f_nodes;

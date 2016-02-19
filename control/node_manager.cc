@@ -197,12 +197,13 @@ namespace psyllid
     void node_manager::_add_node( const std::string& a_node_type, const std::string& a_node_name )
     {
         f_must_reset_midge = true;
-        node_binding* t_binding = scarab::factory< node_binding >::get_instance()->create( a_node_type );
-        if( t_binding == nullptr )
+        node_builder* t_builder = scarab::factory< node_builder >::get_instance()->create( a_node_type );
+        if( t_builder == nullptr )
         {
             throw error() << "Cannot find binding for node type <" << a_node_type << ">";
         }
-        f_nodes.insert( nodes_t::value_type( a_node_name, t_binding ) );
+        t_builder->name() = a_node_name;
+        f_nodes.insert( nodes_t::value_type( a_node_name, t_builder ) );
         return;
     }
 

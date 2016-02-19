@@ -248,4 +248,35 @@ namespace psyllid
     }
 
 
+    frequency_mask_trigger_builder::frequency_mask_trigger_builder() :
+            _node_builder< frequency_mask_trigger >()
+    {
+    }
+
+    frequency_mask_trigger_builder::~frequency_mask_trigger_builder()
+    {
+    }
+
+    void frequency_mask_trigger_builder::apply_config( frequency_mask_trigger* a_node, const scarab::param_node& a_config )
+    {
+        a_node->set_n_packets_for_mask( a_config.get_value( "n-packets-for-mask", a_node->get_n_packets_for_mask() ) );
+
+        if( a_config.has( "threshold-ampl-snr" ) )
+        {
+            a_node->set_threshold_ampl_snr( a_config.get_value< double >( "threshold-ampl-snr" ) );
+        }
+        if( a_config.has( "threshold-power-snr" ) )
+        {
+            a_node->set_threshold_power_snr( a_config.get_value< double >( "threshold-power-snr" ) );
+        }
+        if( a_config.has( "threshold-db" ) )
+        {
+            a_node->set_threshold_dB( a_config.get_value< double >( "threshold-db" ) );
+        }
+
+        a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
+        return;
+    }
+
+
 } /* namespace psyllid */
