@@ -57,14 +57,20 @@ namespace psyllid
             void reset_midge(); // throws psyllid::error in the event of an error configuring midge
             bool must_reset_midge() const;
 
-            midge_package get_midge() const;
+            midge_package get_midge();
 
             std::string get_node_run_str() const;
+
+            bool is_in_use() const;
 
         public:
             bool handle_apply_preset_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
 
+            bool handle_set_node_config_value_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+
             bool handle_get_node_config_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+
+            bool handle_replace_node_config_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
 
         private:
             // not thread-safe

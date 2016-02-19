@@ -103,11 +103,13 @@ namespace psyllid
 
         // add set request handlers
         f_request_receiver->register_set_handler( "daq-preset", std::bind( &node_manager::handle_apply_preset_request, f_node_manager, _1, _2 ) );
+        f_request_receiver->register_set_handler( "node-config-value", std::bind( &node_manager::handle_set_node_config_value_request, f_node_manager, _1, _2 ) );
 
         // add cmd request handlers
         f_request_receiver->register_cmd_handler( "stop-run", std::bind( &daq_control::handle_stop_run_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "activate-daq", std::bind( &daq_control::handle_activate_daq_control, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "deactivate-daq", std::bind( &daq_control::handle_deactivate_daq_control, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_cmd_handler( "replace-node-config", std::bind( &node_manager::handle_replace_node_config_request, f_node_manager, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "stop-all", std::bind( &run_server::handle_stop_all_request, this, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1, _2 ) );
 

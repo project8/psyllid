@@ -182,14 +182,12 @@ namespace psyllid
         return t_run_str;
     }
 
-    midge_package node_manager::get_midge() const
+    midge_package node_manager::get_midge()
     {
-        if( f_manager_mutex.try_lock() ) f_manager_mutex.unlock();
-        else
+        if( f_must_reset_midge )
         {
-            WARN( plog, "Midge is already in use; waiting for resource availability" );
+            reset_midge();
         }
-
         return midge_package( f_midge, f_manager_mutex );
     }
 
@@ -207,15 +205,28 @@ namespace psyllid
         return;
     }
 
-
+    bool node_manager::is_in_use() const
+    {
+        if( f_manager_mutex.try_lock() )
+        {
+            return false;
+            f_manager_mutex.unlock();
+        }
+        else return true;
+    }
 
 
 
     bool node_manager::handle_apply_preset_request( const request_ptr_t a_request, hub::reply_package& a_reply_pkg )
     {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
+        if( ! t_lock.owns_lock() )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error_no_resp, "Node manager is busy" );
+        }
+
         const param_node& t_payload = a_request->get_payload();
-        if( ! t_payload.has( "values" ) ||
-                t_payload.is_array() )
+        if( ! t_payload.has( "values" ) || t_payload.is_array() )
         {
             return a_reply_pkg.send_reply( retcode_t::message_error_invalid_value, "Values array not present or is not an array" );
         }
@@ -223,6 +234,8 @@ namespace psyllid
 
         try
         {
+            t_lock.release();
+            f_manager_mutex.unlock();
             use_preset( t_name );
             return a_reply_pkg.send_reply( retcode_t::success, "Preset <" + t_name + " has been applied" );
         }
@@ -232,9 +245,94 @@ namespace psyllid
         }
     }
 
-    bool node_manager::handle_get_node_config_request( const request_ptr_t, hub::reply_package& a_reply_pkg )
+    bool node_manager::handle_set_node_config_value_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg )
     {
-        return a_reply_pkg.send_reply( retcode_t::message_error_invalid_method, "Get-node-config request is not yet supported" );
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
+        if( ! t_lock.owns_lock() )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error_no_resp, "Node manager is busy" );
+        }
+
+        if( a_request->parsed_rks().size() != 2 )
+        {
+            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "RKS is not formatted properly to specify a target node and configuration item" );
+        }
+
+        string t_target_node = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop();
+
+        const param_node& t_payload = a_request->get_payload();
+        if( ! t_payload.has( "values" ) || t_payload.is_array() )
+        {
+            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_value, "Values array not present or is not an array" );
+        }
+
+        param_node t_config;
+        t_config.add( a_request->parsed_rks().front(), new param_value( t_payload.array_at( "values" )->value_at( 0 ) ) );
+
+        try
+        {
+            t_lock.release();
+            f_manager_mutex.unlock();
+            configure_node( t_target_node, t_config );
+            return a_reply_pkg.send_reply( retcode_t::success, "Node <" + a_request->parsed_rks().front() + "> has been configured" );
+        }
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
+        }
+    }
+
+    bool node_manager::handle_get_node_config_request( const request_ptr_t a_request, hub::reply_package& a_reply_pkg )
+    {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
+        if( ! t_lock.owns_lock() )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error_no_resp, "Node manager is busy" );
+        }
+
+        if( a_request->parsed_rks().empty() )
+        {
+            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "No target node provided in the RKS" );
+        }
+
+        try
+        {
+            t_lock.release();
+            f_manager_mutex.unlock();
+            dump_node_config( a_request->parsed_rks().front(), a_reply_pkg.f_payload );
+            return a_reply_pkg.send_reply( retcode_t::success, "Node <" + a_request->parsed_rks().front() + "> configuration retrieved" );
+        }
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
+        }
+    }
+
+    bool node_manager::handle_replace_node_config_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg )
+    {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
+        if( ! t_lock.owns_lock() )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error_no_resp, "Node manager is busy" );
+        }
+
+        if( a_request->parsed_rks().empty() )
+        {
+            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "No target node provided in the RKS" );
+        }
+
+        try
+        {
+            t_lock.release();
+            f_manager_mutex.unlock();
+            replace_node_config( a_request->parsed_rks().front(), a_request->get_payload() );
+            return a_reply_pkg.send_reply( retcode_t::success, "Node <" + a_request->parsed_rks().front() + "> has been configured" );
+        }
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
+        }
     }
 
 
