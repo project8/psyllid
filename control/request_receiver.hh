@@ -22,7 +22,7 @@ namespace psyllid
             typedef std::function< bool( const dripline::request_ptr_t, reply_package& ) > handler_func_t;
 
         public:
-            request_receiver( run_server* a_run_server );
+            request_receiver( const scarab::param_node& a_master_config );
             virtual ~request_receiver();
 
             void set_run_handler( const handler_func_t& a_func );
@@ -53,7 +53,7 @@ namespace psyllid
 
             int f_listen_timeout_ms;
 
-            run_server* f_run_server;
+            std::unique_ptr< scarab::param_node > f_amqp_config;
 
         public:
             enum status

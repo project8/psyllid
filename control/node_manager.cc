@@ -17,6 +17,8 @@
 #include "logger.hh"
 #include "param.hh"
 
+#include <signal.h>
+
 using std::string;
 
 using scarab::param_array;
@@ -33,13 +35,33 @@ namespace psyllid
 {
     LOGGER( plog, "node_manager" );
 
-    node_manager::node_manager() :
+    node_manager::node_manager( const param_node& a_master_config ) :
             f_manager_mutex(),
             f_midge( new diptera() ),
             f_must_reset_midge( false ),
             f_nodes(),
-            f_connections()
+            f_connections(),
+            f_daq_config( new param_node() )
     {
+        // DAQ config is optional; defaults will work just fine
+        if( a_master_config.has( "daq" ) )
+        {
+            f_daq_config.reset( new param_node( *a_master_config.node_at( "daq" ) ) );
+        }
+
+        if( f_daq_config->has( "preset" ) )
+        {
+            try
+            {
+                use_preset( f_daq_config->get_value( "preset" ) );
+            }
+            catch( error& e )
+            {
+                ERROR( plog, "Unable to apply DAQ preset: " << e.what() );
+                raise( SIGINT );
+            }
+        }
+
     }
 
     node_manager::~node_manager()
@@ -245,7 +267,7 @@ namespace psyllid
         }
     }
 
-    bool node_manager::handle_set_node_config_value_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg )
+    bool node_manager::handle_set_node_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
         if( ! t_lock.owns_lock() )
@@ -253,37 +275,65 @@ namespace psyllid
             return a_reply_pkg.send_reply( retcode_t::device_error_no_resp, "Node manager is busy" );
         }
 
-        if( a_request->parsed_rks().size() != 2 )
+        if( a_request->parsed_rks().empty() )
         {
-            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "RKS is not formatted properly to specify a target node and configuration item" );
+            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "RKS does not specify the node name" );
         }
 
         string t_target_node = a_request->parsed_rks().front();
         a_request->parsed_rks().pop();
 
-        const param_node& t_payload = a_request->get_payload();
-        if( ! t_payload.has( "values" ) || t_payload.is_array() )
+        size_t t_rks_size = a_request->parsed_rks().size();
+        if( t_rks_size == 1 )
         {
-            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_value, "Values array not present or is not an array" );
-        }
+            // Replace full config for node
 
-        param_node t_config;
-        t_config.add( a_request->parsed_rks().front(), new param_value( t_payload.array_at( "values" )->value_at( 0 ) ) );
+            const param_node& t_payload = a_request->get_payload();
+            try
+            {
+                t_lock.release();
+                f_manager_mutex.unlock();
+                replace_node_config( t_target_node, t_payload );
+                return a_reply_pkg.send_reply( retcode_t::success, "Replaced config for node <" + t_target_node + ">" );
+            }
+            catch( error& e )
+            {
+                return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
+            }
+        }
+        else if( t_rks_size == 2 )
+        {
+            // Set a single configuration value
 
-        try
-        {
-            t_lock.release();
-            f_manager_mutex.unlock();
-            configure_node( t_target_node, t_config );
-            return a_reply_pkg.send_reply( retcode_t::success, "Node <" + a_request->parsed_rks().front() + "> has been configured" );
-        }
-        catch( error& e )
-        {
-            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
-        }
+            string t_config_value_name = a_request->parsed_rks().front();
+            a_request->parsed_rks().pop();
+
+            const param_node& t_payload = a_request->get_payload();
+            if( ! t_payload.has( "values" ) || t_payload.is_array() )
+            {
+                return a_reply_pkg.send_reply( retcode_t::message_error_invalid_value, "Values array not present or is not an array" );
+            }
+
+            param_node t_config;
+            t_config.add( a_request->parsed_rks().front(), new param_value( t_payload.array_at( "values" )->value_at( 0 ) ) );
+
+            try
+            {
+                t_lock.release();
+                f_manager_mutex.unlock();
+                configure_node( t_target_node, t_config );
+                return a_reply_pkg.send_reply( retcode_t::success, "Set config value <" + t_config_value_name + "> for node <" + t_target_node + ">" );
+                }
+            catch( error& e )
+            {
+                return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
+            }
+       }
+
+        return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "RKS is not formatted properly" );
     }
 
-    bool node_manager::handle_get_node_config_request( const request_ptr_t a_request, hub::reply_package& a_reply_pkg )
+    bool node_manager::handle_get_node_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
         if( ! t_lock.owns_lock() )
@@ -293,46 +343,61 @@ namespace psyllid
 
         if( a_request->parsed_rks().empty() )
         {
-            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "No target node provided in the RKS" );
+            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "RKS does not specify the node name" );
         }
 
-        try
-        {
-            t_lock.release();
-            f_manager_mutex.unlock();
-            dump_node_config( a_request->parsed_rks().front(), a_reply_pkg.f_payload );
-            return a_reply_pkg.send_reply( retcode_t::success, "Node <" + a_request->parsed_rks().front() + "> configuration retrieved" );
-        }
-        catch( error& e )
-        {
-            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
-        }
-    }
+        string t_target_node = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop();
 
-    bool node_manager::handle_replace_node_config_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg )
-    {
-        std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
-        if( ! t_lock.owns_lock() )
+        size_t t_rks_size = a_request->parsed_rks().size();
+        if( t_rks_size == 1 )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error_no_resp, "Node manager is busy" );
-        }
+            // Get the full config for node
 
-        if( a_request->parsed_rks().empty() )
-        {
-            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "No target node provided in the RKS" );
+            try
+            {
+                t_lock.release();
+                f_manager_mutex.unlock();
+                dump_node_config( t_target_node, a_request->get_payload() );
+                return a_reply_pkg.send_reply( retcode_t::success, "Retrieved config for node <" + t_target_node + ">" );
+            }
+            catch( error& e )
+            {
+                return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
+            }
         }
+        else if( t_rks_size == 2 )
+        {
+            // Get a single configuration value
 
-        try
-        {
-            t_lock.release();
-            f_manager_mutex.unlock();
-            replace_node_config( a_request->parsed_rks().front(), a_request->get_payload() );
-            return a_reply_pkg.send_reply( retcode_t::success, "Node <" + a_request->parsed_rks().front() + "> has been configured" );
-        }
-        catch( error& e )
-        {
-            return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
-        }
+            string t_config_value_name = a_request->parsed_rks().front();
+            a_request->parsed_rks().pop();
+
+            try
+            {
+                param_node t_node_config;
+                t_lock.release();
+                f_manager_mutex.unlock();
+                dump_node_config( t_target_node, t_node_config );
+
+                if( ! t_node_config.has( t_config_value_name ) )
+                {
+                    return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "Did not find config value <" + t_config_value_name + "> in node <" + t_target_node + ">" );
+                }
+
+                param_array* t_values_array = new param_array();
+                t_values_array->assign( 0, *t_node_config.value_at( t_config_value_name ) );
+                a_request->get_payload().add( "values", t_values_array );
+
+                return a_reply_pkg.send_reply( retcode_t::success, "Set config value <" + t_config_value_name + "> for node <" + t_target_node + ">" );
+            }
+            catch( error& e )
+            {
+                return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, e.what() );
+            }
+       }
+
+        return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "RKS is not formatted properly" );
     }
 
 

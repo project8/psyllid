@@ -43,7 +43,7 @@ namespace psyllid
             };
 
         public:
-            daq_control( std::shared_ptr< node_manager > a_mgr );
+            daq_control( const scarab::param_node& a_master_config, std::shared_ptr< node_manager > a_mgr );
             virtual ~daq_control();
 
             /// Run the DAQ control thread
@@ -92,6 +92,8 @@ namespace psyllid
             std::shared_ptr< daq_worker > f_daq_worker;
             std::mutex f_worker_mutex;
             std::thread f_worker_thread;
+
+            std::unique_ptr< scarab::param_node > f_daq_config;
 
         public:
             enum class status

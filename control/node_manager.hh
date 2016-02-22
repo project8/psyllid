@@ -36,7 +36,7 @@ namespace psyllid
             typedef std::shared_ptr< midge::diptera > midge_ptr_t;
 
         public:
-            node_manager();
+            node_manager( const scarab::param_node& a_master_node );
             virtual ~node_manager();
 
             //bool configure( const scarab::param_node* a_node );
@@ -66,11 +66,9 @@ namespace psyllid
         public:
             bool handle_apply_preset_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
 
-            bool handle_set_node_config_value_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+            bool handle_set_node_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
 
-            bool handle_get_node_config_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
-
-            bool handle_replace_node_config_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+            bool handle_get_node_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
 
         private:
             // not thread-safe
@@ -88,6 +86,8 @@ namespace psyllid
 
             nodes_t f_nodes;
             connections_t f_connections;
+
+            std::unique_ptr< scarab::param_node > f_daq_config;
     };
 
     inline void node_manager::add_node( const std::string& a_node_type, const std::string& a_node_name )

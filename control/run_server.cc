@@ -67,30 +67,26 @@ namespace psyllid
 
         std::unique_lock< std::mutex > t_lock( f_component_mutex );
 
-        // node manager
-        DEBUG( plog, "Creating node manager" );
-        f_node_manager.reset( new node_manager() );
-        if( t_daq_node->has( "preset" ) && ! t_daq_node->get_value( "preset" ).empty() )
+        try
         {
-            try
-            {
-                f_node_manager->use_preset( t_daq_node->get_value( "preset" ) );
-            }
-            catch( error& e )
-            {
-                WARN( plog, "Unable to apply DAQ preset: " << e.what() << "\n" <<
-                        "DAQ is not configured" );
-            }
+            // node manager
+            DEBUG( plog, "Creating node manager" );
+            f_node_manager.reset( new node_manager( f_config ) );
+
+            // daq control
+            DEBUG( plog, "Creating DAQ control" );
+            f_daq_control.reset( new daq_control( f_config, f_node_manager ) );
+
+            // request receiver
+            DEBUG( plog, "Creating request receiver" );
+            f_request_receiver.reset( new request_receiver( f_config ) );
+
         }
-
-        // daq control
-        DEBUG( plog, "Creating DAQ control" );
-        std::exception_ptr t_dc_ex_ptr;
-        f_daq_control.reset( new daq_control( f_node_manager ) );
-
-        // request receiver
-        DEBUG( plog, "Creating request receiver" );
-        f_request_receiver.reset( new request_receiver( this ) );
+        catch( error& e )
+        {
+            ERROR( plog, "Exception caught while creating server objects: " << e.what() );
+            return;
+        }
 
         using namespace std::placeholders;
 
@@ -98,33 +94,27 @@ namespace psyllid
         f_request_receiver->set_run_handler( std::bind( &daq_control::handle_start_run_request, f_daq_control, _1, _2 ) );
 
         // add get request handlers
-        f_request_receiver->register_get_handler( "node-config", std::bind( &node_manager::handle_get_node_config_request, f_node_manager, _1, _2 ) );
-        f_request_receiver->register_get_handler( "server-status", std::bind( &run_server::handle_get_server_status_request, this, _1, _2 ) );
+        f_request_receiver->register_get_handler( "node", std::bind( &node_manager::handle_get_node_request, f_node_manager, _1, _2 ) );
+        //f_request_receiver->register_get_handler( "server-status", std::bind( &run_server::handle_get_server_status_request, this, _1, _2 ) );
 
         // add set request handlers
         f_request_receiver->register_set_handler( "daq-preset", std::bind( &node_manager::handle_apply_preset_request, f_node_manager, _1, _2 ) );
-        f_request_receiver->register_set_handler( "node-config-value", std::bind( &node_manager::handle_set_node_config_value_request, f_node_manager, _1, _2 ) );
+        f_request_receiver->register_set_handler( "node", std::bind( &node_manager::handle_set_node_request, f_node_manager, _1, _2 ) );
 
         // add cmd request handlers
         f_request_receiver->register_cmd_handler( "stop-run", std::bind( &daq_control::handle_stop_run_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "activate-daq", std::bind( &daq_control::handle_activate_daq_control, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "deactivate-daq", std::bind( &daq_control::handle_deactivate_daq_control, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "replace-node-config", std::bind( &node_manager::handle_replace_node_config_request, f_node_manager, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "stop-all", std::bind( &run_server::handle_stop_all_request, this, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1, _2 ) );
 
         // start threads
         INFO( plog, "Starting threads" );
+        std::exception_ptr t_dc_ex_ptr;
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get(), t_dc_ex_ptr );
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
         t_lock.unlock();
-
-        if( t_daq_node->get_value< bool >( "activate-on-startup", false ) )
-        {
-            DEBUG( plog, "Activating DAQ control at startup" );
-            f_daq_control->activate();
-        }
 
         set_status( k_running );
         INFO( plog, "Running..." );

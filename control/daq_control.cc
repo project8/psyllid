@@ -14,7 +14,10 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <future>
 #include <thread>
+
+using scarab::param_node;
 
 using dripline::request_ptr_t;
 using dripline::hub;
@@ -26,7 +29,7 @@ namespace psyllid
 {
     LOGGER( plog, "daq_control" );
 
-    daq_control::daq_control( std::shared_ptr< node_manager > a_mgr ) :
+    daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< node_manager > a_mgr ) :
             cancelable(),
             f_condition(),
             f_daq_mutex(),
@@ -34,8 +37,14 @@ namespace psyllid
             f_daq_worker(),
             f_worker_mutex(),
             f_worker_thread(),
+            f_daq_config( new param_node() ),
             f_status( status::initialized )
     {
+        // DAQ config is optional; defaults will work just fine
+        if( a_master_config.has( "daq" ) )
+        {
+            f_daq_config.reset( new param_node( *a_master_config.node_at( "daq" ) ) );
+        }
     }
 
     daq_control::~daq_control()
@@ -44,6 +53,18 @@ namespace psyllid
 
     void daq_control::execute( std::exception_ptr a_ex_ptr )
     {
+        // if we're supposed to activate on startup, we'll call activate asynchronously
+        if( f_daq_config->get_value< bool >( "activate-on-startup", false ) )
+        {
+            std::async( std::launch::async,
+                        [this]()
+                        {
+                            std::this_thread::sleep_for( std::chrono::milliseconds(250));
+                            DEBUG( plog, "Activating DAQ control at startup" );
+                            activate();
+                        } );
+        }
+
         while( ! f_canceled.load() )
         {
             status t_status = get_status();

@@ -33,6 +33,9 @@ namespace psyllid
         param_node* t_daq_node = new param_node();
         t_daq_node->add( "activate-at-startup", new param_value( true ) );
         t_daq_node->add( "preset", new param_value( "roach" ) );
+        param_node* t_monarch_node = new param_node();
+        t_monarch_node->add( "max-file-size-mb", new param_value( 1000 ) );
+        t_daq_node->add( "monarch", t_monarch_node );
         add( "daq", t_daq_node );
 
     }

@@ -1,12 +1,13 @@
 
 #include "request_receiver.hh"
 
-#include "run_server.hh"
+#include "psyllid_error.hh"
 
 #include "logger.hh"
 #include "parsable.hh"
 
 #include <cstddef>
+#include <signal.h>
 #include <sstream>
 
 using std::string;
@@ -23,7 +24,7 @@ namespace psyllid
 
     LOGGER( plog, "request_receiver" );
 
-    request_receiver::request_receiver( run_server* a_run_server) :
+    request_receiver::request_receiver( const param_node& a_master_config ) :
             hub(),
             cancelable(),
             f_run_handler(),
@@ -31,9 +32,14 @@ namespace psyllid
             f_set_handlers(),
             f_cmd_handlers(),
             f_listen_timeout_ms( 100 ),
-            f_run_server( a_run_server ),
+            f_amqp_config(),
             f_status( k_initialized )
     {
+        if( ! a_master_config.has( "amqp" ) )
+        {
+            throw error() << "No AMQP configuration present";
+        }
+        f_amqp_config.reset( new param_node( *a_master_config.node_at( "amqp" ) ) );
     }
 
     request_receiver::~request_receiver()
@@ -111,42 +117,33 @@ namespace psyllid
     {
         set_status( k_starting );
 
-        std::string t_exchange_name;
-        const param_node* t_broker_node = f_run_server->get_config().node_at( "amqp" );
-        if( t_broker_node == nullptr )
-        {
-            ERROR( plog, "No AMQP specification present" );
-            f_run_server->quit_server();
-            return;
-        }
-
         try
         {
-            if( ! dripline_setup( t_broker_node->get_value( "broker" ),
-                                  t_broker_node->get_value< unsigned >( "broker-port" ),
-                                  t_broker_node->get_value( "request-exchange" ),
-                                  t_broker_node->get_value( "queue" ),
+            if( ! dripline_setup( f_amqp_config->get_value( "broker" ),
+                                  f_amqp_config->get_value< unsigned >( "broker-port" ),
+                                  f_amqp_config->get_value( "request-exchange" ),
+                                  f_amqp_config->get_value( "queue" ),
                                   ".project8_authentications.json" ) )
             {
                 ERROR( plog, "Unable to complete dripline setup" );
-                f_run_server->quit_server();
+                raise( SIGINT );
                 return;
             }
         }
         catch( scarab::error& e )
         {
             ERROR( plog, "Invalid AMQP configuration" );
-            f_run_server->quit_server();
+            raise( SIGINT );
             return;
         }
 
-        f_listen_timeout_ms = t_broker_node->get_value< int >( "listen-timeout-ms", f_listen_timeout_ms );
+        f_listen_timeout_ms = f_amqp_config->get_value< int >( "listen-timeout-ms", f_listen_timeout_ms );
 
         // start the service
         if( ! start() )
         {
             ERROR( plog, "Unable to start the dripline service" );
-            f_run_server->quit_server();
+            raise( SIGINT );
             return;
         }
 
