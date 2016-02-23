@@ -24,6 +24,7 @@ namespace psyllid
     LOGGER( plog, "egg_writer" );
 
     egg_writer::egg_writer() :
+            control_access(),
             f_file_size_limit_mb()
     {
     }
@@ -131,7 +132,7 @@ namespace psyllid
                 {
                     DEBUG( plog, "Getting stream <" << t_stream_no << ">" );
                     t_swrap_ptr = t_monarch_ptr->get_stream( t_stream_no );
-                    t_record_ptr = t_swrap_ptr->stream().GetStreamRecord();
+                    t_record_ptr = t_swrap_ptr->get_stream_record();
                 }
 
                 uint64_t t_time_id = t_time_data->get_pkt_in_batch();
@@ -167,7 +168,7 @@ namespace psyllid
 
                     if( t_is_new_event ) DEBUG( plog, "New event" );
                     memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
-                    t_swrap_ptr->stream().WriteRecord( t_is_new_event );
+                    t_swrap_ptr->write_record( t_is_new_event );
                     t_is_new_event = false;
                 }
                 else

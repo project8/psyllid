@@ -59,12 +59,12 @@ int main( const int argc, const char** argv )
         // Stream 0
         stream_wrap_ptr t_swp0 = t_mwp->get_stream( tSingleStreamNum );
         //M3Stream* tSingleStream = tWriteTest->GetStream( tSingleStreamNum );
-        byte_type* tSSData = t_swp0->stream().GetStreamRecord()->GetData();
+        byte_type* tSSData = t_swp0->get_stream_record()->GetData();
         for( unsigned iSample = 0; iSample < tSSSamples; ++iSample )
         {
             tSSData[ iSample ] = 1;
         }
-        if( ! t_swp0->stream().WriteRecord( true ) )
+        if( ! t_swp0->write_record( true ) )
         {
             ERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
@@ -75,7 +75,7 @@ int main( const int argc, const char** argv )
         {
             tSSData[ iSample ] = 10;
         }
-        if( ! t_swp0->stream().WriteRecord( false ) )
+        if( ! t_swp0->write_record( false ) )
         {
             ERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
@@ -88,14 +88,14 @@ int main( const int argc, const char** argv )
         // Stream 1
         stream_wrap_ptr t_swp1 = t_mwp->get_stream( tDoubleStreamNum );
         //M3Stream* tDoubleStream = tWriteTest->GetStream( tDoubleStreamNum );
-        M3DataWriter< uint16_t > tDSData0( t_swp1->stream().GetChannelRecord( 0 )->GetData(), 2, sDigitizedUS );
-        M3DataWriter< uint16_t > tDSData1( t_swp1->stream().GetChannelRecord( 1 )->GetData(), 2, sDigitizedUS );
+        M3DataWriter< uint16_t > tDSData0( t_swp1->get_channel_record( 0 )->GetData(), 2, sDigitizedUS );
+        M3DataWriter< uint16_t > tDSData1( t_swp1->get_channel_record( 1 )->GetData(), 2, sDigitizedUS );
         for( unsigned iSample = 0; iSample < tDSSamples; ++iSample )
         {
             tDSData0.set_at( 1, iSample );
             tDSData1.set_at( 2, iSample );
         }
-        if( ! t_swp1->stream().WriteRecord( true ) )
+        if( ! t_swp1->write_record( true ) )
         {
             ERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
@@ -107,7 +107,7 @@ int main( const int argc, const char** argv )
             tDSData0.set_at( 1000, iSample );
             tDSData1.set_at( 2000, iSample );
         }
-        if( ! t_swp1->stream().WriteRecord( true ) )
+        if( ! t_swp1->write_record( true ) )
         {
             ERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
@@ -119,7 +119,7 @@ int main( const int argc, const char** argv )
             tDSData0.set_at( 10000, iSample );
             tDSData1.set_at( 20000, iSample );
         }
-        if( ! t_swp1->stream().WriteRecord( false ) )
+        if( ! t_swp1->write_record( false ) )
         {
             ERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
@@ -132,16 +132,16 @@ int main( const int argc, const char** argv )
         // Stream 2
         stream_wrap_ptr t_swp2 = t_mwp->get_stream( tTripleStreamNum );
         //M3Stream* tTripleStream = tWriteTest->GetStream( tTripleStreamNum );
-        byte_type* tTSData0 = t_swp2->stream().GetChannelRecord( 0 )->GetData();
-        byte_type* tTSData1 = t_swp2->stream().GetChannelRecord( 1 )->GetData();
-        byte_type* tTSData2 = t_swp2->stream().GetChannelRecord( 2 )->GetData();
+        byte_type* tTSData0 = t_swp2->get_channel_record( 0 )->GetData();
+        byte_type* tTSData1 = t_swp2->get_channel_record( 1 )->GetData();
+        byte_type* tTSData2 = t_swp2->get_channel_record( 2 )->GetData();
         for( unsigned iSample = 0; iSample < tTSSamples; ++iSample )
         {
             tTSData0[ iSample ] = 1;
             tTSData1[ iSample ] = 2;
             tTSData2[ iSample ] = 3;
         }
-        if( ! t_swp2->stream().WriteRecord( true ) )
+        if( ! t_swp2->write_record( true ) )
         {
             ERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
@@ -154,7 +154,7 @@ int main( const int argc, const char** argv )
             tTSData1[ iSample ] = 20;
             tTSData2[ iSample ] = 30;
         }
-        if( ! t_swp2->stream().WriteRecord( false ) )
+        if( ! t_swp2->write_record( false ) )
         {
             ERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
@@ -167,12 +167,12 @@ int main( const int argc, const char** argv )
         // Stream 3
         stream_wrap_ptr t_swp3 = t_mwp->get_stream( tFloatStreamNum );
         //M3Stream* tFloatStream = tWriteTest->GetStream( tFloatStreamNum );
-        M3DataWriter< float > tFlSData( t_swp3->stream().GetChannelRecord( 0 )->GetData(), 4, sAnalog );
+        M3DataWriter< float > tFlSData( t_swp3->get_channel_record( 0 )->GetData(), 4, sAnalog );
         for( unsigned iSample = 0; iSample < tFlSSamples; ++iSample )
         {
             tFlSData.set_at( 3.1415926535898, iSample );
         }
-        if( ! t_swp3->stream().WriteRecord( true ) )
+        if( ! t_swp3->write_record( true ) )
         {
             ERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
@@ -183,7 +183,7 @@ int main( const int argc, const char** argv )
         {
             tFlSData.set_at( 2.71828182846, iSample );
         }
-        if( ! t_swp3->stream().WriteRecord( true ) )
+        if( ! t_swp3->write_record( true ) )
         {
             ERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;

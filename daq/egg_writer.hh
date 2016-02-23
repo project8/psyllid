@@ -8,6 +8,7 @@
 #ifndef PSYLLID_EGG_WRITER_HH_
 #define PSYLLID_EGG_WRITER_HH_
 
+#include "../control/control_access.hh"
 #include "node_builder.hh"
 #include "trigger_flag.hh"
 #include "time_data.hh"
@@ -18,7 +19,8 @@ namespace psyllid
 {
 
     class egg_writer :
-            public midge::_consumer< egg_writer, typelist_2( time_data, trigger_flag ) >
+            public midge::_consumer< egg_writer, typelist_2( time_data, trigger_flag ) >,
+            public control_access
     {
         public:
             egg_writer();
@@ -44,7 +46,6 @@ namespace psyllid
         private:
             virtual void apply_config( egg_writer* a_node, const scarab::param_node& a_config );
     };
-
 
 } /* namespace psyllid */
 

@@ -127,12 +127,21 @@ namespace psyllid
 
             // Will throw psyllid::error if the stream object is not valid.
             // This includes the situation where the monarch stage is anything other than writing.
-            monarch3::M3Stream& stream();
+            //monarch3::M3Stream& stream();
 
-            void lock();
-            void unlock();
+            /// Get the pointer to the stream record
+            monarch3::M3Record* get_stream_record();
+            /// Get the pointer to a particular channel record
+            monarch3::M3Record* get_channel_record( unsigned a_chan_no );
 
-            void finish();
+            /// Write the record contents to the file
+            bool write_record( bool a_is_new_acq );
+
+            //void lock();
+            //void unlock();
+
+            /// Complete use of this stream; does not write the file to disk
+            //void finish();
 
         private:
             stream_wrapper( const stream_wrapper& ) = delete;

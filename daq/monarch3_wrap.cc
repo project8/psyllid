@@ -108,12 +108,31 @@ namespace psyllid
         a_orig.f_is_valid = false;
         return *this;
     }
-
+/*
     monarch3::M3Stream& stream_wrapper::stream()
     {
         if( ! f_is_valid ) throw error() << "Unable to provide the stream; the owning Monarch object must have moved beyond the writing stage";
         return *f_stream;
     }
+*/
+    monarch3::M3Record* stream_wrapper::get_stream_record()
+    {
+        return f_stream->GetStreamRecord();
+    }
+
+    /// Get the pointer to a particular channel record
+    monarch3::M3Record* stream_wrapper::get_channel_record( unsigned a_chan_no )
+    {
+        return f_stream->GetChannelRecord( a_chan_no );
+    }
+
+    /// Write the record contents to the file
+    bool stream_wrapper::write_record( bool a_is_new_acq )
+    {
+        return f_stream->WriteRecord( a_is_new_acq );
+    }
+
+
 /*
     void stream_wrapper::lock()
     {
@@ -126,14 +145,14 @@ namespace psyllid
         return;
     }
 */
-
+/*
     void stream_wrapper::finish()
     {
         f_stream = nullptr;
         f_is_valid = false;
         return;
     }
-/*
+*//*
     void stream_wrapper::monarch_stage_change( monarch_stage a_new_stage )
     {
         if( a_new_stage != monarch_stage::writing ) finish();
@@ -245,7 +264,6 @@ namespace psyllid
         {
             throw error() << "Stream number <" << a_stream_no << "> was not found";
         }
-        t_stream_it->second->finish();
         DEBUG( plog, "Finished stream <" << a_stream_no << ">" );
         f_stream_wraps.erase( t_stream_it );
 
