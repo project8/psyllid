@@ -8,6 +8,8 @@
 #ifndef PSYLLID_NODE_BUILDER_HH_
 #define PSYLLID_NODE_BUILDER_HH_
 
+#include "control_access.hh"
+
 #include "member_variables.hh"
 #include "param.hh"
 
@@ -19,7 +21,7 @@ namespace midge
 namespace psyllid
 {
 
-    class node_builder
+    class node_builder : public control_access
     {
         public:
             node_builder();
@@ -64,6 +66,12 @@ namespace psyllid
     midge::node* _node_builder< x_node_type >::build()
     {
         x_node_type* t_node = new x_node_type();
+
+        control_access* t_cont_acc = dynamic_cast< control_access* >( t_node );
+        if( t_cont_acc != nullptr )
+        {
+            t_cont_acc->set_daq_control( f_daq_control );
+        }
 
         apply_config( t_node, f_config );
         t_node->set_name( f_name );

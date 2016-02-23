@@ -16,6 +16,7 @@
 #include "hub.hh"
 
 #include <map>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <utility>
@@ -30,7 +31,9 @@ namespace psyllid
     class node_manager;
     typedef locked_resource< midge::diptera, node_manager > midge_package;
 
-    class node_manager
+    class daq_control;
+
+    class node_manager : public control_access
     {
         public:
             typedef std::shared_ptr< midge::diptera > midge_ptr_t;
@@ -38,6 +41,8 @@ namespace psyllid
         public:
             node_manager( const scarab::param_node& a_master_node );
             virtual ~node_manager();
+
+            void set_daq_control( std::shared_ptr< daq_control > a_daq_control );
 
             //bool configure( const scarab::param_node* a_node );
             void use_preset( const std::string& a_name ); // can thrown psyllid::error
@@ -87,6 +92,7 @@ namespace psyllid
             nodes_t f_nodes;
             connections_t f_connections;
 
+            std::weak_ptr< daq_control > f_daq_control;
             std::unique_ptr< scarab::param_node > f_daq_config;
     };
 

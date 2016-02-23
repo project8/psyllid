@@ -7,6 +7,7 @@
 
 #include "node_manager.hh"
 
+#include "daq_control.hh"
 #include "node_config_preset.hh"
 #include "psyllid_error.hh"
 
@@ -36,11 +37,13 @@ namespace psyllid
     LOGGER( plog, "node_manager" );
 
     node_manager::node_manager( const param_node& a_master_config ) :
+            control_access(),
             f_manager_mutex(),
             f_midge( new diptera() ),
             f_must_reset_midge( false ),
             f_nodes(),
             f_connections(),
+            f_daq_control(),
             f_daq_config( new param_node() )
     {
         // DAQ config is optional; defaults will work just fine
@@ -71,6 +74,12 @@ namespace psyllid
             delete f_nodes.begin()->second;
             f_nodes.erase( f_nodes.begin() );
         }
+    }
+
+    void node_manager::set_daq_control( std::shared_ptr< daq_control > a_daq_control )
+    {
+        f_daq_control = a_daq_control;
+        return;
     }
 
     void node_manager::use_preset( const std::string& a_name )
@@ -223,6 +232,7 @@ namespace psyllid
             throw error() << "Cannot find binding for node type <" << a_node_type << ">";
         }
         t_builder->name() = a_node_name;
+        t_builder->set_daq_control( f_daq_control.lock() );
         f_nodes.insert( nodes_t::value_type( a_node_name, t_builder ) );
         return;
     }

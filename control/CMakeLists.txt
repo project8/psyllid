@@ -3,6 +3,7 @@
 ###########
 
 set( headers
+    control_access.hh
     daq_control.hh
     daq_worker.hh
     node_builder.hh
@@ -15,6 +16,7 @@ set( headers
 )
 
 set( sources
+    control_access.cc
     daq_control.cc
     daq_worker.cc
     node_builder.cc
