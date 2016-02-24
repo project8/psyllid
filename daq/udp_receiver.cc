@@ -62,6 +62,8 @@ namespace psyllid
             ssize_t t_size_received = 0;
             while( ! f_canceled )
             {
+                t_size_received = 0;
+
                 if( f_paused )
                 {
                     if( have_instruction() && use_instruction() == midge::instruction::resume )
