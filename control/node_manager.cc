@@ -43,7 +43,6 @@ namespace psyllid
             f_must_reset_midge( false ),
             f_nodes(),
             f_connections(),
-            f_daq_control(),
             f_daq_config( new param_node() )
     {
         // DAQ config is optional; defaults will work just fine
@@ -74,12 +73,6 @@ namespace psyllid
             delete f_nodes.begin()->second;
             f_nodes.erase( f_nodes.begin() );
         }
-    }
-
-    void node_manager::set_daq_control( std::shared_ptr< daq_control > a_daq_control )
-    {
-        f_daq_control = a_daq_control;
-        return;
     }
 
     void node_manager::use_preset( const std::string& a_name )

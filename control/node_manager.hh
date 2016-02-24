@@ -42,8 +42,6 @@ namespace psyllid
             node_manager( const scarab::param_node& a_master_node );
             virtual ~node_manager();
 
-            void set_daq_control( std::shared_ptr< daq_control > a_daq_control );
-
             //bool configure( const scarab::param_node* a_node );
             void use_preset( const std::string& a_name ); // can thrown psyllid::error
 
@@ -92,7 +90,6 @@ namespace psyllid
             nodes_t f_nodes;
             connections_t f_connections;
 
-            std::weak_ptr< daq_control > f_daq_control;
             std::unique_ptr< scarab::param_node > f_daq_config;
     };
 
