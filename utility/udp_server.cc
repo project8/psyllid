@@ -18,7 +18,7 @@ namespace psyllid
 {
     int udp_server::f_last_errno = 0;
 
-    udp_server::udp_server( const int& a_port ) :
+    udp_server::udp_server( const int& a_port, unsigned a_timeout_sec ) :
             f_socket( 0 ),
             f_address( nullptr )
     {
@@ -52,6 +52,14 @@ namespace psyllid
         //int optval = 1;
         //::setsockopt( f_socket, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
 
+        // Receive timeout
+        if( a_timeout_sec > 0 )
+        {
+            struct timeval t_timeout;
+            t_timeout.tv_sec = a_timeout_sec;
+            t_timeout.tv_usec = 0;  // Not init'ing this can cause strange errors
+            ::setsockopt( f_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&t_timeout, sizeof(struct timeval) );
+        }
 
         //msg_normal( pmsg, "socket open..." );
 
@@ -85,17 +93,20 @@ namespace psyllid
         }
         f_last_errno = errno;
         ret_errno = errno;
-        if( t_recv_size == 0 && f_last_errno != EWOULDBLOCK && f_last_errno != EAGAIN )
+        if( f_last_errno == EWOULDBLOCK || f_last_errno == EAGAIN )
+        {
+            // recv timed out without anything being available to receive
+            // nothing seems to be wrong with the socket
+            return t_recv_size;
+        }
+        else if( t_recv_size == 0 )
         {
             throw midge::error() << "No message present";
         }
-        else if( t_recv_size < 0 )
+        else  // t_recv_size < 0 && f_last_errno != EWOULDBLOCK && f_last_errno != EAGAIN
         {
             throw midge::error() << "Unable to receive; error message: " << strerror( f_last_errno ) << "\n";
         }
-        // at this point t_recv_size must be 0, and errno is either EWOULDBLOCK or EAGAIN,
-        // which means that there was no data available to receive, but nothing seems to be wrong with the connection
-        return t_recv_size;
     }
 
 }

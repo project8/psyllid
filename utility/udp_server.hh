@@ -10,7 +10,7 @@ namespace psyllid
     class udp_server
     {
         public:
-            udp_server( const int& a_port );
+            udp_server( const int& a_port, unsigned a_timeout_sec = 0 );
             virtual ~udp_server();
 
             //ssize_t send( const char* a_message, size_t a_size, int flags = 0, int& ret_errno = f_last_errno );

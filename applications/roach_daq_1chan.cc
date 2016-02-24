@@ -27,6 +27,7 @@ cancelable* f_cancelable = nullptr;
 
 void cancel( int )
 {
+    INFO( plog, "Attempting to cancel" );
     if( f_cancelable != nullptr ) f_cancelable->cancel();
     return;
 }

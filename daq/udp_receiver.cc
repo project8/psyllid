@@ -25,6 +25,7 @@ namespace psyllid
             f_freq_length( 10 ),
             f_port( 23530 ),
             f_udp_buffer_size( sizeof( roach_packet ) ),
+            f_timeout_sec( 2 ),
             f_paused( false )
     {
     }
@@ -49,7 +50,7 @@ namespace psyllid
 
         try
         {
-            udp_server t_server( f_port );
+            udp_server t_server( f_port, f_timeout_sec );
 
             DEBUG( plog, "Server is listening" );
 
@@ -59,10 +60,8 @@ namespace psyllid
             out_stream< 1 >().set( stream::s_start );
 
             ssize_t t_size_received = 0;
-            while( t_size_received >= 0 )
+            while( ! f_canceled )
             {
-                if( f_canceled ) break;
-
                 if( f_paused )
                 {
                     if( have_instruction() && use_instruction() == midge::instruction::resume )
@@ -90,7 +89,11 @@ namespace psyllid
 
                 INFO( plog, "Waiting for ROACH packets" );
 
-                t_size_received = t_server.recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
+                // inner loop over packet-receive timeouts
+                while( t_size_received <= 0 && ! f_paused && ! f_canceled )
+                {
+                    t_size_received = t_server.recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
+                }
 
                 if( f_canceled ) break;
                 if( f_paused ) continue;
@@ -136,15 +139,10 @@ namespace psyllid
 
                     continue;
                 }
-                else if( t_size_received == 0 )
+                else
                 {
                     DEBUG( plog, "No message received & no error present" );
                     continue;
-                }
-                else
-                {
-                    ERROR( plog, "An error occurred while receiving a packet" );
-                    break;
                 }
             }
 
@@ -158,6 +156,7 @@ namespace psyllid
             DEBUG( plog, "Exiting output streams" );
             out_stream< 0 >().set( stream::s_exit );
             out_stream< 1 >().set( stream::s_exit );
+
             return;
         }
         catch( midge::error& e )
@@ -171,6 +170,8 @@ namespace psyllid
             DEBUG( plog, "Exiting output streams" );
             out_stream< 0 >().set( stream::s_exit );
             out_stream< 1 >().set( stream::s_exit );
+
+            return;
         }
 
         // control should not reach here

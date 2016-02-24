@@ -36,6 +36,7 @@ namespace psyllid
      - "freq-length": uint -- The size of the output frequency-data buffer
      - "port": uint -- The port number to listen on for packets
      - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed
+     - "timeout-sec": uint -- UDP socket timeout in seconds; set to 0 to have no timeout
 
      Output Streams:
      - 0: time_data
@@ -49,10 +50,11 @@ namespace psyllid
             virtual ~udp_receiver();
 
         public:
-            accessible( uint64_t, time_length );
-            accessible( uint64_t, freq_length );
-            accessible( uint64_t, port );
-            accessible( size_t, udp_buffer_size );
+            mv_accessible( uint64_t, time_length );
+            mv_accessible( uint64_t, freq_length );
+            mv_accessible( uint64_t, port );
+            mv_accessible( size_t, udp_buffer_size );
+            mv_accessible( unsigned, timeout_sec );
 
         public:
             virtual void initialize();
