@@ -9,6 +9,7 @@
 
 #include "logger.hh"
 
+#include "psyllid_constants.hh"
 #include "psyllid_error.hh"
 
 namespace psyllid
@@ -66,6 +67,7 @@ namespace psyllid
         if( ! f_header ) throw error() << "Unable to write to header; the owning Monarch object must have moved beyond the preparation stage";
         return *f_header;
     }
+
 /*
     void header_wrapper::monarch_stage_change( monarch_stage a_new_stage )
     {
@@ -168,6 +170,7 @@ namespace psyllid
         f_header_wrap(),
         f_header_mutex(),
         f_stream_wraps(),
+        f_run_start_time( std::chrono::steady_clock::now() ),
         f_stage( monarch_stage::initialized )
     {
         std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
@@ -179,6 +182,22 @@ namespace psyllid
         {
             throw error() << "Unable to open the file <" << a_filename << "\n" <<
                     "Reason: " << e.what();
+        }
+
+        t_monarch_lock.unlock();
+        t_monarch_lock.release();
+
+        try
+        {
+            time_t t_raw_time = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() );
+            struct tm* t_processed_time = gmtime( &t_raw_time );
+            char t_timestamp[512];
+            strftime(t_timestamp, 512, date_time_format, t_processed_time );
+            get_header()->header().SetTimestamp( t_timestamp );
+        }
+        catch( error& e )
+        {
+            throw;
         }
     }
 

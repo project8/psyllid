@@ -96,6 +96,11 @@ namespace psyllid
             std::unique_ptr< scarab::param_node > f_daq_config;
 
         public:
+            mv_referrable( std::string, run_filename );
+            mv_referrable( std::string, run_description );
+            mv_accessible( unsigned, run_duration );
+
+        public:
             enum class status
             {
                 initialized,

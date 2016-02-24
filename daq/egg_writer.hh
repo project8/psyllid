@@ -28,6 +28,8 @@ namespace psyllid
 
         public:
             mv_accessible( unsigned, file_size_limit_mb );
+            mv_referrable( std::string, filename ); /// used if f_daq_control is not set
+            mv_referrable( std::string, description ); /// used if f_daq_control is not set
 
         public:
             virtual void initialize();

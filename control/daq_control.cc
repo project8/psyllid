@@ -38,6 +38,9 @@ namespace psyllid
             f_worker_mutex(),
             f_worker_thread(),
             f_daq_config( new param_node() ),
+            f_run_filename( "default_filename_dc.egg" ),
+            f_run_description( "default_description" ),
+            f_run_duration( 1000 ),
             f_status( status::initialized )
     {
         // DAQ config is optional; defaults will work just fine

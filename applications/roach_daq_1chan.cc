@@ -5,11 +5,12 @@
  *      Author: nsoblath
  */
 
-#include "diptera.hh"
 #include "egg_writer.hh"
 #include "event_builder.hh"
 #include "frequency_mask_trigger.hh"
 #include "udp_receiver.hh"
+
+#include "diptera.hh"
 
 #include "logger.hh"
 

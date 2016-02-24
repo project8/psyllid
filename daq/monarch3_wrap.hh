@@ -27,6 +27,7 @@
 
 #include "M3Monarch.hh"
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -52,6 +53,8 @@ namespace psyllid
     class stream_wrapper;
     typedef std::shared_ptr< stream_wrapper > stream_wrap_ptr;
 
+    typedef std::chrono::time_point< std::chrono::steady_clock, std::chrono::nanoseconds > monarch_time_point_t;
+
     class monarch_wrapper
     {
         public:
@@ -65,6 +68,8 @@ namespace psyllid
 
             void finish_stream( unsigned a_stream_no, bool a_finish_if_streams_done = false );
             void finish_file();
+
+            monarch_time_point_t get_run_start_time() const;
 
             void set_stage( monarch_stage a_stage );
 
@@ -81,6 +86,8 @@ namespace psyllid
             mutable std::mutex f_header_mutex;
 
             std::map< unsigned, stream_wrap_ptr > f_stream_wraps;
+
+            monarch_time_point_t f_run_start_time;
 
             monarch_stage f_stage;
 
@@ -156,6 +163,11 @@ namespace psyllid
             //std::mutex f_stream_mutex;
             //std::unique_lock< std::mutex > f_lock;
     };
+
+    inline monarch_time_point_t monarch_wrapper::get_run_start_time() const
+    {
+        return f_run_start_time;
+    }
 
     inline bool stream_wrapper::is_valid() const
     {

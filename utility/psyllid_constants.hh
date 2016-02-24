@@ -15,4 +15,10 @@
 #define RETURN_CANCELED -2
 #define RETURN_REVOKED -3
 
+namespace psyllid
+{
+    // Combined date & time, according to the ISO 8601 standard: e.g. 2015-01-31T22:35:58Z
+    char date_time_format[] = "%Y-%m-%dT%H:%M:%SZ";
+}
+
 #endif /* PSYLLID_CONSTANTS_HH_ */

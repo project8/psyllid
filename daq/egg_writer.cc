@@ -8,6 +8,7 @@
 #include "egg_writer.hh"
 
 #include "butterfly_house.hh"
+#include "daq_control.hh"
 #include "psyllid_error.hh"
 
 #include "logger.hh"
@@ -25,7 +26,9 @@ namespace psyllid
 
     egg_writer::egg_writer() :
             control_access(),
-            f_file_size_limit_mb()
+            f_file_size_limit_mb(),
+            f_filename( "default_filename_ew.egg" ),
+            f_description( "A very nice run" )
     {
     }
 
@@ -47,13 +50,14 @@ namespace psyllid
         time_data* t_time_data = nullptr;
 
         butterfly_house* t_bf_house = butterfly_house::get_instance();
-        string t_filename( "psyllid_default_filename.egg" );
         monarch_wrap_ptr t_monarch_ptr;
         stream_wrap_ptr t_swrap_ptr;
         monarch3::M3Record* t_record_ptr;
 
         uint64_t t_bytes_per_record = PAYLOAD_SIZE;
         unsigned t_stream_no = 0;
+        monarch_time_point_t t_run_start_time;
+
         bool t_is_new_event = true;
         //bool t_was_triggered = false;
 
@@ -93,21 +97,31 @@ namespace psyllid
             {
                 DEBUG( plog, "Preparing egg file" );
 
-                //TODO: prepare egg file
-                t_filename = "test_file.egg";
                 try
                 {
-                    t_monarch_ptr = t_bf_house->declare_file( t_filename );
+                    unsigned t_run_duration = 0;
+                    if( ! f_daq_control.expired() )
+                    {
+                        std::shared_ptr< daq_control > t_daq_control = f_daq_control.lock();
+                        f_filename = t_daq_control->run_filename();
+                        f_description = t_daq_control->run_description();
+                        t_run_duration = t_daq_control->get_run_duration();
+                    }
 
+                    t_monarch_ptr = t_bf_house->declare_file( f_filename );
+
+                    // *** Start general run setup
+                    // TODO: This should be made conditional on something so that it's only done once
                     header_wrap_ptr t_hwrap_ptr = t_monarch_ptr->get_header();
-                    // to set:
-                    //   run duration
-                    //   timestamp
-                    //   description
+                    t_hwrap_ptr->header().SetDescription( f_description );
+                    t_hwrap_ptr->header().SetRunDuration( t_run_duration );
+                    // *** End general run setup
+
 
                     vector< unsigned > t_chan_vec;
                     t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2", 100, PAYLOAD_SIZE / 2, 2, 1, monarch3::sDigitizedUS, 8, monarch3::sBitsAlignedLeft, &t_chan_vec );
 
+                    // TODO: this should only be done here for the channels added by this stream
                     unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
                     for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
                     {
@@ -117,10 +131,12 @@ namespace psyllid
                         ++i_chan_psyllid;
                     }
 
+                    t_run_start_time = t_monarch_ptr->get_run_start_time();
+
                 }
                 catch( error& e )
                 {
-                    throw midge::error() << "Unable to prepare the egg file <" << t_filename << ">: " << e.what();
+                    throw midge::error() << "Unable to prepare the egg file <" << f_filename << ">: " << e.what();
                 }
 
                 continue;
@@ -167,6 +183,8 @@ namespace psyllid
                     DEBUG( plog, "Triggered packet, id <" << t_trig_data->get_id() << ">" );
 
                     if( t_is_new_event ) DEBUG( plog, "New event" );
+                    t_record_ptr->SetRecordId( t_time_data->get_pkt_in_batch() );
+                    t_record_ptr->SetTime( std::chrono::nanoseconds( std::chrono::steady_clock::now() - t_run_start_time ).count() );
                     memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
                     t_swrap_ptr->write_record( t_is_new_event );
                     t_is_new_event = false;
