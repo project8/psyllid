@@ -89,9 +89,11 @@ func main() {
 	}
 
 	// fill the payload
-	for i := 0; i < int(PayloadSize); i++ {
+	for i := 0; i < int(PayloadSize / 2); i+=2 {
 		timePkt.payload[i] = int8(256.0 * math.Sin( float64(i) * math.Pi / 16.0 ))
+		timePkt.payload[i+1] = int8(5)
 		freqPkt.payload[i] = int8(1)
+		freqPkt.payload[i+1] = int8(1)
 	}
 
 	var packetCounter uint32 = 0
