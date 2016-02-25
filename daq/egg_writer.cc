@@ -109,26 +109,25 @@ namespace psyllid
                     }
 
                     t_monarch_ptr = t_bf_house->declare_file( f_filename );
-
-                    // *** Start general run setup
-                    // TODO: This should be made conditional on something so that it's only done once
                     header_wrap_ptr t_hwrap_ptr = t_monarch_ptr->get_header();
-                    t_hwrap_ptr->header().SetDescription( f_description );
-                    t_hwrap_ptr->header().SetRunDuration( t_run_duration );
-                    // *** End general run setup
 
+                    if( ! t_hwrap_ptr->global_setup_done() )
+                    {
+                        t_hwrap_ptr->header().SetDescription( f_description );
+                        t_hwrap_ptr->header().SetRunDuration( t_run_duration );
+                        t_hwrap_ptr->global_setup_done( true );
+                    }
 
                     vector< unsigned > t_chan_vec;
                     t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2", 100, PAYLOAD_SIZE / 2, 2, 1, monarch3::sDigitizedUS, 8, monarch3::sBitsAlignedLeft, &t_chan_vec );
 
-                    // TODO: this should only be done here for the channels added by this stream
-                    unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
+                    //unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
                     for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
                     {
                         t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( 0. );
                         t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( 0.5 );
                         t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( 1. );
-                        ++i_chan_psyllid;
+                        //++i_chan_psyllid;
                     }
 
                     t_run_start_time = t_monarch_ptr->get_run_start_time();

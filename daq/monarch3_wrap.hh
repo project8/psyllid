@@ -108,6 +108,9 @@ namespace psyllid
             // Will throw psyllid::error if the header object is not valid.
             monarch3::M3Header& header();
 
+            bool global_setup_done() const;
+            void global_setup_done( bool a_flag );
+
         private:
             header_wrapper( const header_wrapper& ) = delete;
             header_wrapper& operator=( const header_wrapper& ) = delete;
@@ -118,6 +121,8 @@ namespace psyllid
 
             monarch3::M3Header* f_header;
             std::unique_lock< std::mutex > f_lock;
+
+            bool f_global_setup_done;
     };
 
 
@@ -168,6 +173,18 @@ namespace psyllid
     {
         return f_run_start_time;
     }
+
+    inline bool header_wrapper::global_setup_done() const
+    {
+        return f_global_setup_done;
+    }
+
+    inline void header_wrapper::global_setup_done( bool a_flag )
+    {
+        f_global_setup_done = a_flag;
+        return;
+    }
+
 
     inline bool stream_wrapper::is_valid() const
     {

@@ -33,7 +33,8 @@ namespace psyllid
 
     header_wrapper::header_wrapper( monarch3::Monarch3& a_monarch, std::mutex& a_mutex ) :
         f_header( a_monarch.GetHeader() ),
-        f_lock( a_mutex )
+        f_lock( a_mutex ),
+        f_global_setup_done( false )
     {
         if( ! f_header )
         {
@@ -43,9 +44,11 @@ namespace psyllid
 
     header_wrapper::header_wrapper( header_wrapper&& a_orig ) :
             f_header( a_orig.f_header ),
-            f_lock( *a_orig.f_lock.release() )
+            f_lock( *a_orig.f_lock.release() ),
+            f_global_setup_done( a_orig.f_global_setup_done )
     {
         a_orig.f_header = nullptr;
+        a_orig.f_global_setup_done = false;
     }
 
     header_wrapper::~header_wrapper()
@@ -59,6 +62,8 @@ namespace psyllid
         a_orig.f_header = nullptr;
         f_lock.release();
         f_lock.swap( a_orig.f_lock );
+        f_global_setup_done = a_orig.f_global_setup_done;
+        a_orig.f_global_setup_done = false;
         return *this;
     }
 
