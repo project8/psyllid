@@ -188,22 +188,6 @@ namespace psyllid
             throw error() << "Unable to open the file <" << a_filename << "\n" <<
                     "Reason: " << e.what();
         }
-
-        t_monarch_lock.unlock();
-        t_monarch_lock.release();
-
-        try
-        {
-            time_t t_raw_time = std::chrono::system_clock::to_time_t( std::chrono::system_clock::now() );
-            struct tm* t_processed_time = gmtime( &t_raw_time );
-            char t_timestamp[512];
-            strftime(t_timestamp, 512, date_time_format, t_processed_time );
-            get_header()->header().SetTimestamp( t_timestamp );
-        }
-        catch( error& e )
-        {
-            throw;
-        }
     }
 
     monarch_wrapper::~monarch_wrapper()

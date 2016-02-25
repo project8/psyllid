@@ -8,7 +8,7 @@
 #ifndef PSYLLID_EGG_WRITER_HH_
 #define PSYLLID_EGG_WRITER_HH_
 
-#include "../control/control_access.hh"
+#include "control_access.hh"
 #include "node_builder.hh"
 #include "trigger_flag.hh"
 #include "time_data.hh"

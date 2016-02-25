@@ -55,14 +55,31 @@ namespace psyllid
 
         public:
             uint32_t get_unix_time() const;
+            void set_unix_time( uint32_t a_time );
+
             uint32_t get_pkt_in_batch() const;
+            void set_pkt_in_batch( uint32_t a_pkt );
+
             uint32_t get_digital_id() const;
+            void set_digital_id( uint32_t );
+
             uint32_t get_if_id() const;
+            void set_if_id( uint32_t );
+
             uint32_t get_user_data_1() const;
+            void set_user_data_1( uint32_t a_data );
+
             uint32_t get_user_data_0() const;
+            void set_user_data_0( uint32_t a_data );
+
             uint64_t get_reserved_0() const;
+            void set_reserved_0( uint64_t a_res );
+
             uint64_t get_reserved_1() const;
+            void set_reserved_1( uint64_t a_res );
+
             bool get_freq_not_time() const;
+            void set_freq_not_time( bool a_flag );
 
             const int8_t* get_raw_array() const;
             size_t get_raw_array_size() const;
@@ -81,9 +98,21 @@ namespace psyllid
         return f_packet.f_unix_time;
     }
 
+    inline void roach_packet_data::set_unix_time( uint32_t a_time )
+    {
+        f_packet.f_unix_time = a_time;
+        return;
+    }
+
     inline uint32_t roach_packet_data::get_pkt_in_batch() const
     {
         return f_packet.f_pkt_in_batch;
+    }
+
+    inline void roach_packet_data::set_pkt_in_batch( uint32_t a_pkt )
+    {
+        f_packet.f_pkt_in_batch = a_pkt;
+        return;
     }
 
     inline uint32_t roach_packet_data::get_digital_id() const
@@ -91,9 +120,21 @@ namespace psyllid
         return f_packet.f_digital_id;
     }
 
+    inline void roach_packet_data::set_digital_id( uint32_t a_id )
+    {
+        f_packet.f_digital_id = a_id;
+        return;
+    }
+
     inline uint32_t roach_packet_data::get_if_id() const
     {
         return f_packet.f_if_id;
+    }
+
+    inline void roach_packet_data::set_if_id( uint32_t a_id )
+    {
+        f_packet.f_if_id = a_id;
+        return;
     }
 
     inline uint32_t roach_packet_data::get_user_data_1() const
@@ -101,9 +142,21 @@ namespace psyllid
         return f_packet.f_user_data_1;
     }
 
+    inline void roach_packet_data::set_user_data_1( uint32_t a_data )
+    {
+        f_packet.f_user_data_1 = a_data;
+        return;
+    }
+
     inline uint32_t roach_packet_data::get_user_data_0() const
     {
         return f_packet.f_user_data_0;
+    }
+
+    inline void roach_packet_data::set_user_data_0( uint32_t a_data )
+    {
+        f_packet.f_user_data_0 = a_data;
+        return;
     }
 
     inline uint64_t roach_packet_data::get_reserved_0() const
@@ -111,14 +164,32 @@ namespace psyllid
         return f_packet.f_reserved_0;
     }
 
+    inline void roach_packet_data::set_reserved_0( uint64_t a_res )
+    {
+        f_packet.f_reserved_0 = a_res;
+        return;
+    }
+
     inline uint64_t roach_packet_data::get_reserved_1() const
     {
         return f_packet.f_reserved_1;
     }
 
+    inline void roach_packet_data::set_reserved_1( uint64_t a_res )
+    {
+        f_packet.f_reserved_1 = a_res;
+        return;
+    }
+
     inline bool roach_packet_data::get_freq_not_time() const
     {
         return f_packet.f_freq_not_time;
+    }
+
+    inline void roach_packet_data::set_freq_not_time( bool a_flag )
+    {
+        f_packet.f_freq_not_time = a_flag;
+        return;
     }
 
     inline const int8_t* roach_packet_data::get_raw_array() const

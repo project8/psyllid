@@ -12,6 +12,9 @@
 #include "psyllid_error.hh"
 
 #include "logger.hh"
+#include "time.hh"
+
+#include <cmath>
 
 using midge::stream;
 
@@ -54,9 +57,17 @@ namespace psyllid
         stream_wrap_ptr t_swrap_ptr;
         monarch3::M3Record* t_record_ptr;
 
-        uint64_t t_bytes_per_record = PAYLOAD_SIZE;
+        uint64_t t_bit_depth = 8;
+        uint64_t t_data_type_size = 1;
+        uint64_t t_sample_size = 2;
+        uint64_t t_rec_length = PAYLOAD_SIZE / t_sample_size;
+        uint64_t t_bytes_per_record = t_rec_length * t_sample_size * t_data_type_size;
+        uint64_t t_acq_rate = 100; // MHz
+        scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)t_acq_rate * 1.e3 );
+
         unsigned t_stream_no = 0;
         monarch_time_point_t t_run_start_time;
+        uint64_t t_first_pkt_in_run = 0;
 
         bool t_is_new_event = true;
         //bool t_was_triggered = false;
@@ -114,12 +125,21 @@ namespace psyllid
                     if( ! t_hwrap_ptr->global_setup_done() )
                     {
                         t_hwrap_ptr->header().SetDescription( f_description );
+
+                        time_t t_raw_time = t_time_data->get_unix_time();
+                        struct tm* t_processed_time = gmtime( &t_raw_time );
+                        char t_timestamp[ 512 ];
+                        strftime( t_timestamp, 512, scarab::date_time_format, t_processed_time );
+                        t_hwrap_ptr->header().SetTimestamp( t_timestamp );
+
                         t_hwrap_ptr->header().SetRunDuration( t_run_duration );
                         t_hwrap_ptr->global_setup_done( true );
                     }
 
                     vector< unsigned > t_chan_vec;
-                    t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2", 100, PAYLOAD_SIZE / 2, 2, 1, monarch3::sDigitizedUS, 8, monarch3::sBitsAlignedLeft, &t_chan_vec );
+                    t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2",
+                            t_acq_rate, t_rec_length, t_sample_size, t_data_type_size,
+                            monarch3::sDigitizedUS, t_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
 
                     //unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
                     for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
@@ -131,6 +151,7 @@ namespace psyllid
                     }
 
                     t_run_start_time = t_monarch_ptr->get_run_start_time();
+                    t_first_pkt_in_run = t_time_data->get_pkt_in_session();
 
                 }
                 catch( error& e )
@@ -150,7 +171,7 @@ namespace psyllid
                     t_record_ptr = t_swrap_ptr->get_stream_record();
                 }
 
-                uint64_t t_time_id = t_time_data->get_pkt_in_batch();
+                uint64_t t_time_id = t_time_data->get_pkt_in_session();
                 uint64_t t_trig_id = t_trig_data->get_id();
 
                 if( t_time_id != t_trig_id )
@@ -174,6 +195,7 @@ namespace psyllid
                     {
                         throw midge::error() << "Unable to match time and trigger streams";
                     }
+                    DEBUG( plog, "Mismatch resolved: time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
                 }
 
 
@@ -182,15 +204,15 @@ namespace psyllid
                     DEBUG( plog, "Triggered packet, id <" << t_trig_data->get_id() << ">" );
 
                     if( t_is_new_event ) DEBUG( plog, "New event" );
-                    t_record_ptr->SetRecordId( t_time_data->get_pkt_in_batch() );
-                    t_record_ptr->SetTime( std::chrono::nanoseconds( std::chrono::steady_clock::now() - t_run_start_time ).count() );
+                    t_record_ptr->SetRecordId( t_time_id );
+                    t_record_ptr->SetTime( t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ) );
                     memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
                     t_swrap_ptr->write_record( t_is_new_event );
                     t_is_new_event = false;
                 }
                 else
                 {
-                    DEBUG( plog, "Untriggered packet, id <" << t_trig_data->get_id() << ">" );
+                    DEBUG( plog, "Untriggered packet, id <" << t_trig_id << ">" );
                     t_is_new_event = true;
                 }
 

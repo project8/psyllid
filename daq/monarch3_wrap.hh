@@ -27,7 +27,6 @@
 
 #include "M3Monarch.hh"
 
-#include <chrono>
 #include <map>
 #include <memory>
 #include <mutex>

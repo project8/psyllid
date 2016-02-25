@@ -10,6 +10,8 @@
 
 #include "roach_packet.hh"
 
+#include "member_variables.hh"
+
 
 namespace psyllid
 {
@@ -25,6 +27,8 @@ namespace psyllid
 
             const iq_t* get_array() const;
             size_t get_array_size() const;
+
+            mv_accessible( uint64_t, pkt_in_session );
 
         private:
             iq_t* f_array;

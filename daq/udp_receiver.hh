@@ -37,6 +37,7 @@ namespace psyllid
      - "port": uint -- The port number to listen on for packets
      - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed
      - "timeout-sec": uint -- UDP socket timeout in seconds; set to 0 to have no timeout
+     - "time-sync-tol": uint -- Tolerance for time synchronization between the ROACH and the server (seconds)
 
      Output Streams:
      - 0: time_data
@@ -55,6 +56,7 @@ namespace psyllid
             mv_accessible( uint64_t, port );
             mv_accessible( size_t, udp_buffer_size );
             mv_accessible( unsigned, timeout_sec );
+            mv_accessible( unsigned, time_sync_tol );
 
         public:
             virtual void initialize();
@@ -63,6 +65,8 @@ namespace psyllid
 
         private:
             bool f_paused;
+
+            void id_match_sanity_check( uint64_t a_time_batch_pkt, uint64_t a_freq_batch_pkt, uint64_t a_time_session_pkt, uint64_t a_freq_session_pkt );
 
     };
 
