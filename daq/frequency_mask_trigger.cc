@@ -115,7 +115,7 @@ namespace psyllid
             {
                 DEBUG( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
                        "  time = " << t_freq_data->get_unix_time() <<
-                       "  id = " << t_freq_data->get_pkt_in_batch() <<
+                       "  id = " << t_freq_data->get_pkt_in_session() <<
                        "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
                        "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
                 (this->*f_exe_func)( t_freq_data, t_trigger_flag );
@@ -169,7 +169,7 @@ namespace psyllid
 
         // advance the output stream with the trigger set to false
         // since something else is presumably looking at the time stream, and it needs to stay synchronized
-        a_trigger_flag->set_id( a_freq_data->get_pkt_in_batch() );
+        a_trigger_flag->set_id( a_freq_data->get_pkt_in_session() );
         a_trigger_flag->set_flag( false );
 
         f_mask_mutex.unlock();
@@ -201,7 +201,7 @@ namespace psyllid
                         ";  mask = " << f_mask[ i_bin ] );
             }
 #endif*/
-            a_trigger_flag->set_id( a_freq_data->get_pkt_in_batch() );
+            a_trigger_flag->set_id( a_freq_data->get_pkt_in_session() );
             if( t_real*t_real + t_imag*t_imag >= f_mask[ i_bin ] )
             {
                 a_trigger_flag->set_flag( true );

@@ -61,7 +61,7 @@ namespace psyllid
             //out_stream< 0 >().set( stream::s_start );
             //out_stream< 1 >().set( stream::s_start );
             f_paused = true;
-            bool t_unpausing = false;
+            bool t_unpausing = true;
 
             uint32_t t_last_packet_time = 0;
             uint64_t t_time_session_pkt_counter = 0;
@@ -157,7 +157,7 @@ namespace psyllid
 
                         DEBUG( plog, "Frequency data received (" << t_size_received << " bytes):  chan = " << t_freq_data->get_digital_id() <<
                                "  time = " << t_freq_data->get_unix_time() <<
-                               "  id = " << t_freq_data->get_pkt_in_batch() <<
+                               "  id = " << t_freq_data->get_pkt_in_session() <<
                                "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
                                "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
                         DEBUG( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
@@ -177,7 +177,7 @@ namespace psyllid
 
                         DEBUG( plog, "Time data received (" << t_size_received << " bytes):  chan = " << t_time_data->get_digital_id() <<
                                "  time = " << t_time_data->get_unix_time() <<
-                               "  id = " << t_time_data->get_pkt_in_batch() <<
+                               "  id = " << t_time_data->get_pkt_in_session() <<
                                "  freqNotTime = " << t_time_data->get_freq_not_time() <<
                                "  bin 0 [0] = " << (unsigned)t_time_data->get_array()[ 0 ][ 0 ] );
                         DEBUG( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );

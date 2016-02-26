@@ -84,7 +84,7 @@ namespace psyllid
             {
                 throw midge::error() << "Time and event stream commands are mismatched: " <<
                         t_time_command << " (time, at stream index " << in_stream< 0 >().get_current_index() << ") vs " <<
-                        t_trig_command << " (trigger, at stream index " << in_stream< 0 >().get_current_index() << ")";
+                        t_trig_command << " (trigger, at stream index " << in_stream< 1 >().get_current_index() << ")";
             }
 
             if( t_trig_command == stream::s_stop )
@@ -182,7 +182,7 @@ namespace psyllid
                         DEBUG( plog, "Moving time stream forward" );
                         t_time_command = in_stream< 0 >().get();
                         t_time_data = in_stream< 0 >().data();
-                        t_time_id = t_time_data->get_pkt_in_batch();
+                        t_time_id = t_time_data->get_pkt_in_session();
                     }
                     while( t_time_id > t_trig_id )
                     {

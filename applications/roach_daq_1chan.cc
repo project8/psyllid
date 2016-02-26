@@ -41,7 +41,7 @@ int main()
 
         udp_receiver* t_udpr = new udp_receiver();
         t_udpr->set_name( "udpr" );
-        t_udpr->set_time_length( 100 );
+        t_udpr->set_time_length( 10 );
         t_root->add( t_udpr );
 
         frequency_mask_trigger* t_fmt = new frequency_mask_trigger();
