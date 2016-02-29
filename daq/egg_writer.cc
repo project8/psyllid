@@ -79,15 +79,29 @@ namespace psyllid
 
             t_trig_command = in_stream< 1 >().get();
             DEBUG( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
-
+/*
             if( t_time_command != t_trig_command )
             {
                 throw midge::error() << "Time and event stream commands are mismatched: " <<
                         t_time_command << " (time, at stream index " << in_stream< 0 >().get_current_index() << ") vs " <<
                         t_trig_command << " (trigger, at stream index " << in_stream< 1 >().get_current_index() << ")";
             }
+*/
+            if( t_trig_command == stream::s_exit || t_time_command == stream::s_exit )
+            {
+                DEBUG( plog, "Egg writer is exiting" );
 
-            if( t_trig_command == stream::s_stop )
+                if( t_swrap_ptr )
+                {
+                    DEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
+                    t_monarch_ptr->finish_stream( t_stream_no, true );
+                    t_swrap_ptr.reset();
+                }
+
+                break;
+            }
+
+            if( t_trig_command == stream::s_stop || t_time_command == stream::s_stop )
             {
                 DEBUG( plog, "Egg writer is stopping" );
 
@@ -219,19 +233,6 @@ namespace psyllid
                 continue;
             }
 
-            if( t_trig_command == stream::s_exit )
-            {
-                DEBUG( plog, "Egg writer is exiting" );
-
-                if( t_swrap_ptr )
-                {
-                    DEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
-                    t_monarch_ptr->finish_stream( t_stream_no, true );
-                    t_swrap_ptr.reset();
-                }
-
-                break;
-            }
         }
 
         return;
