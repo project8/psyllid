@@ -26,6 +26,7 @@ set_option( USE_CPP11 TRUE )
 
 # Midge
 pbuilder_add_submodule( Midge midge )
+midge_process_options()
 
 # Dripline
 pbuilder_add_submodule( Dripline dripline/cpp )
