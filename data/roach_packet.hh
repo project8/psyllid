@@ -9,6 +9,7 @@
 #define PSYLLID_ROACH_PACKET_HH_
 
 #include <cinttypes>
+#include <cstddef> // for size_t
 
 // number of samples in the roach_packet f_data array
 #define PAYLOAD_SIZE 8192 // 1KB

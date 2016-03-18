@@ -15,6 +15,7 @@
 #include "logger.hh"
 
 #include <memory>
+#include <signal.h>
 
 using std::unique_ptr;
 

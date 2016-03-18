@@ -55,7 +55,7 @@ namespace psyllid
         butterfly_house* t_bf_house = butterfly_house::get_instance();
         monarch_wrap_ptr t_monarch_ptr;
         stream_wrap_ptr t_swrap_ptr;
-        monarch3::M3Record* t_record_ptr;
+        monarch3::M3Record* t_record_ptr = nullptr;
 
         uint64_t t_bit_depth = 8;
         uint64_t t_data_type_size = 1;
