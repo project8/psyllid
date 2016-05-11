@@ -5,16 +5,16 @@
  *      Author: nsoblath
  */
 
-#include "../source/daq/egg_writer.hh"
+#include "egg_writer.hh"
 
+#include "daq_control.hh"
+#include "butterfly_house.hh"
 #include "psyllid_error.hh"
 
 #include "logger.hh"
 #include "time.hh"
 
 #include <cmath>
-#include "../source/control/daq_control.hh"
-#include "../source/daq/butterfly_house.hh"
 
 using midge::stream;
 
