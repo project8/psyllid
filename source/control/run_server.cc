@@ -48,7 +48,7 @@ namespace psyllid
 
     void run_server::execute()
     {
-        INFO( plog, "Creating server objects" );
+        LINFO( plog, "Creating server objects" );
 
         set_status( k_starting );
 
@@ -61,7 +61,7 @@ namespace psyllid
         const param_node* t_daq_node = f_config.node_at( "daq" );
         if( t_daq_node == nullptr )
         {
-            ERROR( plog, "No DAQ node present in the master config" );
+            LERROR( plog, "No DAQ node present in the master config" );
             return;
         }
 
@@ -70,23 +70,23 @@ namespace psyllid
         try
         {
             // node manager
-            DEBUG( plog, "Creating node manager" );
+            LDEBUG( plog, "Creating node manager" );
             f_node_manager.reset( new node_manager( f_config ) );
 
             // daq control
-            DEBUG( plog, "Creating DAQ control" );
+            LDEBUG( plog, "Creating DAQ control" );
             f_daq_control.reset( new daq_control( f_config, f_node_manager ) );
 
             f_node_manager->set_daq_control( f_daq_control );
 
             // request receiver
-            DEBUG( plog, "Creating request receiver" );
+            LDEBUG( plog, "Creating request receiver" );
             f_request_receiver.reset( new request_receiver( f_config ) );
 
         }
         catch( error& e )
         {
-            ERROR( plog, "Exception caught while creating server objects: " << e.what() );
+            LERROR( plog, "Exception caught while creating server objects: " << e.what() );
             return;
         }
 
@@ -111,7 +111,7 @@ namespace psyllid
         f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1, _2 ) );
 
         // start threads
-        INFO( plog, "Starting threads" );
+        LINFO( plog, "Starting threads" );
         std::exception_ptr t_dc_ex_ptr;
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get(), t_dc_ex_ptr );
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
@@ -119,7 +119,7 @@ namespace psyllid
         t_lock.unlock();
 
         set_status( k_running );
-        INFO( plog, "Running..." );
+        LINFO( plog, "Running..." );
 
         t_daq_control_thread.join();
         if( t_dc_ex_ptr )
@@ -130,7 +130,7 @@ namespace psyllid
             }
             catch( error& e )
             {
-                ERROR( plog, "Exception caught from DAQ control: " << e.what() );
+                LERROR( plog, "Exception caught from DAQ control: " << e.what() );
                 cancel();
             }
         }
@@ -141,7 +141,7 @@ namespace psyllid
 
         set_status( k_done );
 
-        INFO( plog, "Threads stopped" );
+        LINFO( plog, "Threads stopped" );
 
         f_return = RETURN_SUCCESS;
 
@@ -150,7 +150,7 @@ namespace psyllid
 
     void run_server::do_cancellation()
     {
-        DEBUG( plog, "Canceling run server" );
+        LDEBUG( plog, "Canceling run server" );
         f_request_receiver->cancel();
         f_daq_control->cancel();
         //f_node_manager->cancel();
@@ -159,7 +159,7 @@ namespace psyllid
 
     void run_server::quit_server()
     {
-        INFO( plog, "Shutting down the server" );
+        LINFO( plog, "Shutting down the server" );
         cancel();
         return;
     }

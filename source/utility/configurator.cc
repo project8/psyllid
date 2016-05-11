@@ -67,9 +67,9 @@ namespace psyllid
         if( readlink( "/proc/self/exe", t_exe_buf, t_bufsize ) < 0 )
 #endif
         {
-            WARN( plog, "Could not retrieve executable file name" );
+            LWARN( plog, "Could not retrieve executable file name" );
 #ifdef __APPLE__
-            WARN( plog, "Executable name buffer is too small; needs size %u\n" << t_bufsize );
+            LWARN( plog, "Executable name buffer is too small; needs size %u\n" << t_bufsize );
 #endif
         }
         f_exe_name = string( t_exe_buf );
@@ -117,11 +117,11 @@ namespace psyllid
 
         //std::cout << "removed config and json from parsed options" << std::endl;
         //cout << t_parser );
-        //DEBUG( plog, "adding command-line parser:\n" << t_parser << *f_master_config );
+        //LDEBUG( plog, "adding command-line parser:\n" << t_parser << *f_master_config );
         f_master_config->merge( t_parser );
 
         //std::cout << "fourth configuration complete" << std::endl;
-        INFO( plog, "Final configuration:\n" << *f_master_config );
+        LINFO( plog, "Final configuration:\n" << *f_master_config );
     }
 
     configurator::~configurator()

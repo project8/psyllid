@@ -59,7 +59,7 @@ namespace psyllid
             }
             catch( error& e )
             {
-                ERROR( plog, "Unable to apply DAQ preset: " << e.what() );
+                LERROR( plog, "Unable to apply DAQ preset: " << e.what() );
                 raise( SIGINT );
             }
         }
@@ -165,7 +165,7 @@ namespace psyllid
             try
             {
                 f_midge->add( t_new_node );
-                INFO( plog, "Added node <" << t_node_it->first << ">" );
+                LINFO( plog, "Added node <" << t_node_it->first << ">" );
             }
             catch( midge::error& e )
             {
@@ -186,7 +186,7 @@ namespace psyllid
                 throw error() << "Unable to join nodes: " << e.what();
             }
 
-            INFO( plog, "Node connection made:  <" << *t_conn_it << ">" );
+            LINFO( plog, "Node connection made:  <" << *t_conn_it << ">" );
         }
 
         f_must_reset_midge = false;

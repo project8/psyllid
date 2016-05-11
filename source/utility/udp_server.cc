@@ -34,7 +34,7 @@ namespace psyllid
         f_address->sin_addr.s_addr = htonl( INADDR_ANY );
         f_address->sin_port = htons( a_port );
 
-        //MTINFO( pmsg, "address prepared..." );
+        //MTLINFO( pmsg, "address prepared..." );
 
         //open socket
         f_socket = ::socket( AF_INET, SOCK_DGRAM, 0 );
@@ -70,7 +70,7 @@ namespace psyllid
             return;
         }
 
-        INFO( plog, "Ready to receive messages" );
+        LINFO( plog, "Ready to receive messages" );
 
         return;
     }

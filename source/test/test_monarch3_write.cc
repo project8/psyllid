@@ -17,7 +17,7 @@ int main( const int argc, const char** argv )
 {
     if( argc < 2 || strcmp( argv[1], "-h" ) == 0 )
     {
-        INFO( plog, "usage:\n"
+        LINFO( plog, "usage:\n"
             << "  test_monarch3_write [-h] <output egg file>\n"
             << "      -h: print this usage information" );
         return -1;
@@ -42,7 +42,7 @@ int main( const int argc, const char** argv )
         unsigned tFlSSamples = 10;
         //unsigned tFlCompSamples = 5;
 
-        INFO( plog, "Adding streams" );
+        LINFO( plog, "Adding streams" );
         unsigned tSingleStreamNum = t_hwp->header().AddStream( "1-channel device", 500, tSSSamples, 1, 1, sDigitizedUS, 8, sBitsAlignedLeft );
         unsigned tDoubleStreamNum = t_hwp->header().AddStream( "2-channel device", 2, sInterleaved, 250, tDSSamples, 1, 2, sDigitizedUS, 16, sBitsAlignedLeft );
         unsigned tTripleStreamNum = t_hwp->header().AddStream( "3-channel device", 3, sSeparate, 100, tTSSamples, 1, 1, sDigitizedUS, 8, sBitsAlignedLeft );
@@ -52,9 +52,9 @@ int main( const int argc, const char** argv )
 
         //tWriteTest->WriteHeader();
 
-        INFO( plog, "Wrote header:\n" << t_hwp->header() );
+        LINFO( plog, "Wrote header:\n" << t_hwp->header() );
 
-        INFO( plog, "Writing data" );
+        LINFO( plog, "Writing data" );
 
         // Stream 0
         stream_wrap_ptr t_swp0 = t_mwp->get_stream( tSingleStreamNum );
@@ -66,7 +66,7 @@ int main( const int argc, const char** argv )
         }
         if( ! t_swp0->write_record( true ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
             return -1;
         }
@@ -77,7 +77,7 @@ int main( const int argc, const char** argv )
         }
         if( ! t_swp0->write_record( false ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
             return -1;
         }
@@ -97,7 +97,7 @@ int main( const int argc, const char** argv )
         }
         if( ! t_swp1->write_record( true ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
             return -1;
         }
@@ -109,7 +109,7 @@ int main( const int argc, const char** argv )
         }
         if( ! t_swp1->write_record( true ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
             return -1;
         }
@@ -121,7 +121,7 @@ int main( const int argc, const char** argv )
         }
         if( ! t_swp1->write_record( false ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
             return -1;
         }
@@ -143,7 +143,7 @@ int main( const int argc, const char** argv )
         }
         if( ! t_swp2->write_record( true ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
             return -1;
         }
@@ -156,7 +156,7 @@ int main( const int argc, const char** argv )
         }
         if( ! t_swp2->write_record( false ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
             return -1;
         }
@@ -174,7 +174,7 @@ int main( const int argc, const char** argv )
         }
         if( ! t_swp3->write_record( true ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
             return -1;
         }
@@ -185,7 +185,7 @@ int main( const int argc, const char** argv )
         }
         if( ! t_swp3->write_record( true ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             //delete tWriteTest;
             return -1;
         }
@@ -218,7 +218,7 @@ int main( const int argc, const char** argv )
         }
         if( ! tFlCompStream->WriteRecord( true ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             delete tWriteTest;
             return -1;
         }
@@ -238,7 +238,7 @@ int main( const int argc, const char** argv )
         }
         if( ! tFlCompStream->WriteRecord( false ) )
         {
-            ERROR( plog, "Unable to write the record!" );
+            LERROR( plog, "Unable to write the record!" );
             delete tWriteTest;
             return -1;
         }
@@ -247,14 +247,14 @@ int main( const int argc, const char** argv )
 
         //tWriteTest->FinishWriting();
         t_mwp->finish_file();
-        INFO( plog, "File closed" );
+        LINFO( plog, "File closed" );
 
         //delete tWriteTest;
 
     }
     catch( error& e )
     {
-        ERROR( plog, "Exception thrown during write test:\n" << e.what() );
+        LERROR( plog, "Exception thrown during write test:\n" << e.what() );
     }
 
     return 0;

@@ -49,21 +49,21 @@ namespace psyllid
     void frequency_mask_trigger::set_threshold_ampl_snr( double a_ampl_snr )
     {
         f_threshold_snr = a_ampl_snr * a_ampl_snr;
-        DEBUG( plog, "Setting threshold (power via ampl) to " << f_threshold_snr );
+        LDEBUG( plog, "Setting threshold (power via ampl) to " << f_threshold_snr );
         return;
     }
 
     void frequency_mask_trigger::set_threshold_power_snr( double a_power_snr )
     {
         f_threshold_snr = a_power_snr;
-        DEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr );
+        LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr );
         return;
     }
 
     void frequency_mask_trigger::set_threshold_dB( double a_dB )
     {
         f_threshold_snr = pow( 10, a_dB / 10. );
-        DEBUG( plog, "Setting threshold (power via dB) to " << f_threshold_snr );
+        LDEBUG( plog, "Setting threshold (power via dB) to " << f_threshold_snr );
         return;
     }
 
@@ -99,21 +99,21 @@ namespace psyllid
         while( true )
         {
             t_in_command = in_stream< 0 >().get();
-            DEBUG( plog, "FMT reading stream at index " << in_stream< 0 >().get_current_index() );
+            LDEBUG( plog, "FMT reading stream at index " << in_stream< 0 >().get_current_index() );
 
             t_freq_data = in_stream< 0 >().data();
             t_trigger_flag = out_stream< 0 >().data();
 
             if( t_in_command == stream::s_start )
             {
-                DEBUG( plog, "Starting the FMT output at stream index " << out_stream< 0 >().get_current_index() );
+                LDEBUG( plog, "Starting the FMT output at stream index " << out_stream< 0 >().get_current_index() );
                 out_stream< 0 >().set( stream::s_start );
                 continue;
             }
 
             if( t_in_command == stream::s_run )
             {
-                DEBUG( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
+                LDEBUG( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
                        "  time = " << t_freq_data->get_unix_time() <<
                        "  id = " << t_freq_data->get_pkt_in_session() <<
                        "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
@@ -124,14 +124,14 @@ namespace psyllid
 
             if( t_in_command == stream::s_stop )
             {
-                DEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
+                LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
                 out_stream< 0 >().set( stream::s_stop );
                 continue;
             }
 
             if( t_in_command == stream::s_exit )
             {
-                DEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
+                LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
                 out_stream< 0 >().set( stream::s_exit );
                 break;
             }
@@ -153,14 +153,14 @@ namespace psyllid
 /*#ifndef NDEBUG
             if( i_bin < 5 )
             {
-                WARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
+                LWARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
                         ";  mask = " << f_mask[ i_bin ] );
             }
 #endif*/
         }
 
         ++f_n_summed;
-        DEBUG( plog, "Added data to frequency mask; mask now has " << f_n_summed << " packets" );
+        LDEBUG( plog, "Added data to frequency mask; mask now has " << f_n_summed << " packets" );
 
         if( f_n_summed == f_n_packets_for_mask )
         {
@@ -174,7 +174,7 @@ namespace psyllid
 
         f_mask_mutex.unlock();
 
-        DEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
+        LDEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
         out_stream< 0 >().set( stream::s_run );
         return;
     }
@@ -183,7 +183,7 @@ namespace psyllid
     {
         static unsigned s_array_size = f_mask.size();
 
-        DEBUG( plog, "Checking data against mask" );
+        LDEBUG( plog, "Checking data against mask" );
 
         f_mask_mutex.lock();
 
@@ -197,7 +197,7 @@ namespace psyllid
 /*#ifndef NDEBUG
             if( i_bin < 5 )
             {
-                WARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
+                LWARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
                         ";  mask = " << f_mask[ i_bin ] );
             }
 #endif*/
@@ -205,7 +205,7 @@ namespace psyllid
             if( t_real*t_real + t_imag*t_imag >= f_mask[ i_bin ] )
             {
                 a_trigger_flag->set_flag( true );
-                DEBUG( plog, "Data " << a_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << a_trigger_flag->get_flag() << ">" << '\n' <<
+                LDEBUG( plog, "Data " << a_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << a_trigger_flag->get_flag() << ">" << '\n' <<
                        "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << f_mask[ i_bin ] );
                 break;
             }
@@ -213,7 +213,7 @@ namespace psyllid
 
         f_mask_mutex.unlock();
 
-        DEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
+        LDEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
         out_stream< 0 >().set( stream::s_run );
         return;
     }
@@ -226,7 +226,7 @@ namespace psyllid
 
     void frequency_mask_trigger::calculate_mask()
     {
-        DEBUG( plog, "Calculating frequency mask" );
+        LDEBUG( plog, "Calculating frequency mask" );
 
         f_status = status::triggering;
         f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
@@ -237,7 +237,7 @@ namespace psyllid
 /*#ifndef NDEBUG
             if( i_bin < 5 )
             {
-                WARN( plog, "Bin " << i_bin << " -- threshold snr = " << f_threshold_snr << ";  n_summed = " << f_n_summed << ";  multiplier = " << t_multiplier <<
+                LWARN( plog, "Bin " << i_bin << " -- threshold snr = " << f_threshold_snr << ";  n_summed = " << f_n_summed << ";  multiplier = " << t_multiplier <<
                         ";  summed value = " << f_mask[ i_bin ] << ";  final mask = " << f_mask[ i_bin ] * t_multiplier );
             }
 #endif*/

@@ -23,19 +23,19 @@ int main()
 {
     try
     {
-        INFO( plog, "Creating receiver" );
+        LINFO( plog, "Creating receiver" );
 
         udp_receiver t_receiver;
 
-        INFO( plog, "Initializing receiver" );
+        LINFO( plog, "Initializing receiver" );
 
         t_receiver.initialize();
 
-        INFO( plog, "Running receiver" );
+        LINFO( plog, "Running receiver" );
 
         t_receiver.execute();
 
-        INFO( plog, "Finalizing receiver" );
+        LINFO( plog, "Finalizing receiver" );
 
         t_receiver.finalize();
 
@@ -43,7 +43,7 @@ int main()
     }
     catch( error& e )
     {
-        ERROR( plog, "Exception caught: " << e.what() );
+        LERROR( plog, "Exception caught: " << e.what() );
         return -1;
     }
 

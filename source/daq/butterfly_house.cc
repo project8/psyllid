@@ -35,7 +35,7 @@ namespace psyllid
             if( t_mwp_it == f_butterflies.end() )
             {
                 monarch_wrap_ptr t_mwp( new monarch_wrapper( a_filename ) );
-                INFO( plog, "Created egg3 file <" << a_filename << ">" );
+                LINFO( plog, "Created egg3 file <" << a_filename << ">" );
                 f_butterflies.insert( bf_value_t( a_filename, t_mwp ) );
                 return t_mwp;
             }

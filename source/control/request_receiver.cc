@@ -49,28 +49,28 @@ namespace psyllid
     void request_receiver::set_run_handler( const handler_func_t& a_func )
     {
         f_run_handler = a_func;
-        DEBUG( plog, "Set RUN handler" );
+        LDEBUG( plog, "Set RUN handler" );
         return;
     }
 
     void request_receiver::register_get_handler( const std::string& a_key, const handler_func_t& a_func )
     {
         f_get_handlers[ a_key ] = a_func;
-        DEBUG( plog, "Set GET handler for <" << a_key << ">" );
+        LDEBUG( plog, "Set GET handler for <" << a_key << ">" );
         return;
     }
 
     void request_receiver::register_set_handler( const std::string& a_key, const handler_func_t& a_func )
     {
         f_set_handlers[ a_key ] = a_func;
-        DEBUG( plog, "Set SET handler for <" << a_key << ">" );
+        LDEBUG( plog, "Set SET handler for <" << a_key << ">" );
         return;
     }
 
     void request_receiver::register_cmd_handler( const std::string& a_key, const handler_func_t& a_func )
     {
         f_cmd_handlers[ a_key ] = a_func;
-        DEBUG( plog, "Set CMD handler for <" << a_key << ">" );
+        LDEBUG( plog, "Set CMD handler for <" << a_key << ">" );
         return;
     }
 
@@ -78,11 +78,11 @@ namespace psyllid
     {
         if( f_get_handlers.erase( a_key ) == 0 )
         {
-            WARN( plog, "GET handler <" << a_key << "> was not present; nothing was removed" );
+            LWARN( plog, "GET handler <" << a_key << "> was not present; nothing was removed" );
         }
         else
         {
-            DEBUG( plog, "GET handler <" << a_key << "> was removed" );
+            LDEBUG( plog, "GET handler <" << a_key << "> was removed" );
         }
         return;
     }
@@ -91,11 +91,11 @@ namespace psyllid
     {
         if( f_set_handlers.erase( a_key ) == 0 )
         {
-            WARN( plog, "SET handler <" << a_key << "> was not present; nothing was removed" );
+            LWARN( plog, "SET handler <" << a_key << "> was not present; nothing was removed" );
         }
         else
         {
-            DEBUG( plog, "SET handler <" << a_key << "> was removed" );
+            LDEBUG( plog, "SET handler <" << a_key << "> was removed" );
         }
         return;
     }
@@ -104,11 +104,11 @@ namespace psyllid
     {
         if( f_cmd_handlers.erase( a_key ) == 0 )
         {
-            WARN( plog, "CMD handler <" << a_key << "> was not present; nothing was removed" );
+            LWARN( plog, "CMD handler <" << a_key << "> was not present; nothing was removed" );
         }
         else
         {
-            DEBUG( plog, "CMD handler <" << a_key << "> was removed" );
+            LDEBUG( plog, "CMD handler <" << a_key << "> was removed" );
         }
         return;
     }
@@ -125,14 +125,14 @@ namespace psyllid
                                   f_amqp_config->get_value( "queue" ),
                                   ".project8_authentications.json" ) )
             {
-                ERROR( plog, "Unable to complete dripline setup" );
+                LERROR( plog, "Unable to complete dripline setup" );
                 raise( SIGINT );
                 return;
             }
         }
         catch( scarab::error& e )
         {
-            ERROR( plog, "Invalid AMQP configuration" );
+            LERROR( plog, "Invalid AMQP configuration" );
             raise( SIGINT );
             return;
         }
@@ -142,12 +142,12 @@ namespace psyllid
         // start the service
         if( ! start() )
         {
-            ERROR( plog, "Unable to start the dripline service" );
+            LERROR( plog, "Unable to start the dripline service" );
             raise( SIGINT );
             return;
         }
 
-        INFO( plog, "Waiting for incoming messages" );
+        LINFO( plog, "Waiting for incoming messages" );
 
         set_status( k_listening );
 
@@ -157,12 +157,12 @@ namespace psyllid
             listen( f_listen_timeout_ms );
         }
 
-        INFO( plog, "No longer waiting for messages" );
+        LINFO( plog, "No longer waiting for messages" );
 
         stop();
 
         set_status( k_done );
-        DEBUG( plog, "Request receiver is done" );
+        LDEBUG( plog, "Request receiver is done" );
 
         return;
     }
@@ -183,7 +183,7 @@ namespace psyllid
         }
         catch( std::out_of_range& e )
         {
-            WARN( plog, "GET query type <" << t_query_type << "> was not understood (" << e.what() << ")" );
+            LWARN( plog, "GET query type <" << t_query_type << "> was not understood (" << e.what() << ")" );
             return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Unrecognized query type or no query type provided: <" + t_query_type + ">" );;
         }
     }
@@ -199,7 +199,7 @@ namespace psyllid
         }
         catch( std::out_of_range& e )
         {
-            WARN( plog, "SET request <" << t_set_type << "> not understood (" << e.what() << ")" );
+            LWARN( plog, "SET request <" << t_set_type << "> not understood (" << e.what() << ")" );
             return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Unrecognized set request type or no set request type provided: <" + t_set_type + ">" );
         }
     }
@@ -217,14 +217,14 @@ namespace psyllid
         }
         catch( std::out_of_range& e )
         {
-            WARN( plog, "CMD instruction <" << t_instruction << "> not understood (" << e.what() << ")" );
+            LWARN( plog, "CMD instruction <" << t_instruction << "> not understood (" << e.what() << ")" );
             return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Instruction <" + t_instruction + "> not understood" );;
         }
     }
 
     void request_receiver::do_cancellation()
     {
-        DEBUG( plog, "Canceling request receiver" );
+        LDEBUG( plog, "Canceling request receiver" );
         service::f_canceled.store( true );
         set_status( k_canceled );
         return;

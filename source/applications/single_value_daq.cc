@@ -61,7 +61,7 @@ int main()
     }
     catch( std::exception& e )
     {
-        ERROR( plog, "Exception caught: " << e.what() );
+        LERROR( plog, "Exception caught: " << e.what() );
     }
 
     return 0;

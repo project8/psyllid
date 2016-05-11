@@ -63,7 +63,7 @@ namespace psyllid
                         [this]()
                         {
                             std::this_thread::sleep_for( std::chrono::milliseconds(250));
-                            DEBUG( plog, "Activating DAQ control at startup" );
+                            LDEBUG( plog, "Activating DAQ control at startup" );
                             activate();
                         } );
         }
@@ -85,27 +85,27 @@ namespace psyllid
                     throw error() << "DAQ worker already exists for some unknown reason";
                 }
 
-                DEBUG( plog, "Creating new DAQ worker" );
+                LDEBUG( plog, "Creating new DAQ worker" );
                 f_daq_worker.reset( new daq_worker( ) );
 
                 std::exception_ptr t_worker_ex_ptr;
                 std::function< void() > t_notifier = [this](){ notify_run_stopped(); };
 
-                DEBUG( plog, "Starting DAQ worker" );
+                LDEBUG( plog, "Starting DAQ worker" );
                 f_worker_thread = std::thread( &daq_worker::execute, f_daq_worker.get(), f_node_manager, t_worker_ex_ptr, t_notifier );
                 set_status( status::idle );
                 t_lock.unlock();
 
-                INFO( plog, "DAQ control is now active, and in the idle state" );
+                LINFO( plog, "DAQ control is now active, and in the idle state" );
 
                 f_worker_thread.join();
 
-                INFO( plog, "DAQ control is shutting down" );
+                LINFO( plog, "DAQ control is shutting down" );
                 t_lock.lock();
 
                 if( get_status() == status::running )
                 {
-                    ERROR( plog, "DAQ worker quit while run was in progress" );
+                    LERROR( plog, "DAQ worker quit while run was in progress" );
                     set_status( status::done );
                 }
                 f_daq_worker.reset();
@@ -128,7 +128,7 @@ namespace psyllid
             }
             else if( t_status == status::done )
             {
-                INFO( plog, "Exiting DAQ control" );
+                LINFO( plog, "Exiting DAQ control" );
                 break;
             }
             else if( t_status == status::error )
@@ -142,7 +142,7 @@ namespace psyllid
 
     void daq_control::activate()
     {
-        DEBUG( plog, "Activating DAQ control" );
+        LDEBUG( plog, "Activating DAQ control" );
 
         if( f_canceled.load() )
         {
@@ -162,7 +162,7 @@ namespace psyllid
 
     void daq_control::deactivate()
     {
-        DEBUG( plog, "Deactivating DAQ" );
+        LDEBUG( plog, "Deactivating DAQ" );
 
         if( f_canceled )
         {
@@ -186,7 +186,7 @@ namespace psyllid
 
     void daq_control::start_run()
     {
-        DEBUG( plog, "Preparing for run" );
+        LDEBUG( plog, "Preparing for run" );
 
         if( f_canceled )
         {
@@ -206,7 +206,7 @@ namespace psyllid
             throw error() << "DAQ worker doesn't exist!";
         }
 
-        INFO( plog, "Starting run" );
+        LINFO( plog, "Starting run" );
         try
         {
             f_daq_worker->start_run();
@@ -222,7 +222,7 @@ namespace psyllid
 
     void daq_control::stop_run()
     {
-        INFO( plog, "Run stop requested" );
+        LINFO( plog, "Run stop requested" );
 
         if( get_status() != status::running ) return;
 
@@ -254,7 +254,7 @@ namespace psyllid
 
     void daq_control::do_cancellation()
     {
-        DEBUG( plog, "Canceling DAQ control" );
+        LDEBUG( plog, "Canceling DAQ control" );
         set_status( status::canceled );
         if( f_daq_worker )
         {

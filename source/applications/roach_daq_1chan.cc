@@ -28,7 +28,7 @@ cancelable* f_cancelable = nullptr;
 
 void cancel( int )
 {
-    INFO( plog, "Attempting to cancel" );
+    LINFO( plog, "Attempting to cancel" );
     if( f_cancelable != nullptr ) f_cancelable->cancel();
     return;
 }
@@ -79,7 +79,7 @@ int main()
     }
     catch( std::exception& e )
     {
-        ERROR( plog, "Exception caught: " << e.what() );
+        LERROR( plog, "Exception caught: " << e.what() );
     }
 
     return 0;

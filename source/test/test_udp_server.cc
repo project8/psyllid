@@ -23,7 +23,7 @@ int main()
     {
         server t_server( 23530 );
 
-        INFO( plog, "Server is listening" );
+        LINFO( plog, "Server is listening" );
 
         const size_t t_buff_size = 1024;
         char* t_data = new char[ t_buff_size ];
@@ -31,22 +31,22 @@ int main()
         ssize_t t_size_received = 0;
         while( t_size_received >= 0 )
         {
-            INFO( plog, "Waiting for a message" );
+            LINFO( plog, "Waiting for a message" );
             t_size_received = t_server.recv( t_data, t_buff_size, 0 );
             if( t_size_received > 0 )
             {
-                INFO( plog, "Message received: " << t_data );
+                LINFO( plog, "Message received: " << t_data );
             }
             else
             {
-                DEBUG( plog, "No message received & no error present" );
+                LDEBUG( plog, "No message received & no error present" );
             }
         }
 
     }
     catch( error& e )
     {
-        ERROR( plog, "Exception caught: " << e.what() );
+        LERROR( plog, "Exception caught: " << e.what() );
     }
 
 }

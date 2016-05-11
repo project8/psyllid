@@ -31,7 +31,7 @@ namespace psyllid
 
     void daq_worker::execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr, std::function< void() > a_notifier )
     {
-        DEBUG( plog, "DAQ worker is executing" );
+        LDEBUG( plog, "DAQ worker is executing" );
         try
         {
             if( a_node_mgr->must_reset_midge() ) a_node_mgr->reset_midge();
@@ -54,7 +54,7 @@ namespace psyllid
 
         try
         {
-            DEBUG( plog, "Starting midge" );
+            LDEBUG( plog, "Starting midge" );
             f_midge_pkg->run( a_node_mgr->get_node_run_str() );
         }
         catch( midge::error& e )
@@ -64,7 +64,7 @@ namespace psyllid
 
         a_notifier = nullptr;
 
-        DEBUG( plog, "DAQ worker finished" );
+        LDEBUG( plog, "DAQ worker finished" );
 
         return;
     }
@@ -93,7 +93,7 @@ namespace psyllid
 
     void daq_worker::do_cancellation()
     {
-        DEBUG( plog, "Canceling DAQ worker" );
+        LDEBUG( plog, "Canceling DAQ worker" );
         f_midge_pkg->cancel();
         return;
     }

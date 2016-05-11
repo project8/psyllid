@@ -75,10 +75,10 @@ namespace psyllid
         while( true )
         {
             t_time_command = in_stream< 0 >().get();
-            DEBUG( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
+            LDEBUG( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
             t_trig_command = in_stream< 1 >().get();
-            DEBUG( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
+            LDEBUG( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
 /*
             if( t_time_command != t_trig_command )
             {
@@ -89,11 +89,11 @@ namespace psyllid
 */
             if( t_trig_command == stream::s_exit || t_time_command == stream::s_exit )
             {
-                DEBUG( plog, "Egg writer is exiting" );
+                LDEBUG( plog, "Egg writer is exiting" );
 
                 if( t_swrap_ptr )
                 {
-                    DEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
+                    LDEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
                     t_monarch_ptr->finish_stream( t_stream_no, true );
                     t_swrap_ptr.reset();
                 }
@@ -103,11 +103,11 @@ namespace psyllid
 
             if( t_trig_command == stream::s_stop || t_time_command == stream::s_stop )
             {
-                DEBUG( plog, "Egg writer is stopping" );
+                LDEBUG( plog, "Egg writer is stopping" );
 
                 if( t_swrap_ptr )
                 {
-                    DEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
+                    LDEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
                     t_monarch_ptr->finish_stream( t_stream_no, true );
                     t_swrap_ptr.reset();
                 }
@@ -120,7 +120,7 @@ namespace psyllid
 
             if( t_trig_command == stream::s_start )
             {
-                DEBUG( plog, "Preparing egg file" );
+                LDEBUG( plog, "Preparing egg file" );
 
                 try
                 {
@@ -180,7 +180,7 @@ namespace psyllid
             {
                 if( ! t_swrap_ptr )
                 {
-                    DEBUG( plog, "Getting stream <" << t_stream_no << ">" );
+                    LDEBUG( plog, "Getting stream <" << t_stream_no << ">" );
                     t_swrap_ptr = t_monarch_ptr->get_stream( t_stream_no );
                     t_record_ptr = t_swrap_ptr->get_stream_record();
                 }
@@ -190,17 +190,17 @@ namespace psyllid
 
                 if( t_time_id != t_trig_id )
                 {
-                    DEBUG( plog, "Mismatch between time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
+                    LDEBUG( plog, "Mismatch between time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
                     while( t_time_id < t_trig_id )
                     {
-                        DEBUG( plog, "Moving time stream forward" );
+                        LDEBUG( plog, "Moving time stream forward" );
                         t_time_command = in_stream< 0 >().get();
                         t_time_data = in_stream< 0 >().data();
                         t_time_id = t_time_data->get_pkt_in_session();
                     }
                     while( t_time_id > t_trig_id )
                     {
-                        DEBUG( plog, "Moving trig stream forward" );
+                        LDEBUG( plog, "Moving trig stream forward" );
                         t_trig_command = in_stream< 1 >().get();
                         t_trig_data = in_stream< 1 >().data();
                         t_trig_id = t_trig_data->get_id();
@@ -209,15 +209,15 @@ namespace psyllid
                     {
                         throw midge::error() << "Unable to match time and trigger streams";
                     }
-                    DEBUG( plog, "Mismatch resolved: time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
+                    LDEBUG( plog, "Mismatch resolved: time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
                 }
 
 
                 if( t_trig_data->get_flag() )
                 {
-                    DEBUG( plog, "Triggered packet, id <" << t_trig_data->get_id() << ">" );
+                    LDEBUG( plog, "Triggered packet, id <" << t_trig_data->get_id() << ">" );
 
-                    if( t_is_new_event ) DEBUG( plog, "New event" );
+                    if( t_is_new_event ) LDEBUG( plog, "New event" );
                     t_record_ptr->SetRecordId( t_time_id );
                     t_record_ptr->SetTime( t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ) );
                     memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
@@ -226,7 +226,7 @@ namespace psyllid
                 }
                 else
                 {
-                    DEBUG( plog, "Untriggered packet, id <" << t_trig_id << ">" );
+                    LDEBUG( plog, "Untriggered packet, id <" << t_trig_id << ">" );
                     t_is_new_event = true;
                 }
 

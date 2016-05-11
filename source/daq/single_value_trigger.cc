@@ -47,7 +47,7 @@ namespace psyllid
 
             if( t_in_command == stream::s_start )
             {
-                DEBUG( plog, "Starting the svt output" );
+                LDEBUG( plog, "Starting the svt output" );
                 out_stream< 0 >().set( stream::s_start );
                 continue;
             }
@@ -57,7 +57,7 @@ namespace psyllid
                 t_trigger_flag->set_flag( (*t_freq_data->array())[0] >= f_threshold );
                 t_trigger_flag->set_id( t_freq_data->get_id() );
 
-                DEBUG( plog, "Data " << t_trigger_flag->get_id() << " at " << (*t_freq_data->array())[0] << " resulted in flag <" << t_trigger_flag->get_flag() << ">" );
+                LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " at " << (*t_freq_data->array())[0] << " resulted in flag <" << t_trigger_flag->get_flag() << ">" );
 
                 out_stream< 0 >().set( stream::s_run );
                 continue;

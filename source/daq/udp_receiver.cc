@@ -45,7 +45,7 @@ namespace psyllid
 
     void udp_receiver::execute()
     {
-        DEBUG( plog, "Executing the UDP receiver" );
+        LDEBUG( plog, "Executing the UDP receiver" );
 
         time_data* t_time_data = nullptr;
         freq_data* t_freq_data = nullptr;
@@ -54,7 +54,7 @@ namespace psyllid
         {
             udp_server t_server( f_port, f_timeout_sec );
 
-            DEBUG( plog, "Server is listening" );
+            LDEBUG( plog, "Server is listening" );
 
             std::unique_ptr< char[] > t_buffer_ptr( new char[ f_udp_buffer_size ] );
 
@@ -80,11 +80,11 @@ namespace psyllid
                     if( ( have_instruction() && use_instruction() == midge::instruction::resume )
                             || t_unpausing )
                     {
-                        DEBUG( plog, "UDP receiver resuming" );
+                        LDEBUG( plog, "UDP receiver resuming" );
                         t_unpausing = true;
                         if( std::abs( time( nullptr ) - t_last_packet_time ) > f_time_sync_tol )
                         {
-                            INFO( plog, "Waiting to synchronize with the client" );
+                            LINFO( plog, "Waiting to synchronize with the client" );
                         }
                         else
                         {
@@ -104,7 +104,7 @@ namespace psyllid
                 {
                     if( have_instruction() && use_instruction() == midge::instruction::pause )
                     {
-                        DEBUG( plog, "UDP receiver pausing" );
+                        LDEBUG( plog, "UDP receiver pausing" );
                         out_stream< 0 >().set( stream::s_stop );
                         out_stream< 1 >().set( stream::s_stop );
                         f_paused = true;
@@ -115,11 +115,11 @@ namespace psyllid
                         (out_stream< 1 >().get() == stream::s_stop) ||
                         (false /* some other condition for stopping */) )
                 {
-                    WARN( plog, "Output stream(s) have stop condition" );
+                    LWARN( plog, "Output stream(s) have stop condition" );
                     break;
                 }
 
-                INFO( plog, "Waiting for ROACH packets" );
+                LINFO( plog, "Waiting for ROACH packets" );
 
                 // inner loop over packet-receive timeouts
                 while( t_size_received <= 0 && ! f_canceled )
@@ -142,7 +142,7 @@ namespace psyllid
 
                     // debug purposes only
                     raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( t_buffer_ptr.get() );
-                    DEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
+                    LDEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
 
                     if( t_roach_packet->f_freq_not_time )
                     {
@@ -155,12 +155,12 @@ namespace psyllid
                         t_freq_data->set_pkt_in_session( t_freq_session_pkt_counter++ );
                         memcpy( &t_freq_data->packet(), t_roach_packet, f_udp_buffer_size );
 
-                        DEBUG( plog, "Frequency data received (" << t_size_received << " bytes):  chan = " << t_freq_data->get_digital_id() <<
+                        LDEBUG( plog, "Frequency data received (" << t_size_received << " bytes):  chan = " << t_freq_data->get_digital_id() <<
                                "  time = " << t_freq_data->get_unix_time() <<
                                "  id = " << t_freq_data->get_pkt_in_session() <<
                                "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
                                "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
-                        DEBUG( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                        LDEBUG( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
 
                         out_stream< 1 >().set( stream::s_run );
                     }
@@ -175,12 +175,12 @@ namespace psyllid
                         t_time_data->set_pkt_in_session( t_time_session_pkt_counter++ );
                         memcpy( &t_time_data->packet(), t_roach_packet, f_udp_buffer_size );
 
-                        DEBUG( plog, "Time data received (" << t_size_received << " bytes):  chan = " << t_time_data->get_digital_id() <<
+                        LDEBUG( plog, "Time data received (" << t_size_received << " bytes):  chan = " << t_time_data->get_digital_id() <<
                                "  time = " << t_time_data->get_unix_time() <<
                                "  id = " << t_time_data->get_pkt_in_session() <<
                                "  freqNotTime = " << t_time_data->get_freq_not_time() <<
                                "  bin 0 [0] = " << (unsigned)t_time_data->get_array()[ 0 ][ 0 ] );
-                        DEBUG( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                        LDEBUG( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
 
                         out_stream< 0 >().set( stream::s_run );
                     }
@@ -189,19 +189,19 @@ namespace psyllid
                 }
                 else
                 {
-                    DEBUG( plog, "No message received & no error present" );
+                    LDEBUG( plog, "No message received & no error present" );
                     continue;
                 }
             }
 
-            INFO( plog, "UDP receiver is exiting" );
+            LINFO( plog, "UDP receiver is exiting" );
 
             // normal exit condition
-            DEBUG( plog, "Stopping output streams" );
+            LDEBUG( plog, "Stopping output streams" );
             out_stream< 0 >().set( stream::s_stop );
             out_stream< 1 >().set( stream::s_stop );
 
-            DEBUG( plog, "Exiting output streams" );
+            LDEBUG( plog, "Exiting output streams" );
             out_stream< 0 >().set( stream::s_exit );
             out_stream< 1 >().set( stream::s_exit );
 
@@ -209,13 +209,13 @@ namespace psyllid
         }
         catch( midge::error& e )
         {
-            ERROR( plog, "Exception caught: " << e.what() );
+            LERROR( plog, "Exception caught: " << e.what() );
 
-            DEBUG( plog, "Stopping output streams" );
+            LDEBUG( plog, "Stopping output streams" );
             out_stream< 0 >().set( stream::s_stop );
             out_stream< 1 >().set( stream::s_stop );
 
-            DEBUG( plog, "Exiting output streams" );
+            LDEBUG( plog, "Exiting output streams" );
             out_stream< 0 >().set( stream::s_exit );
             out_stream< 1 >().set( stream::s_exit );
 
@@ -223,7 +223,7 @@ namespace psyllid
         }
 
         // control should not reach here
-        ERROR( plog, "Control should not reach this point" );
+        LERROR( plog, "Control should not reach this point" );
         return;
     }
 
@@ -240,7 +240,7 @@ namespace psyllid
         {
             if( a_time_session_pkt != a_freq_session_pkt )
             {
-                ERROR( plog, "Packet ID mismatch:\n" <<
+                LERROR( plog, "Packet ID mismatch:\n" <<
                         "\tTime batch packet: " << a_time_batch_pkt << '\n' <<
                         "\tFreq batch packet: " << a_freq_batch_pkt << '\n' <<
                         "\tTime session packet: " << a_time_session_pkt << '\n' <<

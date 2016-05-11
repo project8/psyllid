@@ -64,7 +64,7 @@ namespace psyllid
                     t_flag_data->set_id( t_id );
                     t_flag_data->set_flag( t_flags[ t_id ] );
 
-                    DEBUG( plog, "Sending: " << t_id << ", " << t_flags[t_id] );
+                    LDEBUG( plog, "Sending: " << t_id << ", " << t_flags[t_id] );
 
                     out_stream< 0 >().set( stream::s_run );
                 }
@@ -91,7 +91,7 @@ using namespace midge;
 
 int main()
 {
-    INFO( plog, "Preparing" );
+    LINFO( plog, "Preparing" );
 
     ::midge::midge* t_root = new ::midge::midge();
 
@@ -107,13 +107,13 @@ int main()
 
     t_root->join( "tp.out_0:eb.in_0" );
 
-    INFO( plog, "Expecting the following events: 1-8, 9-15, 17-19" );
+    LINFO( plog, "Expecting the following events: 1-8, 9-15, 17-19" );
 
-    INFO( plog, "Starting execution" );
+    LINFO( plog, "Starting execution" );
 
     t_root->run( "tp:eb" );
 
-    INFO( plog, "All done!" );
+    LINFO( plog, "All done!" );
 
     delete t_root;
 

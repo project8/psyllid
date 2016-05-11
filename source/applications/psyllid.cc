@@ -24,7 +24,7 @@ set_version( psyllid, version );
 
 int main( int argc, char** argv )
 {
-    INFO( plog, "Welcome to Psyllid\n\n" <<
+    LINFO( plog, "Welcome to Psyllid\n\n" <<
             "\t\t                                    _/  _/  _/        _/   \n" <<
             "\t\t     _/_/_/      _/_/_/  _/    _/  _/  _/        _/_/_/    \n" <<
             "\t\t    _/    _/  _/_/      _/    _/  _/  _/  _/  _/    _/     \n" <<
@@ -47,22 +47,22 @@ int main( int argc, char** argv )
     }
     catch( scarab::error& e )
     {
-        ERROR( plog, "configuration error: " << e.what() );
+        LERROR( plog, "configuration error: " << e.what() );
         return RETURN_ERROR;
     }
     catch( psyllid::error& e )
     {
-        ERROR( plog, "psyllid error: " << e.what() );
+        LERROR( plog, "psyllid error: " << e.what() );
         return RETURN_ERROR;
     }
     catch( std::exception& e )
     {
-        ERROR( plog, "std::exception caught: " << e.what() );
+        LERROR( plog, "std::exception caught: " << e.what() );
         return RETURN_ERROR;
     }
     catch( ... )
     {
-        ERROR( plog, "unknown excpetion caught" );
+        LERROR( plog, "unknown excpetion caught" );
         return RETURN_ERROR;
     }
 
