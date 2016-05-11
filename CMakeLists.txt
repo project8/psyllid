@@ -19,6 +19,9 @@ pbuilder_prepare_project()
 
 set_option( USE_CPP11 TRUE )
 
+# add an option to build docs
+option( Psyllid_BUILD_DOCS "Enable make targets for both doxygen and sphinx (requires Doxygen, Sphinx, and Breathe)" FALSE )
+
 
 ################
 # dependencies #
@@ -56,3 +59,8 @@ add_subdirectory( source/control )
 
 add_subdirectory( source/applications )
 add_subdirectory( source/test )
+
+if( Psyllid_BUILD_DOCS )
+    add_subdirectory( documentation )
+endif( Psyllid_BUILD_DOCS )
+
