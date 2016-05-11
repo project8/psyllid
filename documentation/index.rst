@@ -11,7 +11,8 @@ Contents:
    :glob:
    :maxdepth: 2
 
-   ServerAPI
+   Roach Packets <roach_packets>
+   Server API <server_api>
 
    from_doxygen
 
