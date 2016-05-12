@@ -89,6 +89,8 @@ namespace psyllid
             return;
         }
 
+        // tie the various request handlers of psyllid to the request receiver
+
         using namespace std::placeholders;
 
         // set the run request handler
@@ -101,6 +103,9 @@ namespace psyllid
         // add set request handlers
         f_request_receiver->register_set_handler( "daq-preset", std::bind( &node_manager::handle_apply_preset_request, f_node_manager, _1, _2 ) );
         f_request_receiver->register_set_handler( "node", std::bind( &node_manager::handle_set_node_request, f_node_manager, _1, _2 ) );
+        f_request_receiver->register_set_handler( "filename", std::bind( &daq_control::handle_set_filename_request, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_set_handler( "description", std::bind( &daq_control::handle_set_description_request, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_set_handler( "duration", std::bind( &daq_control::handle_set_duration_request, f_daq_control, _1, _2 ) );
 
         // add cmd request handlers
         f_request_receiver->register_cmd_handler( "stop-run", std::bind( &daq_control::handle_stop_run_request, f_daq_control, _1, _2 ) );

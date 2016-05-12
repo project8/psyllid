@@ -163,7 +163,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Deactivating DAQ" );
 
-        if( f_canceled )
+        if( f_canceled.load() )
         {
             throw error() << "DAQ control has been canceled";
         }
@@ -187,7 +187,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Preparing for run" );
 
-        if( f_canceled )
+        if( f_canceled.load() )
         {
             throw error() << "daq_control has been canceled";
         }
@@ -208,7 +208,7 @@ namespace psyllid
         LINFO( plog, "Starting run" );
         try
         {
-            f_daq_worker->start_run();
+            f_daq_worker->start_run( f_run_duration );
         }
         catch( error& e )
         {
@@ -311,6 +311,45 @@ namespace psyllid
         catch( run_error& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to stop run: " ) + e.what() );
+        }
+    }
+
+    bool daq_control::handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        try
+        {
+            f_run_filename =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            return a_reply_pkg.send_reply( retcode_t::success, "Filename set" );
+        }
+        catch( scarab::error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set filename: " ) + e.what() );
+        }
+    }
+
+    bool daq_control::handle_set_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        try
+        {
+            f_run_description =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+        }
+        catch( scarab::error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+        }
+    }
+
+    bool daq_control::handle_set_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        try
+        {
+            f_run_duration =  a_request->get_payload().array_at( "values" )->get_value< unsigned >( 0 );
+            return a_reply_pkg.send_reply( retcode_t::success, "Duration set" );
+        }
+        catch( scarab::error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set duration: " ) + e.what() );
         }
     }
 
