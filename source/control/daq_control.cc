@@ -20,7 +20,6 @@
 using scarab::param_node;
 
 using dripline::request_ptr_t;
-using dripline::hub;
 using dripline::retcode_t;
 
 using std::string;
@@ -263,7 +262,7 @@ namespace psyllid
         return;
     }
 
-    bool daq_control::handle_activate_daq_control( const request_ptr_t, hub::reply_package& a_reply_pkg )
+    bool daq_control::handle_activate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -276,7 +275,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_deactivate_daq_control( const request_ptr_t, hub::reply_package& a_reply_pkg )
+    bool daq_control::handle_deactivate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -289,7 +288,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_start_run_request( const request_ptr_t, hub::reply_package& a_reply_pkg )
+    bool daq_control::handle_start_run_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -302,7 +301,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_stop_run_request( const request_ptr_t, hub::reply_package& a_reply_pkg )
+    bool daq_control::handle_stop_run_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         try
         {

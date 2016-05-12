@@ -71,13 +71,13 @@ namespace psyllid
             void stop_run();
 
         public:
-            bool handle_activate_daq_control( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+            bool handle_activate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
-            bool handle_deactivate_daq_control( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+            bool handle_deactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
-            bool handle_start_run_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+            bool handle_start_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
-            bool handle_stop_run_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+            bool handle_stop_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
         private:
             void notify_run_stopped();

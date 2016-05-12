@@ -12,8 +12,10 @@
 
 #include "cancelable.hh"
 
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <mutex>
 
 namespace midge
 {
@@ -32,13 +34,19 @@ namespace psyllid
 
             void execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr, std::function< void() > a_notifier );
 
-            void start_run();
+            void start_run( unsigned a_duration = 0 );
             void stop_run();
 
         private:
             virtual void do_cancellation();
 
+            void do_run( unsigned a_duration );
+
             midge_package f_midge_pkg;
+
+            std::atomic< bool > f_run_in_progress;
+            std::condition_variable f_run_stopper;
+            std::mutex f_run_stop_mutex;
 
             std::function< void() > f_stop_notifier;
     };

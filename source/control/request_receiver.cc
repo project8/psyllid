@@ -167,15 +167,15 @@ namespace psyllid
         return;
     }
 
-    bool request_receiver::do_run_request( const request_ptr_t a_request, reply_package& a_reply_pkg )
+    bool request_receiver::do_run_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         return f_run_handler( a_request, a_reply_pkg );
     }
 
-    bool request_receiver::do_get_request( const request_ptr_t a_request, reply_package& a_reply_pkg )
+    bool request_receiver::do_get_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         std::string t_query_type = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop();
+        a_request->parsed_rks().pop_front();
 
         try
         {
@@ -188,10 +188,10 @@ namespace psyllid
         }
     }
 
-    bool request_receiver::do_set_request( const request_ptr_t a_request, reply_package& a_reply_pkg )
+    bool request_receiver::do_set_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         std::string t_set_type = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop();
+        a_request->parsed_rks().pop_front();
 
         try
         {
@@ -204,12 +204,12 @@ namespace psyllid
         }
     }
 
-    bool request_receiver::do_cmd_request( const request_ptr_t a_request, reply_package& a_reply_pkg )
+    bool request_receiver::do_cmd_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         // get the instruction before checking the lockout key authentication because we need to have the exception for
         // the unlock instruction that allows us to force the unlock.
         std::string t_instruction = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop();
+        a_request->parsed_rks().pop_front();
 
         try
         {

@@ -29,7 +29,6 @@ using scarab::param_value;
 using midge::diptera;
 
 using dripline::request_ptr_t;
-using dripline::hub;
 using dripline::retcode_t;
 
 namespace psyllid
@@ -242,7 +241,7 @@ namespace psyllid
 
 
 
-    bool node_manager::handle_apply_preset_request( const request_ptr_t a_request, hub::reply_package& a_reply_pkg )
+    bool node_manager::handle_apply_preset_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
         if( ! t_lock.owns_lock() )
@@ -270,7 +269,7 @@ namespace psyllid
         }
     }
 
-    bool node_manager::handle_set_node_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg )
+    bool node_manager::handle_set_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
         if( ! t_lock.owns_lock() )
@@ -284,7 +283,7 @@ namespace psyllid
         }
 
         string t_target_node = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop();
+        a_request->parsed_rks().pop_front();
 
         size_t t_rks_size = a_request->parsed_rks().size();
         if( t_rks_size == 1 )
@@ -309,7 +308,7 @@ namespace psyllid
             // Set a single configuration value
 
             string t_config_value_name = a_request->parsed_rks().front();
-            a_request->parsed_rks().pop();
+            a_request->parsed_rks().pop_front();
 
             const param_node& t_payload = a_request->get_payload();
             if( ! t_payload.has( "values" ) || t_payload.is_array() )
@@ -336,7 +335,7 @@ namespace psyllid
         return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "RKS is not formatted properly" );
     }
 
-    bool node_manager::handle_get_node_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg )
+    bool node_manager::handle_get_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex, std::try_to_lock );
         if( ! t_lock.owns_lock() )
@@ -350,7 +349,7 @@ namespace psyllid
         }
 
         string t_target_node = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop();
+        a_request->parsed_rks().pop_front();
 
         size_t t_rks_size = a_request->parsed_rks().size();
         if( t_rks_size == 1 )
@@ -374,7 +373,7 @@ namespace psyllid
             // Get a single configuration value
 
             string t_config_value_name = a_request->parsed_rks().front();
-            a_request->parsed_rks().pop();
+            a_request->parsed_rks().pop_front();
 
             try
             {

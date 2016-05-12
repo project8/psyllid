@@ -19,7 +19,7 @@ namespace psyllid
     class request_receiver : public dripline::hub, public midge::cancelable
     {
         private:
-            typedef std::function< bool( const dripline::request_ptr_t, reply_package& ) > handler_func_t;
+            typedef std::function< bool( const dripline::request_ptr_t, dripline::reply_package& ) > handler_func_t;
 
         public:
             request_receiver( const scarab::param_node& a_master_config );
@@ -37,10 +37,10 @@ namespace psyllid
             void execute();
 
         private:
-            virtual bool do_run_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
-            virtual bool do_get_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
-            virtual bool do_set_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
-            virtual bool do_cmd_request( const dripline::request_ptr_t a_request, reply_package& a_reply_pkg );
+            virtual bool do_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            virtual bool do_get_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            virtual bool do_set_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            virtual bool do_cmd_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
             virtual void do_cancellation();
 

@@ -67,11 +67,11 @@ namespace psyllid
             bool is_in_use() const;
 
         public:
-            bool handle_apply_preset_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+            bool handle_apply_preset_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
-            bool handle_set_node_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+            bool handle_set_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
-            bool handle_get_node_request( const dripline::request_ptr_t a_request, dripline::hub::reply_package& a_reply_pkg );
+            bool handle_get_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
         private:
             // not thread-safe
