@@ -195,7 +195,7 @@ namespace psyllid
 
         try
         {
-            return f_get_handlers.at( t_set_type )( a_request, a_reply_pkg );
+            return f_set_handlers.at( t_set_type )( a_request, a_reply_pkg );
         }
         catch( std::out_of_range& e )
         {
@@ -213,7 +213,7 @@ namespace psyllid
 
         try
         {
-            return f_get_handlers.at( t_instruction )( a_request, a_reply_pkg );
+            return f_cmd_handlers.at( t_instruction )( a_request, a_reply_pkg );
         }
         catch( std::out_of_range& e )
         {

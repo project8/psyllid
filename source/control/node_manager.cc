@@ -94,6 +94,7 @@ namespace psyllid
         const preset_nodes_t& t_new_nodes = t_preset->get_nodes();
         for( preset_nodes_t::const_iterator t_node_it = t_new_nodes.begin(); t_node_it != t_new_nodes.end(); ++t_node_it )
         {
+        	LDEBUG( plog, "Creating node of type <" << t_node_it->second << "> called <" << t_node_it->first << ">" );
             _add_node( t_node_it->second, t_node_it->first );
         }
 
@@ -101,6 +102,7 @@ namespace psyllid
         const preset_conn_t& t_new_connections = t_preset->get_connections();
         for( preset_conn_t::const_iterator t_conn_it = t_new_connections.begin(); t_conn_it != t_new_connections.end(); ++t_conn_it )
         {
+        	LDEBUG( plog, "Adding connection: " << *t_conn_it );
             _add_connection( *t_conn_it );
         }
 

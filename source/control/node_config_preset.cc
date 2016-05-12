@@ -29,7 +29,7 @@ namespace psyllid
         {
             throw error() << "Invalid preset: node is already present: <" + a_name + "> of type <" + a_type + ">";
         }
-        f_nodes.insert( nodes_t::value_type( a_type, a_name ) );
+        f_nodes.insert( nodes_t::value_type( a_name, a_type ) );
         return;
     }
 
