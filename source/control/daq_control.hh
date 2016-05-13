@@ -83,6 +83,8 @@ namespace psyllid
             bool handle_set_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_set_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
+            bool handle_get_status_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+
         private:
             void notify_run_stopped();
 
@@ -105,18 +107,20 @@ namespace psyllid
             mv_accessible( unsigned, run_duration );
 
         public:
-            enum class status
+            enum class status:uint32_t
             {
-                initialized,
-                activating,
-                idle,
-                running,
-                deactivating,
-                canceled,
-                done,
-                error
+                initialized = 0,
+                activating = 2,
+                idle = 4,
+                running = 5,
+                deactivating = 6,
+                canceled = 8,
+                done = 10,
+                error = 200
             };
 
+            static uint32_t status_to_uint( status a_status );
+            static status uint_to_status( uint32_t a_value );
             static std::string interpret_status( status a_status );
 
             status get_status() const;

@@ -43,6 +43,7 @@ namespace psyllid
         }
         catch( error& e )
         {
+        	LERROR( plog, "Exception caught while resetting midge" );
             a_ex_ptr = std::current_exception();
             return;
         }
@@ -84,23 +85,28 @@ namespace psyllid
         {
         	throw error() << "A run is already in progress";
         }
+        LDEBUG( plog, "Launching asynchronous do_run" );
 		std::async( std::launch::async, &daq_worker::do_run, this, a_duration );
         return;
     }
 
     void daq_worker::do_run( unsigned a_duration )
     {
+    	LDEBUG( plog, "Run is commencing" );
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
         f_run_in_progress.store( true );
         f_midge_pkg->instruct( midge::instruction::resume );
         if( a_duration == 0 )
         {
+        	LDEBUG( plog, "Untimed run stopper in use" );
         	f_run_stopper.wait( t_run_stop_lock );
         }
         else
         {
-        	f_run_stopper.wait_for( t_run_stop_lock, std::chrono::duration< int, std::ratio< 1, 1000 > >( a_duration ) );
+        	LDEBUG( plog, "Timed run stopper in use; limit is " << a_duration << " ms" );
+        	f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( a_duration ) );
         }
+        LDEBUG( plog, "Run stopper has been released" );
 	    f_midge_pkg->instruct( midge::instruction::pause );
 	    f_run_in_progress.store( false );
 	    if( f_stop_notifier ) f_stop_notifier();

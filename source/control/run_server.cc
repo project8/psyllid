@@ -99,6 +99,7 @@ namespace psyllid
         // add get request handlers
         f_request_receiver->register_get_handler( "node", std::bind( &node_manager::handle_get_node_request, f_node_manager, _1, _2 ) );
         //f_request_receiver->register_get_handler( "server-status", std::bind( &run_server::handle_get_server_status_request, this, _1, _2 ) );
+        f_request_receiver->register_get_handler( "daq-status", std::bind( &daq_control::handle_get_status_request, f_daq_control, _1, _2 ) );
 
         // add set request handlers
         f_request_receiver->register_set_handler( "daq-preset", std::bind( &node_manager::handle_apply_preset_request, f_node_manager, _1, _2 ) );

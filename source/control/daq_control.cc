@@ -18,6 +18,7 @@
 #include <thread>
 
 using scarab::param_node;
+using scarab::param_value;
 
 using dripline::request_ptr_t;
 using dripline::retcode_t;
@@ -56,8 +57,9 @@ namespace psyllid
     void daq_control::execute( std::exception_ptr a_ex_ptr )
     {
         // if we're supposed to activate on startup, we'll call activate asynchronously
-        if( f_daq_config->get_value< bool >( "activate-on-startup", false ) )
+        if( f_daq_config->get_value< bool >( "activate-at-startup", false ) )
         {
+            LDEBUG( plog, "Will activate DAQ control asynchronously" );
             std::async( std::launch::async,
                         [this]()
                         {
@@ -295,7 +297,7 @@ namespace psyllid
             start_run();
             return a_reply_pkg.send_reply( retcode_t::success, "Run started" );
         }
-        catch( run_error& e )
+        catch( error& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to start run: " ) + e.what() );
         }
@@ -308,7 +310,7 @@ namespace psyllid
             stop_run();
             return a_reply_pkg.send_reply( retcode_t::success, "Run stopped" );
         }
-        catch( run_error& e )
+        catch( error& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to stop run: " ) + e.what() );
         }
@@ -353,7 +355,29 @@ namespace psyllid
         }
     }
 
+    bool daq_control::handle_get_status_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    {
+        param_node* t_server_node = new param_node();
+        t_server_node->add( "status", new param_value( interpret_status( get_status() ) ) );
+        t_server_node->add( "status-value", new param_value( status_to_uint( get_status() ) ) );
 
+        // TODO: add status of nodes
+
+        a_reply_pkg.f_payload.add( "server", t_server_node );
+
+        return a_reply_pkg.send_reply( retcode_t::success, "DAQ status request succeeded" );
+
+    }
+
+
+    uint32_t daq_control::status_to_uint( status a_status )
+    {
+        return static_cast< uint32_t >( a_status );
+    }
+    daq_control::status daq_control::uint_to_status( uint32_t a_value )
+    {
+        return static_cast< status >( a_value );
+    }
     std::string daq_control::interpret_status( status a_status )
     {
         switch( a_status )
@@ -361,11 +385,17 @@ namespace psyllid
             case status::initialized:
                 return std::string( "Initialized" );
                 break;
+            case status::activating:
+                return std::string( "Activating" );
+                break;
             case status::idle:
                 return std::string( "Idle" );
                 break;
             case status::running:
                 return std::string( "Running" );
+                break;
+            case status::deactivating:
+                return std::string( "Deactivating" );
                 break;
             case status::canceled:
                 return std::string( "Canceled" );
