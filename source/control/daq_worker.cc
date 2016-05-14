@@ -60,8 +60,9 @@ namespace psyllid
 
         try
         {
-            LDEBUG( plog, "Starting midge" );
-            f_midge_pkg->run( a_node_mgr->get_node_run_str() );
+        	std::string t_run_string( a_node_mgr->get_node_run_str() );
+            LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
+            f_midge_pkg->run( t_run_string );
         }
         catch( midge::error& e )
         {

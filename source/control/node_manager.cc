@@ -40,6 +40,7 @@ namespace psyllid
             f_manager_mutex(),
             f_midge( new diptera() ),
             f_must_reset_midge( false ),
+			f_midge_mutex(),
             f_nodes(),
             f_connections(),
             f_daq_config( new param_node() )
@@ -121,6 +122,7 @@ namespace psyllid
         {
             throw error() << "Cannot configure node; node named <" << a_node_name << "> is not present";
         }
+        return;
     }
 
     void node_manager::replace_node_config( const std::string& a_node_name, const scarab::param_node& a_config )
@@ -135,6 +137,7 @@ namespace psyllid
         {
             throw error() << "Cannot replace node config; node named <" << a_node_name << "> is not present";
         }
+        return;
     }
 
     void node_manager::dump_node_config( const std::string& a_node_name, scarab::param_node& a_config )
@@ -149,6 +152,7 @@ namespace psyllid
         {
             throw error() << "Cannot dump node config; node named <" << a_node_name << "> is not present";
         }
+        return;
     }
 
     void node_manager::reset_midge()
@@ -157,6 +161,7 @@ namespace psyllid
 
         f_must_reset_midge = true;
 
+        std::unique_lock< std::mutex > t_midge_lock( f_midge_mutex );
         f_midge.reset( new diptera() );
 
         for( nodes_t::const_iterator t_node_it = f_nodes.begin(); t_node_it != f_nodes.end(); ++t_node_it )
@@ -213,7 +218,7 @@ namespace psyllid
         {
             reset_midge();
         }
-        return midge_package( f_midge, f_manager_mutex );
+        return midge_package( f_midge, f_midge_mutex );
     }
 
 
@@ -233,10 +238,11 @@ namespace psyllid
 
     bool node_manager::is_in_use() const
     {
+    	LERROR( plog, "Checking if manager mutex is in use" );
         if( f_manager_mutex.try_lock() )
         {
-            return false;
             f_manager_mutex.unlock();
+            return false;
         }
         else return true;
     }

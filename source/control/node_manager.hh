@@ -83,6 +83,7 @@ namespace psyllid
 
             midge_ptr_t f_midge;
             bool f_must_reset_midge;
+            mutable std::mutex f_midge_mutex;
 
             typedef std::map< std::string, node_builder* > nodes_t;
             typedef std::set< std::string > connections_t;
