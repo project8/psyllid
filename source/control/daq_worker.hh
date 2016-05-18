@@ -17,6 +17,8 @@
 #include <memory>
 #include <mutex>
 
+#include <condition_variable>
+
 namespace midge
 {
     class diptera;
