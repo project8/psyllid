@@ -53,6 +53,16 @@ namespace psyllid
 
 } /* namespace psyllid */
 
+
+
+#define DECLARE_PRESET( preset_class ) \
+	class preset_class : public node_config_preset \
+    { \
+        public: \
+    		preset_class(); \
+            virtual ~preset_class() {}; \
+    };
+
 #define REGISTER_PRESET( preset_class, preset_name ) \
         static ::scarab::registrar< ::psyllid::node_config_preset, preset_class > s_node_config_preset_##preset_class##_registrar( preset_name );
 

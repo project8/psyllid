@@ -13,12 +13,9 @@
 namespace psyllid
 {
 
-    class roach_config : public node_config_preset
-    {
-        public:
-            roach_config();
-            virtual ~roach_config();
-    };
+    DECLARE_PRESET( roach_config );
+
+	DECLARE_PRESET( streaming_1ch );
 
 } /* namespace psyllid */
 

@@ -17,8 +17,17 @@ namespace psyllid
         node( "udp-receiver", "udpr" );
     }
 
-    roach_config::~roach_config()
+
+    REGISTER_PRESET( streaming_1ch, "str-1ch" );
+
+    streaming_1ch::streaming_1ch()
     {
+    	node( "udp-receiver", "udpr" );
+    	node( "streaming-writer", "strw" );
+    	node( "term_freq_data", "term" );
+
+    	connection( "udpr.out_0:ew.in_0" );
+    	connection( "udpr.out_1:term.in_0" );
     }
 
 } /* namespace psyllid */
