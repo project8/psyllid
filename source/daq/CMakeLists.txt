@@ -10,6 +10,8 @@ set( headers
     frequency_mask_trigger.hh
     monarch3_wrap.hh
     roach_config.hh
+    streaming_writer.hh
+    terminator.hh
     udp_receiver.hh
 )
 
@@ -21,6 +23,8 @@ set( sources
     frequency_mask_trigger.cc
     monarch3_wrap.cc
     roach_config.cc
+    streaming_writer.cc
+    terminator.cc
     udp_receiver.cc
 )
 
