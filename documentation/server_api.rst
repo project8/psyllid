@@ -6,9 +6,9 @@ The server communicates with `dripline-standard <https://github.com/project8/har
 
 The API documentation below is organized by message type.
 
-The routing key should consist of the server queue name, optionally followed by other dot-delimited specifiers.
+The routing key should consist of the server queue name, followed by the Routing Key Specifier (RKS): `[queue].[RKS]`.
 
-For each message type, the API includes the allowed Routing Key Specifiers (RKS), Payload options, and contents of the Reply Payload.
+For each message type, the API includes the allowed RKS, Payload options, and contents of the Reply Payload.
 
 
 Lockout
@@ -18,10 +18,6 @@ The server can be locked out to require a key for some types of messages.
 It obeys the lockout behavior specified by the dripline wire protocol.  
 The server keeps a lockout tag that holds the information about who enabled the lock.  
 Additionally, there is a ``OP_GET`` request ``is-locked`` that can be used to assess the state of the lock.
-
-
-IGNORE EVERYTHING BELOW THIS
-============================
 
 
 Message Types
@@ -38,8 +34,9 @@ There are no Routing Key Specifiers for *run* requests.
 
 *Payload*
 
-- ``file=[filename (string)]`` -- *(required)* Filename for the acquisition.
-- ``description=[description (string)]`` -- *(optional)* Text description for the acquisition; saved in the file header.
+- ``file=[filename (string)]`` -- *(not implemented yet)* *(optional)* Filename for the acquisition.
+- ``description=[description (string)]`` -- *(not implemented yet)* *(optional)* Text description for the acquisition; saved in the file header.
+- ``duration=[ms (unsigned int)]`` -- *(not implemented yet)* *(optional)* Duration of the run in ms.
 
 *Reply Payload*
 
@@ -59,74 +56,30 @@ Routing Key Specifiers
 
 The Routing Key Specifier (RKS) indicates the information that is being requested from the server.  Some specifiers have *Payload* options.  The RKS and *Payload* options are listed below, along with the relevant *Reply Payload*.
 
-``acq-config``
+``daq-status``
 --------------
 Returns the current acquisition configuration.
 
 *Reply Payload*
 
-- ``[acquisition configuration]``
+- ``status=[status (string)]`` -- human-readable status message
+- ``status-value=[status code (unsigned int)]`` -- machine-redable status message
 
-``server-config``
------------------
-Returns the current full configuration for the server.
-
-*Reply Payload*
-
-- ``[Full server configuration]``
-
-``acq-status``
---------------
-Returns the status of an acquisition request.
-
-*Payload*
-
-- ``value=[UUID (string)]`` -- *(required)* UUID of the run being queried.
+``node.[node name]``
+--------------------
+Returns the configuration of the node requested.
 
 *Reply Payload*
 
-- ``status=[status (string)]`` -- human-readable status of the requested acquisition
+- ``[Full node configuration]``
 
-
-``server-status``
------------------
-Returns the status of the server, including the queue, server worker (digitizer & writer), and request receiver.
-
-*Reply Payload*
-
-- ``queue``
-
-  - ``is-active=[true/false (bool)]`` -- whether or not acquisition requests from the queue are currently being processed
-  - ``size=[size (unsigned int)]`` -- number of requests in the queue
-
-- ``request-receiver``
-
-  - ``status=[status (string)]`` -- human-readable status message
-
-- ``server-worker``
-
-  - ``digitizer-state=[status (string)]`` -- human-readable digitizer status message
-  - ``status``=[status (string)]`` -- human-readable server-worker status message
-  - ``writer-state=[status (string)]`` -- human-readable writer status message
-
-- ``status=[status (string)]`` -- human-readable server status message
-
-``queue``
----------
-Returns the current acquisition queue, including the UUID and filename for each acquisition request.
+``node.[node name].[parameter]``
+--------------------------------
+Returns the configuration value requested from the node requested.
 
 *Reply Payload*
 
-- ``queue=[[UUIDs; (string)]]`` -- Array of acquisition UUIDs
-
-``queue-size``
---------------
-Returns the size of the acquisition queue.
-
-*Reply Payload*
-
-- ``queue-size=[size; (unsigned int)]`` -- Number of acquisition requests currently in the queue
-
+- ``values=[[value]]`` -- Array with the value requested
 
 ``is-locked``
 -------------
@@ -137,6 +90,8 @@ Returns whether or not the server is locked out.
 - ``is-locked=[true/false (bool)]``
 
 
+IGNORE EVERYTHING BELOW THIS
+============================
 
 OP_SET
 ^^^^^^

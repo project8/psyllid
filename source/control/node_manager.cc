@@ -399,7 +399,7 @@ namespace psyllid
                 t_values_array->assign( 0, *t_node_config.value_at( t_config_value_name ) );
                 a_request->get_payload().add( "values", t_values_array );
 
-                return a_reply_pkg.send_reply( retcode_t::success, "Set config value <" + t_config_value_name + "> for node <" + t_target_node + ">" );
+                return a_reply_pkg.send_reply( retcode_t::success, "Get config value <" + t_config_value_name + "> for node <" + t_target_node + ">" );
             }
             catch( error& e )
             {

@@ -11,6 +11,7 @@ Contents:
    :glob:
    :maxdepth: 2
 
+   Node Configurations <node_configurations>
    Roach Packets <roach_packets>
    Server API <server_api>
 
