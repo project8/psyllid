@@ -5,13 +5,13 @@
  *      Author: nsoblath
  */
 
-#include "configurator.hh"
 #include "psyllid_constants.hh"
 #include "psyllid_error.hh"
 #include "psyllid_version.hh"
 #include "run_server.hh"
 #include "server_config.hh"
 
+#include "configurator.hh"
 #include "logger.hh"
 
 using namespace psyllid;
@@ -36,7 +36,7 @@ int main( int argc, char** argv )
     try
     {
         server_config t_sc;
-        configurator t_configurator( argc, argv, &t_sc );
+        scarab::configurator t_configurator( argc, argv, &t_sc );
 
         // Run the server
         run_server the_server( t_configurator.config(), std::shared_ptr< scarab::version_semantic >( new version() ) );
