@@ -14,6 +14,7 @@
 
 #include <atomic>
 #include <functional>
+#include <future>
 #include <memory>
 #include <mutex>
 
@@ -47,6 +48,7 @@ namespace psyllid
             midge_package f_midge_pkg;
 
             std::atomic< bool > f_run_in_progress;
+            std::future< void > f_run_return;
             std::condition_variable f_run_stopper;
             std::mutex f_run_stop_mutex;
 

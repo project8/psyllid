@@ -25,6 +25,7 @@ namespace psyllid
     daq_worker::daq_worker() :
             f_midge_pkg(),
 			f_run_in_progress( false ),
+			f_run_return(),
 			f_run_stopper(),
             f_stop_notifier()
     {
@@ -87,13 +88,13 @@ namespace psyllid
         	throw error() << "A run is already in progress";
         }
         LDEBUG( plog, "Launching asynchronous do_run" );
-		std::async( std::launch::async, &daq_worker::do_run, this, a_duration );
+		f_run_return = std::async( std::launch::async, &daq_worker::do_run, this, a_duration );
         return;
     }
 
     void daq_worker::do_run( unsigned a_duration )
     {
-    	LDEBUG( plog, "Run is commencing" );
+    	LINFO( plog, "Run is commencing" );
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
         f_run_in_progress.store( true );
         f_midge_pkg->instruct( midge::instruction::resume );
@@ -111,6 +112,7 @@ namespace psyllid
 	    f_midge_pkg->instruct( midge::instruction::pause );
 	    f_run_in_progress.store( false );
 	    if( f_stop_notifier ) f_stop_notifier();
+	    LINFO( plog, "Run has stopped" );
         return;
     }
 

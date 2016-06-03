@@ -250,6 +250,7 @@ namespace psyllid
 
     void daq_control::notify_run_stopped()
     {
+        LDEBUG( plog, "Received notification from worker that run has stopped" );
         set_status( status::idle );
     }
 
