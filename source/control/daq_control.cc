@@ -57,10 +57,11 @@ namespace psyllid
     void daq_control::execute( std::exception_ptr a_ex_ptr )
     {
         // if we're supposed to activate on startup, we'll call activate asynchronously
+        std::future< void > t_activation_return;
         if( f_daq_config->get_value< bool >( "activate-at-startup", false ) )
         {
             LDEBUG( plog, "Will activate DAQ control asynchronously" );
-            std::async( std::launch::async,
+            t_activation_return = std::async( std::launch::async,
                         [this]()
                         {
                             std::this_thread::sleep_for( std::chrono::milliseconds(250));
