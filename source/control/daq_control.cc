@@ -17,6 +17,7 @@
 #include <future>
 #include <thread>
 
+using scarab::param_array;
 using scarab::param_node;
 using scarab::param_value;
 
@@ -369,6 +370,36 @@ namespace psyllid
 
         return a_reply_pkg.send_reply( retcode_t::success, "DAQ status request succeeded" );
 
+    }
+
+    bool daq_control::handle_get_filename_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    {
+        param_array* t_values_array = new param_array();
+        t_values_array->push_back( new param_value( f_run_filename ) );
+
+        a_reply_pkg.f_payload.add( "values", t_values_array );
+
+        return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
+    }
+
+    bool daq_control::handle_get_description_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    {
+        param_array* t_values_array = new param_array();
+        t_values_array->push_back( new param_value( f_run_description ) );
+
+        a_reply_pkg.f_payload.add( "values", t_values_array );
+
+        return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
+    }
+
+    bool daq_control::handle_get_duration_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    {
+        param_array* t_values_array = new param_array();
+        t_values_array->push_back( new param_value( f_run_duration ) );
+
+        a_reply_pkg.f_payload.add( "values", t_values_array );
+
+        return a_reply_pkg.send_reply( retcode_t::success, "Duration request completed" );
     }
 
 

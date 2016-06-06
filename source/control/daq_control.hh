@@ -84,6 +84,9 @@ namespace psyllid
             bool handle_set_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
             bool handle_get_status_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            bool handle_get_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            bool handle_get_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            bool handle_get_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
         private:
             void notify_run_stopped();
