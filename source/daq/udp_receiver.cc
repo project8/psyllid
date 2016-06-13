@@ -262,6 +262,7 @@ namespace psyllid
 
     void udp_receiver_builder::apply_config( udp_receiver* a_node, const scarab::param_node& a_config )
     {
+        LDEBUG( plog, "Configuring udp_receiver with :\n" << a_config );
         a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );
         a_node->set_freq_length( a_config.get_value( "freq-length", a_node->get_freq_length() ) );
         a_node->set_port( a_config.get_value( "port", a_node->get_port() ) );

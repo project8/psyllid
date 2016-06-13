@@ -15,7 +15,7 @@
 
 namespace psyllid
 {
-    REGISTER_NODE( terminator_freq_data, "term_freq_data" );
+    REGISTER_NODE_AND_BUILDER( terminator_freq_data, "term-freq-data" );
 
     LOGGER( plog, "terminator_freq_data" );
 
@@ -79,5 +79,14 @@ namespace psyllid
     }
 
 
+    terminator_freq_data_builder::terminator_freq_data_builder() :
+            _node_builder< terminator_freq_data >()
+    {}
+
+    terminator_freq_data_builder::~terminator_freq_data_builder()
+    {}
+
+    void terminator_freq_data_builder::apply_config( terminator_freq_data*, const scarab::param_node& )
+    {}
 
 } /* namespace psyllid */
