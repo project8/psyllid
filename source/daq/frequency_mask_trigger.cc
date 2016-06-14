@@ -16,7 +16,7 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE( frequency_mask_trigger, "frequency-mask-trigger" );
+    REGISTER_NODE_AND_BUILDER( frequency_mask_trigger, "frequency-mask-trigger" );
 
     LOGGER( plog, "frequency_mask_trigger" );
 

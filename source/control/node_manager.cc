@@ -95,7 +95,7 @@ namespace psyllid
         const preset_nodes_t& t_new_nodes = t_preset->get_nodes();
         for( preset_nodes_t::const_iterator t_node_it = t_new_nodes.begin(); t_node_it != t_new_nodes.end(); ++t_node_it )
         {
-        	LDEBUG( plog, "Creating node of type <" << t_node_it->second << "> called <" << t_node_it->first << ">" );
+            LDEBUG( plog, "Creating node of type <" << t_node_it->second << "> called <" << t_node_it->first << ">" );
             _add_node( t_node_it->second, t_node_it->first );
         }
 
@@ -103,7 +103,7 @@ namespace psyllid
         const preset_conn_t& t_new_connections = t_preset->get_connections();
         for( preset_conn_t::const_iterator t_conn_it = t_new_connections.begin(); t_conn_it != t_new_connections.end(); ++t_conn_it )
         {
-        	LDEBUG( plog, "Adding connection: " << *t_conn_it );
+            LDEBUG( plog, "Adding connection: " << *t_conn_it );
             _add_connection( *t_conn_it );
         }
 
@@ -115,6 +115,7 @@ namespace psyllid
         std::unique_lock< std::mutex > t_mgr_lock( f_manager_mutex );
         try
         {
+            LDEBUG( plog, "Configuring node <" << a_node_name << "> with:\n" << a_config );
             f_nodes.at( a_node_name )->configure( a_config );
             return;
         }
@@ -290,13 +291,17 @@ namespace psyllid
             return a_reply_pkg.send_reply( retcode_t::message_error_invalid_key, "RKS does not specify the node name" );
         }
 
+        size_t t_rks_size = a_request->parsed_rks().size();
+
         string t_target_node = a_request->parsed_rks().front();
         a_request->parsed_rks().pop_front();
 
-        size_t t_rks_size = a_request->parsed_rks().size();
+        LDEBUG( plog, "Set node request RKS is <" << a_request->parsed_rks().to_string() << ">; size = " << a_request->parsed_rks().size() );
+
         if( t_rks_size == 1 )
         {
             // Replace full config for node
+            LDEBUG( plog, "Replacing full config for node <" << t_target_node << ">" );
 
             const param_node& t_payload = a_request->get_payload();
             try
@@ -319,13 +324,16 @@ namespace psyllid
             a_request->parsed_rks().pop_front();
 
             const param_node& t_payload = a_request->get_payload();
+
+            LDEBUG( plog, "Replacing value for configuration value <" << t_config_value_name << "> in node <" << t_target_node << ">; payload:\n" << t_payload );
+
             if( ! t_payload.has( "values" ) || t_payload.is_array() )
             {
                 return a_reply_pkg.send_reply( retcode_t::message_error_invalid_value, "Values array not present or is not an array" );
             }
 
             param_node t_config;
-            t_config.add( a_request->parsed_rks().front(), new param_value( t_payload.array_at( "values" )->value_at( 0 ) ) );
+            t_config.add( t_config_value_name, new param_value( t_payload.array_at( "values" )->get_value( 0 ) ) );
 
             try
             {
@@ -363,6 +371,7 @@ namespace psyllid
         if( t_rks_size == 1 )
         {
             // Get the full config for node
+            LDEBUG( plog, "Getting full config for node <" << t_target_node << ">" );
 
             try
             {

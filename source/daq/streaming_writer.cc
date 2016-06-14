@@ -23,7 +23,7 @@ using std::vector;
 
 namespace psyllid
 {
-    REGISTER_NODE( streaming_writer, "streaming-writer" );
+    REGISTER_NODE_AND_BUILDER( streaming_writer, "streaming-writer" );
 
     LOGGER( plog, "streaming_writer" );
 

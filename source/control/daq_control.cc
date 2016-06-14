@@ -15,6 +15,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <future>
+#include <signal.h>
 #include <thread>
 
 using scarab::param_array;
@@ -92,7 +93,7 @@ namespace psyllid
                 f_daq_worker.reset( new daq_worker( ) );
 
                 std::exception_ptr t_worker_ex_ptr;
-                std::function< void() > t_notifier = [this](){ notify_run_stopped(); };
+                std::function< void( bool ) > t_notifier = [this]( bool a_in_error ){ notify_run_stopped( a_in_error ); };
 
                 LDEBUG( plog, "Starting DAQ worker" );
                 f_worker_thread = std::thread( &daq_worker::execute, f_daq_worker.get(), f_node_manager, t_worker_ex_ptr, t_notifier );
@@ -109,7 +110,7 @@ namespace psyllid
                 if( get_status() == status::running )
                 {
                     LERROR( plog, "DAQ worker quit while run was in progress" );
-                    set_status( status::done );
+                    set_status( status::error );
                 }
                 f_daq_worker.reset();
                 t_lock.unlock();
@@ -137,6 +138,7 @@ namespace psyllid
             else if( t_status == status::error )
             {
                 if( ! a_ex_ptr ) std::make_exception_ptr( error() << "DAQ control is in an error state" );
+                raise( SIGINT );
                 break;
             }
         }
@@ -250,10 +252,19 @@ namespace psyllid
         return;
     }
 
-    void daq_control::notify_run_stopped()
+    void daq_control::notify_run_stopped( bool a_in_error )
     {
         LDEBUG( plog, "Received notification from worker that run has stopped" );
-        set_status( status::idle );
+        if( a_in_error )
+        {
+            set_status( status::error );
+            LDEBUG( plog, "Run was stopped with an error condition" );
+        }
+        else
+        {
+            set_status( status::idle );
+        }
+        return;
     }
 
     void daq_control::do_cancellation()

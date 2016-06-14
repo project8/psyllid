@@ -35,7 +35,7 @@ namespace psyllid
             daq_worker();
             virtual ~daq_worker();
 
-            void execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr, std::function< void() > a_notifier );
+            void execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr, std::function< void( bool ) > a_notifier );
 
             void start_run( unsigned a_duration = 0 );
             void stop_run();
@@ -48,11 +48,12 @@ namespace psyllid
             midge_package f_midge_pkg;
 
             std::atomic< bool > f_run_in_progress;
+            std::atomic< bool > f_error_state;
             std::future< void > f_run_return;
             std::condition_variable f_run_stopper;
             std::mutex f_run_stop_mutex;
 
-            std::function< void() > f_stop_notifier;
+            std::function< void( bool ) > f_stop_notifier;
     };
 
 } /* namespace psyllid */

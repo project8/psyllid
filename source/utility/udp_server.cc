@@ -22,7 +22,7 @@ namespace psyllid
             f_socket( 0 ),
             f_address( nullptr )
     {
-        //msg_normal( pmsg, "opening udp_server socket on port <" << a_port << ">" );
+        LDEBUG( plog, "Opening udp_server socket on port <" << a_port << ">" );
 
         //initialize address
         socklen_t t_socket_length = sizeof(sockaddr_in);
@@ -70,7 +70,7 @@ namespace psyllid
             return;
         }
 
-        LINFO( plog, "Ready to receive messages" );
+        LINFO( plog, "Ready to receive messages on port " << a_port );
 
         return;
     }

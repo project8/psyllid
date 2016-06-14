@@ -24,7 +24,7 @@ namespace psyllid
     {
     	node( "udp-receiver", "udpr" );
     	node( "streaming-writer", "strw" );
-    	node( "term_freq_data", "term" );
+    	node( "term-freq-data", "term" );
 
     	connection( "udpr.out_0:strw.in_0" );
     	connection( "udpr.out_1:term.in_0" );
