@@ -24,9 +24,10 @@ namespace psyllid
 
     daq_worker::daq_worker() :
             f_midge_pkg(),
-			f_run_in_progress( false ),
-			f_run_return(),
-			f_run_stopper(),
+            f_run_in_progress( false ),
+            f_error_state( false ),
+            f_run_return(),
+            f_run_stopper(),
             f_stop_notifier()
     {
     }
@@ -35,7 +36,7 @@ namespace psyllid
     {
     }
 
-    void daq_worker::execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr, std::function< void() > a_notifier )
+    void daq_worker::execute( std::shared_ptr< node_manager > a_node_mgr, std::exception_ptr a_ex_ptr, std::function< void( bool ) > a_notifier )
     {
         LDEBUG( plog, "DAQ worker is executing" );
         try
@@ -44,7 +45,7 @@ namespace psyllid
         }
         catch( error& e )
         {
-        	LERROR( plog, "Exception caught while resetting midge" );
+            LERROR( plog, "Exception caught while resetting midge" );
             a_ex_ptr = std::current_exception();
             return;
         }
@@ -61,7 +62,7 @@ namespace psyllid
 
         try
         {
-        	std::string t_run_string( a_node_mgr->get_node_run_str() );
+            std::string t_run_string( a_node_mgr->get_node_run_str() );
             LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
             f_midge_pkg->run( t_run_string );
         }
@@ -70,7 +71,14 @@ namespace psyllid
             a_ex_ptr = std::current_exception();
         }
 
-        a_notifier = nullptr;
+        if( f_run_in_progress.load() )
+        {
+            LERROR( plog, "Midge exited abnormally" );
+            f_error_state.store( true );
+            f_run_stopper.notify_one();
+        }
+
+        f_stop_notifier = nullptr;
 
         LDEBUG( plog, "DAQ worker finished" );
 
@@ -85,10 +93,10 @@ namespace psyllid
         }
         if( f_run_in_progress.load() )
         {
-        	throw error() << "A run is already in progress";
+            throw error() << "A run is already in progress";
         }
         LDEBUG( plog, "Launching asynchronous do_run" );
-		f_run_return = std::async( std::launch::async, &daq_worker::do_run, this, a_duration );
+	f_run_return = std::async( std::launch::async, &daq_worker::do_run, this, a_duration );
         return;
     }
 
@@ -100,19 +108,23 @@ namespace psyllid
         f_midge_pkg->instruct( midge::instruction::resume );
         if( a_duration == 0 )
         {
-        	LDEBUG( plog, "Untimed run stopper in use" );
-        	f_run_stopper.wait( t_run_stop_lock );
+            LDEBUG( plog, "Untimed run stopper in use" );
+            f_run_stopper.wait( t_run_stop_lock );
         }
         else
         {
-        	LDEBUG( plog, "Timed run stopper in use; limit is " << a_duration << " ms" );
-        	f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( a_duration ) );
+            LDEBUG( plog, "Timed run stopper in use; limit is " << a_duration << " ms" );
+            f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( a_duration ) );
         }
         LDEBUG( plog, "Run stopper has been released" );
-	    f_midge_pkg->instruct( midge::instruction::pause );
-	    f_run_in_progress.store( false );
-	    if( f_stop_notifier ) f_stop_notifier();
-	    LINFO( plog, "Run has stopped" );
+        f_midge_pkg->instruct( midge::instruction::pause );
+        f_run_in_progress.store( false );
+        if( f_stop_notifier )
+        {
+            if( f_error_state.load() ) f_stop_notifier( true );
+            else f_stop_notifier( false );
+        }
+        LINFO( plog, "Run has stopped" );
         return;
     }
 
