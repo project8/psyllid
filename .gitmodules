@@ -4,3 +4,6 @@
 [submodule "monarch"]
 	path = monarch
 	url = https://github.com/project8/monarch
+[submodule "dripline"]
+	path = dripline
+	url = https://github.com/project8/dripline
