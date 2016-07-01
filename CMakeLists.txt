@@ -1,4 +1,5 @@
-cmake_minimum_required (VERSION 3.0)
+# Minimum cmake verison 3.1 required for the variable CMAKE_CXX_STANDARD
+cmake_minimum_required (VERSION 3.1)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
