@@ -1,18 +1,27 @@
-cmake_minimum_required (VERSION 3.0)
+# Minimum cmake verison 3.1 required for the variable CMAKE_CXX_STANDARD
+cmake_minimum_required (VERSION 3.1)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project (psyllid VERSION 0.1.0)
+project( Psyllid VERSION 0.1.0)
 
-include( midge/cmake/MidgeUtility.cmake )
-midge_prepare_project()
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
+include( PackageBuilder )
 
-message( STATUS "midge project name: ${midge_project_name}" )
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/cmake )
+include( MidgeUtility )
+
+pbuilder_prepare_project()
+
 
 #########
 # flags #
 #########
 
+set_option( USE_CPP11 TRUE )
+
+# add an option to build docs
+option( Psyllid_BUILD_DOCS "Enable make targets for both doxygen and sphinx (requires Doxygen, Sphinx, and Breathe)" FALSE )
 
 
 ################
@@ -20,13 +29,15 @@ message( STATUS "midge project name: ${midge_project_name}" )
 ################
 
 # Midge
-midge_build_library()
+pbuilder_add_submodule( Midge midge )
+midge_process_options()
 
+# Dripline
+add_definitions( -DDRIPLINE_AUTH_FILE=.project8_authentications.json )
+pbuilder_add_submodule( Dripline dripline/cpp )
 
 # Monarch
-add_subdirectory( monarch )
-pbuilder_add_submodule_libraries( ${Monarch_LIBRARIES} )
-include_directories( ${Monarch_DEP_INCLUDE_DIRS} )
+pbuilder_add_submodule( Monarch monarch )
 
 
 ###########
@@ -35,17 +46,23 @@ include_directories( ${Monarch_DEP_INCLUDE_DIRS} )
 
 # add include directories
 include_directories( BEFORE
-    data
-    nodes
-    utility
+    source/control
+    source/data
+    source/daq
+    source/utility
 )
 
 
 # build this project
-add_subdirectory( utility )
-add_subdirectory( data )
-add_subdirectory( nodes )
+add_subdirectory( source/utility )
+add_subdirectory( source/data )
+add_subdirectory( source/daq )
+add_subdirectory( source/control )
 
-add_subdirectory( applications )
-add_subdirectory( test )
+add_subdirectory( source/applications )
+add_subdirectory( source/test )
+
+if( Psyllid_BUILD_DOCS )
+    add_subdirectory( documentation )
+endif( Psyllid_BUILD_DOCS )
 
