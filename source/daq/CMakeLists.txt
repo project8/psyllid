@@ -28,6 +28,18 @@ set( sources
     udp_receiver.cc
 )
 
+if( UNIX )
+set( headers 
+    ${headers}
+    packet_processor.hh
+)
+
+set( sources
+    ${sources}
+    packet_processor.cc
+)
+endif( UNIX )
+
 set( dependencies
     PsyllidUtility
     PsyllidData
