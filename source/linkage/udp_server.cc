@@ -1,6 +1,6 @@
-#include "midge_error.hh"
 #include "udp_server.hh"
 
+#include "midge_error.hh"
 #include "logger.hh"
 
 #include <errno.h>

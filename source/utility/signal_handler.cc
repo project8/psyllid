@@ -62,7 +62,7 @@ namespace psyllid
     {
     }
 
-    void signal_handler::add_cancelable( midge::cancelable* a_cancelable )
+    void signal_handler::add_cancelable( scarab::cancelable* a_cancelable )
     {
         f_mutex.lock();
         f_cancelers.insert( a_cancelable );
@@ -70,7 +70,7 @@ namespace psyllid
         return;
     }
 
-    void signal_handler::remove_cancelable( midge::cancelable* a_cancelable )
+    void signal_handler::remove_cancelable( scarab::cancelable* a_cancelable )
     {
         f_mutex.lock();
         f_cancelers.erase( a_cancelable );

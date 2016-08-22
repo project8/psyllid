@@ -42,6 +42,7 @@ endif( UNIX )
 
 set( dependencies
     PsyllidUtility
+    PsyllidLinkage
     PsyllidData
     PsyllidControl
 )

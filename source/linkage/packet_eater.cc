@@ -7,6 +7,8 @@
 
 #include "packet_eater.hh"
 
+#include "packet_buffer.hh"
+
 #include "logger.hh"
 
 #include <arpa/inet.h>
@@ -32,19 +34,23 @@ LOGGER( plog, "udp_server" );
 namespace psyllid {
 
 	packet_eater::packet_eater( unsigned a_timeout_sec ) :
+	        f_timeout_sec( a_timeout_sec ),
 			f_socket( 0 ),
 			f_ring( nullptr ),
-			f_address( nullptr )
+			f_address( nullptr ),
+			f_packet_buffers()
 
 	{
         LINFO( plog, "Preparing fast-packet-acquisition server" );
 
         // create the ring buffer
+        f_ring = new receive_ring();
+        ::memset( f_ring, 0, sizeof(receive_ring) );
         unsigned t_block_size = 1 << 22;
         unsigned t_frame_size = 1 << 11;
         unsigned t_block_num = 64;
         LDEBUG( plog, "Ring buffer parameters: block size: " << t_block_size << "; frame size: " << t_frame_size << "; block number: " << t_block_number );
-        ::memset( &f_ring->f_req, 0, sizeof(f_ring->f_req) );
+        ::memset( &f_ring->f_req, 0, sizeof(tpacket_req3) );
         f_ring->f_req.tp_block_size = t_block_size;
         f_ring->f_req.tp_frame_size = t_frame_size;
         f_ring->f_req.tp_block_nr = t_block_num;
@@ -95,7 +101,7 @@ namespace psyllid {
         }
 
         // finish preparing the ring
-        f_ring->f_map = mmap( nullptr, f_ring->f_req.tp_block_size * f_ring->f_req.tp_block_nr,
+        f_ring->f_map = ::mmap( nullptr, f_ring->f_req.tp_block_size * f_ring->f_req.tp_block_nr,
         		PROT_READ | PROT_WRITE, MAP_SHARED | MAP_LOCKED, f_socket, 0);
         if( f_ring->f_map == MAP_FAILED )
         {
@@ -103,7 +109,7 @@ namespace psyllid {
         	return;
         }
 
-        f_ring->f_rd = malloc(f_ring->f_req.tp_block_nr * sizeof(*f_ring->f_rd) );
+        f_ring->f_rd = ::malloc(f_ring->f_req.tp_block_nr * sizeof(*f_ring->f_rd) );
         if( f_ring->f_rd == nullptr )
         {
         	throw midge::error() << "[udp_server] Unable to allocate memory for the ring";
@@ -116,7 +122,8 @@ namespace psyllid {
         }
 
         // initialize the address
-        ::memset( &f_address, 0, sizeof(f_address) );
+        f_address = new sockaddr_ll();
+        ::memset( f_address, 0, sizeof(sockaddr_ll) );
         int t_interface_index = if_nametoindex( a_interface );
         if( t_interface_index == 0 )
         {
@@ -140,15 +147,52 @@ namespace psyllid {
 
         LINFO( plog, "Ready to receive messages on port " << a_port );
 
-        return;	}
+        return;
+	}
 
 	packet_eater::~packet_eater()
 	{
-        //clean up udp_server address
+	    // undo the ring
+        ::munmap(f_ring->f_map, f_ring->f_req.tp_block_size * f_ring->f_req.tp_block_nr);
+        ::free( f_ring->f_rd );
+
+        // clean up socket address
         delete f_address;
 
-        //close udp_server socket
+        // close udp_server socket
         ::close( f_socket );
+	}
+
+	void packet_eater::execute()
+	{
+	    // Setup the polling file descriptor struct
+	    pollfd t_pollfd;
+	    ::memset( &t_pollfd, 0, sizeof(pollfd) );
+	    t_pollfd.fd = f_socket;
+	    t_pollfd.events = POLLIN | POLLERR;
+	    t_pollfd.revents = 0;
+
+	    unsigned t_block_num = 0;
+	    block_desc* t_pdb = nullptr;
+
+	    unsigned t_timeout_msec = 1000 * f_timeout_sec;
+
+	    while( ! is_canceled() )
+	    {
+	        t_pdb = (block_desc *) f_ring->f_rd[ t_block_num ].iov_base;
+
+	        if( ( t_pbd->f_h1.block_status & TP_STATUS_USER ) == 0 )
+	        {
+	            poll( &t_pollfd, 1, t_timeout_msec );
+	            continue;
+	        }
+
+            walk_block(pbd, block_num);
+            flush_block(pbd);
+            block_num = (block_num + 1) % blocks;
+        }
+
+
 	}
 
 } /* namespace psyllid */
