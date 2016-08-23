@@ -41,16 +41,16 @@ namespace psyllid
 
 
     //*********************
-    // buffer
+    // packet_buffer
     //*********************
 
-    class buffer
+    class packet_buffer
     {
         public:
-            friend class iterator;
+            friend class pb_iterator;
 
-            buffer( size_t a_size, size_t a_packet_size );
-            virtual ~buffer();
+            packet_buffer( size_t a_size, size_t a_packet_size );
+            virtual ~packet_buffer();
 
             size_t size() const;
             size_t packet_size() const;
@@ -68,17 +68,17 @@ namespace psyllid
     };
 
 
-    inline size_t buffer::size() const
+    inline size_t packet_buffer::size() const
     {
         return f_size;
     }
 
-    inline size_t buffer::packet_size() const
+    inline size_t packet_buffer::packet_size() const
     {
         return f_packet_size;
     }
 
-    inline void buffer::delete_packet( unsigned a_index )
+    inline void packet_buffer::delete_packet( unsigned a_index )
     {
         set_packet( a_index, nullptr );
         return;
@@ -86,16 +86,16 @@ namespace psyllid
 
 
     //*********************
-    // iterator
+    // pb_iterator
     //*********************
 
-    class iterator
+    class pb_iterator
     {
         public:
-            iterator( buffer* a_buffer, const std::string& a_name = "default" );
-            virtual ~iterator();
+            pb_iterator( packet_buffer* a_buffer = nullptr /*, const std::string& a_name = "default"*/ );
+            virtual ~pb_iterator();
 
-            const std::string& name() const;
+            //const std::string& name() const;
 
             /// returns the index of the current packet in the buffer
             unsigned int index() const;
@@ -116,16 +116,19 @@ namespace psyllid
             /// try to move to the previous packet;
             bool operator-();
 
-            /// remove iterator from buffer
+            /// attach pb_iterator to a buffer
+            bool attach( packet_buffer* a_buffer );
+
+            /// remove pb_iterator from buffer
             void release();
 
         protected:
-            iterator();
-            iterator( const iterator& );
+            pb_iterator();
+            pb_iterator( const pb_iterator& );
 
-            std::string f_name;
+            //std::string f_name;
 
-            buffer* f_buffer;
+            packet_buffer* f_buffer;
             packet** f_packets;
             std::mutex* f_mutexes;
             unsigned int f_size;
@@ -140,6 +143,31 @@ namespace psyllid
 
             //IT_TIMER_DECLARE
     };
+
+    /*
+    inline const std::string& pb_iterator::name() const
+    {
+        return f_name;
+    }
+    */
+
+    inline unsigned int pb_iterator::index() const
+    {
+        return f_current_index;
+    }
+    inline packet* pb_iterator::object()
+    {
+        return f_packets[ f_current_index ];
+    }
+
+    inline packet* pb_iterator::operator->()
+    {
+        return f_packets[ f_current_index ];
+    }
+    inline packet& pb_iterator::operator*()
+    {
+        return *f_packets[ f_current_index ];
+    }
 
 
 }

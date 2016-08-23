@@ -38,7 +38,10 @@ namespace psyllid {
 			f_socket( 0 ),
 			f_ring( nullptr ),
 			f_address( nullptr ),
-			f_packet_buffers()
+			f_packets_total( 0 ),
+			f_bytes_total( 0 ),
+			f_packet_buffer( 100, 0 ),
+			f_iterator()
 
 	{
         LINFO( plog, "Preparing fast-packet-acquisition server" );
@@ -138,7 +141,7 @@ namespace psyllid {
         f_address->sll_halen = 0;
 
         // bind the socket
-        DEBUG( plog, "Binding the socket" );
+        LDEBUG( plog, "Binding the socket" );
         if( ::bind( f_socket, (const sockaddr*)f_address, sizeof(f_address) ) < 0 )
         {
         	throw midge::error() << "[udp_server] could not bind socket:\n\t" << strerror( errno );
@@ -146,6 +149,9 @@ namespace psyllid {
         }
 
         LINFO( plog, "Ready to receive messages on port " << a_port );
+
+        // create iterator for packet buffer
+        f_iterator.attach( &f_packet_buffer );
 
         return;
 	}
@@ -161,6 +167,13 @@ namespace psyllid {
 
         // close udp_server socket
         ::close( f_socket );
+
+        // delete the packet buffer(s)
+        while( ! f_packet_buffers.empty() )
+        {
+            delete f_packet_buffers.front();
+            f_packet_buffers.pop_front();
+        }
 	}
 
 	void packet_eater::execute()
@@ -194,5 +207,74 @@ namespace psyllid {
 
 
 	}
+
+    void packet_eater::walk_block( block_desc* a_bd, const int a_block_num )
+    {
+        unsigned t_num_pkts = a_bd->f_h1.num_pkts;
+        unsigned long t_bytes = 0;
+
+        tpacket3_hdr* t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)a_bd + a_bd->f_h1.offset_to_first_pkt );
+
+        for( unsigned i = 0; i < t_num_pkts; ++i )
+        {
+            t_bytes += t_packet->tp_snaplen;
+
+            process_packet( t_packet );
+
+            // move packet iterator ahead if possible
+            if( +f_iterator == false )
+            {
+                LINFO( plog, "Packet iterator blocked at <" << f_iterator.index() << ">" );
+                //increment block (waits for mutex lock)
+                ++f_iterator;
+                LINFO( plog, "Packet iterator loose at <" << f_iterator.index() << ">" );
+            }
+
+            // update the address of the packet to the next packet in the block
+            t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)a_bd + t_packet->tp_next_offset );
+        }
+
+        f_packets_total += t_num_pkts;
+        f_bytes_total += t_bytes;
+
+        return;
+    }
+
+    void packet_eater::flush_block( block_desc* a_bd )
+    {
+        a_bd->f_h1.block_status = TP_STATUS_KERNEL;
+        return;
+    }
+
+    void packet_eater::process_packet( tpacket3_hdr* a_packet )
+    {
+        // grab the ethernet interface header (defined in if_ether.h)
+        ethhdr* t_eth_hdr = reinterpret_cast< ethhdr* >( (uint8_t*)a_packet + a_packet->tp_mac );
+
+        // filter only IP packets
+        static const unsigned short t_eth_p_ip = htons(ETH_P_IP);
+        if( t_eth_hdr->h_proto != t_eth_p_ip )
+        {
+            LDEBUG( plog, "Non-IP packet skipped" );
+            return;
+        }
+
+        // grab the ip interface header (defined in ip.h)
+        iphdr* t_ip_hdr = reinterpret_cast< iphdr* >( (uint8_t*)t_eth_hdr + ETH_HLEN );
+
+        //TODO: filter on source address?
+        //uint32_t t_source_address = t_ip_hdr->saddr;
+
+        //TODO: use destination address for routing to different channels?
+        //uint32_t t_dest_address = t_ip_hdr->daddr;
+
+        //TODO: check inputs to copy function
+        f_iterator->copy( reinterpret_cast< uint8_t* >( (uint8_t*)t_ip_hdr + t_ip_hdr->ihl ), t_ip_hdr->tot_len - t_ip_hdr->ihl);
+
+        //TODO: put packet into packet buffer
+        //TODO: (later) check channel, and put into the proper buffer
+
+    }
+
 
 } /* namespace psyllid */

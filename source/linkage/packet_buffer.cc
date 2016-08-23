@@ -65,10 +65,10 @@ namespace psyllid
 
 
     //*********************
-    // buffer
+    // packet_buffer
     //*********************
 
-    buffer::buffer( size_t a_size, size_t a_packet_size ) :
+    packet_buffer::packet_buffer( size_t a_size, size_t a_packet_size ) :
             f_packets( nullptr ),
             f_mutexes( nullptr ),
             f_size( a_size ),
@@ -77,12 +77,12 @@ namespace psyllid
         f_packets = new packet*[f_size];
         for( unsigned t_index = 0; t_index < f_size; ++t_index )
         {
-            f_packets[ t_index ] = nullptr;
+            f_packets[ t_index ] = new packet( a_packet_size );
         }
         f_mutexes = new std::mutex[f_size];
     }
 
-    buffer::~buffer()
+    packet_buffer::~packet_buffer()
     {
         for( unsigned t_index = 0; t_index < f_size; ++t_index )
         {
@@ -93,7 +93,7 @@ namespace psyllid
         delete [] f_mutexes;
     }
 
-    void buffer::set_packet( unsigned a_index, packet* a_packet )
+    void packet_buffer::set_packet( unsigned a_index, packet* a_packet )
     {
         f_mutexes[ a_index ].lock();
         delete f_packets[ a_index ];
@@ -102,7 +102,7 @@ namespace psyllid
         return;
     }
 /*
-    void buffer::print_states()
+    void packet_buffer::print_states()
     {
         std::stringstream pbuff;
         for( unsigned t_index = 0; t_index < f_size; ++t_index )
@@ -116,32 +116,28 @@ namespace psyllid
 
 
     //*********************
-    // iterator
+    // pb_iterator
     //*********************
 
-    iterator::iterator( buffer* a_buffer, const std::string& a_name ) :
-            f_name( a_name ),
-            f_buffer( a_buffer ),
-            f_packets( a_buffer->f_packets ),
-            f_mutexes( a_buffer->f_mutexes ),
-            f_size( a_buffer->f_size ),
-            f_previous_index( f_size ),
+    pb_iterator::pb_iterator( packet_buffer* a_buffer/*, const std::string& a_name*/ ) :
+            //f_name( a_name ),
+            f_buffer( nullptr ),
+            f_packets( nullptr ),
+            f_mutexes( nullptr ),
+            f_size( 0 ),
+            f_previous_index( 0 ),
             f_current_index( 0 ),
-            f_next_index( 1 ),
+            f_next_index( 0 ),
             f_released( false )
     {
         //IT_TIMER_INITIALIZE;
 
-        // start out by passing any packets that are currently locked, then lock the first free packet
-        //IT_TIMER_SET_IGNORE_DECR( (*this) );
-        while( f_mutexes[ f_current_index ].try_lock() == false )
+        if( ! attach( a_buffer ) )
         {
-            decrement();
+            throw error() << "Unable to attach pb_iterator to buffer";
         }
-        //IT_TIMER_UNSET_IGNORE_DECR( (*this) );
-        LDEBUG( plog, "iterator " << f_name << " starting at index " << f_current_index );
     }
-    iterator::iterator( const iterator& a_copy )
+    pb_iterator::pb_iterator( const pb_iterator& a_copy )
     {
         f_buffer = a_copy.f_buffer;
         f_packets = a_copy.f_packets;
@@ -152,35 +148,12 @@ namespace psyllid
         f_next_index = a_copy.f_next_index;
         f_released = a_copy.f_released;
     }
-    iterator::~iterator()
+    pb_iterator::~pb_iterator()
     {
         if(! f_released ) release();
     }
 
-    const std::string& iterator::name() const
-    {
-        return f_name;
-    }
-
-    unsigned int iterator::index() const
-    {
-        return f_current_index;
-    }
-    packet* iterator::object()
-    {
-        return f_packets[ f_current_index ];
-    }
-
-    packet* iterator::operator->()
-    {
-        return f_packets[ f_current_index ];
-    }
-    packet& iterator::operator*()
-    {
-        return *f_packets[ f_current_index ];
-    }
-
-    bool iterator::operator+()
+    bool pb_iterator::operator+()
     {
         //IT_TIMER_INCR_TRY_BEGIN;
         if( f_mutexes[ f_next_index ].try_lock() == true )
@@ -193,7 +166,7 @@ namespace psyllid
         //IT_TIMER_INCR_TRY_FAIL
         return false;
     }
-    void iterator::operator++()
+    void pb_iterator::operator++()
     {
         //IT_TIMER_INCR_BEGIN;
         f_mutexes[ f_next_index ].lock();
@@ -203,7 +176,7 @@ namespace psyllid
         return;
     }
 
-    bool iterator::operator-()
+    bool pb_iterator::operator-()
     {
         //IT_TIMER_OTHER
         if( f_mutexes[ f_previous_index ].try_lock() == true )
@@ -214,7 +187,7 @@ namespace psyllid
         }
         return false;
     }
-    void iterator::operator--()
+    void pb_iterator::operator--()
     {
         //IT_TIMER_OTHER
         f_mutexes[ f_previous_index ].lock();
@@ -223,7 +196,7 @@ namespace psyllid
         return;
     }
 
-    void iterator::increment()
+    void pb_iterator::increment()
     {
         f_previous_index++;
         if( f_previous_index == f_size )
@@ -242,7 +215,7 @@ namespace psyllid
         }
         return;
     }
-    void iterator::decrement()
+    void pb_iterator::decrement()
     {
         if( f_previous_index == 0 )
         {
@@ -262,7 +235,37 @@ namespace psyllid
         return;
     }
 
-    void iterator::release()
+    bool pb_iterator::attach( packet_buffer* a_buffer )
+    {
+        // can only attach if currently released
+        if( ! f_released ) return false;
+
+        // no action if the buffer is null
+        if( a_buffer == nullptr ) return true;
+
+        f_buffer = a_buffer;
+        f_packets = a_buffer->f_packets;
+        f_mutexes = a_buffer->f_mutexes;
+        f_size = a_buffer->f_size;
+        f_previous_index = f_size;
+        f_current_index = 0;
+        f_next_index = 1;
+
+        // start out by passing any packets that are currently locked, then lock the first free packet
+        //IT_TIMER_SET_IGNORE_DECR( (*this) );
+        while( f_mutexes[ f_current_index ].try_lock() == false )
+        {
+            decrement();
+        }
+        //IT_TIMER_UNSET_IGNORE_DECR( (*this) );
+        LDEBUG( plog, "pb_iterator " << /*f_name <<*/ " starting at index " << f_current_index );
+
+        f_released = true;
+
+        return true;
+    }
+
+    void pb_iterator::release()
     {
         f_mutexes[ f_current_index ].unlock();
         f_buffer = NULL;
