@@ -23,6 +23,7 @@ namespace psyllid
     LOGGER( plog, "daq_worker" );
 
     daq_worker::daq_worker() :
+            scarab::cancelable(),
             f_midge_pkg(),
             f_run_in_progress( false ),
             f_error_state( false ),

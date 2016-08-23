@@ -30,6 +30,7 @@ namespace psyllid
     LOGGER( plog, "run_server" );
 
     run_server::run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semantic > a_version ) :
+            scarab::cancelable(),
             f_config( a_node ),
             f_version( a_version ),
             f_return( RETURN_ERROR ),

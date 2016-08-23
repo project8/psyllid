@@ -26,7 +26,7 @@ namespace psyllid
     class daq_worker;
     class node_manager;
 
-    class daq_control : public midge::cancelable
+    class daq_control : public scarab::cancelable
     {
         public:
             class run_error : public error

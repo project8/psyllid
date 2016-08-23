@@ -29,7 +29,7 @@ namespace psyllid
 {
     class node_manager;
 
-    class daq_worker : public midge::cancelable
+    class daq_worker : public scarab::cancelable
     {
         public:
             daq_worker();

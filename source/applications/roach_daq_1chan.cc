@@ -24,7 +24,7 @@ using namespace psyllid;
 
 LOGGER( plog, "roach_daq_1chan" );
 
-cancelable* f_cancelable = nullptr;
+scarab::cancelable* f_cancelable = nullptr;
 
 void cancel( int )
 {

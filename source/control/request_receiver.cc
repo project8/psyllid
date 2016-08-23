@@ -26,7 +26,7 @@ namespace psyllid
 
     request_receiver::request_receiver( const param_node& a_master_config ) :
             hub(),
-            cancelable(),
+            scarab::cancelable(),
             f_run_handler(),
             f_get_handlers(),
             f_set_handlers(),

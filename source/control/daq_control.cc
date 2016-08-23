@@ -32,7 +32,7 @@ namespace psyllid
     LOGGER( plog, "daq_control" );
 
     daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< node_manager > a_mgr ) :
-            cancelable(),
+            scarab::cancelable(),
             f_condition(),
             f_daq_mutex(),
             f_node_manager( a_mgr ),
