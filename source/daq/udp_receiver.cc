@@ -7,7 +7,7 @@
 
 #include "udp_receiver.hh"
 
-#include "udp_server.hh"
+#include "udp_server_socket.hh"
 
 #include "logger.hh"
 
@@ -52,7 +52,7 @@ namespace psyllid
 
         try
         {
-            udp_server t_server( f_port, f_timeout_sec );
+            std::unique_ptr< udp_server > t_server( new udp_server_socket( f_port, f_timeout_sec ) );
 
             LDEBUG( plog, "Server is listening" );
 
@@ -124,7 +124,7 @@ namespace psyllid
                 // inner loop over packet-receive timeouts
                 while( t_size_received <= 0 && ! f_canceled )
                 {
-                    t_size_received = t_server.recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
+                    t_size_received = t_server->recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
                 }
 
                 if( f_canceled ) break;

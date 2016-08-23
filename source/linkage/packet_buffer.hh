@@ -15,10 +15,11 @@ namespace psyllid
     class packet
     {
         public:
-            packet( size_t a_size = 0 );
+            packet();
+            packet( size_t a_size );
             ~packet();
 
-            void copy( uint8_t* a_packet, size_t a_size );
+            void memcpy( uint8_t* a_packet, size_t a_size );
 
             uint8_t* ptr() const;
 
@@ -92,7 +93,8 @@ namespace psyllid
     class pb_iterator
     {
         public:
-            pb_iterator( packet_buffer* a_buffer = nullptr /*, const std::string& a_name = "default"*/ );
+            pb_iterator();
+            pb_iterator( packet_buffer* a_buffer /*, const std::string& a_name = "default"*/ );
             virtual ~pb_iterator();
 
             //const std::string& name() const;
@@ -123,7 +125,6 @@ namespace psyllid
             void release();
 
         protected:
-            pb_iterator();
             pb_iterator( const pb_iterator& );
 
             //std::string f_name;

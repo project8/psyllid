@@ -28,6 +28,10 @@ option( Psyllid_BUILD_DOCS "Enable make targets for both doxygen and sphinx (req
 # dependencies #
 ################
 
+# Boost
+# Boost (1.48 required for container; scarab minimum is 1.46)
+find_package( Boost 1.48.0 REQUIRED )
+
 # Midge
 pbuilder_add_submodule( Midge midge )
 midge_process_options()

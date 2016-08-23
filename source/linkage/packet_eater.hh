@@ -8,26 +8,26 @@
 #ifndef SOURCE_PACKET_EATER_HH_
 #define SOURCE_PACKET_EATER_HH_
 
+#include "packet_buffer.hh"
+
 #include "cancelable.hh"
 
-#include <deque>
 #include <linux/if_packet.h>
+#include <string>
+#include <sys/uio.h>
 
 namespace psyllid
 {
-    class packet_buffer;
-
-
 	struct block_desc
 	{
 		uint32_t f_version;
 		uint32_t f_offset_to_priv;
-		tpacket_hdr_v1 f_h1;
+		tpacket_hdr_v1 f_packet_hdr;
 	};
 
 	struct receive_ring
 	{
-		struct iovec* f_rd;
+		iovec* f_rd;
 		uint8_t* f_map;
 		tpacket_req3 f_req;
 	};
@@ -83,13 +83,13 @@ namespace psyllid
 	class packet_eater : scarab::cancelable
 	{
 		public:
-			packet_eater( unsigned a_timeout_sec = 0 );
+			packet_eater( const std::string& a_net_interface, unsigned a_timeout_sec = 1, unsigned a_n_blocks = 64, unsigned a_block_size = 1 << 22, unsigned a_frame_size = 1 << 11 );
 			virtual ~packet_eater();
 
 			void execute();
 
 		private:
-			void walk_block( block_desc* a_bd, const int a_block_num );
+			void walk_block( block_desc* a_bd );
 			void flush_block( block_desc* a_bd );
 
 			void process_packet( tpacket3_hdr* a_packet );
@@ -97,7 +97,13 @@ namespace psyllid
 			unsigned f_timeout_sec;
 
             int f_socket;
+
 			receive_ring* f_ring;
+	        unsigned f_block_size;
+	        unsigned f_frame_size;
+	        unsigned f_n_blocks;
+
+
 			sockaddr_ll* f_address;
 
 			uint64_t f_packets_total;

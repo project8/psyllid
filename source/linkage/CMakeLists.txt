@@ -4,11 +4,17 @@
 
 set( headers
     packet_buffer.hh
+    packet_distributor.hh
     udp_server.hh
+    udp_server_buffered.hh
+    udp_server_socket.hh
 )
 set( sources
 	packet_buffer.cc
+	packet_distributor.cc
     udp_server.cc
+    udp_server_buffered.cc
+    udp_server_socket.cc
 )
 
 if( UNIX )

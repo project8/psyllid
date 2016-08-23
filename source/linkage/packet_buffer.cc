@@ -19,6 +19,10 @@ namespace psyllid
     // packet
     //*********************
 
+    packet::packet() :
+            packet( 0 )
+    {}
+
     packet::packet( size_t a_size ) :
             f_bytes( nullptr ),
             f_nbytes( a_size )
@@ -42,11 +46,11 @@ namespace psyllid
         }
     }
 
-    void packet::copy( uint8_t* a_packet, size_t a_size )
+    void packet::memcpy( uint8_t* a_packet, size_t a_size )
     {
         if( a_size != f_nbytes )
         {
-            free( f_bytes );
+            ::free( f_bytes );
             f_bytes = nullptr;
             if( a_size != 0 )
             {
@@ -59,7 +63,7 @@ namespace psyllid
             }
             f_nbytes = a_size;
         }
-        memcpy( f_bytes, a_packet, f_nbytes);
+        ::memcpy( f_bytes, a_packet, f_nbytes);
         return;
     }
 
@@ -118,6 +122,10 @@ namespace psyllid
     //*********************
     // pb_iterator
     //*********************
+
+    pb_iterator::pb_iterator() :
+            pb_iterator( nullptr )
+    {}
 
     pb_iterator::pb_iterator( packet_buffer* a_buffer/*, const std::string& a_name*/ ) :
             //f_name( a_name ),
