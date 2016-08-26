@@ -72,6 +72,10 @@ namespace psyllid
     // packet_buffer
     //*********************
 
+    packet_buffer::packet_buffer() :
+            packet_buffer( 10 )
+    {}
+
     packet_buffer::packet_buffer( size_t a_size, size_t a_packet_size ) :
             f_packets( nullptr ),
             f_mutexes( nullptr ),

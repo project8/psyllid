@@ -5,12 +5,13 @@
  *      Author: nsoblath
  */
 
-#ifndef SOURCE_PACKET_EATER_HH_
-#define SOURCE_PACKET_EATER_HH_
+#ifndef PSYLLID_PACKET_EATER_HH_
+#define PSYLLID_PACKET_EATER_HH_
 
 #include "packet_buffer.hh"
 
 #include "cancelable.hh"
+#include "member_variables.hh"
 
 #include <linux/if_packet.h>
 #include <string>
@@ -36,7 +37,7 @@ namespace psyllid
     @class packet_eater
     @author N.S. Oblath
 
-    @brief Sucks up packets from a network connection and distributes them to a specified number of circular buffers
+    @brief Sucks up packets from a network connection and copies them to a circular buffer
 
     @details
     Following documentation of using mmap ring buffers in networking here:
@@ -83,10 +84,17 @@ namespace psyllid
 	class packet_eater : scarab::cancelable
 	{
 		public:
-			packet_eater( const std::string& a_net_interface, unsigned a_timeout_sec = 1, unsigned a_n_blocks = 64, unsigned a_block_size = 1 << 22, unsigned a_frame_size = 1 << 11 );
+			packet_eater( const std::string& a_net_interface );
 			virtual ~packet_eater();
 
+			bool initialize();
+
 			void execute();
+
+			mv_accessible( unsigned, timeout_sec );
+            mv_accessible( unsigned, n_blocks );
+			mv_accessible( unsigned, block_size );
+			mv_accessible( unsigned, frame_size );
 
 		private:
 			void walk_block( block_desc* a_bd );
@@ -94,15 +102,12 @@ namespace psyllid
 
 			void process_packet( tpacket3_hdr* a_packet );
 
-			unsigned f_timeout_sec;
+			std::string f_net_interface_name;
+			int f_net_interface_index;
 
             int f_socket;
 
 			receive_ring* f_ring;
-	        unsigned f_block_size;
-	        unsigned f_frame_size;
-	        unsigned f_n_blocks;
-
 
 			sockaddr_ll* f_address;
 
@@ -116,4 +121,4 @@ namespace psyllid
 
 } /* namespace psyllid */
 
-#endif /* SOURCE_PACKET_EATER_HH_ */
+#endif /* PSYLLID_PACKET_EATER_HH_ */

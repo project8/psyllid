@@ -7,6 +7,7 @@
 
 #include "udp_receiver.hh"
 
+#include "psyllid_error.hh"
 #include "udp_server_socket.hh"
 
 #include "logger.hh"
@@ -209,7 +210,21 @@ namespace psyllid
         }
         catch( midge::error& e )
         {
-            LERROR( plog, "Exception caught: " << e.what() );
+            LERROR( plog, "Midge exception caught: " << e.what() );
+
+            LDEBUG( plog, "Stopping output streams" );
+            out_stream< 0 >().set( stream::s_stop );
+            out_stream< 1 >().set( stream::s_stop );
+
+            LDEBUG( plog, "Exiting output streams" );
+            out_stream< 0 >().set( stream::s_exit );
+            out_stream< 1 >().set( stream::s_exit );
+
+            return;
+        }
+        catch( error& e )
+        {
+            LERROR( plog, "Psyllid exception caught: " << e.what() );
 
             LDEBUG( plog, "Stopping output streams" );
             out_stream< 0 >().set( stream::s_stop );

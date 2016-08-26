@@ -28,18 +28,20 @@
 
 
 
-LOGGER( plog, "udp_server" );
+LOGGER( plog, "packet_eater" );
 
 
 namespace psyllid {
 
-	packet_eater::packet_eater( const std::string& a_net_interface, unsigned a_timeout_sec, unsigned a_n_blocks, unsigned a_block_size, unsigned a_frame_size ) :
-	        f_timeout_sec( a_timeout_sec ),
+	packet_eater::packet_eater( const std::string& a_net_interface ) :
+            f_timeout_sec( 1 ),
+            f_n_blocks( 64 ),
+            f_block_size( 1 << 22 ),
+            f_frame_size( 1 << 11 ),
+	        f_net_interface_name( a_net_interface ),
+	        f_net_interface_index( 0 ),
 			f_socket( 0 ),
 			f_ring( nullptr ),
-			f_block_size( a_block_size ),
-			f_frame_size( a_frame_size ),
-			f_n_blocks( a_n_blocks ),
 			f_address( nullptr ),
 			f_packets_total( 0 ),
 			f_bytes_total( 0 ),
@@ -47,6 +49,35 @@ namespace psyllid {
 			f_iterator()
 
 	{
+	    f_net_interface_name = a_net_interface;
+        f_net_interface_index = if_nametoindex( a_net_interface.c_str() );
+        if( f_net_interface_index == 0 )
+        {
+            throw error() << "[packet_eater] Unable to find index for interface <" << f_net_interface_name << ">";
+        }
+        LDEBUG( plog, "Identified net interface <" << f_net_interface_name << "> with index <" << f_net_interface_index << ">" );
+	}
+
+	packet_eater::~packet_eater()
+	{
+	    // undo the ring
+	    if( f_ring != nullptr )
+	    {
+	        ::munmap(f_ring->f_map, f_ring->f_req.tp_block_size * f_ring->f_req.tp_block_nr);
+	        ::free( f_ring->f_rd );
+	        delete f_ring;
+	        f_ring = nullptr;
+	    }
+
+        // clean up socket address
+        delete f_address;
+
+        // close udp_server socket
+        if( f_socket != 0 ) ::close( f_socket );
+	}
+
+    bool packet_eater::initialize()
+    {
         LINFO( plog, "Preparing fast-packet-acquisition server" );
 
         // create the ring buffer
@@ -64,14 +95,14 @@ namespace psyllid {
         f_ring->f_req.tp_retire_blk_tov = 60;
         f_ring->f_req.tp_feature_req_word = TP_FT_REQ_FILL_RXHASH;
 
-        LDEBUG( plog, "Opening packet_eater for network interface <" << a_net_interface << ">" );
+        LDEBUG( plog, "Opening packet_eater for network interface <" << f_net_interface_name << ">" );
 
         // open socket
         f_socket = ::socket( AF_PACKET, SOCK_RAW, htons(ETH_P_IP) );
         if( f_socket < 0 )
         {
-            throw error() << "[packet_eater] could not create socket:\n\t" << strerror( errno );
-            return;
+            LERROR( plog, "Could not create socket:\n\t" << strerror( errno ) );
+            return false;
         }
 
         // socket options
@@ -79,14 +110,14 @@ namespace psyllid {
         int t_packet_ver = TPACKET_V3;
         if( ::setsockopt( f_socket, SOL_PACKET, PACKET_VERSION, &t_packet_ver, sizeof(t_packet_ver) ) < 0 )
         {
-        	throw error() << "[packet_eater] could not set packet version:\n\t" << strerror( errno );
-        	return;
+            LERROR( plog, "Could not set packet version:\n\t" << strerror( errno ) );
+            return false;
         }
 
         if( ::setsockopt( f_socket, SOL_PACKET, PACKET_RX_RING, &f_ring->f_req, sizeof(f_ring->f_req) ) < 0 )
         {
-        	throw error() << "[packet_eater] could not set receive ring:\n\t" << strerror( errno );
-        	return;
+            LERROR( plog, "Could not set receive ring:\n\t" << strerror( errno ) );
+            return false;
         }
 
         /* setsockopt: Handy debugging trick that lets
@@ -100,7 +131,7 @@ namespace psyllid {
         // Receive timeout
         if( a_timeout_sec > 0 )
         {
-            struct timeval t_timeout;
+            timeval t_timeout;
             t_timeout.tv_sec = a_timeout_sec;
             t_timeout.tv_usec = 0;  // Not init'ing this can cause strange errors
             ::setsockopt( f_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&t_timeout, sizeof(struct timeval) );
@@ -108,37 +139,31 @@ namespace psyllid {
 
         // finish preparing the ring
         f_ring->f_map = (uint8_t*)::mmap( nullptr, f_ring->f_req.tp_block_size * f_ring->f_req.tp_block_nr,
-        		PROT_READ | PROT_WRITE, MAP_SHARED | MAP_LOCKED, f_socket, 0);
+                PROT_READ | PROT_WRITE, MAP_SHARED | MAP_LOCKED, f_socket, 0);
         if( f_ring->f_map == MAP_FAILED )
         {
-        	throw error() << "[packet_eater] Unable to setup ring map";
-        	return;
+            LERROR( plog, "Unable to setup ring map" );
+            return false;
         }
 
         f_ring->f_rd = (iovec*)::malloc(f_ring->f_req.tp_block_nr * sizeof(*f_ring->f_rd) );
         if( f_ring->f_rd == nullptr )
         {
-        	throw error() << "[packet_eater] Unable to allocate memory for the ring";
-        	return;
+            LERROR( plog, "Unable to allocate memory for the ring" );
+            return false;
         }
         for( unsigned i_block = 0; i_block < f_ring->f_req.tp_block_nr; ++i_block )
         {
-        	f_ring->f_rd[ i_block ].iov_base = f_ring->f_map + ( i_block * f_ring->f_req.tp_block_size );
-        	f_ring->f_rd[ i_block ].iov_len = f_ring->f_req.tp_block_size;
+            f_ring->f_rd[ i_block ].iov_base = f_ring->f_map + ( i_block * f_ring->f_req.tp_block_size );
+            f_ring->f_rd[ i_block ].iov_len = f_ring->f_req.tp_block_size;
         }
 
         // initialize the address
         f_address = new sockaddr_ll();
         ::memset( f_address, 0, sizeof(sockaddr_ll) );
-        int t_interface_index = if_nametoindex( a_net_interface.c_str() );
-        if( t_interface_index == 0 )
-        {
-        	throw error() << "[packet_eater] Unable to find index for interface <" << a_net_interface << ">";
-        	return;
-        }
         f_address->sll_family = PF_PACKET;
         f_address->sll_protocol = htons(ETH_P_IP);
-        f_address->sll_ifindex = t_interface_index;
+        f_address->sll_ifindex = f_net_interface_index;
         f_address->sll_hatype = 0;
         f_address->sll_pkttype = 0;
         f_address->sll_halen = 0;
@@ -147,30 +172,17 @@ namespace psyllid {
         LDEBUG( plog, "Binding the socket" );
         if( ::bind( f_socket, (const sockaddr*)f_address, sizeof(f_address) ) < 0 )
         {
-        	throw error() << "[packet_eater] could not bind socket:\n\t" << strerror( errno );
-        	return;
+            LERROR( plog, "Could not bind socket:\n\t" << strerror( errno ) );
+            return false;
         }
 
-        LINFO( plog, "Ready to consume packets on interface <" << a_net_interface << ">" );
+        LINFO( plog, "Ready to consume packets on interface <" << f_net_interface_name << ">" );
 
         // create iterator for packet buffer
         f_iterator.attach( &f_packet_buffer );
 
-        return;
-	}
-
-	packet_eater::~packet_eater()
-	{
-	    // undo the ring
-        ::munmap(f_ring->f_map, f_ring->f_req.tp_block_size * f_ring->f_req.tp_block_nr);
-        ::free( f_ring->f_rd );
-
-        // clean up socket address
-        delete f_address;
-
-        // close udp_server socket
-        ::close( f_socket );
-	}
+        return true;
+    }
 
 	void packet_eater::execute()
 	{
@@ -274,6 +286,5 @@ namespace psyllid {
 
         return;
     }
-
 
 } /* namespace psyllid */

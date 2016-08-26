@@ -50,7 +50,8 @@ namespace psyllid
         public:
             friend class pb_iterator;
 
-            packet_buffer( size_t a_size, size_t a_packet_size );
+            packet_buffer();
+            packet_buffer( size_t a_size, size_t a_packet_size = 0 );
             virtual ~packet_buffer();
 
             size_t size() const;
@@ -95,6 +96,7 @@ namespace psyllid
         public:
             pb_iterator();
             pb_iterator( packet_buffer* a_buffer /*, const std::string& a_name = "default"*/ );
+            pb_iterator( const pb_iterator& );
             virtual ~pb_iterator();
 
             //const std::string& name() const;
@@ -125,7 +127,6 @@ namespace psyllid
             void release();
 
         protected:
-            pb_iterator( const pb_iterator& );
 
             //std::string f_name;
 

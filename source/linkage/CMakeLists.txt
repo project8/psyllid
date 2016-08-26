@@ -21,10 +21,12 @@ if( UNIX )
     set( headers
         ${headers}
         packet_eater.hh
+        packet_eater_manager.hh
     )
     set( sources
         ${sources}
         packet_eater.cc
+        packet_eater_manager.cc
     )
 endif( UNIX )
 

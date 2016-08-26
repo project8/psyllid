@@ -12,6 +12,7 @@
 #include "server_config.hh"
 
 #include "configurator.hh"
+#include "global_config.hh"
 #include "logger.hh"
 
 using namespace psyllid;
@@ -37,6 +38,7 @@ int main( int argc, char** argv )
     {
         server_config t_sc;
         scarab::configurator t_configurator( argc, argv, &t_sc );
+        scarab::global_config::get_instance()->set_config( t_configurator.config() );
 
         // Run the server
         run_server the_server( t_configurator.config(), std::shared_ptr< scarab::version_semantic >( new version() ) );
