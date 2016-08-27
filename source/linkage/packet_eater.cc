@@ -129,10 +129,10 @@ namespace psyllid {
         //::setsockopt( f_socket, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
 
         // Receive timeout
-        if( a_timeout_sec > 0 )
+        if( f_timeout_sec > 0 )
         {
             timeval t_timeout;
-            t_timeout.tv_sec = a_timeout_sec;
+            t_timeout.tv_sec = f_timeout_sec;
             t_timeout.tv_usec = 0;  // Not init'ing this can cause strange errors
             ::setsockopt( f_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&t_timeout, sizeof(struct timeval) );
         }
@@ -182,6 +182,12 @@ namespace psyllid {
         f_iterator.attach( &f_packet_buffer );
 
         return true;
+    }
+
+    void packet_eater::attach_read_iterator( pb_iterator& a_iterator )
+    {
+        a_iterator.attach( &f_packet_buffer );
+        return;
     }
 
 	void packet_eater::execute()
@@ -286,5 +292,12 @@ namespace psyllid {
 
         return;
     }
+
+    packet_buffer& packet_eater::buffer()
+    {
+        return f_packet_buffer;
+    }
+
+
 
 } /* namespace psyllid */

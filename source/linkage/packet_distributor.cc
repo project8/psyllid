@@ -7,6 +7,8 @@
 
 #include "packet_distributor.hh"
 
+#include "psyllid_error.hh"
+
 #include "logger.hh"
 
 namespace psyllid
@@ -14,10 +16,14 @@ namespace psyllid
     LOGGER( plog, "packet_distributor" );
 
 
-    packet_distributor::packet_distributor() :
+    packet_distributor::packet_distributor( packet_buffer* a_buffer ) :
             f_ip_pkt_iterator(),
             f_udp_buffers()
     {
+        if( ! f_ip_pkt_iterator.attach( a_buffer ) )
+        {
+            throw error() << "[packet_distributor] Unable to attach iterator to buffer";
+        }
     }
 
     packet_distributor::~packet_distributor()

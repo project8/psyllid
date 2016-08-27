@@ -15,11 +15,19 @@
 #include "producer.hh"
 #include "shared_cancel.hh"
 
+#include <memory>
+
+namespace scarab
+{
+    class param_node;
+}
+
 namespace psyllid
 {
+    class udp_server;
 
     /*!
-     @class udp-receiver
+     @class udp_receiver
      @author N. S. Oblath
 
      @brief A UDP server to receive ROACH packets.
@@ -57,6 +65,7 @@ namespace psyllid
             mv_accessible( size_t, udp_buffer_size );
             mv_accessible( unsigned, timeout_sec );
             mv_accessible( unsigned, time_sync_tol );
+            mv_assignable( scarab::param_node, server_config );
 
         public:
             virtual void initialize();
@@ -65,6 +74,8 @@ namespace psyllid
 
         private:
             bool f_paused;
+
+            std::unique_ptr< udp_server > f_server;
 
             void id_match_sanity_check( uint64_t a_time_batch_pkt, uint64_t a_freq_batch_pkt, uint64_t a_time_session_pkt, uint64_t a_freq_session_pkt );
 

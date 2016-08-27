@@ -30,7 +30,7 @@ namespace psyllid
     class packet_distributor : scarab::cancelable
     {
         public:
-            packet_distributor();
+            packet_distributor( packet_buffer* a_buffer );
             virtual ~packet_distributor();
 
             bool open_port( unsigned a_port, pb_iterator& a_iterator, unsigned a_buffer_size = 100 );

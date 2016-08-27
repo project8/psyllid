@@ -88,8 +88,11 @@ namespace psyllid
 			virtual ~packet_eater();
 
 			bool initialize();
+			void attach_read_iterator( pb_iterator& a_iterator );
 
 			void execute();
+
+			packet_buffer& buffer();
 
 			mv_accessible( unsigned, timeout_sec );
             mv_accessible( unsigned, n_blocks );

@@ -8,9 +8,11 @@
 #include "udp_receiver.hh"
 
 #include "psyllid_error.hh"
+#include "udp_server_buffered.hh"
 #include "udp_server_socket.hh"
 
 #include "logger.hh"
+#include "param.hh"
 
 #include <memory>
 
@@ -29,7 +31,9 @@ namespace psyllid
             f_udp_buffer_size( sizeof( roach_packet ) ),
             f_timeout_sec( 2 ),
             f_time_sync_tol( 2 ),
-            f_paused( false )
+            f_server_config( nullptr ),
+            f_paused( false ),
+            f_server( nullptr )
     {
     }
 
@@ -39,6 +43,28 @@ namespace psyllid
 
     void udp_receiver::initialize()
     {
+        std::string t_server_type( "socket" );
+        if( f_server_config != nullptr ) t_server_type = f_server_config->get_value( "type", t_server_type );
+        try
+        {
+            if( t_server_type == "socket" )
+            {
+                f_server.reset( new udp_server_socket( f_server_config ) );
+            }
+            else if( t_server_type == "buffered" )
+            {
+                f_server.reset( new udp_server_buffered( f_server_config ) );
+            }
+            else
+            {
+                throw error() << "[udp_receiver] Unknown server type: " << t_server_type;
+            }
+        }
+        catch( error& e )
+        {
+            throw;
+        }
+
         out_buffer< 0 >().initialize( f_time_length );
         out_buffer< 1 >().initialize( f_freq_length );
         return;
@@ -53,9 +79,7 @@ namespace psyllid
 
         try
         {
-            std::unique_ptr< udp_server > t_server( new udp_server_socket( f_port, f_timeout_sec ) );
-
-            LDEBUG( plog, "Server is listening" );
+            //LDEBUG( plog, "Server is listening" );
 
             std::unique_ptr< char[] > t_buffer_ptr( new char[ f_udp_buffer_size ] );
 
@@ -125,7 +149,7 @@ namespace psyllid
                 // inner loop over packet-receive timeouts
                 while( t_size_received <= 0 && ! f_canceled )
                 {
-                    t_size_received = t_server->recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
+                    t_size_received = f_server->recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
                 }
 
                 if( f_canceled ) break;
@@ -284,6 +308,7 @@ namespace psyllid
         a_node->set_udp_buffer_size( a_config.get_value( "udp-buffer-size", a_node->get_udp_buffer_size() ) );
         a_node->set_timeout_sec( a_config.get_value( "timeout-sec", a_node->get_timeout_sec() ) );
         a_node->set_time_sync_tol( a_config.get_value( "time-sync-tol", a_node->get_time_sync_tol() ) );
+        a_node->set_server_config( new scarab::param_node( *a_config.node_at( "server" ) ) );
         return;
     }
 

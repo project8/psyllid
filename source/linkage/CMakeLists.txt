@@ -20,13 +20,13 @@ set( sources
 if( UNIX )
     set( headers
         ${headers}
+        fast_packet_acq_manager.hh
         packet_eater.hh
-        packet_eater_manager.hh
     )
     set( sources
         ${sources}
+        fast_packet_acq_manager.cc
         packet_eater.cc
-        packet_eater_manager.cc
     )
 endif( UNIX )
 
