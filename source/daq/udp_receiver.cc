@@ -178,7 +178,7 @@ namespace psyllid
 
                         t_freq_data = out_stream< 1 >().data();
                         t_freq_data->set_pkt_in_session( t_freq_session_pkt_counter++ );
-                        memcpy( &t_freq_data->packet(), t_roach_packet, f_udp_buffer_size );
+                        ::memcpy( &t_freq_data->packet(), t_roach_packet, f_udp_buffer_size );
 
                         LDEBUG( plog, "Frequency data received (" << t_size_received << " bytes):  chan = " << t_freq_data->get_digital_id() <<
                                "  time = " << t_freq_data->get_unix_time() <<
@@ -198,7 +198,7 @@ namespace psyllid
 
                         t_time_data = out_stream< 0 >().data();
                         t_time_data->set_pkt_in_session( t_time_session_pkt_counter++ );
-                        memcpy( &t_time_data->packet(), t_roach_packet, f_udp_buffer_size );
+                        ::memcpy( &t_time_data->packet(), t_roach_packet, f_udp_buffer_size );
 
                         LDEBUG( plog, "Time data received (" << t_size_received << " bytes):  chan = " << t_time_data->get_digital_id() <<
                                "  time = " << t_time_data->get_unix_time() <<

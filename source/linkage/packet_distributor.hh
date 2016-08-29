@@ -39,6 +39,8 @@ namespace psyllid
             void execute();
 
         private:
+            bool distribute_packet();
+
             pb_iterator f_ip_pkt_iterator;
 
             struct udp_buffer

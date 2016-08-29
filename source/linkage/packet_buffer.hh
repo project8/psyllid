@@ -1,6 +1,8 @@
 #ifndef PSYLLID_PACKET_BUFFER_HH_
 #define PSYLLID_PACKET_BUFFER_HH_
 
+#include "member_variables.hh"
+
 #include <inttypes.h>
 #include <mutex>
 #include <string>
@@ -15,6 +17,15 @@ namespace psyllid
     class packet
     {
         public:
+            enum class status
+            {
+                unused,
+                writing,
+                written,
+                reading
+            };
+
+        public:
             packet();
             packet( size_t a_size );
             ~packet();
@@ -23,21 +34,18 @@ namespace psyllid
 
             uint8_t* ptr() const;
 
-            size_t size() const;
+            mv_accessible_noset( size_t, size );
+            mv_accessible( status, status );
 
         private:
+            friend class pb_iterator;
+
             uint8_t* f_bytes;
-            size_t f_nbytes;
     };
 
     inline uint8_t* packet::ptr() const
     {
         return f_bytes;
-    }
-
-    inline size_t packet::size() const
-    {
-        return f_nbytes;
     }
 
 
@@ -126,6 +134,17 @@ namespace psyllid
             /// remove pb_iterator from buffer
             void release();
 
+            // status access
+            bool is_unused() const;
+            bool is_writing() const;
+            bool is_written() const;
+            bool is_reading() const;
+
+            void set_unused();
+            void set_writing();
+            void set_written();
+            void set_reading();
+
         protected:
 
             //std::string f_name;
@@ -171,6 +190,45 @@ namespace psyllid
         return *f_packets[ f_current_index ];
     }
 
+    inline bool pb_iterator::is_unused() const
+    {
+        return f_packets[ f_current_index ]->f_status == packet::status::unused;
+    }
+
+    inline bool pb_iterator::is_writing() const
+    {
+        return f_packets[ f_current_index ]->f_status == packet::status::writing;
+    }
+
+    inline bool pb_iterator::is_written() const
+    {
+        return f_packets[ f_current_index ]->f_status == packet::status::written;
+    }
+
+    inline bool pb_iterator::is_reading() const
+    {
+        return f_packets[ f_current_index ]->f_status == packet::status::reading;
+    }
+
+    inline void pb_iterator::set_unused()
+    {
+        f_packets[ f_current_index ]->f_status = packet::status::unused;
+    }
+
+    inline void pb_iterator::set_writing()
+    {
+        f_packets[ f_current_index ]->f_status = packet::status::writing;
+    }
+
+    inline void pb_iterator::set_written()
+    {
+        f_packets[ f_current_index ]->f_status = packet::status::written;
+    }
+
+    inline void pb_iterator::set_reading()
+    {
+        f_packets[ f_current_index ]->f_status = packet::status::reading;
+    }
 
 }
 

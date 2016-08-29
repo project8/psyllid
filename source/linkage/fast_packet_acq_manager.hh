@@ -63,6 +63,9 @@ namespace psyllid
 
 	        scarab::param_node f_config;
 
+	    public:
+	        void execute();
+
         protected:
             friend class scarab::singleton< fast_packet_acq_manager >;
             friend class scarab::destroyer< fast_packet_acq_manager >;

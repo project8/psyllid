@@ -37,11 +37,32 @@ namespace psyllid
 
     udp_server_buffered::~udp_server_buffered()
     {
+        f_iterator.release();
     }
 
-    ssize_t udp_server_buffered::recv( char* a_message, size_t a_size, int flags, int& ret_errno )
+    ssize_t udp_server_buffered::recv( char* a_message, size_t a_size, int , int&  )
     {
+        // advance the iterator; blocks until next packet is available
+        ++f_iterator;
 
+        // if the IP packet we're on is unused, skip it
+        if( f_iterator.is_unused() )
+        {
+            return 0;
+        }
+
+        // read the IP packet
+        f_iterator.set_reading();
+
+        if( a_size < f_iterator->get_size() )
+        {
+            throw error() << "[udp_server_buffered] Message buffer is too small (" << a_size << " bytes, while message is " << f_iterator->get_size() << " bytes)";
+        }
+        ::memcpy( a_message, f_iterator->ptr(), f_iterator->get_size() );
+
+        f_iterator.set_unused();
+
+        return f_iterator->get_size();
     }
 
 }

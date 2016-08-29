@@ -11,6 +11,9 @@
 
 #include "logger.hh"
 
+#include <arpa/inet.h>
+#include <linux/udp.h>
+
 namespace psyllid
 {
     LOGGER( plog, "packet_distributor" );
@@ -28,6 +31,11 @@ namespace psyllid
 
     packet_distributor::~packet_distributor()
     {
+        while( ! f_udp_buffers.empty() )
+        {
+            f_udp_buffers.begin()->second.f_iterator.release();
+            f_udp_buffers.erase( f_udp_buffers.begin() );
+        }
     }
 
     bool packet_distributor::open_port( unsigned a_port, pb_iterator& a_iterator, unsigned a_buffer_size )
@@ -66,12 +74,70 @@ namespace psyllid
     void packet_distributor::execute()
     {
 
-        while( ! is_canceled() )
-        {
+        // move the read iterator up until it runs up against a blocked packet
+        while( +f_ip_pkt_iterator );
+        f_ip_pkt_iterator.set_reading();
 
+        // set write packet statuses
+        for( buffer_map::iterator t_it = f_udp_buffers.begin(); t_it != f_udp_buffers.end(); ++t_it )
+        {
+            t_it->second.f_iterator.set_writing();
         }
 
+        while( ! is_canceled() )
+        {
+            // advance the iterator; blocks until next packet is available
+            ++f_ip_pkt_iterator;
 
+            // check for cancelation
+            if( is_canceled() )
+            {
+                break;
+            }
+
+            // if the IP packet we're on is unused, skip it
+            if( f_ip_pkt_iterator.is_unused() )
+            {
+                continue;
+            }
+
+            // read the IP packet
+            f_ip_pkt_iterator.set_reading();
+
+            distribute_packet();
+
+            f_ip_pkt_iterator.set_unused();
+        }
+
+        return;
+    }
+
+    bool packet_distributor::distribute_packet()
+    {
+        // this doesn't appear to be defined anywhere in standard linux headers, at least as far as I could find
+        static const unsigned t_udp_hdr_len = 8;
+
+        udphdr* t_udp_hdr = reinterpret_cast< udphdr* >( f_ip_pkt_iterator->ptr() );
+
+        // get port number
+        unsigned t_port = htons(t_udp_hdr->dest);
+
+        // check for port number in the buffer map
+        buffer_map::iterator t_it = f_udp_buffers.find( t_port );
+        if( t_it == f_udp_buffers.end() )
+        {
+            LDEBUG( plog, "Packet addressed to unopened port: " << t_port );
+            return false;
+        }
+
+        t_it->second.f_iterator.set_writing();
+
+        // copy the UPD packet from the IP packet into the appropriate buffer
+        t_it->second.f_iterator->memcpy( reinterpret_cast< uint8_t* >( t_udp_hdr + t_udp_hdr_len ), htons(t_udp_hdr->len) - t_udp_hdr_len );
+
+        t_it->second.f_iterator.set_written();
+
+        return true;
     }
 
 } /* namespace psyllid */

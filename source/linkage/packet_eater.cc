@@ -74,6 +74,8 @@ namespace psyllid {
 
         // close udp_server socket
         if( f_socket != 0 ) ::close( f_socket );
+
+        f_iterator.release();
 	}
 
     bool packet_eater::initialize()
@@ -204,6 +206,8 @@ namespace psyllid {
 
 	    unsigned t_timeout_msec = 1000 * f_timeout_sec;
 
+        f_iterator.set_writing();
+
 	    while( ! is_canceled() )
 	    {
 	        // get the next block
@@ -226,7 +230,7 @@ namespace psyllid {
             t_block_num = ( t_block_num + 1 ) % f_n_blocks;
         }
 
-
+	    return;
 	}
 
     void packet_eater::walk_block( block_desc* a_bd )
@@ -242,6 +246,8 @@ namespace psyllid {
 
             process_packet( t_packet );
 
+            f_iterator.set_written();
+
             // move packet iterator ahead if possible
             if( +f_iterator == false )
             {
@@ -250,6 +256,7 @@ namespace psyllid {
                 ++f_iterator;
                 LINFO( plog, "Packet iterator loose at <" << f_iterator.index() << ">" );
             }
+            f_iterator.set_writing();
 
             // update the address of the packet to the next packet in the block
             t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)a_bd + t_packet->tp_next_offset );
@@ -288,7 +295,7 @@ namespace psyllid {
 
         // copy packet data to pb_iterator
         uint8_t t_header_bytes = t_ip_hdr->ihl * 4;
-        f_iterator->memcpy( reinterpret_cast< uint8_t* >( (uint8_t*)t_ip_hdr + t_header_bytes ), (uint8_t)t_ip_hdr->tot_len - t_header_bytes );
+        f_iterator->memcpy( reinterpret_cast< uint8_t* >( (uint8_t*)t_ip_hdr + t_header_bytes ), (uint8_t)htons(t_ip_hdr->tot_len) - t_header_bytes );
 
         return;
     }

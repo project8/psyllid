@@ -24,10 +24,11 @@ namespace psyllid
     {}
 
     packet::packet( size_t a_size ) :
-            f_bytes( nullptr ),
-            f_nbytes( a_size )
+            f_size( a_size ),
+            f_status( status::unused ),
+            f_bytes( nullptr )
     {
-        if( f_nbytes != 0 )
+        if( f_size != 0 )
         {
             uint8_t* t_new_bytes = reinterpret_cast< uint8_t* >( malloc( a_size ) );
             if( t_new_bytes == nullptr )
@@ -48,7 +49,7 @@ namespace psyllid
 
     void packet::memcpy( uint8_t* a_packet, size_t a_size )
     {
-        if( a_size != f_nbytes )
+        if( a_size != f_size )
         {
             ::free( f_bytes );
             f_bytes = nullptr;
@@ -61,9 +62,9 @@ namespace psyllid
                 }
                 f_bytes = t_new_bytes;
             }
-            f_nbytes = a_size;
+            f_size = a_size;
         }
-        ::memcpy( f_bytes, a_packet, f_nbytes);
+        ::memcpy( f_bytes, a_packet, f_size);
         return;
     }
 

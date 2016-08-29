@@ -20,6 +20,21 @@ LOGGER( plog, "fast_packet_acq_manager" );
 namespace psyllid
 {
 
+    fast_packet_acq_manager::fast_packet_acq_manager() :
+            f_routes(),
+            f_config()
+    {
+        const scarab::param_node* t_config = scarab::global_config::get_instance()->retrieve().node_at( "fast-packet-acq" );
+        if( t_config != nullptr )
+        {
+            f_config = *t_config;
+        }
+    }
+
+    fast_packet_acq_manager::~fast_packet_acq_manager()
+    {
+    }
+
     bool fast_packet_acq_manager::activate_port( const std::string& a_net_interface, unsigned a_port, pb_iterator& a_iterator, unsigned a_buffer_size )
     {
         route_map::iterator t_route_it = f_routes.find( "a_net_interface" );
@@ -85,19 +100,13 @@ namespace psyllid
         return;
     }
 
-    fast_packet_acq_manager::fast_packet_acq_manager() :
-            f_routes(),
-            f_config()
+    void fast_packet_acq_manager::execute()
     {
-        const scarab::param_node* t_config = scarab::global_config::get_instance()->retrieve().node_at( "fast-packet-acq" );
-        if( t_config != nullptr )
+        for( route_map::iterator t_it = f_routes.begin(); t_it != f_routes.end(); ++t_it )
         {
-            f_config = *t_config;
+            t_it->second.f_distributor->execute();
+            t_it->second.f_eater->execute();
         }
-    }
-
-    fast_packet_acq_manager::~fast_packet_acq_manager()
-    {
     }
 
 } /* namespace psyllid */
