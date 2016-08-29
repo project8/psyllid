@@ -7,8 +7,9 @@
 
 #include "udp_receiver.hh"
 
+#include "fast_packet_acq.hh"
 #include "psyllid_error.hh"
-#include "udp_server_buffered.hh"
+#include "udp_server_fpa.hh"
 #include "udp_server_socket.hh"
 
 #include "logger.hh"
@@ -27,9 +28,7 @@ namespace psyllid
     udp_receiver::udp_receiver() :
             f_time_length( 10 ),
             f_freq_length( 10 ),
-            f_port( 23530 ),
             f_udp_buffer_size( sizeof( roach_packet ) ),
-            f_timeout_sec( 2 ),
             f_time_sync_tol( 2 ),
             f_server_config( nullptr ),
             f_paused( false ),
@@ -51,9 +50,10 @@ namespace psyllid
             {
                 f_server.reset( new udp_server_socket( f_server_config ) );
             }
-            else if( t_server_type == "buffered" )
+            else if( t_server_type == "fpa" )
             {
-                f_server.reset( new udp_server_buffered( f_server_config ) );
+                fast_packet_acq* t_fpa = dynamic_cast< fast_packet_acq* >( node_ptr( f_server_config->get_value( "fpa", "eth1-fpa" ) ) );
+                f_server.reset( new udp_server_fpa( f_server_config, t_fpa ) );
             }
             else
             {
@@ -144,7 +144,7 @@ namespace psyllid
                     break;
                 }
 
-                LINFO( plog, "Waiting for ROACH packets" );
+                LINFO( plog, "Waiting for UDP packets" );
 
                 // inner loop over packet-receive timeouts
                 while( t_size_received <= 0 && ! f_canceled )
@@ -304,9 +304,7 @@ namespace psyllid
         LDEBUG( plog, "Configuring udp_receiver with :\n" << a_config );
         a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );
         a_node->set_freq_length( a_config.get_value( "freq-length", a_node->get_freq_length() ) );
-        a_node->set_port( a_config.get_value( "port", a_node->get_port() ) );
         a_node->set_udp_buffer_size( a_config.get_value( "udp-buffer-size", a_node->get_udp_buffer_size() ) );
-        a_node->set_timeout_sec( a_config.get_value( "timeout-sec", a_node->get_timeout_sec() ) );
         a_node->set_time_sync_tol( a_config.get_value( "time-sync-tol", a_node->get_time_sync_tol() ) );
         a_node->set_server_config( new scarab::param_node( *a_config.node_at( "server" ) ) );
         return;

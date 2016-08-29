@@ -62,6 +62,8 @@ namespace psyllid
             packet_buffer( size_t a_size, size_t a_packet_size = 0 );
             virtual ~packet_buffer();
 
+            void initialize( size_t a_size, size_t a_packet_size = 0 );
+
             size_t size() const;
             size_t packet_size() const;
 

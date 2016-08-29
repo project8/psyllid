@@ -1,0 +1,21 @@
+{
+    "amqp":
+    {
+        "broker": "localhost"
+    },
+    
+    "daq":
+    {
+        "preset": "str-1ch",
+        "activate-at-startup": true
+    },
+
+    "udpr": 
+    {
+        "server": 
+        {
+            "type": "socket",
+            "port": 12345
+        }
+    }
+}

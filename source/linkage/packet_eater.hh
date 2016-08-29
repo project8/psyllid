@@ -40,6 +40,10 @@ namespace psyllid
     @brief Sucks up packets from a network connection and copies them to a circular buffer
 
     @details
+    Input: mmap ring buffer
+    Output: IP-packet circular buffer
+
+
     Following documentation of using mmap ring buffers in networking here:
         https://www.kernel.org/doc/Documentation/networking/packet_mmap.txt
 
@@ -94,10 +98,12 @@ namespace psyllid
 
 			packet_buffer& buffer();
 
-			mv_accessible( unsigned, timeout_sec );
-            mv_accessible( unsigned, n_blocks );
-			mv_accessible( unsigned, block_size );
-			mv_accessible( unsigned, frame_size );
+			mv_accessible( unsigned, timeout_sec );  /// Timeout in seconds for waiting on the network interface
+            mv_accessible( unsigned, n_blocks );     /// Number of blocks in the mmap ring buffer
+			mv_accessible( unsigned, block_size );   /// Number of packets per block in the mmap ring buffer
+			mv_accessible( unsigned, frame_size );   /// Number of blocks per frame in the mmap ring buffer
+
+			mv_accessible( unsigned, buffer_size );  /// Number of packets in the IP-packet circular buffer
 
 		private:
 			void walk_block( block_desc* a_bd );

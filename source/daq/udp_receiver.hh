@@ -42,17 +42,15 @@ namespace psyllid
      Available configuration values:
      - "time-length": uint -- The size of the output time-data buffer
      - "freq-length": uint -- The size of the output frequency-data buffer
-     - "port": uint -- The port number to listen on for packets
      - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed
-     - "timeout-sec": uint -- UDP socket timeout in seconds; set to 0 to have no timeout
      - "time-sync-tol": uint -- Tolerance for time synchronization between the ROACH and the server (seconds)
+     - "server": node -- Options passed to the server
 
      Output Streams:
      - 0: time_data
      - 1: freq_data
     */
-    class udp_receiver :
-            public midge::_producer< udp_receiver, typelist_2( time_data, freq_data ) >
+    class udp_receiver : public midge::_producer< udp_receiver, typelist_2( time_data, freq_data ) >
     {
         public:
             udp_receiver();
@@ -61,9 +59,7 @@ namespace psyllid
         public:
             mv_accessible( uint64_t, time_length );
             mv_accessible( uint64_t, freq_length );
-            mv_accessible( uint64_t, port );
             mv_accessible( size_t, udp_buffer_size );
-            mv_accessible( unsigned, timeout_sec );
             mv_accessible( unsigned, time_sync_tol );
             mv_assignable( scarab::param_node, server_config );
 

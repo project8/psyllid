@@ -74,7 +74,10 @@ namespace psyllid
     //*********************
 
     packet_buffer::packet_buffer() :
-            packet_buffer( 10 )
+            f_packets( nullptr ),
+            f_mutexes( nullptr ),
+            f_size( 0 ),
+            f_packet_size( 0 )
     {}
 
     packet_buffer::packet_buffer( size_t a_size, size_t a_packet_size ) :
@@ -83,12 +86,14 @@ namespace psyllid
             f_size( a_size ),
             f_packet_size( a_packet_size )
     {
-        f_packets = new packet*[f_size];
-        for( unsigned t_index = 0; t_index < f_size; ++t_index )
+        try
         {
-            f_packets[ t_index ] = new packet( a_packet_size );
+            initialize( a_size, a_packet_size );
         }
-        f_mutexes = new std::mutex[f_size];
+        catch( error& e )
+        {
+            throw( e );
+        }
     }
 
     packet_buffer::~packet_buffer()
@@ -100,6 +105,27 @@ namespace psyllid
         }
         delete [] f_packets;
         delete [] f_mutexes;
+    }
+
+    void packet_buffer::initialize( size_t a_size, size_t a_packet_size )
+    {
+        if( f_packets != nullptr )
+        {
+            throw error() << "Packet buffer is already initialized";
+        }
+
+        if( a_size == 0 )
+        {
+            throw error() << "Cannot have buffer size 0";
+        }
+        f_size = a_size;
+
+        f_packets = new packet*[f_size];
+        for( unsigned t_index = 0; t_index < f_size; ++t_index )
+        {
+            f_packets[ t_index ] = new packet( a_packet_size );
+        }
+        f_mutexes = new std::mutex[f_size];
     }
 
     void packet_buffer::set_packet( unsigned a_index, packet* a_packet )

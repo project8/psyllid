@@ -38,6 +38,7 @@ namespace psyllid {
             f_n_blocks( 64 ),
             f_block_size( 1 << 22 ),
             f_frame_size( 1 << 11 ),
+            f_buffer_size( 100 ),
 	        f_net_interface_name( a_net_interface ),
 	        f_net_interface_index( 0 ),
 			f_socket( 0 ),
@@ -45,7 +46,7 @@ namespace psyllid {
 			f_address( nullptr ),
 			f_packets_total( 0 ),
 			f_bytes_total( 0 ),
-			f_packet_buffer( 100, 0 ),
+			f_packet_buffer(),
 			f_iterator()
 
 	{
@@ -179,6 +180,9 @@ namespace psyllid {
         }
 
         LINFO( plog, "Ready to consume packets on interface <" << f_net_interface_name << ">" );
+
+        // initialize the packet buffer
+        f_packet_buffer.initialize( f_buffer_size, 0 );
 
         // create iterator for packet buffer
         f_iterator.attach( &f_packet_buffer );
