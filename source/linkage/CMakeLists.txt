@@ -13,7 +13,7 @@ set( sources
     udp_server_socket.cc
 )
 
-if( UNIX )
+if( UNIX AND NOT APPLE )
     set( headers
         ${headers}
         fast_packet_acq.hh
@@ -28,7 +28,7 @@ if( UNIX )
         packet_eater.cc
         udp_server_fpa.cc
     )
-endif( UNIX )
+endif( UNIX AND NOT APPLE )
 
 set( dependencies
     PsyllidUtility

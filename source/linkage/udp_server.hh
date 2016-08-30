@@ -1,7 +1,7 @@
 #ifndef PSYLLID_UDP_SERVER_HH_
 #define PSYLLID_UDP_SERVER_HH_
 
-#include <cstdlib>
+#include <sys/types.h>
 
 namespace psyllid
 {

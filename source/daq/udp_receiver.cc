@@ -9,13 +9,17 @@
 
 #include "fast_packet_acq.hh"
 #include "psyllid_error.hh"
-#include "udp_server_fpa.hh"
 #include "udp_server_socket.hh"
+
+#ifdef __linux__
+#include "udp_server_fpa.hh"
+#endif
 
 #include "logger.hh"
 #include "param.hh"
 
 #include <memory>
+#include <sys/types.h> // for ssize_t
 
 using midge::stream;
 
@@ -50,11 +54,13 @@ namespace psyllid
             {
                 f_server.reset( new udp_server_socket( f_server_config ) );
             }
+#ifdef __linux__
             else if( t_server_type == "fpa" )
             {
                 fast_packet_acq* t_fpa = dynamic_cast< fast_packet_acq* >( node_ptr( f_server_config->get_value( "fpa", "eth1-fpa" ) ) );
                 f_server.reset( new udp_server_fpa( f_server_config, t_fpa ) );
             }
+#endif
             else
             {
                 throw error() << "[udp_receiver] Unknown server type: " << t_server_type;
