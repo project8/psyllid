@@ -155,10 +155,6 @@ namespace psyllid
     //*********************
 
     pb_iterator::pb_iterator() :
-            pb_iterator( nullptr )
-    {}
-
-    pb_iterator::pb_iterator( packet_buffer* a_buffer/*, const std::string& a_name*/ ) :
             //f_name( a_name ),
             f_buffer( nullptr ),
             f_packets( nullptr ),
@@ -167,13 +163,17 @@ namespace psyllid
             f_previous_index( 0 ),
             f_current_index( 0 ),
             f_next_index( 0 ),
-            f_released( false )
+            f_released( true )
+    {}
+
+    pb_iterator::pb_iterator( packet_buffer* a_buffer/*, const std::string& a_name*/ ) :
+            pb_iterator()
     {
         //IT_TIMER_INITIALIZE;
 
         if( ! attach( a_buffer ) )
         {
-            throw error() << "Unable to attach pb_iterator to buffer";
+            throw error() << "[pb_iterator] Unable to attach pb_iterator to buffer";
         }
     }
     pb_iterator::pb_iterator( const pb_iterator& a_copy )
@@ -277,10 +277,25 @@ namespace psyllid
     bool pb_iterator::attach( packet_buffer* a_buffer )
     {
         // can only attach if currently released
-        if( ! f_released ) return false;
+        if( ! f_released )
+        {
+            LERROR( plog, "Iterator is already attached to a buffer" );
+            return false;
+        }
 
-        // no action if the buffer is null
-        if( a_buffer == nullptr ) return true;
+        // cannot attach to a non-existent buffer
+        if( a_buffer == nullptr )
+        {
+            LERROR( plog, "Cannot attach to a non-existent buffer" );
+            return false;
+        }
+
+        // cannot attach to an uninitialized buffer
+        if( a_buffer->size() == 0 )
+        {
+            LERROR( plog, "Cannot attach to an uninitialized buffer" );
+            return false;
+        }
 
         f_buffer = a_buffer;
         f_packets = a_buffer->f_packets;
@@ -299,17 +314,18 @@ namespace psyllid
         //IT_TIMER_UNSET_IGNORE_DECR( (*this) );
         LDEBUG( plog, "pb_iterator " << /*f_name <<*/ " starting at index " << f_current_index );
 
-        f_released = true;
+        f_released = false;
 
         return true;
     }
 
     void pb_iterator::release()
     {
+        if( f_size == 0 || f_released ) return;
         f_mutexes[ f_current_index ].unlock();
-        f_buffer = NULL;
-        f_packets = NULL;
-        f_mutexes = NULL;
+        f_buffer = nullptr;
+        f_packets = nullptr;
+        f_mutexes = nullptr;
         f_size = 0;
         f_previous_index = 0;
         f_current_index = 0;

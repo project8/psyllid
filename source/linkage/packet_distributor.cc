@@ -19,18 +19,17 @@ namespace psyllid
     LOGGER( plog, "packet_distributor" );
 
 
-    packet_distributor::packet_distributor( packet_buffer* a_buffer ) :
+    packet_distributor::packet_distributor() :
+            f_ip_buffer( nullptr ),
             f_ip_pkt_iterator(),
             f_udp_buffers()
     {
-        if( ! f_ip_pkt_iterator.attach( a_buffer ) )
-        {
-            throw error() << "[packet_distributor] Unable to attach iterator to buffer";
-        }
     }
 
     packet_distributor::~packet_distributor()
     {
+        f_ip_pkt_iterator.release();
+
         while( ! f_udp_buffers.empty() )
         {
             f_udp_buffers.begin()->second.f_iterator.release();
@@ -40,6 +39,7 @@ namespace psyllid
 
     bool packet_distributor::open_port( unsigned a_port, pb_iterator& a_iterator, unsigned a_buffer_size )
     {
+        buffer_map::iterator t_it = f_udp_buffers.find( a_port );
         if( f_udp_buffers.find( a_port ) != f_udp_buffers.end() )
         {
             LWARN( plog, "Port <" << a_port << "> is already open" );
@@ -69,6 +69,15 @@ namespace psyllid
 
         f_udp_buffers.erase( t_it );
         return true;
+    }
+
+    void packet_distributor::initialize()
+    {
+        if( ! f_ip_pkt_iterator.attach( f_ip_buffer ) )
+        {
+            throw error() << "[packet_distributor] Unable to attach iterator to buffer";
+        }
+        return;
     }
 
     void packet_distributor::execute()

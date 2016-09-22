@@ -69,6 +69,9 @@ namespace psyllid
 	        pe_ptr f_eater;
 	        pd_ptr f_distributor;
 
+        private:
+            virtual void do_cancellation();
+            virtual void do_reset_cancellation();
 	};
 
     inline pe_ptr fast_packet_acq::eater()

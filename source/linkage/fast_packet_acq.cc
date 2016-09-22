@@ -39,19 +39,24 @@ namespace psyllid
             f_eater = std::make_shared< packet_eater >( f_net_interface );
 
             // create a new packet distributor for the interface and connect the distributor to the eater
-            f_distributor = std::make_shared< packet_distributor >( &f_eater->buffer() );
+            f_distributor = std::make_shared< packet_distributor >();
+
+            f_distributor->set_ip_buffer( &f_eater->buffer() );
+
+            // initialize the eater
+            if( ! f_eater->initialize() )
+            {
+                throw error() << "[fast_packet_acq] Unable to initialize the eater";
+            }
+            f_distributor->initialize();
+
         }
         catch( error& e )
         {
-            LERROR( plog, "Exception thrown while attempting to create eater and distributor: " << e.what() );
+            LERROR( plog, "Exception thrown while attempting to create and initialize eater and distributor: " << e.what() );
             throw( e );
         }
 
-        // initialize the eater
-        if( ! f_eater->initialize() )
-        {
-            throw error() << "[fast_packet_acq] Unable to initialize the eater";
-        }
         return;
     }
 
@@ -78,6 +83,21 @@ namespace psyllid
     {
         return;
     }
+
+    void fast_packet_acq::do_cancellation()
+    {
+        f_eater->cancel();
+        f_distributor->cancel();
+        return;
+    }
+
+    void fast_packet_acq::do_reset_cancellation()
+    {
+        f_eater->reset_cancel();
+        f_distributor->reset_cancel();
+        return;
+    }
+
 
 
     fast_packet_acq_builder::fast_packet_acq_builder() :

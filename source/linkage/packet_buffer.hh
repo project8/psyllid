@@ -58,7 +58,9 @@ namespace psyllid
         public:
             friend class pb_iterator;
 
+            /// Uninitialized buffer
             packet_buffer();
+            /// Initialized buffer
             packet_buffer( size_t a_size, size_t a_packet_size = 0 );
             virtual ~packet_buffer();
 
