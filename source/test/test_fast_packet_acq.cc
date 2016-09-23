@@ -21,7 +21,7 @@
 using namespace midge;
 using namespace psyllid;
 
-LOGGER( plog, "test_udp_receiver" );
+LOGGER( plog, "test_fast_packet_acq" );
 
 int main()
 {

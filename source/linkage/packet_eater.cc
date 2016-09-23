@@ -43,7 +43,6 @@ namespace psyllid {
 	        f_net_interface_index( 0 ),
 			f_socket( 0 ),
 			f_ring(),
-			f_address( nullptr ),
 			f_packets_total( 0 ),
 			f_bytes_total( 0 ),
 			f_packet_buffer(),
@@ -79,9 +78,6 @@ namespace psyllid {
 	        //f_ring = nullptr;
 	    //}
 
-        // clean up socket address
-        delete f_address;
-
         // close udp_server socket
         if( f_socket > 0 ) ::close( f_socket );
 
@@ -91,6 +87,22 @@ namespace psyllid {
     bool packet_eater::initialize()
     {
         LINFO( plog, "Preparing fast-packet-acquisition server" );
+
+        // open socket
+        //int fd;
+        f_socket = ::socket( AF_PACKET, SOCK_RAW, htons(ETH_P_IP) );
+        if( f_socket < 0 )
+        {
+            LERROR( plog, "Could not create socket:\n\t" << strerror( errno ) );
+            return false;
+        }
+
+        int t_packet_ver = TPACKET_V3;
+        if( ::setsockopt( f_socket, SOL_PACKET, PACKET_VERSION, &t_packet_ver, sizeof(int) ) < 0 )
+        {
+            LERROR( plog, "Could not set packet version:\n\t" << strerror( errno ) );
+            return false;
+        }
 
         // create the ring buffer
         //f_ring = new receive_ring();
@@ -103,7 +115,7 @@ namespace psyllid {
         f_ring.f_req.tp_block_size = f_block_size;
         f_ring.f_req.tp_frame_size = f_frame_size;
         f_ring.f_req.tp_block_nr = f_n_blocks;
-        f_ring.f_req.tp_frame_nr = (f_block_size - f_n_blocks) / f_frame_size;
+        f_ring.f_req.tp_frame_nr = (f_block_size * f_n_blocks) / f_frame_size;
         f_ring.f_req.tp_retire_blk_tov = 60;
         f_ring.f_req.tp_feature_req_word = TP_FT_REQ_FILL_RXHASH;
 
@@ -116,24 +128,8 @@ namespace psyllid {
 
         LDEBUG( plog, "Opening packet_eater for network interface <" << f_net_interface_name << ">" );
 
-        // open socket
-        f_socket = ::socket( AF_PACKET, SOCK_RAW, htons(ETH_P_IP) );
-        if( f_socket < 0 )
-        {
-            LERROR( plog, "Could not create socket:\n\t" << strerror( errno ) );
-            return false;
-        }
-
-        // socket options
-
-        int t_packet_ver = TPACKET_V3;
-        if( ::setsockopt( f_socket, SOL_PACKET, PACKET_VERSION, &t_packet_ver, sizeof(int) ) < 0 )
-        {
-            LERROR( plog, "Could not set packet version:\n\t" << strerror( errno ) );
-            return false;
-        }
-
-        if( ::setsockopt( f_socket, SOL_PACKET, PACKET_RX_RING, &f_ring.f_req, sizeof(tpacket_req3) ) < 0 )
+        LWARN( plog, "f_socket = " << f_socket << ";  SOL_PACKET = " << SOL_PACKET << ";  PACKET_RX_RING = " << PACKET_RX_RING << ";  &f_ring.f_req = " << &f_ring.f_req << ";  sizeof(f_ring.f_req) = " << sizeof(f_ring.f_req) );
+        if( ::setsockopt( f_socket, SOL_PACKET, PACKET_RX_RING, &f_ring.f_req, sizeof(f_ring.f_req) ) < 0 )
         {
             LERROR( plog, "Could not set receive ring:\n\t" << strerror( errno ) );
             return false;
@@ -178,18 +174,16 @@ namespace psyllid {
         }
 
         // initialize the address
-        f_address = new sockaddr_ll();
-        ::memset( f_address, 0, sizeof(sockaddr_ll) );
-        f_address->sll_family = PF_PACKET;
-        f_address->sll_protocol = htons(ETH_P_IP);
-        f_address->sll_ifindex = f_net_interface_index;
-        f_address->sll_hatype = 0;
-        f_address->sll_pkttype = 0;
-        f_address->sll_halen = 0;
+        sockaddr_ll t_address;// = new sockaddr_ll();
+        ::memset( &t_address, 0, sizeof(sockaddr_ll) );
+        t_address.sll_family = PF_PACKET;
+        t_address.sll_protocol = htons(ETH_P_IP);
+        t_address.sll_ifindex = f_net_interface_index;
+        t_address.sll_hatype = 0;
+        t_address.sll_pkttype = 0;
+        t_address.sll_halen = 0;
 
-        // bind the socket
-        LDEBUG( plog, "Binding the socket" );
-        if( ::bind( f_socket, (const sockaddr*)f_address, sizeof(f_address) ) < 0 )
+        if( ::bind( f_socket, (sockaddr*)&t_address, sizeof(t_address) ) < 0 )
         {
             LERROR( plog, "Could not bind socket:\n\t" << strerror( errno ) );
             return false;
@@ -324,7 +318,5 @@ namespace psyllid {
     {
         return f_packet_buffer;
     }
-
-
 
 } /* namespace psyllid */

@@ -120,8 +120,6 @@ namespace psyllid
 
 			receive_ring f_ring;
 
-			sockaddr_ll* f_address;
-
 			uint64_t f_packets_total;
 			uint64_t f_bytes_total;
 
