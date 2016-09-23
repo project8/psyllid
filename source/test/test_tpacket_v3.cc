@@ -51,7 +51,7 @@ struct ring {
 static unsigned long packets_total = 0, bytes_total = 0;
 static sig_atomic_t sigint = 0;
 
-static void sighandler(int num)
+static void sighandler(int /*num*/)
 {
     sigint = 1;
 }
@@ -149,7 +149,7 @@ static void display(tpacket3_hdr *ppd)
     printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
 }
 
-static void walk_block(block_desc *pbd, const int block_num)
+static void walk_block(block_desc *pbd, const int /*block_num*/)
 {
     int num_pkts = pbd->h1.num_pkts, i;
     unsigned long bytes = 0;

@@ -8,7 +8,7 @@
 #include "egg_writer.hh"
 #include "event_builder.hh"
 #include "frequency_mask_trigger.hh"
-#include "udp_receiver.hh"
+#include "tf_roach_receiver.hh"
 
 #include "diptera.hh"
 
@@ -40,7 +40,7 @@ int main()
         //unique_ptr< ::midge::diptera > t_root;
         diptera* t_root = new diptera();
 
-        udp_receiver* t_udpr = new udp_receiver();
+        tf_roach_receiver* t_udpr = new tf_roach_receiver();
         t_udpr->set_name( "udpr" );
         t_udpr->set_time_length( 10 );
         t_root->add( t_udpr );

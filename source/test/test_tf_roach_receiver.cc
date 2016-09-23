@@ -8,8 +8,9 @@
  */
 
 
+#include "tf_roach_receiver.hh"
+
 #include "midge_error.hh"
-#include "udp_receiver.hh"
 
 #include "logger.hh"
 
@@ -17,7 +18,7 @@
 using namespace midge;
 using namespace psyllid;
 
-LOGGER( plog, "test_udp_receiver" );
+LOGGER( plog, "test_tf_roach_receiver" );
 
 int main()
 {
@@ -25,7 +26,7 @@ int main()
     {
         LINFO( plog, "Creating receiver" );
 
-        udp_receiver t_receiver;
+        tf_roach_receiver t_receiver;
 
         LINFO( plog, "Initializing receiver" );
 

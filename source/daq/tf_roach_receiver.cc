@@ -5,7 +5,7 @@
  *      Author: nsoblath
  */
 
-#include "udp_receiver.hh"
+#include "tf_roach_receiver.hh"
 
 #include "fast_packet_acq.hh"
 #include "psyllid_error.hh"
@@ -25,11 +25,11 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( udp_receiver, "udp-receiver" );
+    REGISTER_NODE_AND_BUILDER( tf_roach_receiver, "udp-receiver" );
 
     LOGGER( plog, "udp_receiver" );
 
-    udp_receiver::udp_receiver() :
+    tf_roach_receiver::tf_roach_receiver() :
             f_time_length( 10 ),
             f_freq_length( 10 ),
             f_udp_buffer_size( sizeof( roach_packet ) ),
@@ -40,11 +40,11 @@ namespace psyllid
     {
     }
 
-    udp_receiver::~udp_receiver()
+    tf_roach_receiver::~tf_roach_receiver()
     {
     }
 
-    void udp_receiver::initialize()
+    void tf_roach_receiver::initialize()
     {
         std::string t_server_type( "socket" );
         if( f_server_config != nullptr ) t_server_type = f_server_config->get_value( "type", t_server_type );
@@ -76,7 +76,7 @@ namespace psyllid
         return;
     }
 
-    void udp_receiver::execute()
+    void tf_roach_receiver::execute()
     {
         LDEBUG( plog, "Executing the UDP receiver" );
 
@@ -272,14 +272,14 @@ namespace psyllid
         return;
     }
 
-    void udp_receiver::finalize()
+    void tf_roach_receiver::finalize()
     {
         out_buffer< 0 >().finalize();
         out_buffer< 1 >().finalize();
         return;
     }
 
-    void udp_receiver::id_match_sanity_check( uint64_t a_time_batch_pkt, uint64_t a_freq_batch_pkt, uint64_t a_time_session_pkt, uint64_t a_freq_session_pkt )
+    void tf_roach_receiver::id_match_sanity_check( uint64_t a_time_batch_pkt, uint64_t a_freq_batch_pkt, uint64_t a_time_session_pkt, uint64_t a_freq_session_pkt )
     {
         if( a_time_batch_pkt == a_freq_batch_pkt )
         {
@@ -296,16 +296,16 @@ namespace psyllid
 
 
 
-    udp_receiver_builder::udp_receiver_builder() :
-            _node_builder< udp_receiver >()
+    tf_roach_receiver_builder::tf_roach_receiver_builder() :
+            _node_builder< tf_roach_receiver >()
     {
     }
 
-    udp_receiver_builder::~udp_receiver_builder()
+    tf_roach_receiver_builder::~tf_roach_receiver_builder()
     {
     }
 
-    void udp_receiver_builder::apply_config( udp_receiver* a_node, const scarab::param_node& a_config )
+    void tf_roach_receiver_builder::apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config )
     {
         LDEBUG( plog, "Configuring udp_receiver with :\n" << a_config );
         a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );

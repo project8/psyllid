@@ -15,7 +15,7 @@ if( Psyllid_ENABLE_TESTING )
         #test_event_builder
         test_monarch3_write
         #test_server
-        test_udp_receiver
+        test_tf_roach_receiver
     )
     
     if( UNIX AND NOT APPLE )

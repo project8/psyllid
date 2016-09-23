@@ -8,10 +8,9 @@
  */
 
 
+#include "tf_roach_receiver.hh"
 #include "fast_packet_acq.hh"
 #include "psyllid_error.hh"
-#include "udp_receiver.hh"
-
 #include "midge_error.hh"
 
 #include "logger.hh"
@@ -38,7 +37,7 @@ int main()
 
         LINFO( plog, "Creating and configuring receiver" );
 
-        udp_receiver t_receiver;
+        tf_roach_receiver t_receiver;
         t_receiver.node_ptr( &t_fpa, t_server_config->get_value( "fpa" ) );
         t_receiver.set_server_config( t_server_config );
 

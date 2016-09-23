@@ -5,8 +5,8 @@
  *      Author: nsoblath
  */
 
-#ifndef PSYLLID_UDP_RECEIVER_HH_
-#define PSYLLID_UDP_RECEIVER_HH_
+#ifndef PSYLLID_TF_ROACH_RECEIVER_HH_
+#define PSYLLID_TF_ROACH_RECEIVER_HH_
 
 #include "freq_data.hh"
 #include "node_builder.hh"
@@ -27,17 +27,16 @@ namespace psyllid
     class udp_server;
 
     /*!
-     @class udp_receiver
+     @class tf_roach_receiver
      @author N. S. Oblath
 
-     @brief A UDP server to receive ROACH packets.
+     @brief A producer to receive and distribute time and frequency ROACH packets.
 
      @details
 
-
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
-     Node type: "udp-receiver"
+     Node type: "tf-roach-receiver"
 
      Available configuration values:
      - "time-length": uint -- The size of the output time-data buffer
@@ -50,11 +49,11 @@ namespace psyllid
      - 0: time_data
      - 1: freq_data
     */
-    class udp_receiver : public midge::_producer< udp_receiver, typelist_2( time_data, freq_data ) >
+    class tf_roach_receiver : public midge::_producer< tf_roach_receiver, typelist_2( time_data, freq_data ) >
     {
         public:
-            udp_receiver();
-            virtual ~udp_receiver();
+            tf_roach_receiver();
+            virtual ~tf_roach_receiver();
 
         public:
             mv_accessible( uint64_t, time_length );
@@ -77,16 +76,16 @@ namespace psyllid
 
     };
 
-    class udp_receiver_builder : public _node_builder< udp_receiver >
+    class tf_roach_receiver_builder : public _node_builder< tf_roach_receiver >
     {
         public:
-            udp_receiver_builder();
-            virtual ~udp_receiver_builder();
+            tf_roach_receiver_builder();
+            virtual ~tf_roach_receiver_builder();
 
         private:
-            virtual void apply_config( udp_receiver* a_node, const scarab::param_node& a_config );
+            virtual void apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config );
     };
 
 } /* namespace psyllid */
 
-#endif /* PSYLLID_UDP_RECEIVER_HH_ */
+#endif /* PSYLLID_TF_ROACH_RECEIVER_HH_ */
