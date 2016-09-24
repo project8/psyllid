@@ -208,6 +208,8 @@ namespace psyllid {
 
 	void packet_eater::execute()
 	{
+	    LDEBUG( plog, "Packet eater is starting execution" );
+
 	    // Setup the polling file descriptor struct
 	    pollfd t_pollfd;
 	    ::memset( &t_pollfd, 0, sizeof(pollfd) );
@@ -243,6 +245,8 @@ namespace psyllid {
 
             t_block_num = ( t_block_num + 1 ) % f_n_blocks;
         }
+
+	    LINFO( plog, "Packet eater was canceled; exiting" );
 
 	    return;
 	}

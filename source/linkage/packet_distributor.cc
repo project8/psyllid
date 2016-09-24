@@ -18,6 +18,10 @@ namespace psyllid
 {
     LOGGER( plog, "packet_distributor" );
 
+    packet_distributor::udp_buffer::udp_buffer( unsigned a_size, unsigned a_packet_size ) :
+            f_buffer( a_size, a_packet_size ),
+            f_iterator()
+    {}
 
     packet_distributor::packet_distributor() :
             f_ip_buffer( nullptr ),
@@ -32,7 +36,8 @@ namespace psyllid
 
         while( ! f_udp_buffers.empty() )
         {
-            f_udp_buffers.begin()->second.f_iterator.release();
+            f_udp_buffers.begin()->second->f_iterator.release();
+            delete f_udp_buffers.begin()->second;
             f_udp_buffers.erase( f_udp_buffers.begin() );
         }
     }
@@ -46,14 +51,24 @@ namespace psyllid
             return false;
         }
 
+        LDEBUG( plog, "Opening port <" << a_port << ">" );
+
         // Initialize the udp_buffer struct in the map
-        f_udp_buffers[ a_port ] = udp_buffer{ packet_buffer( a_buffer_size ), pb_iterator() };
+        //f_udp_buffers[ a_port ] = udp_buffer{ packet_buffer( a_buffer_size ), pb_iterator() };
+        udp_buffer* t_new_buffer = new udp_buffer( a_buffer_size );
+        f_udp_buffers[ a_port ] = t_new_buffer;
+        //f_udp_buffers.emplace( std::make_pair( a_port, udp_buffer( a_buffer_size ) ) );
+        LWARN( plog, "Initialized outbound buffer for port <" << a_port << ">; packet 0 ptr is " << f_udp_buffers.at( a_port )->f_buffer.get_packet(0) );
 
         // attach the write iterator
-        f_udp_buffers[ a_port ].f_iterator.attach( &f_udp_buffers[ a_port ].f_buffer );
+        f_udp_buffers.at( a_port )->f_iterator.attach( &f_udp_buffers.at( a_port )->f_buffer );
+        LWARN( plog, "Attached writer iterator; current packet (at " << f_udp_buffers.at( a_port )->f_iterator.index()
+               << ") ptr is " << f_udp_buffers.at( a_port )->f_iterator.object() );
 
         // attach the read iterator
-        a_iterator.attach( &f_udp_buffers[ a_port ].f_buffer );
+        a_iterator.attach( &f_udp_buffers.at( a_port )->f_buffer );
+
+        LDEBUG( plog, "Port <" << a_port << "> is open; distributor now has " << f_udp_buffers.size() << " ports open" );
 
         return true;
     }
@@ -67,12 +82,20 @@ namespace psyllid
             return true;
         }
 
+        LDEBUG( plog, "Closing port <" << a_port << ">" );
+
+        t_it->second->f_iterator.release();
+        delete t_it->second;
         f_udp_buffers.erase( t_it );
+
+        LDEBUG( plog, "Port <" << a_port << "> is closed; distributor now has " << f_udp_buffers.size() << " ports open" );
+
         return true;
     }
 
     void packet_distributor::initialize()
     {
+        LDEBUG( plog, "Initializing packet distributor" );
         if( ! f_ip_pkt_iterator.attach( f_ip_buffer ) )
         {
             throw error() << "[packet_distributor] Unable to attach iterator to buffer";
@@ -82,6 +105,7 @@ namespace psyllid
 
     void packet_distributor::execute()
     {
+        LDEBUG( plog, "Packet distributor is starting execution" );
 
         // move the read iterator up until it runs up against a blocked packet
         while( +f_ip_pkt_iterator );
@@ -90,7 +114,7 @@ namespace psyllid
         // set write packet statuses
         for( buffer_map::iterator t_it = f_udp_buffers.begin(); t_it != f_udp_buffers.end(); ++t_it )
         {
-            t_it->second.f_iterator.set_writing();
+            t_it->second->f_iterator.set_writing();
         }
 
         while( ! is_canceled() )
@@ -101,6 +125,7 @@ namespace psyllid
             // check for cancelation
             if( is_canceled() )
             {
+                LINFO( plog, "Packet distributor was canceled (2); exiting" );
                 break;
             }
 
@@ -118,6 +143,7 @@ namespace psyllid
             f_ip_pkt_iterator.set_unused();
         }
 
+        LINFO( plog, "Packet distributor was canceled (1); exiting" );
         return;
     }
 
@@ -139,12 +165,12 @@ namespace psyllid
             return false;
         }
 
-        t_it->second.f_iterator.set_writing();
+        t_it->second->f_iterator.set_writing();
 
         // copy the UPD packet from the IP packet into the appropriate buffer
-        t_it->second.f_iterator->memcpy( reinterpret_cast< uint8_t* >( t_udp_hdr + t_udp_hdr_len ), htons(t_udp_hdr->len) - t_udp_hdr_len );
+        t_it->second->f_iterator->memcpy( reinterpret_cast< uint8_t* >( t_udp_hdr + t_udp_hdr_len ), htons(t_udp_hdr->len) - t_udp_hdr_len );
 
-        t_it->second.f_iterator.set_written();
+        t_it->second->f_iterator.set_written();
 
         return true;
     }

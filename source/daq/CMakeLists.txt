@@ -12,6 +12,7 @@ set( headers
     roach_config.hh
     streaming_writer.hh
     terminator.hh
+    tf_roach_monitor.hh
     tf_roach_receiver.hh
 )
 
@@ -25,6 +26,7 @@ set( sources
     roach_config.cc
     streaming_writer.cc
     terminator.cc
+    tf_roach_monitor.cc
     tf_roach_receiver.cc
 )
 

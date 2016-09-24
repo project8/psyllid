@@ -19,7 +19,6 @@
 
 using std::unique_ptr;
 
-using namespace midge;
 using namespace psyllid;
 
 LOGGER( plog, "roach_daq_1chan" );
@@ -38,7 +37,7 @@ int main()
     try
     {
         //unique_ptr< ::midge::diptera > t_root;
-        diptera* t_root = new diptera();
+        midge::diptera* t_root = new midge::diptera();
 
         tf_roach_receiver* t_udpr = new tf_roach_receiver();
         t_udpr->set_name( "udpr" );

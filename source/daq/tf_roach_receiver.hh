@@ -44,6 +44,10 @@ namespace psyllid
      - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed
      - "time-sync-tol": uint -- Tolerance for time synchronization between the ROACH and the server (seconds)
      - "server": node -- Options passed to the server
+       - "type": string -- Server type:
+         - "socket" (default) = standard socket server (udp_server_socket)
+         - "fpa" = fast-packet-acquisition (udp_server_fpa); requires executable run with root privileges
+       - [specific-server dependent options]
 
      Output Streams:
      - 0: time_data

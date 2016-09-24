@@ -93,6 +93,11 @@ namespace psyllid
         ::close( f_socket );
     }
 
+    void udp_server_socket::activate()
+    {
+        return;
+    }
+
     ssize_t udp_server_socket::recv( char* a_message, size_t a_size, int flags, int& ret_errno )
     {
         ssize_t t_recv_size = ::recv( f_socket, (void*)a_message, a_size, flags );
@@ -118,4 +123,8 @@ namespace psyllid
         }
     }
 
+    void udp_server_socket::deactivate()
+    {
+        return;
+    }
 }

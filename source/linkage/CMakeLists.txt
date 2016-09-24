@@ -17,6 +17,7 @@ if( UNIX AND NOT APPLE )
     set( headers
         ${headers}
         fast_packet_acq.hh
+        fpa_factory.hh
         packet_distributor.hh
         packet_eater.hh
         udp_server_fpa.hh
@@ -24,6 +25,7 @@ if( UNIX AND NOT APPLE )
     set( sources
         ${sources}
         fast_packet_acq.cc
+        fpa_factory.cc
         packet_distributor.cc
         packet_eater.cc
         udp_server_fpa.cc

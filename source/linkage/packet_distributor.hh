@@ -52,12 +52,14 @@ namespace psyllid
 
             struct udp_buffer
             {
-                //udp_buffer() {};
+                udp_buffer( unsigned a_size, unsigned a_packet_size = 0 );
+                udp_buffer( const udp_buffer& ) = default;
+                udp_buffer( udp_buffer&& ) = default;
                 ~udp_buffer() {};
                 packet_buffer f_buffer;
                 pb_iterator f_iterator;
             };
-            typedef ::bcont::flat_map< unsigned, udp_buffer > buffer_map;
+            typedef ::bcont::flat_map< unsigned, udp_buffer* > buffer_map;
 
             buffer_map f_udp_buffers;
     };

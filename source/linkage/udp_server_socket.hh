@@ -32,7 +32,11 @@ namespace psyllid
             udp_server_socket( scarab::param_node* a_config );
             virtual ~udp_server_socket();
 
+            void activate();
+
             ssize_t recv( char* a_message, size_t a_size, int flags = 0, int& ret_errno = udp_server::f_last_errno );
+
+            void deactivate();
 
         private:
 

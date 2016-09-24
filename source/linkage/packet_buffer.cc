@@ -24,18 +24,16 @@ namespace psyllid
     {}
 
     packet::packet( size_t a_size ) :
-            f_size( a_size ),
+            f_size( 0 ),
             f_status( status::unused ),
             f_bytes( nullptr )
     {
         if( f_size != 0 )
         {
-            uint8_t* t_new_bytes = reinterpret_cast< uint8_t* >( malloc( a_size ) );
-            if( t_new_bytes == nullptr )
+            if( ! reallocate( a_size ) )
             {
                 throw error() << "Unable to allocate new packet memory in packet constructor";
             }
-            f_bytes = t_new_bytes;
         }
     }
 
@@ -51,21 +49,33 @@ namespace psyllid
     {
         if( a_size != f_size )
         {
-            ::free( f_bytes );
-            f_bytes = nullptr;
-            if( a_size != 0 )
+            if( ! reallocate( a_size ) )
             {
-                uint8_t* t_new_bytes = reinterpret_cast< uint8_t* >( realloc( a_packet, a_size ) );
-                if( t_new_bytes == nullptr )
-                {
-                    throw error() << "Unable to allocate new packet memory";
-                }
-                f_bytes = t_new_bytes;
+                throw error() << "Unable to allocate new packet memory";
             }
-            f_size = a_size;
         }
         ::memcpy( f_bytes, a_packet, f_size);
         return;
+    }
+
+    bool packet::reallocate( size_t a_size )
+    {
+        if( f_bytes != 0 )
+        {
+            ::free( f_bytes );
+            f_bytes = nullptr;
+        }
+        if( a_size != 0 )
+        {
+            uint8_t* t_new_bytes = reinterpret_cast< uint8_t* >( malloc( a_size ) );
+            if( t_new_bytes == nullptr )
+            {
+                return false;
+            }
+            f_bytes = t_new_bytes;
+        }
+        f_size = a_size;
+        return true;
     }
 
 
@@ -88,12 +98,32 @@ namespace psyllid
     {
         try
         {
+            LWARN( plog, "packet_buffer constructor with size " << a_size << " and packet size " << a_packet_size );
             initialize( a_size, a_packet_size );
         }
         catch( error& e )
         {
             throw( e );
         }
+    }
+
+    packet_buffer::packet_buffer( const packet_buffer& a_orig ) :
+            f_packets( a_orig.f_packets ),
+            f_mutexes( a_orig.f_mutexes ),
+            f_size( a_orig.f_size ),
+            f_packet_size( a_orig.f_packet_size )
+    {}
+
+    packet_buffer::packet_buffer( packet_buffer&& a_orig ) :
+            f_packets( a_orig.f_packets ),
+            f_mutexes( a_orig.f_mutexes ),
+            f_size( a_orig.f_size ),
+            f_packet_size( a_orig.f_packet_size )
+    {
+        a_orig.f_packets = nullptr;
+        a_orig.f_mutexes = nullptr;
+        a_orig.f_size = 0;
+        a_orig.f_packet_size = 0;
     }
 
     packet_buffer::~packet_buffer()
@@ -119,11 +149,13 @@ namespace psyllid
             throw error() << "Cannot have buffer size 0";
         }
         f_size = a_size;
+        f_packet_size = a_packet_size;
 
         f_packets = new packet*[f_size];
         for( unsigned t_index = 0; t_index < f_size; ++t_index )
         {
             f_packets[ t_index ] = new packet( a_packet_size );
+            LWARN( plog, "packet at " << t_index << " now has ptr " << f_packets[t_index] );
         }
         f_mutexes = new std::mutex[f_size];
     }
@@ -187,6 +219,27 @@ namespace psyllid
         f_next_index = a_copy.f_next_index;
         f_released = a_copy.f_released;
     }
+    pb_iterator::pb_iterator( pb_iterator&& a_orig ) :
+            //f_name( a_orig.f_name ),
+            f_buffer( a_orig.f_buffer ),
+            f_packets( a_orig.f_packets ),
+            f_mutexes( a_orig.f_mutexes ),
+            f_size( a_orig.f_size ),
+            f_previous_index( a_orig.f_previous_index ),
+            f_current_index( a_orig.f_current_index ),
+            f_next_index( a_orig.f_next_index ),
+            f_released( a_orig.f_released )
+    {
+        f_buffer = nullptr;
+        f_packets = nullptr;
+        f_mutexes = nullptr;
+        f_size = 0;
+        f_previous_index = 0;
+        f_current_index = 0;
+        f_next_index = 0;
+        f_released =true;
+    }
+
     pb_iterator::~pb_iterator()
     {
         if(! f_released ) release();

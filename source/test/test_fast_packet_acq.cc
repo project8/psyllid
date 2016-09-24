@@ -5,59 +5,62 @@
  *      Author: nsoblath
  *
  *  Suggested UDP client: roach_simulator.go
+ *
+ *  Usage: > test_fast_packet_acq [options]
+ *
+ *  Options:
+ *    - interface -- (string) network interface to listen on; defaults to "eth1"
  */
 
 
 #include "tf_roach_receiver.hh"
-#include "fast_packet_acq.hh"
+#include "fpa_factory.hh"
 #include "psyllid_error.hh"
 #include "midge_error.hh"
 
+#include "configurator.hh"
 #include "logger.hh"
 #include "param.hh"
 
 
-using namespace midge;
 using namespace psyllid;
 
 LOGGER( plog, "test_fast_packet_acq" );
 
-int main()
+int main( int argc, char** argv )
 {
     try
     {
+        scarab::param_node t_default_config;
+        t_default_config.add( "interface", new scarab::param_value( "eth1" ) );
+
+        scarab::configurator t_configurator( argc, argv, &t_default_config );
+
+        std::string t_interface( t_configurator.get< std::string >( "interface" ) );
+
+        // setup the server config
         scarab::param_node* t_server_config = new scarab::param_node();
         t_server_config->add( "type", new scarab::param_value( "fpa" ) );
-        t_server_config->add( "fpa", new scarab::param_value( "eth1-fpa" ) );
-
-        LINFO( plog, "Creating and configuring FPA" );
-
-        fast_packet_acq t_fpa;
-        t_fpa.net_interface() = "eth1";
+        t_server_config->add( "interface", new scarab::param_value( t_interface ) );
 
         LINFO( plog, "Creating and configuring receiver" );
 
         tf_roach_receiver t_receiver;
-        t_receiver.node_ptr( &t_fpa, t_server_config->get_value( "fpa" ) );
+        t_receiver.set_name( "rec" );
+        //t_receiver.node_ptr( &t_fpa, t_interface );
         t_receiver.set_server_config( t_server_config );
 
         LINFO( plog, "Initializing receiver & FPA" );
 
-        t_fpa.initialize();
         t_receiver.initialize();
 
         LINFO( plog, "Running receiver" );
 
         t_receiver.execute();
 
-        LINFO( plog, "Running FPA" );
-
-        t_fpa.execute();
-
         LINFO( plog, "Finalizing receiver and FPA" );
 
         t_receiver.finalize();
-        t_fpa.finalize();
 
         return 0;
     }

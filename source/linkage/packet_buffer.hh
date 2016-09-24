@@ -6,6 +6,7 @@
 #include <inttypes.h>
 #include <mutex>
 #include <string>
+#include <iostream>
 
 namespace psyllid
 {
@@ -40,6 +41,8 @@ namespace psyllid
         private:
             friend class pb_iterator;
 
+            bool reallocate( size_t a_size );
+
             uint8_t* f_bytes;
     };
 
@@ -62,6 +65,8 @@ namespace psyllid
             packet_buffer();
             /// Initialized buffer
             packet_buffer( size_t a_size, size_t a_packet_size = 0 );
+            packet_buffer( const packet_buffer& a_orig );
+            packet_buffer( packet_buffer&& a_orig );
             virtual ~packet_buffer();
 
             void initialize( size_t a_size, size_t a_packet_size = 0 );
@@ -73,6 +78,8 @@ namespace psyllid
             void delete_packet( unsigned a_index );
 
             void print_states();
+
+            packet* get_packet(int i) {return f_packets[i];}
 
         private:
             packet** f_packets;
@@ -108,7 +115,8 @@ namespace psyllid
         public:
             pb_iterator();
             pb_iterator( packet_buffer* a_buffer /*, const std::string& a_name = "default"*/ );
-            pb_iterator( const pb_iterator& );
+            pb_iterator( const pb_iterator& a_orig );
+            pb_iterator( pb_iterator && a_orig );
             virtual ~pb_iterator();
 
             //const std::string& name() const;

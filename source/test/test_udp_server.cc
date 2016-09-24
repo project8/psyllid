@@ -8,20 +8,19 @@
  */
 
 
-#include "udp_server.hh"
-#include "midge_error.hh"
+#include "udp_server_socket.hh"
+#include "psyllid_error.hh"
 #include "logger.hh"
 
-using namespace midge;
 using namespace psyllid;
 
-LOGGER( plog, "test_server" );
+LOGGER( plog, "test_udp_server" );
 
 int main()
 {
     try
     {
-        server t_server( 23530 );
+        udp_server_socket t_server( 23530 );
 
         LINFO( plog, "Server is listening" );
 
@@ -44,7 +43,7 @@ int main()
         }
 
     }
-    catch( error& e )
+    catch( std::exception& e )
     {
         LERROR( plog, "Exception caught: " << e.what() );
     }

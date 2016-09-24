@@ -42,6 +42,7 @@ namespace psyllid
 
     tf_roach_receiver::~tf_roach_receiver()
     {
+        delete f_server_config;
     }
 
     void tf_roach_receiver::initialize()
@@ -57,8 +58,8 @@ namespace psyllid
 #ifdef __linux__
             else if( t_server_type == "fpa" )
             {
-                fast_packet_acq* t_fpa = dynamic_cast< fast_packet_acq* >( node_ptr( f_server_config->get_value( "fpa", "eth1-fpa" ) ) );
-                f_server.reset( new udp_server_fpa( f_server_config, t_fpa ) );
+                //fast_packet_acq* t_fpa = dynamic_cast< fast_packet_acq* >( node_ptr( f_server_config->get_value( "fpa", "eth1" ) ) );
+                f_server.reset( new udp_server_fpa( f_server_config ) );
             }
 #endif
             else
@@ -78,7 +79,9 @@ namespace psyllid
 
     void tf_roach_receiver::execute()
     {
-        LDEBUG( plog, "Executing the UDP receiver" );
+        LDEBUG( plog, "Executing the TF ROACH receiver" );
+
+        f_server->activate();
 
         time_data* t_time_data = nullptr;
         freq_data* t_freq_data = nullptr;
