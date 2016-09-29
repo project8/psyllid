@@ -32,43 +32,47 @@ namespace psyllid
     @class fast_packet_acq
     @author N.S. Oblath
 
-    @brief Global access to fast-packet-acquisition system; Eaters and distributors are requested by network interface name
+    @brief Fast-packet-acquisition system for a particular network interface
 
     @details
-    Fast-packet-acquisition configuration is done by access to the global_config class.
+    Each fast_packet_acq instance applies to a single network interface (e.g. eth0).
     All configuration values are optional (defaults will be used if not provided; see the packet_eater class for details)
-    To configure a packet the global configuration should contain a node looking like this:
+    To configure a fast-packet-acq for interface eth1, the configuration might look like this:
 
-        "fast-packet-acq" : {
-            "ifc1" : {
-                "timeout-sec": 2,
-                "n-blocks": 100,
-            }
-        }
+        eth1:
+            - timeout-sec: 2
+            - n-blocks: 100
+
     */
 	class fast_packet_acq : public midge::bystander
 	{
 	    public:
-            fast_packet_acq();
+            fast_packet_acq( const std::string& a_interface = "" );
             virtual ~fast_packet_acq();
 
             pe_ptr eater();
             pd_ptr distributor();
 
-            mv_referrable( std::string, net_interface );
+            const std::string& net_interface() const;
 
 	    public:
-            void initialize();
-            bool activate_port( unsigned a_port, pb_iterator& a_iterator, unsigned a_buffer_size = 100 );
+            void initialize(); // set interface before calling this
+            bool activate_port( unsigned a_port, pb_iterator& a_iterator, unsigned a_buffer_size = 100 ); // initialize before calling this
 
             void execute();
 
             void finalize();
 
         private:
+            bool f_is_initialized;
+            bool f_is_running;
+
 	        pe_ptr f_eater;
 	        pd_ptr f_distributor;
 
+        private:
+            virtual void do_cancellation();
+            virtual void do_reset_cancellation();
 	};
 
     inline pe_ptr fast_packet_acq::eater()
@@ -80,6 +84,10 @@ namespace psyllid
         return f_distributor;
     }
 
+    inline const std::string& fast_packet_acq::net_interface() const
+    {
+        return f_name;
+    }
 
 
     class fast_packet_acq_builder : public _node_builder< fast_packet_acq >

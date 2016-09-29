@@ -12,7 +12,8 @@ set( headers
     roach_config.hh
     streaming_writer.hh
     terminator.hh
-    udp_receiver.hh
+    tf_roach_monitor.hh
+    tf_roach_receiver.hh
 )
 
 set( sources
@@ -25,7 +26,8 @@ set( sources
     roach_config.cc
     streaming_writer.cc
     terminator.cc
-    udp_receiver.cc
+    tf_roach_monitor.cc
+    tf_roach_receiver.cc
 )
 
 if( UNIX )

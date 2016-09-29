@@ -37,7 +37,7 @@ namespace psyllid
     {
         midge::enum_t t_command = midge::stream::s_none;
 
-        freq_data* t_data = nullptr;
+        //freq_data* t_data = nullptr;
 
         while( true )
         {
@@ -55,7 +55,7 @@ namespace psyllid
                 continue;
             }
 
-            t_data = in_stream< 0 >().data();
+            //t_data = in_stream< 0 >().data();
 
             if( t_command == midge::stream::s_start )
             {

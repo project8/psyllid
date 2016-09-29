@@ -42,8 +42,7 @@ namespace psyllid {
 	        f_net_interface_name( a_net_interface ),
 	        f_net_interface_index( 0 ),
 			f_socket( 0 ),
-			f_ring( nullptr ),
-			f_address( nullptr ),
+			f_ring(),
 			f_packets_total( 0 ),
 			f_bytes_total( 0 ),
 			f_packet_buffer(),
@@ -62,19 +61,25 @@ namespace psyllid {
 	packet_eater::~packet_eater()
 	{
 	    // undo the ring
-	    if( f_ring != nullptr )
-	    {
-	        ::munmap(f_ring->f_map, f_ring->f_req.tp_block_size * f_ring->f_req.tp_block_nr);
-	        ::free( f_ring->f_rd );
-	        delete f_ring;
-	        f_ring = nullptr;
-	    }
+	    //if( f_ring != nullptr )
+	    //{
+	        //LWARN( plog, "f_ring = " << f_ring );
+	        LWARN( plog, "f_ring->f_rd = " << f_ring.f_rd );
+	        LWARN( plog, "f_ring->f_map = " << f_ring.f_map );
+	        LWARN( plog, "f_ring->f_req.tp_block_size = " << f_ring.f_req.tp_block_size );
 
-        // clean up socket address
-        delete f_address;
+	        ::munmap(f_ring.f_map, f_ring.f_req.tp_block_size * f_ring.f_req.tp_block_nr);
+	        if( f_ring.f_rd != nullptr )
+	        {
+	            LERROR( plog, "freeing f_rd" );
+	            ::free( f_ring.f_rd );
+	        }
+	        //delete f_ring;
+	        //f_ring = nullptr;
+	    //}
 
         // close udp_server socket
-        if( f_socket != 0 ) ::close( f_socket );
+        if( f_socket > 0 ) ::close( f_socket );
 
         f_iterator.release();
 	}
@@ -83,24 +88,8 @@ namespace psyllid {
     {
         LINFO( plog, "Preparing fast-packet-acquisition server" );
 
-        // create the ring buffer
-        f_ring = new receive_ring();
-        ::memset( f_ring, 0, sizeof(receive_ring) );
-        LDEBUG( plog, "Ring buffer parameters:\n" <<
-                "block size: " << f_block_size << '\n' <<
-                "frame size: " << f_frame_size << '\n' <<
-                "number of blocks: " << f_n_blocks );
-        ::memset( &f_ring->f_req, 0, sizeof(tpacket_req3) );
-        f_ring->f_req.tp_block_size = f_block_size;
-        f_ring->f_req.tp_frame_size = f_frame_size;
-        f_ring->f_req.tp_block_nr = f_n_blocks;
-        f_ring->f_req.tp_frame_nr = (f_block_size - f_n_blocks) / f_frame_size;
-        f_ring->f_req.tp_retire_blk_tov = 60;
-        f_ring->f_req.tp_feature_req_word = TP_FT_REQ_FILL_RXHASH;
-
-        LDEBUG( plog, "Opening packet_eater for network interface <" << f_net_interface_name << ">" );
-
         // open socket
+        //int fd;
         f_socket = ::socket( AF_PACKET, SOCK_RAW, htons(ETH_P_IP) );
         if( f_socket < 0 )
         {
@@ -108,16 +97,39 @@ namespace psyllid {
             return false;
         }
 
-        // socket options
-
         int t_packet_ver = TPACKET_V3;
-        if( ::setsockopt( f_socket, SOL_PACKET, PACKET_VERSION, &t_packet_ver, sizeof(t_packet_ver) ) < 0 )
+        if( ::setsockopt( f_socket, SOL_PACKET, PACKET_VERSION, &t_packet_ver, sizeof(int) ) < 0 )
         {
             LERROR( plog, "Could not set packet version:\n\t" << strerror( errno ) );
             return false;
         }
 
-        if( ::setsockopt( f_socket, SOL_PACKET, PACKET_RX_RING, &f_ring->f_req, sizeof(f_ring->f_req) ) < 0 )
+        // create the ring buffer
+        //f_ring = new receive_ring();
+        //::memset( f_ring, 0, sizeof(receive_ring) );
+        //::memset( &f_ring->f_req, 0, sizeof(tpacket_req3) );
+        LDEBUG( plog, "Ring buffer parameters:\n" <<
+                "block size: " << f_block_size << '\n' <<
+                "frame size: " << f_frame_size << '\n' <<
+                "number of blocks: " << f_n_blocks );
+        f_ring.f_req.tp_block_size = f_block_size;
+        f_ring.f_req.tp_frame_size = f_frame_size;
+        f_ring.f_req.tp_block_nr = f_n_blocks;
+        f_ring.f_req.tp_frame_nr = (f_block_size * f_n_blocks) / f_frame_size;
+        f_ring.f_req.tp_retire_blk_tov = 60;
+        f_ring.f_req.tp_feature_req_word = TP_FT_REQ_FILL_RXHASH;
+
+        //LWARN( plog, "f_ring = " << f_ring );
+        bool test = f_ring.f_rd == nullptr;
+        LWARN( plog, "f_ring.f_rd == nullptr: " << test );
+        test = f_ring.f_map == nullptr;
+        LWARN( plog, "f_ring.f_map == nullptr: " << test );
+        LWARN( plog, "f_ring.f_req.tp_block_size = " << f_ring.f_req.tp_block_size );
+
+        LDEBUG( plog, "Opening packet_eater for network interface <" << f_net_interface_name << ">" );
+
+        LWARN( plog, "f_socket = " << f_socket << ";  SOL_PACKET = " << SOL_PACKET << ";  PACKET_RX_RING = " << PACKET_RX_RING << ";  &f_ring.f_req = " << &f_ring.f_req << ";  sizeof(f_ring.f_req) = " << sizeof(f_ring.f_req) );
+        if( ::setsockopt( f_socket, SOL_PACKET, PACKET_RX_RING, &f_ring.f_req, sizeof(f_ring.f_req) ) < 0 )
         {
             LERROR( plog, "Could not set receive ring:\n\t" << strerror( errno ) );
             return false;
@@ -141,39 +153,37 @@ namespace psyllid {
         }
 
         // finish preparing the ring
-        f_ring->f_map = (uint8_t*)::mmap( nullptr, f_ring->f_req.tp_block_size * f_ring->f_req.tp_block_nr,
+        f_ring.f_map = (uint8_t*)::mmap( nullptr, f_ring.f_req.tp_block_size * f_ring.f_req.tp_block_nr,
                 PROT_READ | PROT_WRITE, MAP_SHARED | MAP_LOCKED, f_socket, 0);
-        if( f_ring->f_map == MAP_FAILED )
+        if( f_ring.f_map == MAP_FAILED )
         {
             LERROR( plog, "Unable to setup ring map" );
             return false;
         }
 
-        f_ring->f_rd = (iovec*)::malloc(f_ring->f_req.tp_block_nr * sizeof(*f_ring->f_rd) );
-        if( f_ring->f_rd == nullptr )
+        f_ring.f_rd = (iovec*)::malloc(f_ring.f_req.tp_block_nr * sizeof(*f_ring.f_rd) );
+        if( f_ring.f_rd == nullptr )
         {
             LERROR( plog, "Unable to allocate memory for the ring" );
             return false;
         }
-        for( unsigned i_block = 0; i_block < f_ring->f_req.tp_block_nr; ++i_block )
+        for( unsigned i_block = 0; i_block < f_ring.f_req.tp_block_nr; ++i_block )
         {
-            f_ring->f_rd[ i_block ].iov_base = f_ring->f_map + ( i_block * f_ring->f_req.tp_block_size );
-            f_ring->f_rd[ i_block ].iov_len = f_ring->f_req.tp_block_size;
+            f_ring.f_rd[ i_block ].iov_base = f_ring.f_map + ( i_block * f_ring.f_req.tp_block_size );
+            f_ring.f_rd[ i_block ].iov_len = f_ring.f_req.tp_block_size;
         }
 
         // initialize the address
-        f_address = new sockaddr_ll();
-        ::memset( f_address, 0, sizeof(sockaddr_ll) );
-        f_address->sll_family = PF_PACKET;
-        f_address->sll_protocol = htons(ETH_P_IP);
-        f_address->sll_ifindex = f_net_interface_index;
-        f_address->sll_hatype = 0;
-        f_address->sll_pkttype = 0;
-        f_address->sll_halen = 0;
+        sockaddr_ll t_address;// = new sockaddr_ll();
+        ::memset( &t_address, 0, sizeof(sockaddr_ll) );
+        t_address.sll_family = PF_PACKET;
+        t_address.sll_protocol = htons(ETH_P_IP);
+        t_address.sll_ifindex = f_net_interface_index;
+        t_address.sll_hatype = 0;
+        t_address.sll_pkttype = 0;
+        t_address.sll_halen = 0;
 
-        // bind the socket
-        LDEBUG( plog, "Binding the socket" );
-        if( ::bind( f_socket, (const sockaddr*)f_address, sizeof(f_address) ) < 0 )
+        if( ::bind( f_socket, (sockaddr*)&t_address, sizeof(t_address) ) < 0 )
         {
             LERROR( plog, "Could not bind socket:\n\t" << strerror( errno ) );
             return false;
@@ -198,6 +208,8 @@ namespace psyllid {
 
 	void packet_eater::execute()
 	{
+	    LDEBUG( plog, "Packet eater is starting execution" );
+
 	    // Setup the polling file descriptor struct
 	    pollfd t_pollfd;
 	    ::memset( &t_pollfd, 0, sizeof(pollfd) );
@@ -215,7 +227,7 @@ namespace psyllid {
 	    while( ! is_canceled() )
 	    {
 	        // get the next block
-	        t_block = (block_desc *) f_ring->f_rd[ t_block_num ].iov_base;
+	        t_block = (block_desc *) f_ring.f_rd[ t_block_num ].iov_base;
 
 	        // make sure the next block has been made available to the user
 	        if( ( t_block->f_packet_hdr.block_status & TP_STATUS_USER ) == 0 )
@@ -233,6 +245,8 @@ namespace psyllid {
 
             t_block_num = ( t_block_num + 1 ) % f_n_blocks;
         }
+
+	    LINFO( plog, "Packet eater was canceled; exiting" );
 
 	    return;
 	}
@@ -308,7 +322,5 @@ namespace psyllid {
     {
         return f_packet_buffer;
     }
-
-
 
 } /* namespace psyllid */

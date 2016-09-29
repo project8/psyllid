@@ -87,13 +87,12 @@ namespace psyllid
 
 
 using namespace psyllid;
-using namespace midge;
 
 int main()
 {
     LINFO( plog, "Preparing" );
 
-    ::midge::midge* t_root = new ::midge::midge();
+    ::midge::diptera* t_root = new ::midge::diptera();
 
     test_producer* t_test_prod = new test_producer();
     t_test_prod->set_name( "tp" );

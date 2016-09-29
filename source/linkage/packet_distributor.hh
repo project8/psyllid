@@ -11,6 +11,7 @@
 #include "packet_buffer.hh"
 
 #include "cancelable.hh"
+#include "member_variables.hh"
 
 #include <boost/container/flat_map.hpp>
 
@@ -27,33 +28,46 @@ namespace psyllid
 
     @details
     */
-    class packet_distributor : scarab::cancelable
+    class packet_distributor : public scarab::cancelable
     {
         public:
-            packet_distributor( packet_buffer* a_buffer );
+            packet_distributor();
             virtual ~packet_distributor();
 
             bool open_port( unsigned a_port, pb_iterator& a_iterator, unsigned a_buffer_size = 100 );
             bool close_port( unsigned a_port );
 
+            void initialize();
+
             void execute();
+
+            void set_ip_buffer( packet_buffer* a_buffer );
 
         private:
             bool distribute_packet();
+
+            packet_buffer* f_ip_buffer;
 
             pb_iterator f_ip_pkt_iterator;
 
             struct udp_buffer
             {
-                //udp_buffer() {};
+                udp_buffer( unsigned a_size, unsigned a_packet_size = 0 );
+                udp_buffer( const udp_buffer& ) = default;
+                udp_buffer( udp_buffer&& ) = default;
                 ~udp_buffer() {};
                 packet_buffer f_buffer;
                 pb_iterator f_iterator;
             };
-            typedef ::bcont::flat_map< unsigned, udp_buffer > buffer_map;
+            typedef ::bcont::flat_map< unsigned, udp_buffer* > buffer_map;
 
-            ::bcont::flat_map< unsigned, udp_buffer > f_udp_buffers;
+            buffer_map f_udp_buffers;
     };
+
+    inline void packet_distributor::set_ip_buffer( packet_buffer* a_buffer )
+    {
+        f_ip_buffer = a_buffer;
+    }
 
 } /* namespace psyllid */
 

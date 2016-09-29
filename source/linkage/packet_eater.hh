@@ -28,9 +28,11 @@ namespace psyllid
 
 	struct receive_ring
 	{
-		iovec* f_rd;
-		uint8_t* f_map;
-		tpacket_req3 f_req;
+        iovec* f_rd;
+        uint8_t* f_map;
+        tpacket_req3 f_req;
+        receive_ring() : f_rd( nullptr ), f_map( nullptr ), f_req()
+        {}
 	};
 
 	/*!
@@ -85,7 +87,7 @@ namespace psyllid
 
 	 */
 
-	class packet_eater : scarab::cancelable
+	class packet_eater : public scarab::cancelable
 	{
 		public:
 			packet_eater( const std::string& a_net_interface );
@@ -116,9 +118,7 @@ namespace psyllid
 
             int f_socket;
 
-			receive_ring* f_ring;
-
-			sockaddr_ll* f_address;
+			receive_ring f_ring;
 
 			uint64_t f_packets_total;
 			uint64_t f_bytes_total;
