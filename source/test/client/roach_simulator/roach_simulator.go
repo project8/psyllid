@@ -66,7 +66,8 @@ func (roachPkt *RoachPacket)PackInto( rawPkt *RawPacket ) {
 }
  
 func main() {
-	ServerAddr,err := net.ResolveUDPAddr("udp","127.0.0.1:23530")
+	//ServerAddr,err := net.ResolveUDPAddr("udp","127.0.0.1:23530")
+	ServerAddr,err := net.ResolveUDPAddr("udp", "192.168.56.102:23530")
 	CheckError(err)
  
 	//LocalAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
