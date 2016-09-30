@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"flag"
 	"fmt"
 	"math"
 	"net"
 	"os"
+	"strconv"
 	"time"
 )
  
@@ -66,8 +68,29 @@ func (roachPkt *RoachPacket)PackInto( rawPkt *RawPacket ) {
 }
  
 func main() {
+	// Notes on the timing between packets
+	// Packets are sent in (time, freqquency) pairs.  There is a 1 ms delay between them (configurable with the -tf-delay flag)
+	// The delay time between pairs is configurable with the -pkt-delay command-line flag.  The default is 500 ms.
+	// For delays much larger than 1 ms, this is approximately the period of the packet cycle.
+
+	// setup command line options
+	var ip string
+	var port int
+	var packetDelay, tfDelay time.Duration
+	flag.StringVar(&ip, "ip", "127.0.0.1", "IP address to which the packets are sent")
+	flag.IntVar(&port, "port", 23530, "Port to which the packets are sent")
+	flag.DurationVar(&packetDelay, "pkt-delay", time.Millisecond*500, "Delay time between packets (approximately the period of the packet cycle)")
+	flag.DurationVar(&tfDelay, "tf-delay", time.Millisecond, "Delay between the time and frequency packets")
+
+	flag.Parse()
+
+	fmt.Printf("Time between packet pairs: %v\n", packetDelay)
+	fmt.Printf("Time between time and frequency packets: %v\n", tfDelay)
+
+	address := ip + ":" + strconv.Itoa(port)
+	fmt.Printf("Addressing packets to: %v\n", address)
 	//ServerAddr,err := net.ResolveUDPAddr("udp","127.0.0.1:23530")
-	ServerAddr,err := net.ResolveUDPAddr("udp", "192.168.56.102:23530")
+	ServerAddr,err := net.ResolveUDPAddr("udp", address)
 	CheckError(err)
  
 	//LocalAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
@@ -105,6 +128,8 @@ func main() {
 	var signalCounter uint8 = 0
 	const signalCounterMax uint8 = 15
 	const signalTrigger uint8 = 14
+
+	fmt.Println()
 		
 	for {
 
@@ -140,9 +165,9 @@ func main() {
 			if err != nil {
 				fmt.Println("Unable to send buffer:", err)
 			}
-			time.Sleep(time.Millisecond * 10)
+			time.Sleep(tfDelay)
 		}
-		time.Sleep(time.Second * 1)
+		time.Sleep(packetDelay)
 
 		packetCounter++
 		if packetCounter == packetCounterMax {
