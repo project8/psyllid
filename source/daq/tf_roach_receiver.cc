@@ -317,7 +317,7 @@ namespace psyllid
         a_node->set_time_sync_tol( a_config.get_value( "time-sync-tol", a_node->get_time_sync_tol() ) );
         const scarab::param_node* t_server_config = a_config.node_at( "server" );
         if( t_server_config == nullptr ) a_node->set_server_config( nullptr );
-        else a_node->set_server_config( new scarab::param_node( t_server_config ) );
+        else a_node->set_server_config( new scarab::param_node( *t_server_config ) );
         return;
     }
 
