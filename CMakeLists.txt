@@ -23,6 +23,14 @@ set_option( USE_CPP11 TRUE )
 # add an option to build docs
 option( Psyllid_BUILD_DOCS "Enable make targets for both doxygen and sphinx (requires Doxygen, Sphinx, and Breathe)" FALSE )
 
+# add an option to perform iterator time profiling
+option( Psyllid_ENABLE_ITERATOR_TIMING "Flag to enable iterator time profiling" FALSE )
+if( Psyllid_ENABLE_ITERATOR_TIMING )
+    add_definitions( -DENABLE_ITERATOR_TIMING )
+else( Psyllid_ENABLE_ITERATOR_TIMING )
+    remove_definitions( -DENABLE_ITERATOR_TIMING )
+endif( Psyllid_ENABLE_ITERATOR_TIMING )
+
 
 ################
 # dependencies #

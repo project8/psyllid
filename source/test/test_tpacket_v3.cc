@@ -127,6 +127,7 @@ static void display(tpacket3_hdr *ppd)
     ethhdr *eth = (ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
     iphdr *ip = (iphdr *) ((uint8_t *) eth + ETH_HLEN);
 
+    printf("packet id: %d, ", eth->h_proto);
     if (eth->h_proto == htons(ETH_P_IP)) {
         sockaddr_in ss, sd;
         char sbuff[NI_MAXHOST], dbuff[NI_MAXHOST];

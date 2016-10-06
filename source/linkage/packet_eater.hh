@@ -35,7 +35,7 @@ namespace psyllid
         {}
 	};
 
-	/*!
+    /*!
     @class packet_eater
     @author N.S. Oblath
 
@@ -111,7 +111,7 @@ namespace psyllid
 			void walk_block( block_desc* a_bd );
 			void flush_block( block_desc* a_bd );
 
-			void process_packet( tpacket3_hdr* a_packet );
+			bool process_packet( tpacket3_hdr* a_packet );
 
 			std::string f_net_interface_name;
 			int f_net_interface_index;

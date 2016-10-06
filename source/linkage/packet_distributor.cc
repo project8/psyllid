@@ -13,19 +13,20 @@
 
 #include <arpa/inet.h>
 #include <linux/udp.h>
+#include <sstream>
 
 namespace psyllid
 {
     LOGGER( plog, "packet_distributor" );
 
-    packet_distributor::udp_buffer::udp_buffer( unsigned a_size, unsigned a_packet_size ) :
+    packet_distributor::udp_buffer::udp_buffer( unsigned a_size, unsigned a_packet_size, const std::string& a_name ) :
             f_buffer( a_size, a_packet_size ),
-            f_iterator()
+            f_iterator( a_name )
     {}
 
-    packet_distributor::packet_distributor() :
+    packet_distributor::packet_distributor( const std::string& a_interface ) :
             f_ip_buffer( nullptr ),
-            f_ip_pkt_iterator(),
+            f_ip_pkt_iterator( a_interface + std::string("ip_reader") ),
             f_udp_buffers()
     {
     }
@@ -55,7 +56,10 @@ namespace psyllid
 
         // Initialize the udp_buffer struct in the map
         //f_udp_buffers[ a_port ] = udp_buffer{ packet_buffer( a_buffer_size ), pb_iterator() };
-        udp_buffer* t_new_buffer = new udp_buffer( a_buffer_size );
+        std::stringstream a_conv;
+        a_conv << a_port;
+	std::string t_port_str( "p" + a_conv.str() );
+        udp_buffer* t_new_buffer = new udp_buffer( a_buffer_size, 0, t_port_str + std::string("_udp_writer") );
         f_udp_buffers[ a_port ] = t_new_buffer;
         //f_udp_buffers.emplace( std::make_pair( a_port, udp_buffer( a_buffer_size ) ) );
         LWARN( plog, "Initialized outbound buffer for port <" << a_port << ">; packet 0 ptr is " << f_udp_buffers.at( a_port )->f_buffer.get_packet(0) );
@@ -66,6 +70,7 @@ namespace psyllid
                << ") ptr is " << f_udp_buffers.at( a_port )->f_iterator.object() );
 
         // attach the read iterator
+        a_iterator.name() = t_port_str + std::string("_udp_reader");
         a_iterator.attach( &f_udp_buffers.at( a_port )->f_buffer );
 
         LDEBUG( plog, "Port <" << a_port << "> is open; distributor now has " << f_udp_buffers.size() << " ports open" );
@@ -109,7 +114,7 @@ namespace psyllid
 
         // move the read iterator up until it runs up against a blocked packet
         while( +f_ip_pkt_iterator );
-        f_ip_pkt_iterator.set_reading();
+        f_ip_pkt_iterator.set_unused();
 
         // set write packet statuses
         for( buffer_map::iterator t_it = f_udp_buffers.begin(); t_it != f_udp_buffers.end(); ++t_it )
@@ -120,6 +125,7 @@ namespace psyllid
         while( ! is_canceled() )
         {
             // advance the iterator; blocks until next packet is available
+            LDEBUG( plog, "Attempting to advance IP packet read iterator" );
             ++f_ip_pkt_iterator;
 
             // check for cancelation
@@ -151,6 +157,8 @@ namespace psyllid
     {
         // this doesn't appear to be defined anywhere in standard linux headers, at least as far as I could find
         static const unsigned t_udp_hdr_len = 8;
+
+        LDEBUG( plog, "Reading IP packet at iterator position " << f_ip_pkt_iterator.index() );
 
         udphdr* t_udp_hdr = reinterpret_cast< udphdr* >( f_ip_pkt_iterator->ptr() );
 

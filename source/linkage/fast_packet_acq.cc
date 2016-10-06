@@ -44,7 +44,7 @@ namespace psyllid
             f_eater = std::make_shared< packet_eater >( f_name );
 
             // create a new packet distributor for the interface and connect the distributor to the eater
-            f_distributor = std::make_shared< packet_distributor >();
+            f_distributor = std::make_shared< packet_distributor >( f_name );
 
             f_distributor->set_ip_buffer( &f_eater->buffer() );
 

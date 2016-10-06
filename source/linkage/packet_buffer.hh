@@ -1,6 +1,8 @@
 #ifndef PSYLLID_PACKET_BUFFER_HH_
 #define PSYLLID_PACKET_BUFFER_HH_
 
+#include "iterator_timer.hh"
+
 #include "member_variables.hh"
 
 #include <inttypes.h>
@@ -13,17 +15,17 @@ namespace psyllid
 
     //*********************
     // packet
-    //*********************
+    //*********************/
 
     class packet
     {
         public:
             enum class status
             {
-                unused,
-                writing,
-                written,
-                reading
+                unused = 0,
+                writing = 2,
+                written = 4,
+                reading = 6
             };
 
         public:
@@ -54,7 +56,7 @@ namespace psyllid
 
     //*********************
     // packet_buffer
-    //*********************
+    //*********************/
 
     class packet_buffer
     {
@@ -108,18 +110,19 @@ namespace psyllid
 
     //*********************
     // pb_iterator
-    //*********************
+    //*********************/
 
     class pb_iterator
     {
         public:
-            pb_iterator();
-            pb_iterator( packet_buffer* a_buffer /*, const std::string& a_name = "default"*/ );
+            pb_iterator( const std::string& a_name = "default" );
+            pb_iterator( packet_buffer* a_buffer , const std::string& a_name = "default" );
             pb_iterator( const pb_iterator& a_orig );
             pb_iterator( pb_iterator && a_orig );
             virtual ~pb_iterator();
 
-            //const std::string& name() const;
+            const std::string& name() const;
+            std::string& name();
 
             /// returns the index of the current packet in the buffer
             unsigned int index() const;
@@ -159,7 +162,7 @@ namespace psyllid
 
         protected:
 
-            //std::string f_name;
+            std::string f_name;
 
             packet_buffer* f_buffer;
             packet** f_packets;
@@ -174,15 +177,18 @@ namespace psyllid
 
             bool f_released;
 
-            //IT_TIMER_DECLARE
+            IT_TIMER_DECLARE
     };
 
-    /*
     inline const std::string& pb_iterator::name() const
     {
         return f_name;
     }
-    */
+
+    inline std::string& pb_iterator::name()
+    {
+        return f_name;
+    }
 
     inline unsigned int pb_iterator::index() const
     {

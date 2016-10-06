@@ -31,7 +31,7 @@ namespace psyllid
     class packet_distributor : public scarab::cancelable
     {
         public:
-            packet_distributor();
+            packet_distributor( const std::string& a_interface );
             virtual ~packet_distributor();
 
             bool open_port( unsigned a_port, pb_iterator& a_iterator, unsigned a_buffer_size = 100 );
@@ -52,7 +52,7 @@ namespace psyllid
 
             struct udp_buffer
             {
-                udp_buffer( unsigned a_size, unsigned a_packet_size = 0 );
+                udp_buffer( unsigned a_size, unsigned a_packet_size = 0, const std::string& a_name = "udp_writer" );
                 udp_buffer( const udp_buffer& ) = default;
                 udp_buffer( udp_buffer&& ) = default;
                 ~udp_buffer() {};

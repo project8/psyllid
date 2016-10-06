@@ -17,7 +17,7 @@ namespace psyllid
 
     //*********************
     // packet
-    //*********************
+    //*********************/
 
     packet::packet() :
             packet( 0 )
@@ -81,7 +81,7 @@ namespace psyllid
 
     //*********************
     // packet_buffer
-    //*********************
+    //*********************/
 
     packet_buffer::packet_buffer() :
             f_packets( nullptr ),
@@ -155,7 +155,7 @@ namespace psyllid
         for( unsigned t_index = 0; t_index < f_size; ++t_index )
         {
             f_packets[ t_index ] = new packet( a_packet_size );
-            LWARN( plog, "packet at " << t_index << " now has ptr " << f_packets[t_index] );
+            //LWARN( plog, "packet at " << t_index << " now has ptr " << f_packets[t_index] );
         }
         f_mutexes = new std::mutex[f_size];
     }
@@ -168,26 +168,25 @@ namespace psyllid
         f_mutexes[ a_index ].unlock();
         return;
     }
-/*
+
     void packet_buffer::print_states()
     {
         std::stringstream pbuff;
         for( unsigned t_index = 0; t_index < f_size; ++t_index )
         {
-            pbuff << f_packets[ t_index ]->get_state() << " ";
+            pbuff << (unsigned)f_packets[ t_index ]->get_status() << " ";
         }
-        DEBUG( mtlog, pbuff.str() );
+        LDEBUG( plog, pbuff.str() );
         return;
     }
-*/
 
 
     //*********************
     // pb_iterator
-    //*********************
+    //*********************/
 
-    pb_iterator::pb_iterator() :
-            //f_name( a_name ),
+    pb_iterator::pb_iterator( const std::string& a_name ) :
+            f_name( a_name ),
             f_buffer( nullptr ),
             f_packets( nullptr ),
             f_mutexes( nullptr ),
@@ -198,10 +197,10 @@ namespace psyllid
             f_released( true )
     {}
 
-    pb_iterator::pb_iterator( packet_buffer* a_buffer/*, const std::string& a_name*/ ) :
-            pb_iterator()
+    pb_iterator::pb_iterator( packet_buffer* a_buffer, const std::string& a_name ) :
+            pb_iterator( a_name )
     {
-        //IT_TIMER_INITIALIZE;
+        IT_TIMER_INITIALIZE;
 
         if( ! attach( a_buffer ) )
         {
@@ -210,6 +209,7 @@ namespace psyllid
     }
     pb_iterator::pb_iterator( const pb_iterator& a_copy )
     {
+        f_name = a_copy.f_name;
         f_buffer = a_copy.f_buffer;
         f_packets = a_copy.f_packets;
         f_mutexes = a_copy.f_mutexes;
@@ -220,7 +220,7 @@ namespace psyllid
         f_released = a_copy.f_released;
     }
     pb_iterator::pb_iterator( pb_iterator&& a_orig ) :
-            //f_name( a_orig.f_name ),
+            f_name( a_orig.f_name ),
             f_buffer( a_orig.f_buffer ),
             f_packets( a_orig.f_packets ),
             f_mutexes( a_orig.f_mutexes ),
@@ -247,22 +247,22 @@ namespace psyllid
 
     bool pb_iterator::operator+()
     {
-        //IT_TIMER_INCR_TRY_BEGIN;
+        IT_TIMER_INCR_TRY_BEGIN;
         if( f_mutexes[ f_next_index ].try_lock() == true )
         {
-            //IT_TIMER_INCR_LOCKED;
+            IT_TIMER_INCR_LOCKED;
             f_mutexes[ f_current_index ].unlock();
             increment();
             return true;
         }
-        //IT_TIMER_INCR_TRY_FAIL
+        IT_TIMER_INCR_TRY_FAIL
         return false;
     }
     void pb_iterator::operator++()
     {
-        //IT_TIMER_INCR_BEGIN;
+        IT_TIMER_INCR_BEGIN;
         f_mutexes[ f_next_index ].lock();
-        //IT_TIMER_INCR_LOCKED;
+        IT_TIMER_INCR_LOCKED;
         f_mutexes[ f_current_index ].unlock();
         increment();
         return;
@@ -270,7 +270,7 @@ namespace psyllid
 
     bool pb_iterator::operator-()
     {
-        //IT_TIMER_OTHER
+        IT_TIMER_OTHER
         if( f_mutexes[ f_previous_index ].try_lock() == true )
         {
             f_mutexes[ f_current_index ].unlock();
@@ -281,7 +281,7 @@ namespace psyllid
     }
     void pb_iterator::operator--()
     {
-        //IT_TIMER_OTHER
+        IT_TIMER_OTHER
         f_mutexes[ f_previous_index ].lock();
         f_mutexes[ f_current_index ].unlock();
         decrement();
@@ -359,13 +359,13 @@ namespace psyllid
         f_next_index = 1;
 
         // start out by passing any packets that are currently locked, then lock the first free packet
-        //IT_TIMER_SET_IGNORE_DECR( (*this) );
+        IT_TIMER_SET_IGNORE_DECR( (*this) );
         while( f_mutexes[ f_current_index ].try_lock() == false )
         {
             decrement();
         }
-        //IT_TIMER_UNSET_IGNORE_DECR( (*this) );
-        LDEBUG( plog, "pb_iterator " << /*f_name <<*/ " starting at index " << f_current_index );
+        IT_TIMER_UNSET_IGNORE_DECR( (*this) );
+        LDEBUG( plog, "pb_iterator " << f_name << " starting at index " << f_current_index );
 
         f_released = false;
 

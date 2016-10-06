@@ -39,24 +39,23 @@ namespace psyllid {
             f_block_size( 1 << 22 ),
             f_frame_size( 1 << 11 ),
             f_buffer_size( 100 ),
-	        f_net_interface_name( a_net_interface ),
-	        f_net_interface_index( 0 ),
-			f_socket( 0 ),
-			f_ring(),
-			f_packets_total( 0 ),
-			f_bytes_total( 0 ),
-			f_packet_buffer(),
-			f_iterator()
-
+            f_net_interface_name( a_net_interface ),
+            f_net_interface_index( 0 ),
+            f_socket( 0 ),
+            f_ring(),
+            f_packets_total( 0 ),
+            f_bytes_total( 0 ),
+            f_packet_buffer(),
+            f_iterator( a_net_interface + std::string( "_ip_writer" ) )
 	{
-	    f_net_interface_name = a_net_interface;
-        f_net_interface_index = if_nametoindex( a_net_interface.c_str() );
-        if( f_net_interface_index == 0 )
-        {
-            throw error() << "[packet_eater] Unable to find index for interface <" << f_net_interface_name << ">";
+            f_net_interface_name = a_net_interface;
+            f_net_interface_index = if_nametoindex( a_net_interface.c_str() );
+            if( f_net_interface_index == 0 )
+            {
+                throw error() << "[packet_eater] Unable to find index for interface <" << f_net_interface_name << ">";
+            }
+            LDEBUG( plog, "Identified net interface <" << f_net_interface_name << "> with index <" << f_net_interface_index << ">" );
         }
-        LDEBUG( plog, "Identified net interface <" << f_net_interface_name << "> with index <" << f_net_interface_index << ">" );
-	}
 
 	packet_eater::~packet_eater()
 	{
@@ -82,7 +81,7 @@ namespace psyllid {
         if( f_socket > 0 ) ::close( f_socket );
 
         f_iterator.release();
-	}
+    }
 
     bool packet_eater::initialize()
     {
@@ -206,50 +205,49 @@ namespace psyllid {
         return;
     }
 
-	void packet_eater::execute()
-	{
-	    LDEBUG( plog, "Packet eater is starting execution" );
+    void packet_eater::execute()
+    {
+        LDEBUG( plog, "Packet eater is starting execution" );
 
-	    // Setup the polling file descriptor struct
-	    pollfd t_pollfd;
-	    ::memset( &t_pollfd, 0, sizeof(pollfd) );
-	    t_pollfd.fd = f_socket;
-	    t_pollfd.events = POLLIN | POLLERR;
-	    t_pollfd.revents = 0;
+        // Setup the polling file descriptor struct
+        pollfd t_pollfd;
+        ::memset( &t_pollfd, 0, sizeof(pollfd) );
+        t_pollfd.fd = f_socket;
+        t_pollfd.events = POLLIN | POLLERR;
+        t_pollfd.revents = 0;
 
-	    unsigned t_block_num = 0;
-	    block_desc* t_block = nullptr;
+        unsigned t_block_num = 0;
+        block_desc* t_block = nullptr;
 
-	    unsigned t_timeout_msec = 1000 * f_timeout_sec;
+        unsigned t_timeout_msec = 1000 * f_timeout_sec;
 
         f_iterator.set_writing();
 
-	    while( ! is_canceled() )
-	    {
-	        // get the next block
-	        t_block = (block_desc *) f_ring.f_rd[ t_block_num ].iov_base;
+        while( ! is_canceled() )
+        {
+            // get the next block
+            t_block = (block_desc *) f_ring.f_rd[ t_block_num ].iov_base;
 
-	        // make sure the next block has been made available to the user
-	        if( ( t_block->f_packet_hdr.block_status & TP_STATUS_USER ) == 0 )
-	        {
-	            // next block isn't available yet, so poll until it is, with the specified timeout
-	            // timeout or successful poll will go back to the top of the loop
-	            poll( &t_pollfd, 1, t_timeout_msec );
-	            continue;
-	        }
+            // make sure the next block has been made available to the user
+            if( ( t_block->f_packet_hdr.block_status & TP_STATUS_USER ) == 0 )
+            {
+                // next block isn't available yet, so poll until it is, with the specified timeout
+                // timeout or successful poll will go back to the top of the loop
+                poll( &t_pollfd, 1, t_timeout_msec );
+                continue;
+            }
 
-	        // we have a block available, so process it
+            // we have a block available, so process it
             walk_block( t_block );
             // return the block to the kernel; we're done with it
             flush_block( t_block );
-
             t_block_num = ( t_block_num + 1 ) % f_n_blocks;
         }
 
-	    LINFO( plog, "Packet eater was canceled; exiting" );
+        LINFO( plog, "Packet eater was canceled; exiting" );
 
-	    return;
-	}
+        return;
+    }
 
     void packet_eater::walk_block( block_desc* a_bd )
     {
@@ -258,27 +256,31 @@ namespace psyllid {
 
         tpacket3_hdr* t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)a_bd + a_bd->f_packet_hdr.offset_to_first_pkt );
 
+        LDEBUG( plog, "Walking a packet with " << t_num_pkts << " packets" );
         for( unsigned i = 0; i < t_num_pkts; ++i )
         {
             t_bytes += t_packet->tp_snaplen;
 
-            process_packet( t_packet );
-
-            f_iterator.set_written();
-
-            // move packet iterator ahead if possible
-            if( +f_iterator == false )
+            LDEBUG( plog, "Attempting to write IP packet at iterator index " << f_iterator.index() );
+            if( process_packet( t_packet ) )
             {
-                LINFO( plog, "Packet iterator blocked at <" << f_iterator.index() << ">" );
-                //increment block (waits for mutex lock)
-                ++f_iterator;
-                LINFO( plog, "Packet iterator loose at <" << f_iterator.index() << ">" );
+                f_iterator.set_written();
+
+                // move packet iterator ahead if possible
+                if( +f_iterator == false )
+                {
+                    LINFO( plog, "Packet iterator blocked at <" << f_iterator.index() << ">" );
+                    //increment block (waits for mutex lock)
+                    ++f_iterator;
+                    LINFO( plog, "Packet iterator loose at <" << f_iterator.index() << ">" );
+                }
+                f_iterator.set_writing();
             }
-            f_iterator.set_writing();
 
             // update the address of the packet to the next packet in the block
             t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)a_bd + t_packet->tp_next_offset );
         }
+        LDEBUG( plog, "Done walking block" );
 
         f_packets_total += t_num_pkts;
         f_bytes_total += t_bytes;
@@ -292,19 +294,20 @@ namespace psyllid {
         return;
     }
 
-    void packet_eater::process_packet( tpacket3_hdr* a_packet )
+    bool packet_eater::process_packet( tpacket3_hdr* a_packet )
     {
         // grab the ethernet interface header (defined in if_ether.h)
         ethhdr* t_eth_hdr = reinterpret_cast< ethhdr* >( (uint8_t*)a_packet + a_packet->tp_mac );
 
         // filter only IP packets
         static const unsigned short t_eth_p_ip = htons(ETH_P_IP);
+        LWARN( plog, "t_eth_p_ip: " << t_eth_p_ip << "; htons(ETH_P_IP): " << htons(ETH_P_IP) << "; t_eth_hdr->h_proto: " << t_eth_hdr->h_proto );
         if( t_eth_hdr->h_proto != t_eth_p_ip )
         {
             LDEBUG( plog, "Non-IP packet skipped" );
-            return;
+            return false;
         }
-
+        LWARN( plog, "Handling IP packet" );
         // grab the ip interface header (defined in ip.h)
         iphdr* t_ip_hdr = reinterpret_cast< iphdr* >( (uint8_t*)t_eth_hdr + ETH_HLEN );
 
@@ -315,7 +318,7 @@ namespace psyllid {
         uint8_t t_header_bytes = t_ip_hdr->ihl * 4;
         f_iterator->memcpy( reinterpret_cast< uint8_t* >( (uint8_t*)t_ip_hdr + t_header_bytes ), (uint8_t)htons(t_ip_hdr->tot_len) - t_header_bytes );
 
-        return;
+        return true;
     }
 
     packet_buffer& packet_eater::buffer()
