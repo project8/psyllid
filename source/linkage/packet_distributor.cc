@@ -125,7 +125,7 @@ namespace psyllid
         while( ! is_canceled() )
         {
             // advance the iterator; blocks until next packet is available
-            LDEBUG( plog, "Attempting to advance IP packet read iterator" );
+            //LDEBUG( plog, "Attempting to advance IP packet read iterator" );
             ++f_ip_pkt_iterator;
 
             // check for cancelation

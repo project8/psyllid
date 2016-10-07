@@ -256,7 +256,7 @@ namespace psyllid {
 
         tpacket3_hdr* t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)a_bd + a_bd->f_packet_hdr.offset_to_first_pkt );
 
-        LDEBUG( plog, "Walking a packet with " << t_num_pkts << " packets" );
+        LDEBUG( plog, "Walking a block with " << t_num_pkts << " packets" );
         for( unsigned i = 0; i < t_num_pkts; ++i )
         {
             t_bytes += t_packet->tp_snaplen;
@@ -278,7 +278,7 @@ namespace psyllid {
             }
 
             // update the address of the packet to the next packet in the block
-            t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)a_bd + t_packet->tp_next_offset );
+            t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_packet + t_packet->tp_next_offset );
         }
         LDEBUG( plog, "Done walking block" );
 
@@ -301,13 +301,19 @@ namespace psyllid {
 
         // filter only IP packets
         static const unsigned short t_eth_p_ip = htons(ETH_P_IP);
-        LWARN( plog, "t_eth_p_ip: " << t_eth_p_ip << "; htons(ETH_P_IP): " << htons(ETH_P_IP) << "; t_eth_hdr->h_proto: " << t_eth_hdr->h_proto );
+        //LWARN( plog, "t_eth_p_ip: " << t_eth_p_ip << "; htons(ETH_P_IP): " << htons(ETH_P_IP) << "; t_eth_hdr->h_proto: " << t_eth_hdr->h_proto );
+        //for (int i=0; i<50; ++i)
+        //{
+        //    printf("%02X", ((char*)a_packet)[i]);
+        //}
+        //printf("\n");
+
         if( t_eth_hdr->h_proto != t_eth_p_ip )
         {
             LDEBUG( plog, "Non-IP packet skipped" );
             return false;
         }
-        LWARN( plog, "Handling IP packet" );
+        //LWARN( plog, "Handling IP packet" );
         // grab the ip interface header (defined in ip.h)
         iphdr* t_ip_hdr = reinterpret_cast< iphdr* >( (uint8_t*)t_eth_hdr + ETH_HLEN );
 

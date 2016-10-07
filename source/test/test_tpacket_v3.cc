@@ -148,6 +148,11 @@ static void display(tpacket3_hdr *ppd)
     }
 
     printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
+    //for (int i=0; i<50; ++i)
+    //{
+    //    printf("%02X", ((char*)ppd)[i]);
+    //}
+    //printf("\n");
 }
 
 static void walk_block(block_desc *pbd, const int /*block_num*/)
@@ -199,7 +204,7 @@ int main(int argc, char **argp)
 
     signal(SIGINT, sighandler);
 
-    printf("setting up socket");
+    printf("setting up socket\n");
     memset(&ring, 0, sizeof(ring));
     fd = setup_socket(&ring, argp[argc - 1]);
     assert(fd > 0);
@@ -209,7 +214,7 @@ int main(int argc, char **argp)
     pfd.events = POLLIN | POLLERR;
     pfd.revents = 0;
 
-    printf("waiting packets");
+    printf("waiting for packets\n");
 
     while (likely(!sigint)) {
         pbd = (block_desc *) ring.rd[block_num].iov_base;
@@ -222,6 +227,7 @@ int main(int argc, char **argp)
         walk_block(pbd, block_num);
         flush_block(pbd);
         block_num = (block_num + 1) % blocks;
+        if (packets_total > 50) raise(SIGINT);
     }
 
     len = sizeof(stats);
