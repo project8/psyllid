@@ -133,7 +133,7 @@ namespace psyllid
     {
         if( ! f_midge_pkg.have_lock() )
         {
-            throw error() << "Do not have midge resource";
+            throw error() << "Do not have midge resource; worker is not currently running";
         }
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
         if( ! f_run_in_progress.load() ) return;
@@ -145,7 +145,7 @@ namespace psyllid
     void daq_worker::do_cancellation()
     {
         LDEBUG( plog, "Canceling DAQ worker" );
-        f_midge_pkg->cancel();
+        if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
         return;
     }
 
