@@ -240,6 +240,10 @@ namespace psyllid
             throw error() << "Cannot find binding for node type <" << a_node_type << ">";
         }
         t_builder->name() = a_node_name;
+        if( f_daq_config->has( a_node_name ) )
+        {
+            t_builder->configure( *f_daq_config->node_at( a_node_name ) );
+        }
         t_builder->set_daq_control( f_daq_control.lock() );
         f_nodes.insert( nodes_t::value_type( a_node_name, t_builder ) );
         return;

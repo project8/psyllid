@@ -49,15 +49,18 @@ namespace psyllid
     {
         std::string t_server_type( "socket" );
         if( f_server_config != nullptr ) t_server_type = f_server_config->get_value( "type", t_server_type );
+        LDEBUG( plog, "Initializing tf_roach_receiver with server type <" << t_server_type << ">" );
         try
         {
             if( t_server_type == "socket" )
             {
+                LDEBUG( plog, "Server config for socket server:\n" << *f_server_config );
                 f_server.reset( new udp_server_socket( f_server_config ) );
             }
 #ifdef __linux__
             else if( t_server_type == "fpa" )
             {
+                LDEBUG( plog, "Server config for fpa server:\n" << *f_server_config );
                 //fast_packet_acq* t_fpa = dynamic_cast< fast_packet_acq* >( node_ptr( f_server_config->get_value( "fpa", "eth1" ) ) );
                 f_server.reset( new udp_server_fpa( f_server_config ) );
             }
@@ -310,12 +313,13 @@ namespace psyllid
 
     void tf_roach_receiver_builder::apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config )
     {
-        LDEBUG( plog, "Configuring udp_receiver with :\n" << a_config );
+        LDEBUG( plog, "Configuring udp_receiver with:\n" << a_config );
         a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );
         a_node->set_freq_length( a_config.get_value( "freq-length", a_node->get_freq_length() ) );
         a_node->set_udp_buffer_size( a_config.get_value( "udp-buffer-size", a_node->get_udp_buffer_size() ) );
         a_node->set_time_sync_tol( a_config.get_value( "time-sync-tol", a_node->get_time_sync_tol() ) );
         const scarab::param_node* t_server_config = a_config.node_at( "server" );
+        LDEBUG( plog, "Saving server config:]n" << *t_server_config );
         if( t_server_config == nullptr ) a_node->set_server_config( nullptr );
         else a_node->set_server_config( new scarab::param_node( *t_server_config ) );
         return;

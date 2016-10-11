@@ -27,7 +27,8 @@ namespace psyllid
         unsigned t_timeout_sec = 1;
         if( a_config != nullptr )
         {
-            a_config->get_value( "port", t_port );
+            LDEBUG( plog, "Received configuration:\n" << *a_config );
+            t_port = a_config->get_value( "port", t_port );
             t_timeout_sec = a_config->get_value( "timeout-sec", t_timeout_sec );
         }
 
