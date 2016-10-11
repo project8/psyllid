@@ -61,6 +61,7 @@ namespace psyllid
             bool must_reset_midge() const;
 
             midge_package get_midge();
+            void return_midge( midge_package&& a_midge );
 
             std::string get_node_run_str() const;
 

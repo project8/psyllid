@@ -78,6 +78,7 @@ namespace psyllid
             if( t_status == status::initialized )
             {
                 std::unique_lock< std::mutex > t_lock( f_daq_mutex );
+                LDEBUG( plog, "DAQ control initialized and waiting for activation signal" );
                 f_condition.wait_for( t_lock, std::chrono::seconds(1) );
             }
             else if( t_status == status::activating )
@@ -89,7 +90,7 @@ namespace psyllid
                     throw error() << "DAQ worker already exists for some unknown reason";
                 }
 
-                LDEBUG( plog, "Creating new DAQ worker" );
+                LDEBUG( plog, "DAQ control activating; Creating new DAQ worker" );
                 f_daq_worker.reset( new daq_worker( ) );
 
                 std::exception_ptr t_worker_ex_ptr;
@@ -97,10 +98,12 @@ namespace psyllid
 
                 LDEBUG( plog, "Starting DAQ worker" );
                 f_worker_thread = std::thread( &daq_worker::execute, f_daq_worker.get(), f_node_manager, t_worker_ex_ptr, t_notifier );
+                LDEBUG( plog, "DAQ control status now set to \"idle\"" );
                 set_status( status::idle );
                 t_lock.unlock();
 
                 LINFO( plog, "DAQ control is now active, and in the idle state" );
+                LDEBUG( plog, "DAQ control will now wait until the DAQ worker is finished executing" );
 
                 f_worker_thread.join();
 
@@ -128,6 +131,7 @@ namespace psyllid
             }
             else if( t_status == status::deactivating )
             {
+                LDEBUG( plog, "DAQ control deactivating; status now set to \"initialized\"" );
                 set_status( status::initialized );
             }
             else if( t_status == status::done )
@@ -183,6 +187,7 @@ namespace psyllid
         set_status( status::deactivating );
         if( f_daq_worker )
         {
+            LDEBUG( plog, "Canceling DAQ worker from DAQ control" );
             f_daq_worker->cancel();
         }
 

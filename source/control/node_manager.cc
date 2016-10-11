@@ -222,6 +222,14 @@ namespace psyllid
         return midge_package( f_midge, f_midge_mutex );
     }
 
+    void node_manager::return_midge( midge_package&& a_midge )
+    {
+        midge_package t_returned( std::move( a_midge ) );
+        t_returned.unlock();
+        f_must_reset_midge = true;
+        return;
+    }
+
 
     void node_manager::_add_node( const std::string& a_node_type, const std::string& a_node_name )
     {

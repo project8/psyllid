@@ -51,6 +51,7 @@ namespace psyllid
             return;
         }
 
+        LDEBUG( plog, "Acquiring midge package" );
         f_midge_pkg = a_node_mgr->get_midge();
 
         if( ! f_midge_pkg.have_lock() )
@@ -67,10 +68,14 @@ namespace psyllid
             LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
             f_midge_pkg->run( t_run_string );
         }
-        catch( midge::error& e )
+        catch( std::exception& e )
         {
+            a_node_mgr->return_midge( std::move( f_midge_pkg ) );
+            LERROR( plog, "An exception was thrown while running midge" );
             a_ex_ptr = std::current_exception();
         }
+
+        a_node_mgr->return_midge( std::move( f_midge_pkg ) );
 
         if( f_run_in_progress.load() )
         {
@@ -97,7 +102,7 @@ namespace psyllid
             throw error() << "A run is already in progress";
         }
         LDEBUG( plog, "Launching asynchronous do_run" );
-	f_run_return = std::async( std::launch::async, &daq_worker::do_run, this, a_duration );
+        f_run_return = std::async( std::launch::async, &daq_worker::do_run, this, a_duration );
         return;
     }
 
