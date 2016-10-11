@@ -78,7 +78,7 @@ namespace psyllid
             if( t_status == status::initialized )
             {
                 std::unique_lock< std::mutex > t_lock( f_daq_mutex );
-                LDEBUG( plog, "DAQ control initialized and waiting for activation signal" );
+                //LDEBUG( plog, "DAQ control initialized and waiting for activation signal" );
                 f_condition.wait_for( t_lock, std::chrono::seconds(1) );
             }
             else if( t_status == status::activating )
