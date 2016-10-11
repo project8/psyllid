@@ -71,7 +71,7 @@ namespace psyllid
         catch( std::exception& e )
         {
             a_node_mgr->return_midge( std::move( f_midge_pkg ) );
-            LERROR( plog, "An exception was thrown while running midge" );
+            LERROR( plog, "An exception was thrown while running midge: " << e.what() );
             a_ex_ptr = std::current_exception();
         }
 
