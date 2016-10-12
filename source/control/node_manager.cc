@@ -171,10 +171,10 @@ namespace psyllid
 
             try
             {
+                LINFO( plog, "Adding node <" << t_node_it->first << ">" );
                 f_midge->add( t_new_node );
-                LINFO( plog, "Added node <" << t_node_it->first << ">" );
             }
-            catch( midge::error& e )
+            catch( std::exception& e )
             {
                 delete t_new_node;
                 throw error() << "Unable to add processor <" << t_node_it->first << ">: " << e.what();
@@ -186,9 +186,10 @@ namespace psyllid
         {
             try
             {
+                LINFO( plog, "Adding connection <" << *t_conn_it << ">" );
                 f_midge->join( *t_conn_it );
             }
-            catch( midge::error& e )
+            catch( std::exception& e )
             {
                 throw error() << "Unable to join nodes: " << e.what();
             }

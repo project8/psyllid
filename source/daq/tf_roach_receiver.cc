@@ -54,13 +54,11 @@ namespace psyllid
         {
             if( t_server_type == "socket" )
             {
-                LDEBUG( plog, "Server config for socket server:\n" << *f_server_config );
                 f_server.reset( new udp_server_socket( f_server_config ) );
             }
 #ifdef __linux__
             else if( t_server_type == "fpa" )
             {
-                LDEBUG( plog, "Server config for fpa server:\n" << *f_server_config );
                 //fast_packet_acq* t_fpa = dynamic_cast< fast_packet_acq* >( node_ptr( f_server_config->get_value( "fpa", "eth1" ) ) );
                 f_server.reset( new udp_server_fpa( f_server_config ) );
             }
@@ -319,9 +317,16 @@ namespace psyllid
         a_node->set_udp_buffer_size( a_config.get_value( "udp-buffer-size", a_node->get_udp_buffer_size() ) );
         a_node->set_time_sync_tol( a_config.get_value( "time-sync-tol", a_node->get_time_sync_tol() ) );
         const scarab::param_node* t_server_config = a_config.node_at( "server" );
-        LDEBUG( plog, "Saving server config:]n" << *t_server_config );
-        if( t_server_config == nullptr ) a_node->set_server_config( nullptr );
-        else a_node->set_server_config( new scarab::param_node( *t_server_config ) );
+        if( t_server_config == nullptr )
+        {
+            LDEBUG( plog, "No server config" );
+            a_node->set_server_config( nullptr );
+        }
+        else
+        {
+            LDEBUG( plog, "Saving server config:\n" << *t_server_config );
+            a_node->set_server_config( new scarab::param_node( *t_server_config ) );
+        }
         return;
     }
 
