@@ -17,6 +17,7 @@ namespace psyllid
 
 	DECLARE_PRESET( streaming_1ch );
 
+	DECLARE_PRESET( fmask_trigger_1ch);
 } /* namespace psyllid */
 
 #endif /* PSYLLID_ROACH_CONFIG_HH_ */
