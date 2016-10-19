@@ -7,8 +7,10 @@
 
 #include "daq_control.hh"
 
-#include "daq_worker.hh"
 #include "node_manager.hh"
+
+#include "diptera.hh"
+#include "midge_error.hh"
 
 #include "logger.hh"
 
@@ -33,13 +35,14 @@ namespace psyllid
 
     daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< node_manager > a_mgr ) :
             scarab::cancelable(),
-            f_condition(),
+            f_activation_condition(),
             f_daq_mutex(),
             f_node_manager( a_mgr ),
-            f_daq_worker(),
-            f_worker_mutex(),
-            f_worker_thread(),
             f_daq_config( new param_node() ),
+            f_midge_pkg(),
+            f_run_stopper(),
+            f_run_stop_mutex(),
+            f_run_return(),
             f_run_filename( "default_filename_dc.egg" ),
             f_run_description( "default_description" ),
             f_run_duration( 1000 ),
@@ -79,49 +82,58 @@ namespace psyllid
             {
                 std::unique_lock< std::mutex > t_lock( f_daq_mutex );
                 //LDEBUG( plog, "DAQ control initialized and waiting for activation signal" );
-                f_condition.wait_for( t_lock, std::chrono::seconds(1) );
+                f_activation_condition.wait_for( t_lock, std::chrono::seconds(1) );
             }
             else if( t_status == status::activating )
             {
-                std::unique_lock< std::mutex > t_lock( f_worker_mutex );
+                LINFO( plog, "DAQ control activating" );
 
-                if( f_daq_worker )
+                try
                 {
-                    throw error() << "DAQ worker already exists for some unknown reason";
+                    if( f_node_manager->must_reset_midge() )
+                    {
+                        LDEBUG( plog, "Reseting midge" );
+                        f_node_manager->reset_midge();
+                    }
+                }
+                catch( error& e )
+                {
+                    LERROR( plog, "Exception caught while resetting midge" );
+                    a_ex_ptr = std::current_exception();
+                    return;
                 }
 
-                LDEBUG( plog, "DAQ control activating; Creating new DAQ worker" );
-                f_daq_worker.reset( new daq_worker( ) );
+                LDEBUG( plog, "Acquiring midge package" );
+                f_midge_pkg = f_node_manager->get_midge();
 
-                std::exception_ptr t_worker_ex_ptr;
-                std::function< void( bool ) > t_notifier = [this]( bool a_in_error ){ notify_run_stopped( a_in_error ); };
+                if( ! f_midge_pkg.have_lock() )
+                {
+                    a_ex_ptr = std::make_exception_ptr( error() << "Could not get midge resource" );
+                    return;
+                }
 
-                LDEBUG( plog, "Starting DAQ worker" );
-                f_worker_thread = std::thread( &daq_worker::execute, f_daq_worker.get(), f_node_manager, t_worker_ex_ptr, t_notifier );
-                LDEBUG( plog, "DAQ control status now set to \"idle\"" );
-                set_status( status::idle );
-                t_lock.unlock();
+                try
+                {
+                    std::string t_run_string( f_node_manager->get_node_run_str() );
+                    LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
+                    set_status( status::idle );
+                    f_midge_pkg->run( t_run_string );
+                    LINFO( plog, "DAQ control is shutting down after midge exited" );
+                }
+                catch( std::exception& e )
+                {
+                    LERROR( plog, "An exception was thrown while running midge: " << e.what() );
+                    set_status( status::error );
+                    a_ex_ptr = std::current_exception();
+                }
 
-                LINFO( plog, "DAQ control is now active, and in the idle state" );
-                LDEBUG( plog, "DAQ control will now wait until the DAQ worker is finished executing" );
-
-                f_worker_thread.join();
-
-                LINFO( plog, "DAQ control is shutting down" );
-                t_lock.lock();
+                f_node_manager->return_midge( std::move( f_midge_pkg ) );
 
                 if( get_status() == status::running )
                 {
-                    LERROR( plog, "DAQ worker quit while run was in progress" );
+                    LERROR( plog, "Midge exited abnormally" );
                     set_status( status::error );
-                }
-                f_daq_worker.reset();
-                t_lock.unlock();
-
-                if( t_worker_ex_ptr )
-                {
-                    set_status( status::error );
-                    a_ex_ptr = t_worker_ex_ptr;
+                    f_run_stopper.notify_all();
                 }
             }
             else if( t_status == status::idle )
@@ -164,7 +176,7 @@ namespace psyllid
         }
 
         set_status( status::activating );
-        f_condition.notify_one();
+        f_activation_condition.notify_one();
 
         return;
     }
@@ -183,12 +195,11 @@ namespace psyllid
             throw status_error() << "Invalid state for deactivating: <" + daq_control::interpret_status( get_status() ) + ">; DAQ control must be in idle state";
         }
 
-        std::unique_lock< std::mutex > t_lock( f_worker_mutex );
         set_status( status::deactivating );
-        if( f_daq_worker )
+        if( f_midge_pkg.have_lock() )
         {
             LDEBUG( plog, "Canceling DAQ worker from DAQ control" );
-            f_daq_worker->cancel();
+            f_midge_pkg->cancel();
         }
 
         return;
@@ -208,24 +219,43 @@ namespace psyllid
             throw status_error() << "DAQ control must be in the idle state to start a run";
         }
 
-        std::unique_lock< std::mutex > t_lock( f_worker_mutex );
-
-        if( ! f_daq_worker )
+        if( ! f_midge_pkg.have_lock() )
         {
-            cancel();
-            throw error() << "DAQ worker doesn't exist!";
+            throw error() << "Do not have midge resource";
         }
 
-        LINFO( plog, "Starting run" );
-        try
-        {
-            f_daq_worker->start_run( f_run_duration );
-        }
-        catch( error& e )
-        {
-            throw run_error() << e.what();
-        }
+        LDEBUG( plog, "Launching asynchronous do_run" );
+        f_run_return = std::async( std::launch::async, &daq_control::do_run, this, f_run_duration );
+        //TODO: use run return?
+
+        return;
+    }
+
+    void daq_control::do_run( unsigned a_duration )
+    {
+        LINFO( plog, "Run is commencing" );
+
+        std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
+
         set_status( status::running );
+        f_midge_pkg->instruct( midge::instruction::resume );
+
+        if( a_duration == 0 )
+        {
+            LDEBUG( plog, "Untimed run stopper in use" );
+            f_run_stopper.wait( t_run_stop_lock );
+        }
+        else
+        {
+            LDEBUG( plog, "Timed run stopper in use; limit is " << a_duration << " ms" );
+            f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( a_duration ) );
+        }
+        LDEBUG( plog, "Run stopper has been released" );
+
+        f_midge_pkg->instruct( midge::instruction::pause );
+        set_status( status::idle );
+
+        LINFO( plog, "Run has stopped" );
 
         return;
     }
@@ -236,39 +266,14 @@ namespace psyllid
 
         if( get_status() != status::running ) return;
 
-        std::unique_lock< std::mutex > t_lock( f_worker_mutex );
-
-        if( ! f_daq_worker )
+        if( ! f_midge_pkg.have_lock() )
         {
-            cancel();
-            throw error() << "DAQ worker doesn't exist!";
+            throw error() << "Do not have midge resource; worker is not currently running";
         }
 
-        try
-        {
-            f_daq_worker->stop_run();
-        }
-        catch( error& e )
-        {
-            throw run_error() << e.what();
-        }
-        set_status( status::idle );
+        std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
+        f_run_stopper.notify_all();
 
-        return;
-    }
-
-    void daq_control::notify_run_stopped( bool a_in_error )
-    {
-        LDEBUG( plog, "Received notification from worker that run has stopped" );
-        if( a_in_error )
-        {
-            set_status( status::error );
-            LDEBUG( plog, "Run was stopped with an error condition" );
-        }
-        else
-        {
-            set_status( status::idle );
-        }
         return;
     }
 
@@ -276,10 +281,13 @@ namespace psyllid
     {
         LDEBUG( plog, "Canceling DAQ control" );
         set_status( status::canceled );
-        if( f_daq_worker )
-        {
-            f_daq_worker->cancel();
-        }
+
+        LDEBUG( plog, "Canceling midge" );
+        if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+        return;
+
+
+
         return;
     }
 

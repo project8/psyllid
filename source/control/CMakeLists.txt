@@ -5,7 +5,6 @@
 set( headers
     control_access.hh
     daq_control.hh
-    daq_worker.hh
     node_builder.hh
     node_config_preset.hh
     node_manager.hh
@@ -18,7 +17,6 @@ set( headers
 set( sources
     control_access.cc
     daq_control.cc
-    daq_worker.cc
     node_builder.cc
     node_config_preset.cc
     node_manager.cc
