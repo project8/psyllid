@@ -96,7 +96,7 @@ namespace psyllid
             //out_stream< 0 >().set( stream::s_start );
             //out_stream< 1 >().set( stream::s_start );
             f_paused = true;
-            bool t_unpausing = true;
+            bool t_unpausing = false;
 
             uint32_t t_last_packet_time = 0;
             uint64_t t_time_session_pkt_counter = 0;
@@ -135,6 +135,12 @@ namespace psyllid
                             t_unpausing = false;
                             f_paused = false;
                         }
+                    }
+                    else
+                    {
+                        // wait for a second, then continue the loop
+                        std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
+                        continue;
                     }
                 }
                 else
@@ -313,7 +319,7 @@ namespace psyllid
 
     void tf_roach_receiver_builder::apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config )
     {
-        LDEBUG( plog, "Configuring udp_receiver with:\n" << a_config );
+        LDEBUG( plog, "Configuring tf_roach_receiver with:\n" << a_config );
         a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );
         a_node->set_freq_length( a_config.get_value( "freq-length", a_node->get_freq_length() ) );
         a_node->set_udp_buffer_size( a_config.get_value( "udp-buffer-size", a_node->get_udp_buffer_size() ) );
