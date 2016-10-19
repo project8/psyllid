@@ -9,7 +9,6 @@
 
 #include "psyllid_constants.hh"
 #include "daq_control.hh"
-#include "daq_worker.hh"
 #include "node_manager.hh"
 #include "request_receiver.hh"
 #include "signal_handler.hh"
