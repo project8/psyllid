@@ -14,7 +14,7 @@ namespace psyllid
 
     roach_config::roach_config()
     {
-        node( "udp-receiver", "udpr" );
+        node( "tf-roach-receiver", "tfrr" );
     }
 
 
@@ -22,12 +22,12 @@ namespace psyllid
 
     streaming_1ch::streaming_1ch()
     {
-    	node( "udp-receiver", "udpr" );
+    	node( "tf-roach-receiver", "tfrr" );
     	node( "streaming-writer", "strw" );
     	node( "term-freq-data", "term" );
 
-    	connection( "udpr.out_0:strw.in_0" );
-    	connection( "udpr.out_1:term.in_0" );
+    	connection( "tfrr.out_0:strw.in_0" );
+    	connection( "tfrr.out_1:term.in_0" );
     }
 
 } /* namespace psyllid */

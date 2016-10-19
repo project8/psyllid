@@ -25,9 +25,9 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( tf_roach_receiver, "udp-receiver" );
+    REGISTER_NODE_AND_BUILDER( tf_roach_receiver, "tf-roach-receiver" );
 
-    LOGGER( plog, "udp_receiver" );
+    LOGGER( plog, "tf_roach_receiver" );
 
     tf_roach_receiver::tf_roach_receiver() :
             f_time_length( 10 ),
@@ -106,6 +106,8 @@ namespace psyllid
             uint64_t t_freq_batch_pkt = 0;
 
             ssize_t t_size_received = 0;
+
+            LINFO( plog, "Starting main loop; waiting for packets" );
             while( ! f_canceled )
             {
                 t_size_received = 0;
@@ -154,7 +156,7 @@ namespace psyllid
                     break;
                 }
 
-                LINFO( plog, "Waiting for UDP packets" );
+                LDEBUG( plog, "Waiting for UDP packets" );
 
                 // inner loop over packet-receive timeouts
                 while( t_size_received <= 0 && ! f_canceled )
@@ -184,7 +186,7 @@ namespace psyllid
                         // packet is frequency data
 
                         t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
-                        id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, t_time_session_pkt_counter, t_freq_session_pkt_counter );
+                        //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, t_time_session_pkt_counter, t_freq_session_pkt_counter );
 
                         t_freq_data = out_stream< 1 >().data();
                         t_freq_data->set_pkt_in_session( t_freq_session_pkt_counter++ );
@@ -204,7 +206,7 @@ namespace psyllid
                         // packet is time data
 
                         t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
-                        id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, t_time_session_pkt_counter, t_freq_session_pkt_counter );
+                        //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, t_time_session_pkt_counter, t_freq_session_pkt_counter );
 
                         t_time_data = out_stream< 0 >().data();
                         t_time_data->set_pkt_in_session( t_time_session_pkt_counter++ );
