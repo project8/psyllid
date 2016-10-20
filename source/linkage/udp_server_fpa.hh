@@ -44,11 +44,16 @@ namespace psyllid
 
             void activate();
 
-            ssize_t recv( char* a_message, size_t a_size, int flags = 0, int& ret_errno = udp_server::f_last_errno );
+            void execute();
+
+            virtual void reset_read();
+            ssize_t get_next_packet( char* a_message, size_t a_size );
 
             void deactivate();
 
         private:
+            virtual void do_cancellation();
+
             std::string f_interface;
 
             pb_iterator f_iterator;

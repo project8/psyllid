@@ -18,6 +18,7 @@
 #include "logger.hh"
 #include "param.hh"
 
+#include <thread>
 #include <memory>
 #include <sys/types.h> // for ssize_t
 
@@ -55,6 +56,7 @@ namespace psyllid
             if( t_server_type == "socket" )
             {
                 f_server.reset( new udp_server_socket( f_server_config ) );
+                static_cast< udp_server_socket* >( f_server.get() )->initialize_packet_wrapper( f_udp_buffer_size );
             }
 #ifdef __linux__
             else if( t_server_type == "fpa" )
@@ -87,6 +89,8 @@ namespace psyllid
         time_data* t_time_data = nullptr;
         freq_data* t_freq_data = nullptr;
 
+        std::thread* t_server_thread = nullptr;
+
         try
         {
             //LDEBUG( plog, "Server is listening" );
@@ -107,21 +111,33 @@ namespace psyllid
 
             ssize_t t_size_received = 0;
 
+            // start the server running
+            LDEBUG( plog, "Launching asynchronous server thread" );
+            t_server_thread = new std::thread( &udp_server::execute, f_server.get() );
+            //f_server->execute();
+
             LINFO( plog, "Starting main loop; waiting for packets" );
-            while( ! f_canceled )
+            while( ! f_canceled.load() )
             {
                 t_size_received = 0;
 
                 if( f_paused )
                 {
-                    if( ( have_instruction() && use_instruction() == midge::instruction::resume )
-                            || t_unpausing )
+                    midge::instruction t_instruction = midge::instruction::none;
+                    if( have_instruction() ) t_instruction = use_instruction();
+                    if( t_instruction == midge::instruction::pause )
+                    {
+                        LDEBUG( plog, "Received pause instruction while paused" );
+                        t_unpausing = false;
+                    }
+                    else if( t_instruction == midge::instruction::resume || t_unpausing )
                     {
                         LDEBUG( plog, "UDP receiver resuming" );
                         t_unpausing = true;
+                        f_server->reset_read();
                         if( std::abs( time( nullptr ) - t_last_packet_time ) > f_time_sync_tol )
                         {
-                            LINFO( plog, "Waiting to synchronize with the client" );
+                            LINFO( plog, "Waiting to synchronize with the client (psyllid time - last packet time: |" << time(nullptr) << " - " << t_last_packet_time << "| > " << f_time_sync_tol << ")" );
                         }
                         else
                         {
@@ -139,6 +155,7 @@ namespace psyllid
                     else
                     {
                         // wait for a second, then continue the loop
+                        //LDEBUG( plog, "Waiting for instruction" );
                         std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
                         continue;
                     }
@@ -165,12 +182,16 @@ namespace psyllid
                 LDEBUG( plog, "Waiting for UDP packets" );
 
                 // inner loop over packet-receive timeouts
-                while( t_size_received <= 0 && ! f_canceled )
+                while( t_size_received <= 0 && ! f_canceled.load() )
                 {
-                    t_size_received = f_server->recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
+                    //t_size_received = f_server->recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
+                    t_size_received = f_server->get_next_packet( t_buffer_ptr.get(), f_udp_buffer_size );
                 }
 
-                if( f_canceled ) break;
+                if( f_canceled.load() )
+                {
+                    break;
+                }
 
                 if( t_size_received > 0 )
                 {
@@ -184,8 +205,10 @@ namespace psyllid
                     }
 
                     // debug purposes only
+#ifndef NDEBUG
                     raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( t_buffer_ptr.get() );
                     LDEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
+#endif
 
                     if( t_roach_packet->f_freq_not_time )
                     {
@@ -239,6 +262,11 @@ namespace psyllid
 
             LINFO( plog, "UDP receiver is exiting" );
 
+            LDEBUG( plog, "Canceling packet server" );
+            f_server->cancel();
+            t_server_thread->join();
+            delete t_server_thread;
+
             // normal exit condition
             LDEBUG( plog, "Stopping output streams" );
             out_stream< 0 >().set( stream::s_stop );
@@ -254,6 +282,11 @@ namespace psyllid
         {
             LERROR( plog, "Midge exception caught: " << e.what() );
 
+            LDEBUG( plog, "Canceling packet server" );
+            f_server->cancel();
+            t_server_thread->join();
+            delete t_server_thread;
+
             LDEBUG( plog, "Stopping output streams" );
             out_stream< 0 >().set( stream::s_stop );
             out_stream< 1 >().set( stream::s_stop );
@@ -267,6 +300,11 @@ namespace psyllid
         catch( error& e )
         {
             LERROR( plog, "Psyllid exception caught: " << e.what() );
+
+            LDEBUG( plog, "Canceling packet server" );
+            f_server->cancel();
+            t_server_thread->join();
+            delete t_server_thread;
 
             LDEBUG( plog, "Stopping output streams" );
             out_stream< 0 >().set( stream::s_stop );
@@ -288,6 +326,13 @@ namespace psyllid
     {
         out_buffer< 0 >().finalize();
         out_buffer< 1 >().finalize();
+        return;
+    }
+
+    void tf_roach_receiver::do_cancellation()
+    {
+        LDEBUG( plog, "Canceling tf_roach_receiver" );
+        f_server->cancel();
         return;
     }
 

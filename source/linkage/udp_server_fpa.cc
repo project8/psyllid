@@ -44,13 +44,26 @@ namespace psyllid
 
     void udp_server_fpa::activate()
     {
-        LDEBUG( plog, "Activating udp_server_fpa" );
+        //LDEBUG( plog, "Activating udp_server_fpa" );
+        return;
+    }
+
+    void udp_server_fpa::execute()
+    {
+        LDEBUG( plog, "Executing udp_server_fpa" );
         fpa_ptr t_fpa = fpa_factory::get_instance()->get_fpa( f_interface );
         t_fpa->execute();
         return;
     }
 
-    ssize_t udp_server_fpa::recv( char* a_message, size_t a_size, int , int&  )
+    void udp_server_fpa::reset_read()
+    {
+        // advance f_iterator until it hits the write pointer
+        while( +f_iterator ) {}
+        return;
+    }
+
+    ssize_t udp_server_fpa::get_next_packet( char* a_message, size_t a_size )
     {
         // advance the iterator; blocks until next packet is available
         ++f_iterator;
@@ -77,10 +90,17 @@ namespace psyllid
 
     void udp_server_fpa::deactivate()
     {
-        LDEBUG( plog, "Deactivating udp_server_fpa" );
+        //LDEBUG( plog, "Deactivating udp_server_fpa" );
+        return;
+    }
+
+    void udp_server_fpa::do_cancellation()
+    {
+        LDEBUG( plog, "Canceling udp_server_fpa" );
         fpa_ptr t_fpa = fpa_factory::get_instance()->get_fpa( f_interface );
         t_fpa->cancel();
         return;
     }
+
 
 }

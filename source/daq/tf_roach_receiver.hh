@@ -72,6 +72,8 @@ namespace psyllid
             virtual void finalize();
 
         private:
+            virtual void do_cancellation();
+
             bool f_paused;
 
             std::unique_ptr< udp_server > f_server;
