@@ -153,7 +153,7 @@ namespace psyllid
                     vector< unsigned > t_chan_vec;
                     t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2",
                             t_acq_rate, t_rec_length, t_sample_size, t_data_type_size,
-                            monarch3::sDigitizedUS, t_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
+                            monarch3::sDigitizedS, t_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
 
                     //unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
                     for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
