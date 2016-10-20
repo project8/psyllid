@@ -129,6 +129,8 @@ func main() {
 	const signalCounterMax uint8 = 15
 	const signalTrigger uint8 = 14
 
+	fmt.Printf( "20 elements of the time data array:\n%v", timePkt.payload[0:20] )
+
 	fmt.Println()
 		
 	for {
