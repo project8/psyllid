@@ -138,6 +138,7 @@ namespace psyllid
                         if( std::abs( time( nullptr ) - t_last_packet_time ) > f_time_sync_tol )
                         {
                             LINFO( plog, "Waiting to synchronize with the client (psyllid time - last packet time: |" << time(nullptr) << " - " << t_last_packet_time << "| > " << f_time_sync_tol << ")" );
+                            // after this, we'll go around the loop again, and end up below where we're waiting for a few milliseconds
                         }
                         else
                         {
@@ -154,9 +155,10 @@ namespace psyllid
                     }
                     else
                     {
+                        // if we've reached here, we're waiting for psyllid to synchronize with the incoming packets
                         // wait for a second, then continue the loop
                         //LDEBUG( plog, "Waiting for instruction" );
-                        std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
+                        std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
                         continue;
                     }
                 }
