@@ -14,7 +14,7 @@
 #include "producer.hh"
 #include "shared_cancel.hh"
 
-#include <memory>
+#include <netinet/in.h>
 
 namespace scarab
 {
@@ -23,7 +23,6 @@ namespace scarab
 
 namespace psyllid
 {
-    class udp_server;
 
     /*!
      @class packet_receiver_socket
