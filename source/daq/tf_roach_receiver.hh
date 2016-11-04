@@ -9,10 +9,11 @@
 #define PSYLLID_TF_ROACH_RECEIVER_HH_
 
 #include "freq_data.hh"
+#include "memory_block.hh"
 #include "node_builder.hh"
 #include "time_data.hh"
 
-#include "producer.hh"
+#include "transformer.hh"
 #include "shared_cancel.hh"
 
 #include <memory>
@@ -24,8 +25,6 @@ namespace scarab
 
 namespace psyllid
 {
-    class udp_server;
-
     /*!
      @class tf_roach_receiver
      @author N. S. Oblath
@@ -53,7 +52,7 @@ namespace psyllid
      - 0: time_data
      - 1: freq_data
     */
-    class tf_roach_receiver : public midge::_producer< tf_roach_receiver, typelist_2( time_data, freq_data ) >
+    class tf_roach_receiver : public midge::_transformer< tf_roach_receiver, typelist_1( memory_block ), typelist_2( time_data, freq_data ) >
     {
         public:
             tf_roach_receiver();
@@ -64,7 +63,6 @@ namespace psyllid
             mv_accessible( uint64_t, freq_length );
             mv_accessible( size_t, udp_buffer_size );
             mv_accessible( unsigned, time_sync_tol );
-            mv_assignable( scarab::param_node, server_config );
 
         public:
             virtual void initialize();
@@ -72,11 +70,10 @@ namespace psyllid
             virtual void finalize();
 
         private:
+            void check_instruction();
             virtual void do_cancellation();
 
             bool f_paused;
-
-            std::unique_ptr< udp_server > f_server;
 
             void id_match_sanity_check( uint64_t a_time_batch_pkt, uint64_t a_freq_batch_pkt, uint64_t a_time_session_pkt, uint64_t a_freq_session_pkt );
 
