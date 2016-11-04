@@ -61,7 +61,7 @@ namespace psyllid
         //prepare address
         f_address->sin_family = AF_INET;
         f_address->sin_addr.s_addr = inet_addr( f_ip.c_str() );
-        if( f_address->sin_addr.s_addr == -1 )
+        if( f_address->sin_addr.s_addr == INADDR_NONE )
         {
             throw error() << "[packet_receiver_socket] invalid IP address\n";
             return;
@@ -170,7 +170,7 @@ namespace psyllid
                 if( t_size_received > 0 )
                 {
                     t_block = out_stream< 0 >().data();
-                    ::memcpy( &t_block->get_block(), t_buffer_ptr.get(), t_size_received );
+                    ::memcpy( t_block->block(), t_buffer_ptr.get(), t_size_received );
 
                     LDEBUG( plog, "Packet received (" << t_size_received << " bytes)" );
                     LDEBUG( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );

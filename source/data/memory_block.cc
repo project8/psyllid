@@ -7,6 +7,8 @@
 
 #include "memory_block.hh"
 
+#include <cstdlib>
+
 namespace psyllid
 {
 
@@ -24,8 +26,8 @@ namespace psyllid
     void memory_block::resize( size_t a_n_bytes )
     {
         if( a_n_bytes == f_n_bytes ) return;
-        if( f_n_bytes != 0 ) free( (void*)f_block );
-        if( a_n_bytes != 0 ) (uint8_t*)malloc( a_n_bytes );
+        if( f_n_bytes != 0 ) ::free( (void*)f_block );
+        if( a_n_bytes != 0 ) f_block = (uint8_t*)::malloc( a_n_bytes );
         else f_block = nullptr;
         return;
     }

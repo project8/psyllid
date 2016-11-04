@@ -22,11 +22,25 @@ namespace psyllid
             virtual ~memory_block();
 
         public:
-            mv_accessible( size_t, n_bytes );
-            mv_accessible( uint8_t*, block );
-
             void resize( size_t a_n_bytes );
+            uint8_t* block();
+            const uint8_t* block() const;
+
+            mv_accessible( size_t, n_bytes );
+
+        private:
+            uint8_t* f_block;
     };
+
+    inline uint8_t* memory_block::block()
+    {
+        return f_block;
+    }
+
+    inline const uint8_t* memory_block::block() const
+    {
+        return f_block;
+    }
 
 } /* namespace psyllid */
 

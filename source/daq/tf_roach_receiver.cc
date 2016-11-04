@@ -29,7 +29,10 @@ namespace psyllid
             f_freq_length( 10 ),
             f_udp_buffer_size( sizeof( roach_packet ) ),
             f_time_sync_tol( 2 ),
-            f_paused( false )
+            f_paused( false ),
+            f_last_packet_time( 0 ),
+            f_time_session_pkt_counter( 0 ),
+            f_freq_session_pkt_counter( 0 )
     {
     }
 
@@ -63,11 +66,6 @@ namespace psyllid
             //out_stream< 0 >().set( stream::s_start );
             //out_stream< 1 >().set( stream::s_start );
             f_paused = true;
-            bool t_unpausing = false;
-
-            uint32_t t_last_packet_time = 0;
-            uint64_t t_time_session_pkt_counter = 0;
-            uint64_t t_freq_session_pkt_counter = 0;
 
             uint64_t t_time_batch_pkt = 0;
             uint64_t t_freq_batch_pkt = 0;
@@ -116,19 +114,6 @@ namespace psyllid
                 {
                     t_memory_block = in_stream< 0 >().data();
 
-
-
-
-
-                    LDEBUG( plog, "Waiting for UDP packets" );
-
-                    // inner loop over packet-receive timeouts
-                    while( t_size_received <= 0 && ! f_canceled.load() )
-                    {
-                        //t_size_received = f_server->recv( t_buffer_ptr.get(), f_udp_buffer_size, 0 );
-                        t_size_received = f_server->get_next_packet( t_buffer_ptr.get(), f_udp_buffer_size );
-                    }
-
                     if( f_canceled.load() )
                     {
                         break;
@@ -136,18 +121,12 @@ namespace psyllid
 
                     if( t_size_received > 0 )
                     {
-                        byteswap_inplace( reinterpret_cast< raw_roach_packet* >( t_buffer_ptr.get() ) );
-                        roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( t_buffer_ptr.get() );
-
-                        if( f_paused )
-                        {
-                            t_last_packet_time = t_roach_packet->f_unix_time;
-                            continue;
-                        }
+                        byteswap_inplace( reinterpret_cast< raw_roach_packet* >( t_memory_block->block() ) );
+                        roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( t_memory_block->block() );
 
                         // debug purposes only
     #ifndef NDEBUG
-                        raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( t_buffer_ptr.get() );
+                        raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( t_memory_block->block() );
                         LDEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
     #endif
 
@@ -156,10 +135,10 @@ namespace psyllid
                             // packet is frequency data
 
                             t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
-                            //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, t_time_session_pkt_counter, t_freq_session_pkt_counter );
+                            //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, f_time_session_pkt_counter, f_freq_session_pkt_counter );
 
                             t_freq_data = out_stream< 1 >().data();
-                            t_freq_data->set_pkt_in_session( t_freq_session_pkt_counter++ );
+                            t_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
                             ::memcpy( &t_freq_data->packet(), t_roach_packet, f_udp_buffer_size );
 
                             LDEBUG( plog, "Frequency data received (" << t_size_received << " bytes):  chan = " << t_freq_data->get_digital_id() <<
@@ -176,10 +155,10 @@ namespace psyllid
                             // packet is time data
 
                             t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
-                            //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, t_time_session_pkt_counter, t_freq_session_pkt_counter );
+                            //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, f_time_session_pkt_counter, f_freq_session_pkt_counter );
 
                             t_time_data = out_stream< 0 >().data();
-                            t_time_data->set_pkt_in_session( t_time_session_pkt_counter++ );
+                            t_time_data->set_pkt_in_session( f_time_session_pkt_counter++ );
                             ::memcpy( &t_time_data->packet(), t_roach_packet, f_udp_buffer_size );
 
                             LDEBUG( plog, "Time data received (" << t_size_received << " bytes):  chan = " << t_time_data->get_digital_id() <<
@@ -263,13 +242,13 @@ namespace psyllid
             if( have_instruction() && use_instruction() == midge::instruction::resume )
             {
                 LDEBUG( plog, "TF ROACH receiver resuming" );
-                out_stream< 0 >().data()->set_unix_time( t_last_packet_time );
+                out_stream< 0 >().data()->set_unix_time( f_last_packet_time );
                 out_stream< 0 >().data()->set_pkt_in_session( 0 );
                 out_stream< 1 >().data()->set_pkt_in_session( 0 );
                 out_stream< 0 >().set( stream::s_start );
                 out_stream< 1 >().set( stream::s_start );
-                t_time_session_pkt_counter = 0;
-                t_freq_session_pkt_counter = 0;
+                f_time_session_pkt_counter = 0;
+                f_freq_session_pkt_counter = 0;
                 f_paused = false;
             }
         }
@@ -289,8 +268,6 @@ namespace psyllid
 
     void tf_roach_receiver::do_cancellation()
     {
-        LDEBUG( plog, "Canceling tf_roach_receiver" );
-        f_server->cancel();
         return;
     }
 
@@ -327,17 +304,6 @@ namespace psyllid
         a_node->set_freq_length( a_config.get_value( "freq-length", a_node->get_freq_length() ) );
         a_node->set_udp_buffer_size( a_config.get_value( "udp-buffer-size", a_node->get_udp_buffer_size() ) );
         a_node->set_time_sync_tol( a_config.get_value( "time-sync-tol", a_node->get_time_sync_tol() ) );
-        const scarab::param_node* t_server_config = a_config.node_at( "server" );
-        if( t_server_config == nullptr )
-        {
-            LDEBUG( plog, "No server config" );
-            a_node->set_server_config( nullptr );
-        }
-        else
-        {
-            LDEBUG( plog, "Saving server config:\n" << *t_server_config );
-            a_node->set_server_config( new scarab::param_node( *t_server_config ) );
-        }
         return;
     }
 
