@@ -16,6 +16,9 @@ namespace psyllid
     DECLARE_PRESET( roach_config );
 
 	DECLARE_PRESET( streaming_1ch );
+#ifdef __linux__
+	DECLARE_PRESET( streaming_1ch_fpa );
+#endif
 
 	DECLARE_PRESET( fmask_trigger_1ch);
 } /* namespace psyllid */
