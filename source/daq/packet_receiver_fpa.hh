@@ -44,28 +44,70 @@ namespace psyllid
      @class packet_receiver_fpa
      @author N. S. Oblath
 
-     @brief A producer to receive and distribute time and frequency ROACH packets.
+     @brief A producer to receive UDP packets via the fast-packet-acquisition interface and write them as raw blocks of memory
 
      @details
 
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
-     Node type: "tf-roach-receiver"
+     Works in Linux only.
+
+     Input: mmap ring buffer
+
+
+     Following documentation of using mmap ring buffers in networking here:
+         https://www.kernel.org/doc/Documentation/networking/packet_mmap.txt
+
+     Understanding of tpacket3_hdr that I've pieced together:
+
+     Defined in if_packet.h (my comments denoted with ///)
+
+        struct tpacket_hdr_variant1 {
+            __u32   tp_rxhash;           ///
+            __u32   tp_vlan_tci;         ///
+        };
+
+        struct tpacket3_hdr {
+            __u32       tp_next_offset;  /// Memory offset from the packet location to the next packet
+            __u32       tp_sec;          ///
+            __u32       tp_nsec;         ///
+            __u32       tp_snaplen;      /// Size of this packet in bytes
+            __u32       tp_len;          ///
+            __u32       tp_status;       /// Packet status (see values below)
+            __u16       tp_mac;          /// Memory offset from the packet location to the ethhdr object
+            __u16       tp_net;          ///
+            // pkt_hdr variants
+            union {
+                struct tpacket_hdr_variant1 hv1;
+            };
+        };
+
+     Available values for tp_status from if_packet.h:
+
+        // Rx ring - header status
+        #define TP_STATUS_KERNEL    0x0     /// Returned to the kernel?
+        #define TP_STATUS_USER      0x1     /// Available to the user?
+        #define TP_STATUS_COPY      0x2
+        #define TP_STATUS_LOSING    0x4
+        #define TP_STATUS_CSUMNOTREADY  0x8
+        #define TP_STATUS_VLAN_VALID   0x10 // auxdata has valid tp_vlan_tci
+        #define TP_STATUS_BLK_TMO   0x20
+
+
+     Node type: "packet-receiver-fpa"
 
      Available configuration values:
-     - "time-length": uint -- The size of the output time-data buffer
-     - "freq-length": uint -- The size of the output frequency-data buffer
-     - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed
-     - "time-sync-tol": uint -- Tolerance for time synchronization between the ROACH and the server (seconds)
-     - "server": node -- Options passed to the server
-       - "type": string -- Server type:
-         - "socket" (default) = standard socket server (udp_server_socket)
-         - "fpa" = fast-packet-acquisition (udp_server_fpa); requires executable run with root privileges
-       - [specific-server dependent options]
+     - "length": uint -- The size of the output buffer
+     - "max-packet-size": uint -- Maximum number of bytes to be read for each packet; larger packets will be truncated
+     - "port": uint -- UDP port to listen on for packets
+     - "interface": string -- Name of the network interface to listen on for packets
+     - "timeout-sec": uint -- Timeout (in seconds) while listening for incoming packets; listening for packets repeats after timeout
+     - "n-blocks": uint -- Number of blocks in the mmap ring buffer
+     - "block-size": uint -- Number of packets per block in the mmap ring buffer
+     - "frame-size": uint -- Number of blocks per frame in the mmap ring buffer
 
      Output Streams:
-     - 0: time_data
-     - 1: freq_data
+     - 0: memory_block
     */
     class packet_receiver_fpa : public midge::_producer< packet_receiver_fpa, typelist_1( memory_block ) >
     {

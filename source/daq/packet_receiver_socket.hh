@@ -28,28 +28,23 @@ namespace psyllid
      @class packet_receiver_socket
      @author N. S. Oblath
 
-     @brief A producer to receive and distribute time and frequency ROACH packets.
+     @brief A producer to receive UDP packets via the standard socket interface and write them as raw blocks of memory
 
      @details
 
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
-     Node type: "tf-roach-receiver"
+     Node type: "packet-receiver-socket"
 
      Available configuration values:
-     - "time-length": uint -- The size of the output time-data buffer
-     - "freq-length": uint -- The size of the output frequency-data buffer
-     - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed
-     - "time-sync-tol": uint -- Tolerance for time synchronization between the ROACH and the server (seconds)
-     - "server": node -- Options passed to the server
-       - "type": string -- Server type:
-         - "socket" (default) = standard socket server (udp_server_socket)
-         - "fpa" = fast-packet-acquisition (udp_server_fpa); requires executable run with root privileges
-       - [specific-server dependent options]
+     - "length": uint -- The size of the output buffer
+     - "max-packet-size": uint -- Maximum number of bytes to be read for each packet; larger packets will be truncated
+     - "port": uint -- UDP port to listen on for packets
+     - "ip": string -- IP port to listen on for packets; must be in IPV4 numbers-and-dots notation (e.g. 127.0.0.1)
+     - "timeout-sec": uint -- Timeout (in seconds) while listening for incoming packets; listening for packets repeats after timeout
 
      Output Streams:
-     - 0: time_data
-     - 1: freq_data
+     - 0: memory_block
     */
     class packet_receiver_socket : public midge::_producer< packet_receiver_socket, typelist_1( memory_block ) >
     {

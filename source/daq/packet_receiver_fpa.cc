@@ -413,8 +413,10 @@ namespace psyllid
         a_node->set_port( a_config.get_value( "port", a_node->get_port() ) );
         a_node->interface() = a_config.get_value( "interface", a_node->interface() );
         a_node->set_timeout_sec( a_config.get_value( "timeout-sec", a_node->get_timeout_sec() ) );
+        a_node->set_n_blocks( a_config.get_value( "n-blocks", a_node->get_n_blocks() ) );
+        a_node->set_block_size( a_config.get_value( "block-size", a_node->get_block_size() ) );
+        a_node->set_frame_size( a_config.get_value( "frame-size", a_node->get_frame_size() ) );
         return;
     }
-
 
 } /* namespace psyllid */

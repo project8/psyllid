@@ -27,6 +27,7 @@ namespace psyllid
             const uint8_t* block() const;
 
             mv_accessible( size_t, n_bytes );
+            mv_accessible( size_t, n_bytes_used );
 
         private:
             uint8_t* f_block;

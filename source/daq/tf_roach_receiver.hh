@@ -29,7 +29,7 @@ namespace psyllid
      @class tf_roach_receiver
      @author N. S. Oblath
 
-     @brief A producer to receive and distribute time and frequency ROACH packets.
+     @brief A transformer to receive raw blocks of memory, parse them, and distribute them as time and frequency ROACH packets.
 
      @details
 
@@ -40,13 +40,12 @@ namespace psyllid
      Available configuration values:
      - "time-length": uint -- The size of the output time-data buffer
      - "freq-length": uint -- The size of the output frequency-data buffer
-     - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed
-     - "time-sync-tol": uint -- Tolerance for time synchronization between the ROACH and the server (seconds)
-     - "server": node -- Options passed to the server
-       - "type": string -- Server type:
-         - "socket" (default) = standard socket server (udp_server_socket)
-         - "fpa" = fast-packet-acquisition (udp_server_fpa); requires executable run with root privileges
-       - [specific-server dependent options]
+     - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed and is specified by the ROACH configuration
+     - "time-sync-tol": uint -- (currently unused) Tolerance for time synchronization between the ROACH and the server (seconds)
+     - "start-paused": bool -- Whether to start execution paused and wait for an unpause command
+
+     Input Stream:
+     - 0: memory_block
 
      Output Streams:
      - 0: time_data
@@ -63,6 +62,7 @@ namespace psyllid
             mv_accessible( uint64_t, freq_length );
             mv_accessible( size_t, udp_buffer_size );
             mv_accessible( unsigned, time_sync_tol );
+            mv_accessible( bool, start_paused );
 
         public:
             virtual void initialize();

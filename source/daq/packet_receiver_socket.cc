@@ -119,8 +119,6 @@ namespace psyllid
         {
             //LDEBUG( plog, "Server is listening" );
 
-            std::unique_ptr< char[] > t_buffer_ptr( new char[ f_max_packet_size ] );
-
             out_stream< 0 >().set( stream::s_start );
 
             ssize_t t_size_received = 0;
@@ -128,6 +126,9 @@ namespace psyllid
             LINFO( plog, "Starting main loop; waiting for packets" );
             while( ! f_canceled.load() )
             {
+                t_block = out_stream< 0 >().data();
+                t_block->resize( f_max_packet_size );
+
                 t_size_received = 0;
 
                 if( (out_stream< 0 >().get() == stream::s_stop) )
@@ -141,9 +142,18 @@ namespace psyllid
                 // inner loop over packet-receive timeouts
                 while( t_size_received <= 0 && ! f_canceled.load() )
                 {
-                    t_size_received = ::recv( f_socket, (void*)t_buffer_ptr.get(), f_max_packet_size, 0 );
+                    t_size_received = ::recv( f_socket, (void*)t_block->block(), f_max_packet_size, 0 );
 
-                    if( t_size_received > 0 ) break;
+                    if( t_size_received > 0 )
+                    {
+                        LDEBUG( plog, "Packet received (" << t_size_received << " bytes)" );
+                        LDEBUG( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
+
+                        t_block->set_n_bytes_used( t_size_received );
+
+                        out_stream< 0 >().set( stream::s_run );
+                        break;
+                    }
 
                     f_last_errno = errno;
                     if( f_last_errno == EWOULDBLOCK || f_last_errno == EAGAIN )
@@ -160,29 +170,6 @@ namespace psyllid
                     {
                         LWARN( "Unable to receive; error message: " << strerror( f_last_errno ) );
                     }
-                }
-
-                if( f_canceled.load() )
-                {
-                    break;
-                }
-
-                if( t_size_received > 0 )
-                {
-                    t_block = out_stream< 0 >().data();
-                    ::memcpy( t_block->block(), t_buffer_ptr.get(), t_size_received );
-
-                    LDEBUG( plog, "Packet received (" << t_size_received << " bytes)" );
-                    LDEBUG( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
-
-                    out_stream< 0 >().set( stream::s_run );
-
-                    continue;
-                }
-                else
-                {
-                    LDEBUG( plog, "No packet received & no error present" );
-                    continue;
                 }
             }
 

@@ -16,7 +16,7 @@ if( Psyllid_ENABLE_TESTING )
         test_monarch3_write
         #test_server
         #test_tf_roach_monitor
-        #test_tf_roach_receiver
+        test_tf_roach_receiver
     )
     
     if( UNIX AND NOT APPLE )

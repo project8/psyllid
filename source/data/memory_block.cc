@@ -14,6 +14,7 @@ namespace psyllid
 
     memory_block::memory_block() :
             f_n_bytes( 0 ),
+            f_n_bytes_used( 0 ),
             f_block( nullptr )
     {
     }
