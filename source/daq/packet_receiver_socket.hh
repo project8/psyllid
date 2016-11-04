@@ -62,16 +62,12 @@ namespace psyllid
             mv_accessible( size_t, max_packet_size );
             mv_accessible( size_t, port );
             mv_referrable( std::string, ip );
-            mv_accessible( unsigned, timeout_sec );
-            mv_assignable( scarab::param_node, server_config );
+            mv_accessible( unsigned, timeout_sec );  /// Timeout in seconds for waiting on socket recv function
 
         public:
             virtual void initialize();
             virtual void execute();
             virtual void finalize();
-
-            void activate();
-            void deactivate();
 
         private:
             virtual void do_cancellation();

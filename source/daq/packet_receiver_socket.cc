@@ -37,7 +37,6 @@ namespace psyllid
             f_port( 23530 ),
             f_ip( "127.0.0.1" ),
             f_timeout_sec( 1 ),
-            f_server_config( nullptr ),
             f_socket( 0 ),
             f_address( nullptr ),
             f_last_errno( 0 )
@@ -46,14 +45,13 @@ namespace psyllid
 
     packet_receiver_socket::~packet_receiver_socket()
     {
-        delete f_server_config;
     }
 
     void packet_receiver_socket::initialize()
     {
         out_buffer< 0 >().initialize( f_length );
 
-        LDEBUG( plog, "Opening udp_server socket receiving at " << f_ip << ":" << f_port );
+        LDEBUG( plog, "Opening UDP socket receiving at " << f_ip << ":" << f_port );
 
         //initialize address
         socklen_t t_socket_length = sizeof(sockaddr_in);
@@ -117,8 +115,6 @@ namespace psyllid
 
         memory_block* t_block = nullptr;
 
-        std::thread* t_server_thread = nullptr;
-
         try
         {
             //LDEBUG( plog, "Server is listening" );
@@ -126,9 +122,6 @@ namespace psyllid
             std::unique_ptr< char[] > t_buffer_ptr( new char[ f_max_packet_size ] );
 
             out_stream< 0 >().set( stream::s_start );
-
-            uint32_t t_last_packet_time = 0;
-            uint64_t t_session_pkt_counter = 0;
 
             ssize_t t_size_received = 0;
 
