@@ -9,6 +9,7 @@ set( headers
     #single_value_trigger.hh
     frequency_mask_trigger.hh
     monarch3_wrap.hh
+    packet_receiver_socket.hh
     roach_config.hh
     streaming_writer.hh
     terminator.hh
@@ -23,6 +24,7 @@ set( sources
     #single_value_trigger.cc
     frequency_mask_trigger.cc
     monarch3_wrap.cc
+    packet_receiver_socket.cc
     roach_config.cc
     streaming_writer.cc
     terminator.cc
