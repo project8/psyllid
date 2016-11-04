@@ -241,9 +241,32 @@ namespace psyllid
                 }
 
                 // we have a block available, so process it
-                walk_block( t_block );
+                unsigned t_num_pkts = t_block->f_packet_hdr.num_pkts;
+                unsigned long t_bytes = 0;
+
+                tpacket3_hdr* t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_block + t_block->f_packet_hdr.offset_to_first_pkt );
+
+                LDEBUG( plog, "Walking a block with " << t_num_pkts << " packets" );
+                for( unsigned i = 0; i < t_num_pkts; ++i )
+                {
+                    t_bytes += t_packet->tp_snaplen;
+
+                    LDEBUG( plog, "Attempting to write IP packet at iterator index " << out_stream< 0 >().get_current_index() );
+                    if( process_packet( t_packet ) )
+                    {
+                        out_stream< 0 >().set( stream::s_run );
+                    }
+
+                    // update the address of the packet to the next packet in the block
+                    t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_packet + t_packet->tp_next_offset );
+                }
+                LDEBUG( plog, "Done walking block" );
+
+                f_packets_total += t_num_pkts;
+                f_bytes_total += t_bytes;
+
                 // return the block to the kernel; we're done with it
-                flush_block( t_block );
+                t_block->f_packet_hdr.block_status = TP_STATUS_KERNEL;
                 t_block_num = ( t_block_num + 1 ) % f_n_blocks;
 
             }
@@ -289,46 +312,12 @@ namespace psyllid
         return;
     }
 
-
-
-
-    void packet_receiver_fpa::walk_block( block_desc* a_bd )
-    {
-        unsigned t_num_pkts = a_bd->f_packet_hdr.num_pkts;
-        unsigned long t_bytes = 0;
-
-        tpacket3_hdr* t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)a_bd + a_bd->f_packet_hdr.offset_to_first_pkt );
-
-        LDEBUG( plog, "Walking a block with " << t_num_pkts << " packets" );
-        for( unsigned i = 0; i < t_num_pkts; ++i )
-        {
-            t_bytes += t_packet->tp_snaplen;
-
-            LDEBUG( plog, "Attempting to write IP packet at iterator index " << out_stream< 0 >().get_current_index() );
-            if( process_packet( t_packet ) )
-            {
-                out_stream< 0 >().set( stream::s_run );
-            }
-
-            // update the address of the packet to the next packet in the block
-            t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_packet + t_packet->tp_next_offset );
-        }
-        LDEBUG( plog, "Done walking block" );
-
-        f_packets_total += t_num_pkts;
-        f_bytes_total += t_bytes;
-
-        return;
-    }
-
-    void packet_receiver_fpa::flush_block( block_desc* a_bd )
-    {
-        a_bd->f_packet_hdr.block_status = TP_STATUS_KERNEL;
-        return;
-    }
-
     bool packet_receiver_fpa::process_packet( tpacket3_hdr* a_packet )
     {
+        //****************
+        // Ethernet Packet
+        //****************
+
         // grab the ethernet interface header (defined in if_ether.h)
         ethhdr* t_eth_hdr = reinterpret_cast< ethhdr* >( (uint8_t*)a_packet + a_packet->tp_mac );
 
@@ -346,6 +335,12 @@ namespace psyllid
             LDEBUG( plog, "Non-IP packet skipped" );
             return false;
         }
+
+
+        //**********
+        // IP Packet
+        //**********
+
         //LWARN( plog, "Handling IP packet" );
         // grab the ip interface header (defined in ip.h)
         iphdr* t_ip_hdr = reinterpret_cast< iphdr* >( (uint8_t*)t_eth_hdr + ETH_HLEN );
@@ -353,70 +348,38 @@ namespace psyllid
         //TODO: filter on source address?
         //uint32_t t_source_address = t_ip_hdr->saddr;
 
-        // copy packet data to pb_iterator
-        uint8_t t_header_bytes = t_ip_hdr->ihl * 4;
-        f_iterator->memcpy( reinterpret_cast< uint8_t* >( (uint8_t*)t_ip_hdr + t_header_bytes ), (uint8_t)htons(t_ip_hdr->tot_len) - t_header_bytes );
+        // get ip packet data
+        uint8_t t_ip_header_bytes = t_ip_hdr->ihl * 4;
+        uint8_t* t_ip_data = (uint8_t*)t_ip_hdr + t_ip_header_bytes;
+        //size_t t_ip_data_len = (uint8_t)htons(t_ip_hdr->tot_len) - t_ip_header_bytes;
 
 
-
-
-
+        //***********
+        // UDP Packet
+        //***********
 
         // this doesn't appear to be defined anywhere in standard linux headers, at least as far as I could find
         static const unsigned t_udp_hdr_len = 8;
 
-        LDEBUG( plog, "Reading IP packet at iterator position " << f_ip_pkt_iterator.index() );
-
-        udphdr* t_udp_hdr = reinterpret_cast< udphdr* >( f_ip_pkt_iterator->ptr() );
+        udphdr* t_udp_hdr = reinterpret_cast< udphdr* >( t_ip_data );
 
         // get port number
         unsigned t_port = htons(t_udp_hdr->dest);
 
-        // check for port number in the buffer map
-        buffer_map::iterator t_it = f_udp_buffers.find( t_port );
-        if( t_it == f_udp_buffers.end() )
-        {
-            LDEBUG( plog, "Packet addressed to unopened port: " << t_port );
-            return false;
-        }
-
-        t_it->second->f_iterator.set_writing();
+        // check port number against configured port
+        if( t_port != f_port ) return false;
 
         // copy the UPD packet from the IP packet into the appropriate buffer
-        t_it->second->f_iterator->memcpy( reinterpret_cast< uint8_t* >( t_udp_hdr + t_udp_hdr_len ), htons(t_udp_hdr->len) - t_udp_hdr_len );
+        uint8_t* t_udp_data = t_udp_hdr + t_udp_hdr_len;
+        size_t t_udp_data_len = htons(t_udp_hdr->len) - t_udp_hdr_len;
 
+        t_block = out_stream< 0 >().data();
+        ::memcpy( &t_block->get_block(), t_udp_data, t_udp_data_len );
 
+        LDEBUG( plog, "Packet received (" << t_udp_data_len << " bytes)" );
+        LDEBUG( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
 
-
-
-
-
-
-        if( t_size_received > 0 )
-        {
-            t_block = out_stream< 0 >().data();
-            ::memcpy( &t_block->get_block(), t_buffer_ptr.get(), t_size_received );
-
-            LDEBUG( plog, "Packet received (" << t_size_received << " bytes)" );
-            LDEBUG( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
-
-            out_stream< 0 >().set( stream::s_run );
-
-            continue;
-        }
-        else
-        {
-            LDEBUG( plog, "No packet received & no error present" );
-            continue;
-        }
-
-
-
-
-
-
-
-
+        out_stream< 0 >().set( stream::s_run );
 
         return true;
     }

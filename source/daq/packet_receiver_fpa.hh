@@ -92,7 +92,6 @@ namespace psyllid
             virtual void do_cancellation();
 
             void walk_block( block_desc* a_bd );
-            void flush_block( block_desc* a_bd );
 
             bool process_packet( tpacket3_hdr* a_packet );
 
