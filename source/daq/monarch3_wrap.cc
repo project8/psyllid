@@ -336,6 +336,7 @@ namespace psyllid
 
     void monarch_wrapper::set_stage( monarch_stage a_stage )
     {
+        LDEBUG( plog, "Setting monarch stage to <" << a_stage << ">" );
         f_stage = a_stage;
         //if( f_header_wrap ) f_header_wrap->monarch_stage_change( a_stage );
         /*
