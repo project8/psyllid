@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <linux/if_ether.h>
 #include <linux/ip.h>
+#include <linux/udp.h>
 #include <net/if.h>
 #include <netdb.h>
 #include <poll.h>
@@ -40,7 +41,6 @@ namespace psyllid
             f_max_packet_size( 1048576 ),
             f_port( 23530 ),
             f_interface( "eth1" ),
-            f_timeout_sec( 1 ),
             f_timeout_sec( 1 ),
             f_n_blocks( 64 ),
             f_block_size( 1 << 22 ),
@@ -89,15 +89,13 @@ namespace psyllid
         f_socket = ::socket( AF_PACKET, SOCK_RAW, htons(ETH_P_IP) );
         if( f_socket < 0 )
         {
-            LERROR( plog, "Could not create socket:\n\t" << strerror( errno ) );
-            return false;
+            throw error() << "Could not create socket:\n\t" << strerror( errno );
         }
 
         int t_packet_ver = TPACKET_V3;
         if( ::setsockopt( f_socket, SOL_PACKET, PACKET_VERSION, &t_packet_ver, sizeof(int) ) < 0 )
         {
-            LERROR( plog, "Could not set packet version:\n\t" << strerror( errno ) );
-            return false;
+            throw error() << "Could not set packet version:\n\t" << strerror( errno );
         }
 
         // create the ring buffer
@@ -122,13 +120,12 @@ namespace psyllid
         LWARN( plog, "f_ring.f_map == nullptr: " << test );
         LWARN( plog, "f_ring.f_req.tp_block_size = " << f_ring.f_req.tp_block_size );
 
-        LDEBUG( plog, "Opening packet_eater for network interface <" << f_net_interface_name << ">" );
+        LDEBUG( plog, "Opening packet_eater for network interface <" << f_interface << ">" );
 
         LWARN( plog, "f_socket = " << f_socket << ";  SOL_PACKET = " << SOL_PACKET << ";  PACKET_RX_RING = " << PACKET_RX_RING << ";  &f_ring.f_req = " << &f_ring.f_req << ";  sizeof(f_ring.f_req) = " << sizeof(f_ring.f_req) );
         if( ::setsockopt( f_socket, SOL_PACKET, PACKET_RX_RING, &f_ring.f_req, sizeof(f_ring.f_req) ) < 0 )
         {
-            LERROR( plog, "Could not set receive ring:\n\t" << strerror( errno ) );
-            return false;
+            throw error() << "Could not set receive ring:\n\t" << strerror( errno );
         }
 
         /* setsockopt: Handy debugging trick that lets
@@ -153,15 +150,13 @@ namespace psyllid
                 PROT_READ | PROT_WRITE, MAP_SHARED | MAP_LOCKED, f_socket, 0);
         if( f_ring.f_map == MAP_FAILED )
         {
-            LERROR( plog, "Unable to setup ring map" );
-            return false;
+            throw error() << "Unable to setup ring map";
         }
 
         f_ring.f_rd = (iovec*)::malloc(f_ring.f_req.tp_block_nr * sizeof(*f_ring.f_rd) );
         if( f_ring.f_rd == nullptr )
         {
-            LERROR( plog, "Unable to allocate memory for the ring" );
-            return false;
+            throw error() << "Unable to allocate memory for the ring";
         }
         for( unsigned i_block = 0; i_block < f_ring.f_req.tp_block_nr; ++i_block )
         {
@@ -181,8 +176,7 @@ namespace psyllid
 
         if( ::bind( f_socket, (sockaddr*)&t_address, sizeof(t_address) ) < 0 )
         {
-            LERROR( plog, "Could not bind socket:\n\t" << strerror( errno ) );
-            return false;
+            throw error() << "Could not bind socket:\n\t" << strerror( errno );
         }
 
         LINFO( plog, "Ready to consume packets on interface <" << f_interface << ">" );
@@ -194,7 +188,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Executing the packet_receiver_fpa" );
 
-        memory_block* t_block = nullptr;
+        //memory_block* t_mem_block = nullptr;
 
         // Setup the polling file descriptor struct
         pollfd t_pollfd;
@@ -215,8 +209,6 @@ namespace psyllid
             std::unique_ptr< char[] > t_buffer_ptr( new char[ f_max_packet_size ] );
 
             out_stream< 0 >().set( stream::s_start );
-
-            ssize_t t_size_received = 0;
 
             LINFO( plog, "Starting main loop; waiting for packets" );
             while( ! f_canceled.load() )
@@ -370,11 +362,11 @@ namespace psyllid
         if( t_port != f_port ) return false;
 
         // copy the UPD packet from the IP packet into the appropriate buffer
-        uint8_t* t_udp_data = t_udp_hdr + t_udp_hdr_len;
+        uint8_t* t_udp_data = (uint8_t*)t_udp_hdr + t_udp_hdr_len;
         size_t t_udp_data_len = htons(t_udp_hdr->len) - t_udp_hdr_len;
 
-        t_block = out_stream< 0 >().data();
-        ::memcpy( &t_block->get_block(), t_udp_data, t_udp_data_len );
+        memory_block* t_mem_block = out_stream< 0 >().data();
+        ::memcpy( t_mem_block->block(), t_udp_data, t_udp_data_len );
 
         LDEBUG( plog, "Packet received (" << t_udp_data_len << " bytes)" );
         LDEBUG( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );

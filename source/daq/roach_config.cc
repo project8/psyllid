@@ -35,7 +35,7 @@ namespace psyllid
 #ifdef __linux__
     REGISTER_PRESET( streaming_1ch_fpa, "str-1ch-fpa" );
 
-    streaming_1ch::streaming_1ch()
+    streaming_1ch_fpa::streaming_1ch_fpa()
     {
         node( "packet-receiver-fpa", "prs" );
         node( "tf-roach-receiver", "tfrr" );

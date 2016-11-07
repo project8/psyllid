@@ -14,7 +14,9 @@
 #include "producer.hh"
 #include "shared_cancel.hh"
 
+#include <linux/if_packet.h>
 #include <memory>
+#include <sys/uio.h>
 
 namespace scarab
 {
@@ -132,8 +134,6 @@ namespace psyllid
 
         private:
             virtual void do_cancellation();
-
-            void walk_block( block_desc* a_bd );
 
             bool process_packet( tpacket3_hdr* a_packet );
 
