@@ -10,22 +10,11 @@
         "activate-at-startup": true
     },
 
-    "udpr": 
+    "prf": 
     {
-        "server": 
-        {
-            "type": "fpa",
-            "fpa": "eth1-fpa",
-            "port": 12345,
-            "timeout-sec": 2,
-            "buffer-size": 100
-        }
-    },
-    
-    "eth1-fpa":
-    {
-        "net-interface": "eth1",
-        "timeout-sec": 2,
+        "length": 10,
+        "port": 23530,
+        "interface": "eth0",
         "n-blocks": 64,
         "block-size": 4194304,
         "frame-size": 2048

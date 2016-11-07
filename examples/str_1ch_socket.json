@@ -10,12 +10,10 @@
         "activate-at-startup": true
     },
 
-    "udpr": 
+    "prs": 
     {
-        "server": 
-        {
-            "type": "socket",
-            "port": 12345
-        }
+        "length": 10,
+        "port": 23530,
+        "ip": "127.0.0.1"
     }
 }

@@ -37,12 +37,12 @@ namespace psyllid
 
     streaming_1ch_fpa::streaming_1ch_fpa()
     {
-        node( "packet-receiver-fpa", "prs" );
+        node( "packet-receiver-fpa", "prf" );
         node( "tf-roach-receiver", "tfrr" );
         node( "streaming-writer", "strw" );
         node( "term-freq-data", "term" );
 
-        connection( "prs.out_0:tfrr.in_0" );
+        connection( "prf.out_0:tfrr.in_0" );
         connection( "tfrr.out_0:strw.in_0" );
         connection( "tfrr.out_1:term.in_0" );
     }
