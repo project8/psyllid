@@ -6,7 +6,6 @@ if( Psyllid_ENABLE_EXECUTABLES )
 
     set( lib_dependencies 
         PsyllidUtility
-        PsyllidLinkage
         PsyllidData
         PsyllidDAQ
         PsyllidControl

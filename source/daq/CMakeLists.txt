@@ -46,7 +46,6 @@ endif( UNIX AND NOT APPLE )
 
 set( dependencies
     PsyllidUtility
-    PsyllidLinkage
     PsyllidData
     PsyllidControl
 )

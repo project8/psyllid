@@ -6,7 +6,6 @@ if( Psyllid_ENABLE_TESTING )
 
     set( lib_dependencies
         PsyllidUtility
-        PsyllidLinkage
         PsyllidData
         PsyllidDAQ
     )
