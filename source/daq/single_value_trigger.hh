@@ -29,7 +29,7 @@ namespace psyllid
 
         public:
             void initialize();
-            void execute();
+            void execute( midge::diptera* a_midge = nullptr );
             void finalize();
 
     };

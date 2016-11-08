@@ -48,181 +48,189 @@ namespace psyllid
         return;
     }
 
-    void tf_roach_receiver::execute()
+    void tf_roach_receiver::execute( midge::diptera* a_midge )
     {
-        LDEBUG( plog, "Executing the TF ROACH receiver" );
-
-        midge::enum_t t_in_command = stream::s_none;
-
-        memory_block* t_memory_block = nullptr;
-        time_data* t_time_data = nullptr;
-        freq_data* t_freq_data = nullptr;
-
         try
         {
-            //LDEBUG( plog, "Server is listening" );
+            LDEBUG( plog, "Executing the TF ROACH receiver" );
 
-            std::unique_ptr< char[] > t_buffer_ptr( new char[ f_udp_buffer_size ] );
+            midge::enum_t t_in_command = stream::s_none;
 
-            // start out as configured (default is paused)
-            //out_stream< 0 >().set( stream::s_start );
-            //out_stream< 1 >().set( stream::s_start );
-            f_paused = f_start_paused;
+            memory_block* t_memory_block = nullptr;
+            time_data* t_time_data = nullptr;
+            freq_data* t_freq_data = nullptr;
 
-            uint64_t t_time_batch_pkt = 0;
-            uint64_t t_freq_batch_pkt = 0;
-
-            size_t t_pkt_size = 0;
-
-            LINFO( plog, "Starting main loop; waiting for packets" );
-            while( ! f_canceled.load() )
+            try
             {
-                // check if we've received a pause or unpause instruction
-                check_instruction();
+                //LDEBUG( plog, "Server is listening" );
 
-                t_in_command = in_stream< 0 >().get();
-                LDEBUG( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
+                std::unique_ptr< char[] > t_buffer_ptr( new char[ f_udp_buffer_size ] );
 
-                // check for any commands from upstream
-                if( t_in_command == stream::s_exit )
+                // start out as configured (default is paused)
+                //out_stream< 0 >().set( stream::s_start );
+                //out_stream< 1 >().set( stream::s_start );
+                f_paused = f_start_paused;
+
+                uint64_t t_time_batch_pkt = 0;
+                uint64_t t_freq_batch_pkt = 0;
+
+                size_t t_pkt_size = 0;
+
+                LINFO( plog, "Starting main loop; waiting for packets" );
+                while( ! f_canceled.load() )
                 {
-                    LDEBUG( plog, "TF ROACH receiver is exiting" );
-                    break;
-                }
+                    // check if we've received a pause or unpause instruction
+                    check_instruction();
 
-                if( t_in_command == stream::s_stop )
-                {
-                    LDEBUG( plog, "TF ROACH receiver is stopping" );
-                    continue;
-                }
+                    t_in_command = in_stream< 0 >().get();
+                    LDEBUG( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
 
-                if( t_in_command == stream::s_start )
-                {
-                    LDEBUG( plog, "TF ROACH receiver is starting" );
-                    continue;
-                }
+                    // check for any commands from upstream
+                    if( t_in_command == stream::s_exit )
+                    {
+                        LDEBUG( plog, "TF ROACH receiver is exiting" );
+                        break;
+                    }
 
-                if( f_canceled.load() )
-                {
-                    break;
-                }
-                check_instruction();
+                    if( t_in_command == stream::s_stop )
+                    {
+                        LDEBUG( plog, "TF ROACH receiver is stopping" );
+                        continue;
+                    }
 
-                // do nothing with input data if paused
-                if( f_paused ) continue;
-
-                if( t_in_command == stream::s_run )
-                {
-                    t_memory_block = in_stream< 0 >().data();
+                    if( t_in_command == stream::s_start )
+                    {
+                        LDEBUG( plog, "TF ROACH receiver is starting" );
+                        continue;
+                    }
 
                     if( f_canceled.load() )
                     {
                         break;
                     }
+                    check_instruction();
 
-                    t_pkt_size = t_memory_block->get_n_bytes_used();
-                    if( t_pkt_size != f_udp_buffer_size )
+                    // do nothing with input data if paused
+                    if( f_paused ) continue;
+
+                    if( t_in_command == stream::s_run )
                     {
-                        LWARN( plog, "Improper packet size; packet may be malformed: received " << t_memory_block->get_n_bytes_used() << " bytes; expected " << f_udp_buffer_size << " bytes" );
-                    }
+                        t_memory_block = in_stream< 0 >().data();
 
-                    byteswap_inplace( reinterpret_cast< raw_roach_packet* >( t_memory_block->block() ) );
-                    roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( t_memory_block->block() );
+                        if( f_canceled.load() )
+                        {
+                            break;
+                        }
 
-                    // debug purposes only
-#ifndef NDEBUG
-                    raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( t_memory_block->block() );
-                    LDEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
-#endif
+                        t_pkt_size = t_memory_block->get_n_bytes_used();
+                        if( t_pkt_size != f_udp_buffer_size )
+                        {
+                            LWARN( plog, "Improper packet size; packet may be malformed: received " << t_memory_block->get_n_bytes_used() << " bytes; expected " << f_udp_buffer_size << " bytes" );
+                        }
 
-                    if( t_roach_packet->f_freq_not_time )
-                    {
-                        // packet is frequency data
+                        byteswap_inplace( reinterpret_cast< raw_roach_packet* >( t_memory_block->block() ) );
+                        roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( t_memory_block->block() );
 
-                        t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
-                        //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, f_time_session_pkt_counter, f_freq_session_pkt_counter );
+                        // debug purposes only
+    #ifndef NDEBUG
+                        raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( t_memory_block->block() );
+                        LDEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
+    #endif
 
-                        t_freq_data = out_stream< 1 >().data();
-                        t_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
-                        ::memcpy( &t_freq_data->packet(), t_roach_packet, t_pkt_size );
+                        if( t_roach_packet->f_freq_not_time )
+                        {
+                            // packet is frequency data
 
-                        LDEBUG( plog, "Frequency data received (" << t_pkt_size << " bytes):  chan = " << t_freq_data->get_digital_id() <<
-                               "  time = " << t_freq_data->get_unix_time() <<
-                               "  id = " << t_freq_data->get_pkt_in_session() <<
-                               "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
-                               "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
-                        LDEBUG( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                            t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
+                            //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, f_time_session_pkt_counter, f_freq_session_pkt_counter );
 
-                        out_stream< 1 >().set( stream::s_run );
-                    }
-                    else
-                    {
-                        // packet is time data
+                            t_freq_data = out_stream< 1 >().data();
+                            t_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
+                            ::memcpy( &t_freq_data->packet(), t_roach_packet, t_pkt_size );
 
-                        t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
-                        //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, f_time_session_pkt_counter, f_freq_session_pkt_counter );
+                            LDEBUG( plog, "Frequency data received (" << t_pkt_size << " bytes):  chan = " << t_freq_data->get_digital_id() <<
+                                   "  time = " << t_freq_data->get_unix_time() <<
+                                   "  id = " << t_freq_data->get_pkt_in_session() <<
+                                   "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
+                                   "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
+                            LDEBUG( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
 
-                        t_time_data = out_stream< 0 >().data();
-                        t_time_data->set_pkt_in_session( f_time_session_pkt_counter++ );
-                        ::memcpy( &t_time_data->packet(), t_roach_packet, t_pkt_size );
+                            out_stream< 1 >().set( stream::s_run );
+                        }
+                        else
+                        {
+                            // packet is time data
 
-                        LDEBUG( plog, "Time data received (" << t_pkt_size << " bytes):  chan = " << t_time_data->get_digital_id() <<
-                               "  time = " << t_time_data->get_unix_time() <<
-                               "  id = " << t_time_data->get_pkt_in_session() <<
-                               "  freqNotTime = " << t_time_data->get_freq_not_time() <<
-                               "  bin 0 [0] = " << (unsigned)t_time_data->get_array()[ 0 ][ 0 ] );
-                        LDEBUG( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                            t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
+                            //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, f_time_session_pkt_counter, f_freq_session_pkt_counter );
 
-                        out_stream< 0 >().set( stream::s_run );
-                    }
-                } // if block for run command
-            } // main while loop
+                            t_time_data = out_stream< 0 >().data();
+                            t_time_data->set_pkt_in_session( f_time_session_pkt_counter++ );
+                            ::memcpy( &t_time_data->packet(), t_roach_packet, t_pkt_size );
 
-            LINFO( plog, "TF ROACH receiver is exiting" );
+                            LDEBUG( plog, "Time data received (" << t_pkt_size << " bytes):  chan = " << t_time_data->get_digital_id() <<
+                                   "  time = " << t_time_data->get_unix_time() <<
+                                   "  id = " << t_time_data->get_pkt_in_session() <<
+                                   "  freqNotTime = " << t_time_data->get_freq_not_time() <<
+                                   "  bin 0 [0] = " << (unsigned)t_time_data->get_array()[ 0 ][ 0 ] );
+                            LDEBUG( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
 
-            // normal exit condition
-            LDEBUG( plog, "Stopping output streams" );
-            out_stream< 0 >().set( stream::s_stop );
-            out_stream< 1 >().set( stream::s_stop );
+                            out_stream< 0 >().set( stream::s_run );
+                        }
+                    } // if block for run command
+                } // main while loop
 
-            LDEBUG( plog, "Exiting output streams" );
-            out_stream< 0 >().set( stream::s_exit );
-            out_stream< 1 >().set( stream::s_exit );
+                LINFO( plog, "TF ROACH receiver is exiting" );
 
+                // normal exit condition
+                LDEBUG( plog, "Stopping output streams" );
+                out_stream< 0 >().set( stream::s_stop );
+                out_stream< 1 >().set( stream::s_stop );
+
+                LDEBUG( plog, "Exiting output streams" );
+                out_stream< 0 >().set( stream::s_exit );
+                out_stream< 1 >().set( stream::s_exit );
+
+                return;
+            }
+            catch( midge::error& e )
+            {
+                LERROR( plog, "Midge exception caught: " << e.what() );
+
+                LDEBUG( plog, "Stopping output streams" );
+                out_stream< 0 >().set( stream::s_stop );
+                out_stream< 1 >().set( stream::s_stop );
+
+                LDEBUG( plog, "Exiting output streams" );
+                out_stream< 0 >().set( stream::s_exit );
+                out_stream< 1 >().set( stream::s_exit );
+
+                return;
+            }
+            catch( error& e )
+            {
+                LERROR( plog, "Psyllid exception caught: " << e.what() );
+
+                LDEBUG( plog, "Stopping output streams" );
+                out_stream< 0 >().set( stream::s_stop );
+                out_stream< 1 >().set( stream::s_stop );
+
+                LDEBUG( plog, "Exiting output streams" );
+                out_stream< 0 >().set( stream::s_exit );
+                out_stream< 1 >().set( stream::s_exit );
+
+                return;
+            }
+
+            // control should not reach here
+            LERROR( plog, "Control should not reach this point" );
             return;
         }
-        catch( midge::error& e )
+        catch(...)
         {
-            LERROR( plog, "Midge exception caught: " << e.what() );
-
-            LDEBUG( plog, "Stopping output streams" );
-            out_stream< 0 >().set( stream::s_stop );
-            out_stream< 1 >().set( stream::s_stop );
-
-            LDEBUG( plog, "Exiting output streams" );
-            out_stream< 0 >().set( stream::s_exit );
-            out_stream< 1 >().set( stream::s_exit );
-
-            return;
+            if( a_midge ) a_midge->throw_ex( std::current_exception() );
+            else throw;
         }
-        catch( error& e )
-        {
-            LERROR( plog, "Psyllid exception caught: " << e.what() );
-
-            LDEBUG( plog, "Stopping output streams" );
-            out_stream< 0 >().set( stream::s_stop );
-            out_stream< 1 >().set( stream::s_stop );
-
-            LDEBUG( plog, "Exiting output streams" );
-            out_stream< 0 >().set( stream::s_exit );
-            out_stream< 1 >().set( stream::s_exit );
-
-            return;
-        }
-
-        // control should not reach here
-        LERROR( plog, "Control should not reach this point" );
-        return;
     }
 
     void tf_roach_receiver::finalize()

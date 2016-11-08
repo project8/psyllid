@@ -38,44 +38,52 @@ namespace psyllid
         return;
     }
 
-    void terminator_time_data::execute()
+    void terminator_time_data::execute( midge::diptera* a_midge )
     {
-        midge::enum_t t_command = midge::stream::s_none;
-
-        //time_data* t_data = nullptr;
-
-        while( true )
+        try
         {
-            t_command = in_stream< 0 >().get();
+            midge::enum_t t_command = midge::stream::s_none;
 
-            if( t_command == midge::stream::s_exit )
+            //time_data* t_data = nullptr;
+
+            while( true )
             {
-                LDEBUG( plog, "Terminator is exiting" );
-                break;
+                t_command = in_stream< 0 >().get();
+
+                if( t_command == midge::stream::s_exit )
+                {
+                    LDEBUG( plog, "Terminator is exiting" );
+                    break;
+                }
+
+                if( t_command == midge::stream::s_stop )
+                {
+                    LDEBUG( plog, "Terminator is stopping" );
+                    continue;
+                }
+
+                //t_data = in_stream< 0 >().data();
+
+                if( t_command == midge::stream::s_start )
+                {
+                    LDEBUG( plog, "Terminator is starting" );
+                    continue;
+                }
+
+                if( t_command == midge::stream::s_run )
+                {
+                    continue;
+                }
+
             }
 
-            if( t_command == midge::stream::s_stop )
-            {
-                LDEBUG( plog, "Terminator is stopping" );
-                continue;
-            }
-
-            //t_data = in_stream< 0 >().data();
-
-            if( t_command == midge::stream::s_start )
-            {
-                LDEBUG( plog, "Terminator is starting" );
-                continue;
-            }
-
-            if( t_command == midge::stream::s_run )
-            {
-                continue;
-            }
-
+            return;
         }
-
-        return;
+        catch(...)
+        {
+            if( a_midge ) a_midge->throw_ex( std::current_exception() );
+            else throw;
+        }
     }
 
     void terminator_time_data::finalize()
@@ -112,44 +120,52 @@ namespace psyllid
         return;
     }
 
-    void terminator_freq_data::execute()
+    void terminator_freq_data::execute( midge::diptera* a_midge )
     {
-        midge::enum_t t_command = midge::stream::s_none;
-
-        //freq_data* t_data = nullptr;
-
-        while( true )
+        try
         {
-            t_command = in_stream< 0 >().get();
+            midge::enum_t t_command = midge::stream::s_none;
 
-            if( t_command == midge::stream::s_exit )
+            //freq_data* t_data = nullptr;
+
+            while( true )
             {
-                LDEBUG( plog, "Terminator is exiting" );
-                break;
+                t_command = in_stream< 0 >().get();
+
+                if( t_command == midge::stream::s_exit )
+                {
+                    LDEBUG( plog, "Terminator is exiting" );
+                    break;
+                }
+
+                if( t_command == midge::stream::s_stop )
+                {
+                    LDEBUG( plog, "Terminator is stopping" );
+                    continue;
+                }
+
+                //t_data = in_stream< 0 >().data();
+
+                if( t_command == midge::stream::s_start )
+                {
+                    LDEBUG( plog, "Terminator is starting" );
+                    continue;
+                }
+
+                if( t_command == midge::stream::s_run )
+                {
+                    continue;
+                }
+
             }
 
-            if( t_command == midge::stream::s_stop )
-            {
-                LDEBUG( plog, "Terminator is stopping" );
-                continue;
-            }
-
-            //t_data = in_stream< 0 >().data();
-
-            if( t_command == midge::stream::s_start )
-            {
-                LDEBUG( plog, "Terminator is starting" );
-                continue;
-            }
-
-            if( t_command == midge::stream::s_run )
-            {
-                continue;
-            }
-
+            return;
         }
-
-        return;
+        catch(...)
+        {
+            if( a_midge ) a_midge->throw_ex( std::current_exception() );
+            else throw;
+        }
     }
 
     void terminator_freq_data::finalize()

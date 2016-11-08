@@ -37,58 +37,66 @@ namespace psyllid
         return;
     }
 
-    void roach_time_monitor::execute()
+    void roach_time_monitor::execute( midge::diptera* a_midge )
     {
-        midge::enum_t t_time_command = stream::s_none;
-
-        time_data* t_time_data = nullptr;
-
-        uint64_t t_current_pkt_in_batch = 0;
-
-        while( true )
+        try
         {
-            t_time_command = in_stream< 0 >().get();
-            LDEBUG( plog, "ROACH time monitor reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
+            midge::enum_t t_time_command = stream::s_none;
 
-            if( t_time_command == stream::s_exit )
+            time_data* t_time_data = nullptr;
+
+            uint64_t t_current_pkt_in_batch = 0;
+
+            while( true )
             {
-                LDEBUG( plog, "ROACH time monitor is exiting" );
+                t_time_command = in_stream< 0 >().get();
+                LDEBUG( plog, "ROACH time monitor reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
-                break;
-            }
-
-            if( t_time_command == stream::s_stop )
-            {
-                LDEBUG( plog, "ROACH time monitor is stopping" );
-
-                continue;
-            }
-
-            if( t_time_command == stream::s_start )
-            {
-                LDEBUG( plog, "ROACH time monitor is starting" );
-
-                continue;
-            }
-
-            t_time_data = in_stream< 0 >().data();
-
-            if( t_time_command == stream::s_run )
-            {
-                t_current_pkt_in_batch = t_time_data->get_pkt_in_batch();
-
-                if( f_last_pkt_in_batch + 1 != t_current_pkt_in_batch )
+                if( t_time_command == stream::s_exit )
                 {
-                    LWARN( plog, "[Time] Packet-count discontinuity: last packet = " << f_last_pkt_in_batch << "  current packet = " << t_current_pkt_in_batch );
-                }
-                f_last_pkt_in_batch = t_current_pkt_in_batch;
+                    LDEBUG( plog, "ROACH time monitor is exiting" );
 
-                continue;
+                    break;
+                }
+
+                if( t_time_command == stream::s_stop )
+                {
+                    LDEBUG( plog, "ROACH time monitor is stopping" );
+
+                    continue;
+                }
+
+                if( t_time_command == stream::s_start )
+                {
+                    LDEBUG( plog, "ROACH time monitor is starting" );
+
+                    continue;
+                }
+
+                t_time_data = in_stream< 0 >().data();
+
+                if( t_time_command == stream::s_run )
+                {
+                    t_current_pkt_in_batch = t_time_data->get_pkt_in_batch();
+
+                    if( f_last_pkt_in_batch + 1 != t_current_pkt_in_batch )
+                    {
+                        LWARN( plog, "[Time] Packet-count discontinuity: last packet = " << f_last_pkt_in_batch << "  current packet = " << t_current_pkt_in_batch );
+                    }
+                    f_last_pkt_in_batch = t_current_pkt_in_batch;
+
+                    continue;
+                }
+
             }
 
+            return;
         }
-
-        return;
+        catch(...)
+        {
+            if( a_midge ) a_midge->throw_ex( std::current_exception() );
+            else throw;
+        }
     }
 
     void roach_time_monitor::finalize()

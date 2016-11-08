@@ -184,124 +184,132 @@ namespace psyllid
         return;
     }
 
-    void packet_receiver_fpa::execute()
+    void packet_receiver_fpa::execute( midge::diptera* a_midge )
     {
-        LDEBUG( plog, "Executing the packet_receiver_fpa" );
-
-        //memory_block* t_mem_block = nullptr;
-
-        // Setup the polling file descriptor struct
-        pollfd t_pollfd;
-        ::memset( &t_pollfd, 0, sizeof(pollfd) );
-        t_pollfd.fd = f_socket;
-        t_pollfd.events = POLLIN | POLLERR;
-        t_pollfd.revents = 0;
-
-        unsigned t_block_num = 0;
-        block_desc* t_block = nullptr;
-
-        unsigned t_timeout_msec = 1000 * f_timeout_sec;
-
         try
         {
-            //LDEBUG( plog, "Server is listening" );
+            LDEBUG( plog, "Executing the packet_receiver_fpa" );
 
-            std::unique_ptr< char[] > t_buffer_ptr( new char[ f_max_packet_size ] );
+            //memory_block* t_mem_block = nullptr;
 
-            out_stream< 0 >().set( stream::s_start );
+            // Setup the polling file descriptor struct
+            pollfd t_pollfd;
+            ::memset( &t_pollfd, 0, sizeof(pollfd) );
+            t_pollfd.fd = f_socket;
+            t_pollfd.events = POLLIN | POLLERR;
+            t_pollfd.revents = 0;
 
-            LINFO( plog, "Starting main loop; waiting for packets" );
-            while( ! f_canceled.load() )
+            unsigned t_block_num = 0;
+            block_desc* t_block = nullptr;
+
+            unsigned t_timeout_msec = 1000 * f_timeout_sec;
+
+            try
             {
+                //LDEBUG( plog, "Server is listening" );
 
-                if( (out_stream< 0 >().get() == stream::s_stop) )
+                std::unique_ptr< char[] > t_buffer_ptr( new char[ f_max_packet_size ] );
+
+                out_stream< 0 >().set( stream::s_start );
+
+                LINFO( plog, "Starting main loop; waiting for packets" );
+                while( ! f_canceled.load() )
                 {
-                    LWARN( plog, "Output stream(s) have stop condition" );
-                    break;
-                }
 
-                // get the next block
-                t_block = (block_desc *) f_ring.f_rd[ t_block_num ].iov_base;
-
-                // make sure the next block has been made available to the user
-                if( ( t_block->f_packet_hdr.block_status & TP_STATUS_USER ) == 0 )
-                {
-                    // next block isn't available yet, so poll until it is, with the specified timeout
-                    // timeout or successful poll will go back to the top of the loop
-                    poll( &t_pollfd, 1, t_timeout_msec );
-                    continue;
-                }
-
-                // we have a block available, so process it
-                unsigned t_num_pkts = t_block->f_packet_hdr.num_pkts;
-                unsigned long t_bytes = 0;
-
-                tpacket3_hdr* t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_block + t_block->f_packet_hdr.offset_to_first_pkt );
-
-                LDEBUG( plog, "Walking a block with " << t_num_pkts << " packets" );
-                for( unsigned i = 0; i < t_num_pkts; ++i )
-                {
-                    t_bytes += t_packet->tp_snaplen;
-
-                    LTRACE( plog, "Attempting to write IP packet at iterator index " << out_stream< 0 >().get_current_index() );
-                    if( process_packet( t_packet ) )
+                    if( (out_stream< 0 >().get() == stream::s_stop) )
                     {
-                        out_stream< 0 >().set( stream::s_run );
+                        LWARN( plog, "Output stream(s) have stop condition" );
+                        break;
                     }
 
-                    // update the address of the packet to the next packet in the block
-                    t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_packet + t_packet->tp_next_offset );
+                    // get the next block
+                    t_block = (block_desc *) f_ring.f_rd[ t_block_num ].iov_base;
+
+                    // make sure the next block has been made available to the user
+                    if( ( t_block->f_packet_hdr.block_status & TP_STATUS_USER ) == 0 )
+                    {
+                        // next block isn't available yet, so poll until it is, with the specified timeout
+                        // timeout or successful poll will go back to the top of the loop
+                        poll( &t_pollfd, 1, t_timeout_msec );
+                        continue;
+                    }
+
+                    // we have a block available, so process it
+                    unsigned t_num_pkts = t_block->f_packet_hdr.num_pkts;
+                    unsigned long t_bytes = 0;
+
+                    tpacket3_hdr* t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_block + t_block->f_packet_hdr.offset_to_first_pkt );
+
+                    LDEBUG( plog, "Walking a block with " << t_num_pkts << " packets" );
+                    for( unsigned i = 0; i < t_num_pkts; ++i )
+                    {
+                        t_bytes += t_packet->tp_snaplen;
+
+                        LTRACE( plog, "Attempting to write IP packet at iterator index " << out_stream< 0 >().get_current_index() );
+                        if( process_packet( t_packet ) )
+                        {
+                            out_stream< 0 >().set( stream::s_run );
+                        }
+
+                        // update the address of the packet to the next packet in the block
+                        t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_packet + t_packet->tp_next_offset );
+                    }
+                    LDEBUG( plog, "Done walking block" );
+
+                    f_packets_total += t_num_pkts;
+                    f_bytes_total += t_bytes;
+
+                    // return the block to the kernel; we're done with it
+                    t_block->f_packet_hdr.block_status = TP_STATUS_KERNEL;
+                    t_block_num = ( t_block_num + 1 ) % f_n_blocks;
+
                 }
-                LDEBUG( plog, "Done walking block" );
 
-                f_packets_total += t_num_pkts;
-                f_bytes_total += t_bytes;
+                LINFO( plog, "Packet receiver is exiting" );
 
-                // return the block to the kernel; we're done with it
-                t_block->f_packet_hdr.block_status = TP_STATUS_KERNEL;
-                t_block_num = ( t_block_num + 1 ) % f_n_blocks;
+                // normal exit condition
+                LDEBUG( plog, "Stopping output streams" );
+                out_stream< 0 >().set( stream::s_stop );
 
+                LDEBUG( plog, "Exiting output streams" );
+                out_stream< 0 >().set( stream::s_exit );
+
+                return;
+            }
+            catch( midge::error& e )
+            {
+                LERROR( plog, "Midge exception caught: " << e.what() );
+
+                LDEBUG( plog, "Stopping output stream" );
+                out_stream< 0 >().set( stream::s_stop );
+
+                LDEBUG( plog, "Exiting output stream" );
+                out_stream< 0 >().set( stream::s_exit );
+
+                return;
+            }
+            catch( error& e )
+            {
+                LERROR( plog, "Psyllid exception caught: " << e.what() );
+
+                LDEBUG( plog, "Stopping output stream" );
+                out_stream< 0 >().set( stream::s_stop );
+
+                LDEBUG( plog, "Exiting output stream" );
+                out_stream< 0 >().set( stream::s_exit );
+
+                return;
             }
 
-            LINFO( plog, "Packet receiver is exiting" );
-
-            // normal exit condition
-            LDEBUG( plog, "Stopping output streams" );
-            out_stream< 0 >().set( stream::s_stop );
-
-            LDEBUG( plog, "Exiting output streams" );
-            out_stream< 0 >().set( stream::s_exit );
-
+            // control should not reach here
+            LERROR( plog, "Control should not reach this point" );
             return;
         }
-        catch( midge::error& e )
+        catch(...)
         {
-            LERROR( plog, "Midge exception caught: " << e.what() );
-
-            LDEBUG( plog, "Stopping output stream" );
-            out_stream< 0 >().set( stream::s_stop );
-
-            LDEBUG( plog, "Exiting output stream" );
-            out_stream< 0 >().set( stream::s_exit );
-
-            return;
+            if( a_midge ) a_midge->throw_ex( std::current_exception() );
+            else throw;
         }
-        catch( error& e )
-        {
-            LERROR( plog, "Psyllid exception caught: " << e.what() );
-
-            LDEBUG( plog, "Stopping output stream" );
-            out_stream< 0 >().set( stream::s_stop );
-
-            LDEBUG( plog, "Exiting output stream" );
-            out_stream< 0 >().set( stream::s_exit );
-
-            return;
-        }
-
-        // control should not reach here
-        LERROR( plog, "Control should not reach this point" );
-        return;
     }
 
     bool packet_receiver_fpa::process_packet( tpacket3_hdr* a_packet )

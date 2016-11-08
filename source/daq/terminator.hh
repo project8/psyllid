@@ -27,7 +27,7 @@ namespace psyllid
 
         public:
             virtual void initialize();
-            virtual void execute();
+            virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
     };
@@ -52,7 +52,7 @@ namespace psyllid
 
         public:
             virtual void initialize();
-            virtual void execute();
+            virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
     };

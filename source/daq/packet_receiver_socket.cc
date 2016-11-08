@@ -109,109 +109,118 @@ namespace psyllid
         return;
     }
 
-    void packet_receiver_socket::execute()
+    void packet_receiver_socket::execute( midge::diptera* a_midge )
     {
-        LDEBUG( plog, "Executing the packet_receiver_socket" );
-
-        memory_block* t_block = nullptr;
-
         try
         {
-            //LDEBUG( plog, "Server is listening" );
+            LDEBUG( plog, "Executing the packet_receiver_socket" );
 
-            out_stream< 0 >().set( stream::s_start );
+            memory_block* t_block = nullptr;
 
-            ssize_t t_size_received = 0;
-
-            LINFO( plog, "Starting main loop; waiting for packets" );
-            while( ! f_canceled.load() )
+            try
             {
-                t_block = out_stream< 0 >().data();
-                t_block->resize( f_max_packet_size );
+                //LDEBUG( plog, "Server is listening" );
 
-                t_size_received = 0;
+                out_stream< 0 >().set( stream::s_start );
 
-                if( (out_stream< 0 >().get() == stream::s_stop) )
+                ssize_t t_size_received = 0;
+
+                LINFO( plog, "Starting main loop; waiting for packets" );
+                while( ! f_canceled.load() )
                 {
-                    LWARN( plog, "Output stream(s) have stop condition" );
-                    break;
-                }
+                    t_block = out_stream< 0 >().data();
+                    t_block->resize( f_max_packet_size );
 
-                LTRACE( plog, "Waiting for packets" );
+                    throw std::exception();
 
-                // inner loop over packet-receive timeouts
-                while( t_size_received <= 0 && ! f_canceled.load() )
-                {
-                    t_size_received = ::recv( f_socket, (void*)t_block->block(), f_max_packet_size, 0 );
+                    t_size_received = 0;
 
-                    if( t_size_received > 0 )
+                    if( (out_stream< 0 >().get() == stream::s_stop) )
                     {
-                        LTRACE( plog, "Packet received (" << t_size_received << " bytes)" );
-                        LTRACE( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
-
-                        t_block->set_n_bytes_used( t_size_received );
-
-                        out_stream< 0 >().set( stream::s_run );
+                        LWARN( plog, "Output stream(s) have stop condition" );
                         break;
                     }
 
-                    f_last_errno = errno;
-                    if( f_last_errno == EWOULDBLOCK || f_last_errno == EAGAIN )
+                    LTRACE( plog, "Waiting for packets" );
+
+                    // inner loop over packet-receive timeouts
+                    while( t_size_received <= 0 && ! f_canceled.load() )
                     {
-                        // recv timed out without anything being available to receive
-                        // nothing seems to be wrong with the socket
-                        break;
-                    }
-                    else if( t_size_received == 0 )
-                    {
-                        LWARN( plog, "No message present" );
-                    }
-                    else  // t_size_received < 0 && f_last_errno != EWOULDBLOCK && f_last_errno != EAGAIN
-                    {
-                        LWARN( "Unable to receive; error message: " << strerror( f_last_errno ) );
+                        t_size_received = ::recv( f_socket, (void*)t_block->block(), f_max_packet_size, 0 );
+
+                        if( t_size_received > 0 )
+                        {
+                            LTRACE( plog, "Packet received (" << t_size_received << " bytes)" );
+                            LTRACE( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
+
+                            t_block->set_n_bytes_used( t_size_received );
+
+                            out_stream< 0 >().set( stream::s_run );
+                            break;
+                        }
+
+                        f_last_errno = errno;
+                        if( f_last_errno == EWOULDBLOCK || f_last_errno == EAGAIN )
+                        {
+                            // recv timed out without anything being available to receive
+                            // nothing seems to be wrong with the socket
+                            break;
+                        }
+                        else if( t_size_received == 0 )
+                        {
+                            LWARN( plog, "No message present" );
+                        }
+                        else  // t_size_received < 0 && f_last_errno != EWOULDBLOCK && f_last_errno != EAGAIN
+                        {
+                            LWARN( "Unable to receive; error message: " << strerror( f_last_errno ) );
+                        }
                     }
                 }
+
+                LINFO( plog, "Packet receiver is exiting" );
+
+                // normal exit condition
+                LDEBUG( plog, "Stopping output streams" );
+                out_stream< 0 >().set( stream::s_stop );
+
+                LDEBUG( plog, "Exiting output streams" );
+                out_stream< 0 >().set( stream::s_exit );
+
+                return;
+            }
+            catch( midge::error& e )
+            {
+                LERROR( plog, "Midge exception caught: " << e.what() );
+
+                LDEBUG( plog, "Stopping output stream" );
+                out_stream< 0 >().set( stream::s_stop );
+
+                LDEBUG( plog, "Exiting output stream" );
+                out_stream< 0 >().set( stream::s_exit );
+
+                return;
+            }
+            catch( error& e )
+            {
+                LERROR( plog, "Psyllid exception caught: " << e.what() );
+
+                LDEBUG( plog, "Stopping output stream" );
+                out_stream< 0 >().set( stream::s_stop );
+
+                LDEBUG( plog, "Exiting output stream" );
+                out_stream< 0 >().set( stream::s_exit );
+
+                return;
             }
 
-            LINFO( plog, "Packet receiver is exiting" );
-
-            // normal exit condition
-            LDEBUG( plog, "Stopping output streams" );
-            out_stream< 0 >().set( stream::s_stop );
-
-            LDEBUG( plog, "Exiting output streams" );
-            out_stream< 0 >().set( stream::s_exit );
-
+            // control should not reach here
+            LERROR( plog, "Control should not reach this point" );
             return;
         }
-        catch( midge::error& e )
+        catch(...)
         {
-            LERROR( plog, "Midge exception caught: " << e.what() );
-
-            LDEBUG( plog, "Stopping output stream" );
-            out_stream< 0 >().set( stream::s_stop );
-
-            LDEBUG( plog, "Exiting output stream" );
-            out_stream< 0 >().set( stream::s_exit );
-
-            return;
+            a_midge->throw_ex( std::current_exception() );
         }
-        catch( error& e )
-        {
-            LERROR( plog, "Psyllid exception caught: " << e.what() );
-
-            LDEBUG( plog, "Stopping output stream" );
-            out_stream< 0 >().set( stream::s_stop );
-
-            LDEBUG( plog, "Exiting output stream" );
-            out_stream< 0 >().set( stream::s_exit );
-
-            return;
-        }
-
-        // control should not reach here
-        LERROR( plog, "Control should not reach this point" );
-        return;
     }
 
     void packet_receiver_socket::finalize()
