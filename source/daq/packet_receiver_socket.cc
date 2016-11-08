@@ -131,8 +131,6 @@ namespace psyllid
                     t_block = out_stream< 0 >().data();
                     t_block->resize( f_max_packet_size );
 
-                    throw std::exception();
-
                     t_size_received = 0;
 
                     if( (out_stream< 0 >().get() == stream::s_stop) )
