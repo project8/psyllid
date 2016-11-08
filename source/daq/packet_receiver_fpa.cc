@@ -243,7 +243,7 @@ namespace psyllid
                 {
                     t_bytes += t_packet->tp_snaplen;
 
-                    LDEBUG( plog, "Attempting to write IP packet at iterator index " << out_stream< 0 >().get_current_index() );
+                    LTRACE( plog, "Attempting to write IP packet at iterator index " << out_stream< 0 >().get_current_index() );
                     if( process_packet( t_packet ) )
                     {
                         out_stream< 0 >().set( stream::s_run );
@@ -368,8 +368,8 @@ namespace psyllid
         memory_block* t_mem_block = out_stream< 0 >().data();
         ::memcpy( t_mem_block->block(), t_udp_data, t_udp_data_len );
 
-        LDEBUG( plog, "Packet received (" << t_udp_data_len << " bytes)" );
-        LDEBUG( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
+        LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes)" );
+        LTRACE( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
 
         out_stream< 0 >().set( stream::s_run );
 

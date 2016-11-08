@@ -146,8 +146,8 @@ namespace psyllid
 
                     if( t_size_received > 0 )
                     {
-                        LDEBUG( plog, "Packet received (" << t_size_received << " bytes)" );
-                        LDEBUG( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
+                        LTRACE( plog, "Packet received (" << t_size_received << " bytes)" );
+                        LTRACE( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
 
                         t_block->set_n_bytes_used( t_size_received );
 
