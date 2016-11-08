@@ -32,7 +32,7 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( packet_receiver_fpa, "packet-receiver-socket" );
+    REGISTER_NODE_AND_BUILDER( packet_receiver_fpa, "packet-receiver-fpa" );
 
     LOGGER( plog, "packet_receiver_fpa" );
 
