@@ -42,6 +42,8 @@ namespace psyllid
             node_manager( const scarab::param_node& a_master_node );
             virtual ~node_manager();
 
+            void initialize(); // will setup preset nodes if specified; use only after f_daq_control is set
+
             //bool configure( const scarab::param_node* a_node );
             void use_preset( const std::string& a_name ); // can thrown psyllid::error
 

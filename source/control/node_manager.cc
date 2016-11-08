@@ -46,7 +46,19 @@ namespace psyllid
             f_config( new param_node() )
     {
         f_config.reset( new param_node( a_master_config ) );
+    }
 
+    node_manager::~node_manager()
+    {
+        while( ! f_nodes.empty() )
+        {
+            delete f_nodes.begin()->second;
+            f_nodes.erase( f_nodes.begin() );
+        }
+    }
+
+    void node_manager::initialize()
+    {
         // DAQ config is optional; defaults will work just fine
         if( f_config->has( "daq" ) )
         {
@@ -68,15 +80,6 @@ namespace psyllid
             }
         }
 
-    }
-
-    node_manager::~node_manager()
-    {
-        while( ! f_nodes.empty() )
-        {
-            delete f_nodes.begin()->second;
-            f_nodes.erase( f_nodes.begin() );
-        }
     }
 
     void node_manager::use_preset( const std::string& a_name )

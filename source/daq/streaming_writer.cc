@@ -121,8 +121,10 @@ namespace psyllid
                             f_filename = t_daq_control->run_filename();
                             f_description = t_daq_control->run_description();
                             t_run_duration = t_daq_control->get_run_duration();
+                            LDEBUG( plog, "Updated filename, description, and duration from daq_control" );
                         }
 
+                        LDEBUG( plog, "Declaring monarch file <" << f_filename << ">" );
                         t_monarch_ptr = t_bf_house->declare_file( f_filename );
                         header_wrap_ptr t_hwrap_ptr = t_monarch_ptr->get_header();
 

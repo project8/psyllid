@@ -77,6 +77,7 @@ namespace psyllid
             f_daq_control.reset( new daq_control( f_config, f_node_manager ) );
 
             f_node_manager->set_daq_control( f_daq_control );
+            f_node_manager->initialize();
 
             // request receiver
             LDEBUG( plog, "Creating request receiver" );

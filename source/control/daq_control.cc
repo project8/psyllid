@@ -354,6 +354,7 @@ namespace psyllid
         try
         {
             f_run_filename =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            LDEBUG( plog, "Run filename set to <" << f_run_filename << ">" );
             return a_reply_pkg.send_reply( retcode_t::success, "Filename set" );
         }
         catch( scarab::error& e )
@@ -367,6 +368,7 @@ namespace psyllid
         try
         {
             f_run_description =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            LDEBUG( plog, "Run description set to:\n" << f_run_description );
             return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
         }
         catch( scarab::error& e )
@@ -380,6 +382,7 @@ namespace psyllid
         try
         {
             f_run_duration =  a_request->get_payload().array_at( "values" )->get_value< unsigned >( 0 );
+            LDEBUG( plog, "Duration set to <" << f_run_duration << "> ms" );
             return a_reply_pkg.send_reply( retcode_t::success, "Duration set" );
         }
         catch( scarab::error& e )
