@@ -43,24 +43,28 @@ namespace psyllid
 			f_midge_mutex(),
             f_nodes(),
             f_connections(),
-            f_daq_config( new param_node() )
+            f_config( new param_node() )
     {
-        // DAQ config is optional; defaults will work just fine
-        if( a_master_config.has( "daq" ) )
-        {
-            f_daq_config.reset( new param_node( *a_master_config.node_at( "daq" ) ) );
-        }
+        f_config.reset( new param_node( a_master_config ) );
 
-        if( f_daq_config->has( "preset" ) )
+        // DAQ config is optional; defaults will work just fine
+        if( f_config->has( "daq" ) )
         {
-            try
+            param_node* t_daq_node = f_config->node_at( "daq" );
+            if( t_daq_node != nullptr )
             {
-                use_preset( f_daq_config->get_value( "preset" ) );
-            }
-            catch( error& e )
-            {
-                LERROR( plog, "Unable to apply DAQ preset: " << e.what() );
-                raise( SIGINT );
+                if( t_daq_node->has( "preset" ) )
+                {
+                    try
+                    {
+                        use_preset( t_daq_node->get_value( "preset" ) );
+                    }
+                    catch( error& e )
+                    {
+                        LERROR( plog, "Unable to apply DAQ preset: " << e.what() );
+                        raise( SIGINT );
+                    }
+                }
             }
         }
 
@@ -241,9 +245,9 @@ namespace psyllid
             throw error() << "Cannot find binding for node type <" << a_node_type << ">";
         }
         t_builder->name() = a_node_name;
-        if( f_daq_config->has( a_node_name ) )
+        if( f_config->has( a_node_name ) )
         {
-            t_builder->configure( *f_daq_config->node_at( a_node_name ) );
+            t_builder->configure( *f_config->node_at( a_node_name ) );
         }
         t_builder->set_daq_control( f_daq_control.lock() );
         f_nodes.insert( nodes_t::value_type( a_node_name, t_builder ) );

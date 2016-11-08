@@ -92,7 +92,7 @@ namespace psyllid
             nodes_t f_nodes;
             connections_t f_connections;
 
-            std::unique_ptr< scarab::param_node > f_daq_config;
+            std::unique_ptr< scarab::param_node > f_config;
     };
 
     inline void node_manager::add_node( const std::string& a_node_type, const std::string& a_node_name )
