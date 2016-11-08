@@ -137,7 +137,7 @@ namespace psyllid
                     break;
                 }
 
-                LDEBUG( plog, "Waiting for packets" );
+                LTRACE( plog, "Waiting for packets" );
 
                 // inner loop over packet-receive timeouts
                 while( t_size_received <= 0 && ! f_canceled.load() )
