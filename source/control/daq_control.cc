@@ -59,7 +59,7 @@ namespace psyllid
     {
     }
 
-    void daq_control::execute( std::exception_ptr a_ex_ptr )
+    void daq_control::execute()
     {
         // if we're supposed to activate on startup, we'll call activate asynchronously
         std::future< void > t_activation_return;
@@ -75,6 +75,8 @@ namespace psyllid
                         } );
         }
 
+        // Errors caught during this loop are handled by setting the status to error, and continuing the loop,
+        // which then goes to the error clause of the outer if/elseif logic
         while( ! f_canceled.load() )
         {
             status t_status = get_status();
@@ -98,9 +100,9 @@ namespace psyllid
                 }
                 catch( error& e )
                 {
-                    LERROR( plog, "Exception caught while resetting midge" );
-                    a_ex_ptr = std::current_exception();
-                    return;
+                    LERROR( plog, "Exception caught while resetting midge: " << e.what() );
+                    set_status( status::error );
+                    continue;
                 }
 
                 LDEBUG( plog, "Acquiring midge package" );
@@ -108,8 +110,9 @@ namespace psyllid
 
                 if( ! f_midge_pkg.have_lock() )
                 {
-                    a_ex_ptr = std::make_exception_ptr( error() << "Could not get midge resource" );
-                    return;
+                    LERROR( plog, "Could not get midge resource" );
+                    set_status( status::error );
+                    continue;
                 }
 
                 try
@@ -124,7 +127,8 @@ namespace psyllid
                 {
                     LERROR( plog, "An exception was thrown while running midge: " << e.what() );
                     set_status( status::error );
-                    a_ex_ptr = std::current_exception();
+                    f_run_stopper.notify_all();
+                    continue;
                 }
 
                 f_node_manager->return_midge( std::move( f_midge_pkg ) );
@@ -134,12 +138,14 @@ namespace psyllid
                     LERROR( plog, "Midge exited abnormally" );
                     set_status( status::error );
                     f_run_stopper.notify_all();
+                    continue;
                 }
             }
             else if( t_status == status::idle )
             {
-                a_ex_ptr = std::make_exception_ptr( error() << "DAQ control status is idle in the outer execution loop!" );
+                LERROR( plog, "DAQ control status is idle in the outer execution loop!" );
                 set_status( status::error );
+                continue;
             }
             else if( t_status == status::deactivating )
             {
@@ -153,7 +159,7 @@ namespace psyllid
             }
             else if( t_status == status::error )
             {
-                if( ! a_ex_ptr ) std::make_exception_ptr( error() << "DAQ control is in an error state" );
+                LERROR( plog, "DAQ control is in an error state" );
                 raise( SIGINT );
                 break;
             }

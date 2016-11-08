@@ -47,7 +47,7 @@ namespace psyllid
             virtual ~daq_control();
 
             /// Run the DAQ control thread
-            void execute( std::exception_ptr a_ex_ptr );
+            void execute();
 
             /// Start the DAQ into the idle state
             /// Deactivated with deactivate()
