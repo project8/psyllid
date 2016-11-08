@@ -83,7 +83,7 @@ namespace psyllid
                     check_instruction();
 
                     t_in_command = in_stream< 0 >().get();
-                    LDEBUG( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
+                    LTRACE( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
 
                     // check for any commands from upstream
                     if( t_in_command == stream::s_exit )
