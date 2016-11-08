@@ -134,7 +134,7 @@ namespace psyllid
                         // debug purposes only
     #ifndef NDEBUG
                         raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( t_memory_block->block() );
-                        LDEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
+                        LTRACE( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
     #endif
 
                         if( t_roach_packet->f_freq_not_time )
@@ -148,12 +148,12 @@ namespace psyllid
                             t_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
                             ::memcpy( &t_freq_data->packet(), t_roach_packet, t_pkt_size );
 
-                            LDEBUG( plog, "Frequency data received (" << t_pkt_size << " bytes):  chan = " << t_freq_data->get_digital_id() <<
+                            LTRACE( plog, "Frequency data received (" << t_pkt_size << " bytes):  chan = " << t_freq_data->get_digital_id() <<
                                    "  time = " << t_freq_data->get_unix_time() <<
                                    "  id = " << t_freq_data->get_pkt_in_session() <<
                                    "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
                                    "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
-                            LDEBUG( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                            LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
 
                             out_stream< 1 >().set( stream::s_run );
                         }
@@ -168,12 +168,12 @@ namespace psyllid
                             t_time_data->set_pkt_in_session( f_time_session_pkt_counter++ );
                             ::memcpy( &t_time_data->packet(), t_roach_packet, t_pkt_size );
 
-                            LDEBUG( plog, "Time data received (" << t_pkt_size << " bytes):  chan = " << t_time_data->get_digital_id() <<
+                            LTRACE( plog, "Time data received (" << t_pkt_size << " bytes):  chan = " << t_time_data->get_digital_id() <<
                                    "  time = " << t_time_data->get_unix_time() <<
                                    "  id = " << t_time_data->get_pkt_in_session() <<
                                    "  freqNotTime = " << t_time_data->get_freq_not_time() <<
                                    "  bin 0 [0] = " << (unsigned)t_time_data->get_array()[ 0 ][ 0 ] );
-                            LDEBUG( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                            LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
 
                             out_stream< 0 >().set( stream::s_run );
                         }

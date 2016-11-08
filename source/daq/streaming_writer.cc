@@ -74,7 +74,7 @@ namespace psyllid
             while( true )
             {
                 t_time_command = in_stream< 0 >().get();
-                LDEBUG( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
+                LTRACE( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
                 if( t_time_command == stream::s_exit )
                 {
@@ -183,7 +183,7 @@ namespace psyllid
 
                     t_record_ptr->SetRecordId( t_time_id );
                     t_record_ptr->SetTime( t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ) );
-                    memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
+                    ::memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
                     t_swrap_ptr->write_record( t_is_new_event );
 
                     t_is_new_event = false;
