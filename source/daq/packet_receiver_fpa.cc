@@ -357,11 +357,14 @@ namespace psyllid
         if( t_port != f_port ) return false;
 
         // copy the UPD packet from the IP packet into the appropriate buffer
-        uint8_t* t_udp_data = (uint8_t*)t_udp_hdr + t_udp_hdr_len;
+        //uint8_t* t_udp_data = (uint8_t*)t_udp_hdr + t_udp_hdr_len;
         size_t t_udp_data_len = htons(t_udp_hdr->len) - t_udp_hdr_len;
-
         memory_block* t_mem_block = out_stream< 0 >().data();
-        ::memcpy( t_mem_block->block(), t_udp_data, t_udp_data_len );
+        t_mem_block->resize( f_max_packet_size );
+        ::memcpy( t_mem_block->block(),
+                  reinterpret_cast< uint8_t* >( t_udp_hdr + t_udp_hdr_len ),
+                  t_udp_data_len );
+        t_mem_block->set_n_bytes_used( t_udp_data_len );
 
         LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes)" );
         LTRACE( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
@@ -390,7 +393,7 @@ namespace psyllid
     {
         if( f_ring.f_map != nullptr )
         {
-            DEBUG( plog, "Unmapping mmap ring" );
+            LDEBUG( plog, "Unmapping mmap ring" );
             ::munmap(f_ring.f_map, f_ring.f_req.tp_block_size * f_ring.f_req.tp_block_nr);
             f_ring.f_map = nullptr;
         }

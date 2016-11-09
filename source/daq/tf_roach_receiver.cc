@@ -1,3 +1,4 @@
+
 /*
  * udp_receiver.cc
  *
@@ -134,6 +135,7 @@ namespace psyllid
                         if( t_pkt_size != f_udp_buffer_size )
                         {
                             LWARN( plog, "Improper packet size; packet may be malformed: received " << t_memory_block->get_n_bytes_used() << " bytes; expected " << f_udp_buffer_size << " bytes" );
+                            if( t_pkt_size == 0 ) continue;
                         }
 
                         byteswap_inplace( reinterpret_cast< raw_roach_packet* >( t_memory_block->block() ) );
