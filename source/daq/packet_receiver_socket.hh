@@ -65,6 +65,7 @@ namespace psyllid
             virtual void finalize();
 
         private:
+            void cleanup_socket();
             virtual void do_cancellation();
 
             int f_socket;

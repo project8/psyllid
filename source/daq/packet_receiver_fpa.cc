@@ -55,20 +55,7 @@ namespace psyllid
 
     packet_receiver_fpa::~packet_receiver_fpa()
     {
-        // undo the ring
-        LWARN( plog, "f_ring->f_rd = " << f_ring.f_rd );
-        LWARN( plog, "f_ring->f_map = " << f_ring.f_map );
-        LWARN( plog, "f_ring->f_req.tp_block_size = " << f_ring.f_req.tp_block_size );
-
-        ::munmap(f_ring.f_map, f_ring.f_req.tp_block_size * f_ring.f_req.tp_block_nr);
-        if( f_ring.f_rd != nullptr )
-        {
-            LERROR( plog, "freeing f_rd" );
-            ::free( f_ring.f_rd );
-        }
-
-        // close socket
-        if( f_socket > 0 ) ::close( f_socket );
+        cleanup_fpa();
     }
 
     void packet_receiver_fpa::initialize()
@@ -387,11 +374,40 @@ namespace psyllid
     void packet_receiver_fpa::finalize()
     {
         out_buffer< 0 >().finalize();
+
+        LINFO( plog, "Turning off the FPA" );
+        cleanup_fpa();
+
         return;
     }
 
     void packet_receiver_fpa::do_cancellation()
     {
+        return;
+    }
+
+    void packet_receiver_fpa::cleanup_fpa()
+    {
+        if( f_ring.f_map != nullptr )
+        {
+            DEBUG( plog, "Unmapping mmap ring" );
+            ::munmap(f_ring.f_map, f_ring.f_req.tp_block_size * f_ring.f_req.tp_block_nr);
+            f_ring.f_map = nullptr;
+        }
+        if( f_ring.f_rd != nullptr )
+        {
+            LDEBUG( plog, "freeing f_rd" );
+            ::free( f_ring.f_rd );
+            f_ring.f_rd = nullptr;
+        }
+
+        // close socket
+        if( f_socket != 0 )
+        {
+            ::close( f_socket );
+            f_socket = 0;
+        }
+
         return;
     }
 

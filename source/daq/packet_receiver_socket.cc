@@ -45,6 +45,7 @@ namespace psyllid
 
     packet_receiver_socket::~packet_receiver_socket()
     {
+        cleanup_socket();
     }
 
     void packet_receiver_socket::initialize()
@@ -224,6 +225,28 @@ namespace psyllid
     void packet_receiver_socket::finalize()
     {
         out_buffer< 0 >().finalize();
+
+        cleanup_socket();
+
+        return;
+    }
+
+    void packet_receiver_socket::cleanup_socket()
+    {
+        //clean up udp_server address
+        if( f_address != nullptr )
+        {
+            delete f_address;
+            f_address = nullptr;
+        }
+
+        //close udp_server socket
+        if( f_socket != 0 )
+        {
+            ::close( f_socket );
+            f_socket = 0;
+        }
+
         return;
     }
 

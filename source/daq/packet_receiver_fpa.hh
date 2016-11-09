@@ -136,6 +136,7 @@ namespace psyllid
             virtual void do_cancellation();
 
             bool process_packet( tpacket3_hdr* a_packet );
+            void cleanup_fpa();
 
             int f_net_interface_index;
 
