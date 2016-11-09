@@ -7,10 +7,12 @@
 
 #include "monarch3_wrap.hh"
 
-#include "logger.hh"
-
+#include "butterfly_house.hh"
 #include "psyllid_constants.hh"
 #include "psyllid_error.hh"
+
+#include "logger.hh"
+
 
 namespace psyllid
 {
@@ -307,13 +309,14 @@ namespace psyllid
 
     void monarch_wrapper::finish_file_nolock()
     {
+        std::string t_filename( f_monarch->GetHeader()->GetFilename() );
         if( f_stage == monarch_stage::preparing )
         {
             f_header_wrap.reset();
             try
             {
                 f_monarch->WriteHeader();
-                LDEBUG( plog, "Header written for file <" << f_monarch->GetHeader()->GetFilename() << ">" );
+                LDEBUG( plog, "Header written for file <" << t_filename << ">" );
             }
             catch( monarch3::M3Exception& e )
             {
@@ -327,10 +330,11 @@ namespace psyllid
                 throw error() << "Streams have not all been finished";
             }
         }
-        LINFO( plog, "Finished writing file <" << f_monarch->GetHeader()->GetFilename() << ">" );
+        LINFO( plog, "Finished writing file <" << t_filename << ">" );
         f_monarch->FinishWriting();
         set_stage( monarch_stage::finished );
         f_monarch.reset();
+        butterfly_house::get_instance()->remove_file( t_filename );
         return;
     }
 

@@ -99,7 +99,6 @@ namespace psyllid
                         t_monarch_ptr->finish_stream( t_stream_no, true );
                         t_swrap_ptr.reset();
                     }
-                    t_bf_house->remove_file( f_filename );
 
                     break;
                 }
@@ -114,7 +113,6 @@ namespace psyllid
                         t_monarch_ptr->finish_stream( t_stream_no, true );
                         t_swrap_ptr.reset();
                     }
-                    t_bf_house->remove_file( f_filename );
 
                     continue;
                 }
