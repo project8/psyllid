@@ -31,7 +31,6 @@ namespace psyllid
             f_time_sync_tol( 2 ),
             f_start_paused( true ),
             f_paused( true ),
-            f_last_packet_time( 0 ),
             f_time_session_pkt_counter( 0 ),
             f_freq_session_pkt_counter( 0 )
     {
@@ -89,18 +88,27 @@ namespace psyllid
                     if( t_in_command == stream::s_exit )
                     {
                         LDEBUG( plog, "TF ROACH receiver is exiting" );
+                        // Output streams are stopped here because even though this is controlled by the pause/unpause commands,
+                        // receiving a stop command from upstream overrides that.
+                        out_stream< 0 >().set( stream::s_exit );
+                        out_stream< 1 >().set( stream::s_exit );
                         break;
                     }
 
                     if( t_in_command == stream::s_stop )
                     {
                         LDEBUG( plog, "TF ROACH receiver is stopping" );
+                        // Output streams are stopped here because even though this is controlled by the pause/unpause commands,
+                        // receiving a stop command from upstream overrides that.
+                        out_stream< 0 >().set( stream::s_stop );
+                        out_stream< 1 >().set( stream::s_stop );
                         continue;
                     }
 
                     if( t_in_command == stream::s_start )
                     {
                         LDEBUG( plog, "TF ROACH receiver is starting" );
+                        // Output streams are not started here because this is controled by the pause/unpause commands
                         continue;
                     }
 
@@ -132,17 +140,15 @@ namespace psyllid
                         roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( t_memory_block->block() );
 
                         // debug purposes only
-    #ifndef NDEBUG
+#ifndef NDEBUG
                         raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( t_memory_block->block() );
                         LTRACE( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
-    #endif
+#endif
 
                         if( t_roach_packet->f_freq_not_time )
                         {
                             // packet is frequency data
-
                             t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
-                            //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, f_time_session_pkt_counter, f_freq_session_pkt_counter );
 
                             t_freq_data = out_stream< 1 >().data();
                             t_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
@@ -153,16 +159,11 @@ namespace psyllid
                                    "  id = " << t_freq_data->get_pkt_in_session() <<
                                    "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
                                    "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
-                            LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
-
-                            out_stream< 1 >().set( stream::s_run );
                         }
                         else
                         {
                             // packet is time data
-
                             t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
-                            //id_match_sanity_check( t_time_batch_pkt, t_freq_batch_pkt, f_time_session_pkt_counter, f_freq_session_pkt_counter );
 
                             t_time_data = out_stream< 0 >().data();
                             t_time_data->set_pkt_in_session( f_time_session_pkt_counter++ );
@@ -173,8 +174,14 @@ namespace psyllid
                                    "  id = " << t_time_data->get_pkt_in_session() <<
                                    "  freqNotTime = " << t_time_data->get_freq_not_time() <<
                                    "  bin 0 [0] = " << (unsigned)t_time_data->get_array()[ 0 ][ 0 ] );
-                            LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                        }
 
+                        if( t_time_batch_pkt == t_freq_batch_pkt )
+                        {
+                            LTRACE( plog, "Time and frequency batch IDs match: " << t_time_batch_pkt );
+                            LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                            out_stream< 1 >().set( stream::s_run );
+                            LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
                             out_stream< 0 >().set( stream::s_run );
                         }
                     } // if block for run command
@@ -247,7 +254,6 @@ namespace psyllid
             if( have_instruction() && use_instruction() == midge::instruction::resume )
             {
                 LDEBUG( plog, "TF ROACH receiver resuming" );
-                out_stream< 0 >().data()->set_unix_time( f_last_packet_time );
                 out_stream< 0 >().data()->set_pkt_in_session( 0 );
                 out_stream< 1 >().data()->set_pkt_in_session( 0 );
                 out_stream< 0 >().set( stream::s_start );
@@ -275,22 +281,6 @@ namespace psyllid
     {
         return;
     }
-
-    void tf_roach_receiver::id_match_sanity_check( uint64_t a_time_batch_pkt, uint64_t a_freq_batch_pkt, uint64_t a_time_session_pkt, uint64_t a_freq_session_pkt )
-    {
-        if( a_time_batch_pkt == a_freq_batch_pkt )
-        {
-            if( a_time_session_pkt != a_freq_session_pkt )
-            {
-                LERROR( plog, "Packet ID mismatch:\n" <<
-                        "\tTime batch packet: " << a_time_batch_pkt << '\n' <<
-                        "\tFreq batch packet: " << a_freq_batch_pkt << '\n' <<
-                        "\tTime session packet: " << a_time_session_pkt << '\n' <<
-                        "\tFreq session packet: " << a_freq_session_pkt );
-            }
-        }
-    }
-
 
 
     tf_roach_receiver_builder::tf_roach_receiver_builder() :

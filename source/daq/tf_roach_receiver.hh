@@ -75,11 +75,8 @@ namespace psyllid
 
             bool f_paused;
 
-            uint32_t f_last_packet_time;
             uint64_t f_time_session_pkt_counter;
             uint64_t f_freq_session_pkt_counter;
-
-            void id_match_sanity_check( uint64_t a_time_batch_pkt, uint64_t a_freq_batch_pkt, uint64_t a_time_session_pkt, uint64_t a_freq_session_pkt );
 
     };
 
