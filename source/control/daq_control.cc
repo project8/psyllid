@@ -222,7 +222,7 @@ namespace psyllid
 
         if( get_status() != status::idle )
         {
-            throw status_error() << "DAQ control must be in the idle state to start a run";
+            throw status_error() << "DAQ control must be in the idle state to start a run; activate the DAQ and try again";
         }
 
         if( ! f_midge_pkg.have_lock() )
