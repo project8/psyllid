@@ -6,7 +6,7 @@
     
     "daq":
     {
-        "preset": "str-1ch",
+        "preset": "str-1ch-fpa",
         "activate-at-startup": true
     },
 
