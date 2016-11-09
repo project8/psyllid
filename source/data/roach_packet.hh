@@ -14,6 +14,9 @@
 // number of samples in the roach_packet f_data array
 #define PAYLOAD_SIZE 8192 // 1KB
 
+// number of integers used in the pkt_in_batch counter
+#define BATCH_COUNTER_SIZE 390626
+
 namespace psyllid
 {
 

@@ -52,6 +52,9 @@ namespace psyllid
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
+        private:
+            unsigned f_last_pkt_in_batch;
+
     };
 
 

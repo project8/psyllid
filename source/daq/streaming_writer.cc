@@ -179,6 +179,11 @@ namespace psyllid
 
                     uint64_t t_time_id = t_time_data->get_pkt_in_session();
 
+                    uint32_t t_expected_pkt_in_batch = f_last_pkt_in_batch + 1;
+                    if( t_expected_pkt_in_batch >= BATCH_COUNTER_SIZE ) t_expected_pkt_in_batch = 0;
+                    if( ! t_is_new_event && t_time_data->get_pkt_in_batch() != t_expected_pkt_in_batch ) t_is_new_event = true;
+                    f_last_pkt_in_batch = t_time_data->get_pkt_in_batch();
+
                     t_record_ptr->SetRecordId( t_time_id );
                     t_record_ptr->SetTime( t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ) );
                     ::memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
