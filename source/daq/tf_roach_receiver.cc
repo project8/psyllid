@@ -132,6 +132,7 @@ namespace psyllid
                         }
 
                         t_pkt_size = t_memory_block->get_n_bytes_used();
+                        LTRACE( plog, "Handling packet at stream index <" << in_stream< 0 >().get_current_index() << "; size =  " << t_pkt_size << " bytes; block address = " << (void*)t_memory_block->block() );
                         if( t_pkt_size != f_udp_buffer_size )
                         {
                             LWARN( plog, "Improper packet size; packet may be malformed: received " << t_memory_block->get_n_bytes_used() << " bytes; expected " << f_udp_buffer_size << " bytes" );

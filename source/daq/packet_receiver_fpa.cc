@@ -227,21 +227,26 @@ namespace psyllid
 
                     tpacket3_hdr* t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_block + t_block->f_packet_hdr.offset_to_first_pkt );
 
-                    LDEBUG( plog, "Walking a block with " << t_num_pkts << " packets" );
+                    LTRACE( plog, "Walking a block with " << t_num_pkts << " packets" );
                     for( unsigned i = 0; i < t_num_pkts; ++i )
                     {
                         t_bytes += t_packet->tp_snaplen;
 
-                        LTRACE( plog, "Attempting to write IP packet at iterator index " << out_stream< 0 >().get_current_index() );
+                        LTRACE( plog, "Processing IP packet; current iterator index is <" << out_stream< 0 >().get_current_index() << ">" );
                         if( process_packet( t_packet ) )
                         {
+                            LTRACE( plog, "UDP packet processed; outputing to stream index <" << out_stream< 0 >().get_current_index() << ">" );
                             out_stream< 0 >().set( stream::s_run );
+                        }
+                        else
+                        {
+                            LTRACE( plog, "Packet was not processed properly; skipping" );
                         }
 
                         // update the address of the packet to the next packet in the block
                         t_packet = reinterpret_cast< tpacket3_hdr* >( (uint8_t*)t_packet + t_packet->tp_next_offset );
                     }
-                    LDEBUG( plog, "Done walking block" );
+                    LTRACE( plog, "Done walking block" );
 
                     f_packets_total += t_num_pkts;
                     f_bytes_total += t_bytes;
@@ -366,10 +371,7 @@ namespace psyllid
                   t_udp_data_len );
         t_mem_block->set_n_bytes_used( t_udp_data_len );
 
-        LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes)" );
-        LTRACE( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
-
-        out_stream< 0 >().set( stream::s_run );
+        LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes); block address is " << (void*)t_mem_block->block() );
 
         return true;
     }
