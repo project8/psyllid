@@ -102,57 +102,6 @@ int main( int argc, char** argv )
         delete t_root;
 
         return 0;
-
-
-
-
-
-
-
-        scarab::param_node t_default_config;
-        t_default_config.add( "type", new scarab::param_value( "socket" ) );
-        t_default_config.add( "interface", new scarab::param_value( "eth1" ) );
-
-        scarab::configurator t_configurator( argc, argv, &t_default_config );
-
-/*
-#ifdef __linux__
-        fast_packet_acq* t_fpa = nullptr;
-        if( t_server_type == "fpa" )
-        {
-            LINFO( plog, "Creating fast-packet acquisition" );
-            t_fpa = new fast_packet_acq( t_configurator.get< std::string >( "interface" ) );
-            t_fpa->initialize();
-        }
-#endif
-*/
-        LINFO( plog, "Creating packet receiver" );
-
-        packet_receiver_socket t_pck_receiver;
-        t_pck_receiver.set_port( 23530 );
-        t_pck_receiver.ip() = "127.0.0.1";
-
-        LINFO( plog, "Creating receiver" );
-
-        tf_roach_receiver t_tfr_receiver;
-
-        LINFO( plog, "Initializing receiver" );
-
-        t_tfr_receiver.initialize();
-
-        LINFO( plog, "Running receiver" );
-
-        t_tfr_receiver.execute();
-
-        LINFO( plog, "Finalizing receiver" );
-
-        t_tfr_receiver.finalize();
-/*
-#ifdef __linux__
-        delete t_fpa;
-#endif
-*/
-        return 0;
     }
     catch( std::exception& e )
     {
