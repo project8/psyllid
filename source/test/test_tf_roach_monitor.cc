@@ -1,23 +1,30 @@
 /*
  * test_tf_roach_monitor.cc
  *
- *  Created on: Sep 23, 2016
+ *  Created on: Dec 28, 2015
  *      Author: nsoblath
  *
  *  Suggested UDP client: roach_simulator.go
  *
  *  Usage: > test_tf_roach_monitor [options]
  *
- *  Options:
- *    - type: server type name; options are "socket" (default) and "fpa"
- *    - interface: network interface name; only used if using "fpa" server type; default is "eth1"
+ *  Parameters:
+ *    - port: (uint) port number to listen on for packets
+ *    - interface: (string) network interface name to listen on for packets; this is only needed if using the FPA receiver; default is "eth1"
+ *    - ip: (string) IP address to listen on for packets; this is only needed if using the socket receiver; default is "127.0.0.1"
+ *    - fpa: (null) Flag to request use of the FPA receiver; only valid on linux machines
  */
 
 
 #include "psyllid_error.hh"
+#include "packet_receiver_socket.hh"
 #include "terminator.hh"
-#include "tf_roach_monitor.hh"
 #include "tf_roach_receiver.hh"
+#include "tf_roach_monitor.hh"
+
+#ifdef __linux__
+#include "packet_receiver_fpa.hh"
+#endif
 
 #include "diptera.hh"
 
@@ -28,7 +35,6 @@
 #include <signal.h>
 
 using namespace psyllid;
-
 
 LOGGER( plog, "test_tf_roach_monitor" );
 
@@ -46,51 +52,75 @@ int main( int argc, char** argv )
     try
     {
         scarab::param_node t_default_config;
-        t_default_config.add( "type", new scarab::param_value( "socket" ) );
+        t_default_config.add( "ip", new scarab::param_value( "127.0.0.1" ) );
+        t_default_config.add( "port", new scarab::param_value( 23530 ) );
         t_default_config.add( "interface", new scarab::param_value( "eth1" ) );
 
         scarab::configurator t_configurator( argc, argv, &t_default_config );
 
-        std::string t_server_type( t_configurator.get< std::string >( "type" ) );
-        scarab::param_node* t_server_config = new scarab::param_node(  );
-        t_server_config->add( "type", new scarab::param_value( t_server_type ) );
-        if( t_server_type == "fpa" )
-        {
-            t_server_config->add( "interface", new scarab::param_value( t_configurator.get< std::string >( "interface" ) ) );
-        }
+        std::string t_ip( t_configurator.get< std::string >( "ip" ) );
+        unsigned t_port = t_configurator.get< unsigned >( "port" );
+        std::string t_interface( t_configurator.get< std::string >( "interface" ) );
+        bool t_use_fpa( t_configurator.config().has( "fpa" ) );
 
         LINFO( plog, "Creating and configuring nodes" );
 
         midge::diptera* t_root = new midge::diptera();
 
-        tf_roach_receiver* t_rec = new tf_roach_receiver();
-        t_rec->set_name( "rec" );
-        t_rec->set_time_length( 10 );
-        t_rec->set_server_config( t_server_config );
-        t_root->add( t_rec );
+        if( t_use_fpa )
+        {
+#ifdef __linux__
+            packet_receiver_fpa* t_pck_rec = new packet_receiver_fpa();
+            t_pck_rec->set_name( "pck_rec" );
+            t_pck_rec->set_length( 10 );
+            t_pck_rec->set_port( t_port );
+            t_pck_rec->interface() = t_interface;
+            t_root->add( t_pck_rec );
+            f_cancelable = t_pck_rec;
+#else
+            LERROR( plog, "FPA was requested, but is only available on a Linux machine" );
+            return -1;
+#endif
+        }
+        else
+        {
+            packet_receiver_socket* t_pck_rec = new packet_receiver_socket();
+            t_pck_rec->set_name( "pck_rec" );
+            t_pck_rec->set_length( 10 );
+            t_pck_rec->set_port( t_port );
+            t_pck_rec->ip() = t_ip;
+            t_root->add( t_pck_rec );
+            f_cancelable = t_pck_rec;
+        }
+
+        tf_roach_receiver* t_tfr_rec = new tf_roach_receiver();
+        t_tfr_rec->set_name( "tfr_rec" );
+        t_tfr_rec->set_time_length( 10 );
+        t_tfr_rec->set_start_paused( false );
+        t_root->add( t_tfr_rec );
 
         roach_time_monitor* t_tmon = new roach_time_monitor();
         t_tmon->set_name( "tmon" );
         t_root->add( t_tmon );
 
-        terminator_freq_data* t_term = new terminator_freq_data();
-        t_term->set_name( "term" );
-        t_root->add( t_term );
+        roach_freq_monitor* t_fmon = new roach_freq_monitor();
+        t_fmon->set_name( "fmon" );
+        t_root->add( t_fmon );
 
         LINFO( plog, "Connecting nodes" );
 
-        t_root->join( "rec.out_0:tmon.in_0" );
-        t_root->join( "rec.out_1:term.in_0" );
+        t_root->join( "pck_rec.out_0:tfr_rec.in_0" );
+        t_root->join( "tfr_rec.out_0:tmon.in_0" );
+        t_root->join( "tfr_rec.out_1:fmon.in_0" );
 
         LINFO( plog, "Exit with ctrl-c" );
 
         // set up signal handling for canceling with ctrl-c
-        f_cancelable = t_rec;
         signal( SIGINT, cancel );
 
         LINFO( plog, "Executing" );
 
-        t_root->run( "udpr:fmt:eb:ew" );
+        t_root->run( "pck_rec:tfr_rec:tmon:fmon" );
 
         LINFO( plog, "Execution complete" );
 
@@ -108,5 +138,3 @@ int main( int argc, char** argv )
     }
 
 }
-
-
