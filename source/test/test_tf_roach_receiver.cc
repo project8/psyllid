@@ -19,6 +19,10 @@
 #include "terminator.hh"
 #include "tf_roach_receiver.hh"
 
+#ifdef __linux__
+#include "packet_receiver_fpa.hh"
+#endif
+
 #include "diptera.hh"
 
 #include "configurator.hh"
@@ -47,22 +51,44 @@ int main( int argc, char** argv )
         scarab::param_node t_default_config;
         t_default_config.add( "ip", new scarab::param_value( "127.0.0.1" ) );
         t_default_config.add( "port", new scarab::param_value( 23530 ) );
+        t_default_config.add( "interface", new scarab::param_value( "eth1" ) );
 
         scarab::configurator t_configurator( argc, argv, &t_default_config );
 
         std::string t_ip( t_configurator.get< std::string >( "ip" ) );
         unsigned t_port = t_configurator.get< unsigned >( "port" );
+        std::string t_interface( t_configurator.get< std::string >( "interface" ) );
+        bool t_use_fpa( t_configurator.config().has( "fpa" ) );
 
         LINFO( plog, "Creating and configuring nodes" );
 
         midge::diptera* t_root = new midge::diptera();
 
-        packet_receiver_socket* t_pck_rec = new packet_receiver_socket();
-        t_pck_rec->set_name( "pck_rec" );
-        t_pck_rec->set_length( 10 );
-        t_pck_rec->set_port( t_port );
-        t_pck_rec->ip() = t_ip;
-        t_root->add( t_pck_rec );
+        if( t_use_fpa )
+        {
+#ifdef __linux__
+            packet_receiver_fpa* t_pck_rec = new packet_receiver_fpa();
+            t_pck_rec->set_name( "pck_rec" );
+            t_pck_rec->set_length( 10 );
+            t_pck_rec->set_port( t_port );
+            t_pck_rec->interface() = t_interface;
+            t_root->add( t_pck_rec );
+            f_cancelable = t_pck_rec;
+#else
+            LERROR( plog, "FPA was requested, but is only available on a Linux machine" );
+            return -1;
+#endif
+        }
+        else
+        {
+            packet_receiver_socket* t_pck_rec = new packet_receiver_socket();
+            t_pck_rec->set_name( "pck_rec" );
+            t_pck_rec->set_length( 10 );
+            t_pck_rec->set_port( t_port );
+            t_pck_rec->ip() = t_ip;
+            t_root->add( t_pck_rec );
+            f_cancelable = t_pck_rec;
+        }
 
         tf_roach_receiver* t_tfr_rec = new tf_roach_receiver();
         t_tfr_rec->set_name( "tfr_rec" );
@@ -87,7 +113,6 @@ int main( int argc, char** argv )
         LINFO( plog, "Exit with ctrl-c" );
 
         // set up signal handling for canceling with ctrl-c
-        f_cancelable = t_pck_rec;
         signal( SIGINT, cancel );
 
         LINFO( plog, "Executing" );

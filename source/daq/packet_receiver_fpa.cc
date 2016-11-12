@@ -373,6 +373,8 @@ namespace psyllid
 
         LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes); block address is " << (void*)t_mem_block->block() );
 
+        LTRACE( plog, "Packet bytes: " << ((char*)t_mem_block->block())[0] << " " << ((char*)t_mem_block->block())[1] << " " << ((char*)t_mem_block->block())[2] );
+
         return true;
     }
 
