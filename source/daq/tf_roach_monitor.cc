@@ -58,7 +58,7 @@ namespace psyllid
             while( true )
             {
                 t_time_command = in_stream< 0 >().get();
-                LDEBUG( plog, "ROACH time monitor reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
+                LTRACE( plog, "ROACH time monitor reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
                 if( t_time_command == stream::s_exit )
                 {
@@ -169,7 +169,7 @@ namespace psyllid
             while( true )
             {
                 t_freq_command = in_stream< 0 >().get();
-                LDEBUG( plog, "ROACH freq monitor reading stream 0 (freq) at index " << in_stream< 0 >().get_current_index() );
+                LTRACE( plog, "ROACH freq monitor reading stream 0 (freq) at index " << in_stream< 0 >().get_current_index() );
 
                 if( t_freq_command == stream::s_exit )
                 {

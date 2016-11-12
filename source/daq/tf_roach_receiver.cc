@@ -162,6 +162,8 @@ namespace psyllid
                                    "  id = " << t_freq_data->get_pkt_in_session() <<
                                    "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
                                    "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
+                            LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                            out_stream< 1 >().set( stream::s_run );
                         }
                         else
                         {
@@ -177,16 +179,18 @@ namespace psyllid
                                    "  id = " << t_time_data->get_pkt_in_session() <<
                                    "  freqNotTime = " << t_time_data->get_freq_not_time() <<
                                    "  bin 0 [0] = " << (unsigned)t_time_data->get_array()[ 0 ][ 0 ] );
-                        }
-
-                        if( t_time_batch_pkt == t_freq_batch_pkt )
-                        {
-                            LTRACE( plog, "Time and frequency batch IDs match: " << t_time_batch_pkt );
-                            LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
-                            out_stream< 1 >().set( stream::s_run );
                             LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
                             out_stream< 0 >().set( stream::s_run );
                         }
+
+                        //if( t_time_batch_pkt == t_freq_batch_pkt )
+                        //{
+                        //    LTRACE( plog, "Time and frequency batch IDs match: " << t_time_batch_pkt );
+                        //    LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                        //    out_stream< 1 >().set( stream::s_run );
+                        //    LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                        //    out_stream< 0 >().set( stream::s_run );
+                       // }
                     } // if block for run command
                 } // main while loop
 
