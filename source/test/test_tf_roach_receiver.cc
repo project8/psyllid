@@ -9,8 +9,10 @@
  *  Usage: > test_tf_roach_receiver [options]
  *
  *  Parameters:
- *    - type: (string) server type name; options are "socket" (default) and "fpa"
- *    - interface: (string) network interface name; this is only needed if using the FPA server; default is "eth1"
+ *    - port: (uint) port number to listen on for packets
+ *    - interface: (string) network interface name to listen on for packets; this is only needed if using the FPA receiver; default is "eth1"
+ *    - ip: (string) IP address to listen on for packets; this is only needed if using the socket receiver; default is "127.0.0.1"
+ *    - fpa: (null) Flag to request use of the FPA receiver; only valid on linux machines
  */
 
 
