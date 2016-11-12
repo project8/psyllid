@@ -44,6 +44,15 @@ int main( int argc, char** argv )
 {
     try
     {
+        scarab::param_node t_default_config;
+        t_default_config.add( "ip", new scarab::param_value( "127.0.0.1" ) );
+        t_default_config.add( "port", new scarab::param_value( 23530 ) );
+
+        scarab::configurator t_configurator( argc, argv, &t_default_config );
+
+        std::string t_ip( t_configurator.get< std::string >( "ip" ) );
+        unsigned t_port = t_configurator.get< unsigned >( "port" );
+
         LINFO( plog, "Creating and configuring nodes" );
 
         midge::diptera* t_root = new midge::diptera();
@@ -51,8 +60,8 @@ int main( int argc, char** argv )
         packet_receiver_socket* t_pck_rec = new packet_receiver_socket();
         t_pck_rec->set_name( "pck_rec" );
         t_pck_rec->set_length( 10 );
-        t_pck_rec->set_port( 23530 );
-        t_pck_rec->ip() = "127.0.0.1";
+        t_pck_rec->set_port( t_port );
+        t_pck_rec->ip() = t_ip;
         t_root->add( t_pck_rec );
 
         tf_roach_receiver* t_tfr_rec = new tf_roach_receiver();
