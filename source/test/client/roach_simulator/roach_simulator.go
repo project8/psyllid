@@ -69,7 +69,7 @@ func (roachPkt *RoachPacket)PackInto( rawPkt *RawPacket ) {
  
 func main() {
 	// Notes on the timing between packets
-	// Packets are sent in (time, freqquency) pairs.  There is a 1 ms delay between them (configurable with the -tf-delay flag)
+	// Packets are sent in (time, frequency) pairs.  There is a 1 ms delay between them (configurable with the -tf-delay flag)
 	// The delay time between pairs is configurable with the -pkt-delay command-line flag.  The default is 500 ms.
 	// For delays much larger than 1 ms, this is approximately the period of the packet cycle.
 
