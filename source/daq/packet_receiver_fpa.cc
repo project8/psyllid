@@ -310,7 +310,7 @@ namespace psyllid
 
     bool packet_receiver_fpa::process_packet( tpacket3_hdr* a_packet )
     {
-        printf("rxhash: 0x%x\n", a_packet->hv1.tp_rxhash);
+        //printf("rxhash: 0x%x\n", a_packet->hv1.tp_rxhash);
 
         //****************
         // Ethernet Packet
@@ -322,7 +322,7 @@ namespace psyllid
         char t_macstr_dest[3*ETH_ALEN], t_macstr_source[3*ETH_ALEN];
         ether_ntoa_r((struct ether_addr*)&(t_eth_hdr->h_dest), t_macstr_dest);
         ether_ntoa_r((struct ether_addr*)&(t_eth_hdr->h_source), t_macstr_source);
-        LWARN( plog, "ethhdr: h_dest: " << t_macstr_dest << ";  h_source: " << t_macstr_source << ";  h_proto: " << ntohs(t_eth_hdr->h_proto) );
+        LTRACE( plog, "ethhdr: h_dest: " << t_macstr_dest << ";  h_source: " << t_macstr_source << ";  h_proto: " << ntohs(t_eth_hdr->h_proto) );
         //LWARN( plog, "Ethernet header: " << t_eth_p_ip << "; htons(ETH_P_IP): " << htons(ETH_P_IP) << "; t_eth_hdr->h_proto: " << t_eth_hdr->h_proto );
         //for (int i=0; i<50; ++i)
         //{
@@ -330,9 +330,8 @@ namespace psyllid
         //}
         //printf("\n");
 
-        LWARN( plog, "Ethernet sizes (total, header, data): ???, " << ETH_HLEN << ", ???" );
-        char* t_eth_body = reinterpret_cast< char* >( (char*)t_eth_hdr + ETH_HLEN );
-        LWARN( plog, "Ethernet mem addresses (packet/header, data): " << t_eth_hdr << ", " << (void*)t_eth_body );
+        LTRACE( plog, "Ethernet sizes (total, header, data): ???, " << ETH_HLEN << ", ???" );
+        LTRACE( plog, "Ethernet mem addresses (packet/header, data): " << t_eth_hdr << ", " << (void*)( (char*)t_eth_hdr + ETH_HLEN ) );
 
         // filter only IP packets
         static const unsigned short t_eth_p_ip = htons(ETH_P_IP);
@@ -351,21 +350,28 @@ namespace psyllid
         // grab the ip interface header (defined in ip.h)
         iphdr* t_ip_hdr = reinterpret_cast< iphdr* >( (char*)t_eth_hdr + ETH_HLEN );
 
+#ifndef NDEBUG
         char t_source_ip[16], t_dest_ip[16];
         inet_ntop(AF_INET, &t_ip_hdr->saddr, t_source_ip, 16);
         inet_ntop(AF_INET, &t_ip_hdr->daddr, t_dest_ip, 16);
-        LWARN( plog, "IP header: version: " << unsigned(t_ip_hdr->version) << ";  ihl: " << unsigned(t_ip_hdr->ihl) << ";  tos: " << ntohs(t_ip_hdr->tos) << ";  tot_len: " << ntohs(t_ip_hdr->tot_len) << ";  protocol: " << unsigned(t_ip_hdr->protocol) << ";  saddr: " << t_source_ip << ";  daddr: " << t_dest_ip );
+        LTRACE( plog, "IP header: version: " << unsigned(t_ip_hdr->version) << ";  ihl: " << unsigned(t_ip_hdr->ihl) << ";  tos: " << ntohs(t_ip_hdr->tos) << ";  tot_len: " << ntohs(t_ip_hdr->tot_len) << ";  protocol: " << unsigned(t_ip_hdr->protocol) << ";  saddr: " << t_source_ip << ";  daddr: " << t_dest_ip );
+#endif
 
         //TODO: filter on source address?
         //uint32_t t_source_address = t_ip_hdr->saddr;
 
         // get ip packet data
-        uint8_t t_ip_header_bytes = t_ip_hdr->ihl * 4;
-        char* t_ip_data = reinterpret_cast< char* >( (char*)t_ip_hdr + t_ip_header_bytes );
+        //char* t_ip_data = (char*)t_ip_hdr + t_ip_hdr->ihl * 4;
         //size_t t_ip_data_len = (uint8_t)htons(t_ip_hdr->tot_len) - t_ip_header_bytes;
 
-        LWARN( plog, "IP sizes (total, header, data): " << ntohs(t_ip_hdr->tot_len) << ", " << unsigned(t_ip_header_bytes) << ", " << ntohs(t_ip_hdr->tot_len) - t_ip_header_bytes );
-        LWARN( plog, "IP mem addresses(packet/header, data): " << t_ip_hdr << ", " << (void*)t_ip_data );
+        LTRACE( plog, "IP sizes (total, header, data): " << ntohs(t_ip_hdr->tot_len) << ", " << unsigned(t_ip_hdr->ihl * 4) << ", " << ntohs(t_ip_hdr->tot_len) - t_ip_hdr->ihl * 4 );
+        LTRACE( plog, "IP mem addresses(packet/header, data): " << t_ip_hdr << ", " << (void*)( (char*)t_ip_hdr + t_ip_hdr->ihl * 4 ) );
+
+        if( t_ip_hdr->protocol != 17 )
+        {
+            LDEBUG( plog, "Non-UDP packet skipped" );
+            return false;
+        }
 
         //***********
         // UDP Packet
@@ -374,24 +380,24 @@ namespace psyllid
         // this doesn't appear to be defined anywhere in standard linux headers, at least as far as I could find
         static const unsigned t_udp_hdr_len = sizeof( udphdr );
 
-        udphdr* t_udp_hdr = reinterpret_cast< udphdr* >( t_ip_data );
+        udphdr* t_udp_hdr = reinterpret_cast< udphdr* >( (char*)t_ip_hdr + t_ip_hdr->ihl * 4 );
 
-        LWARN( plog, "UDP header: source port: " << ntohs(t_udp_hdr->source) << ";  dest port: " << ntohs(t_udp_hdr->dest) << ";  len: " << ntohs(t_udp_hdr->len) << ";  check: " << ntohs(t_udp_hdr->check) );
+        LTRACE( plog, "UDP header: source port: " << ntohs(t_udp_hdr->source) << ";  dest port: " << ntohs(t_udp_hdr->dest) << ";  len: " << ntohs(t_udp_hdr->len) << ";  check: " << ntohs(t_udp_hdr->check) );
 
         // get port number
-        unsigned t_port = ntohs(t_udp_hdr->dest);
+        //unsigned t_port = ntohs(t_udp_hdr->dest);
 
         // check port number against configured port
-        if( t_port != f_port )
+        if( ntohs(t_udp_hdr->dest) != f_port )
         {
-            LDEBUG( plog, "Destination port is incorrect: expected " << f_port << " but got " << t_port );
+            LDEBUG( plog, "Destination port is incorrect: expected " << f_port << " but got " << ntohs(t_udp_hdr->dest) );
             return false;
         }
 
         size_t t_udp_data_len = ntohs(t_udp_hdr->len) - t_udp_hdr_len;
 
-        LWARN( plog, "UDP sizes (total, header, data): " << ntohs(t_udp_hdr->len) << ", " << t_udp_hdr_len << ", " << t_udp_data_len );
-        LWARN( plog, "UDP mem addresses (packet/header, data): " << t_udp_hdr << ", " << (void*)((char*)t_udp_hdr + t_udp_hdr_len) );
+        LTRACE( plog, "UDP sizes (total, header, data): " << ntohs(t_udp_hdr->len) << ", " << t_udp_hdr_len << ", " << t_udp_data_len );
+        LTRACE( plog, "UDP mem addresses (packet/header, data): " << t_udp_hdr << ", " << (void*)((char*)t_udp_hdr + t_udp_hdr_len) );
 
         // copy the UPD packet from the IP packet into the appropriate buffer
         //uint8_t* t_udp_data = (uint8_t*)t_udp_hdr + t_udp_hdr_len;
