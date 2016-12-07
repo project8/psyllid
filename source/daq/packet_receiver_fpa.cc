@@ -30,6 +30,7 @@
 
 // debug
 #include <netinet/ether.h>
+#include <linux/icmp.h>
 
 using midge::stream;
 
@@ -329,6 +330,10 @@ namespace psyllid
         //}
         //printf("\n");
 
+        LWARN( plog, "Ethernet sizes (total, header, data): ???, " << ETH_HLEN << ", ???" );
+        char* t_eth_body = reinterpret_cast< char* >( (char*)t_eth_hdr + ETH_HLEN );
+        LWARN( plog, "Ethernet mem addresses (packet/header, data): " << t_eth_hdr << ", " << (void*)t_eth_body );
+
         // filter only IP packets
         static const unsigned short t_eth_p_ip = htons(ETH_P_IP);
         if( t_eth_hdr->h_proto != t_eth_p_ip )
@@ -344,25 +349,30 @@ namespace psyllid
 
         //LWARN( plog, "Handling IP packet" );
         // grab the ip interface header (defined in ip.h)
-        iphdr* t_ip_hdr = reinterpret_cast< iphdr* >( (uint8_t*)t_eth_hdr + ETH_HLEN );
+        iphdr* t_ip_hdr = reinterpret_cast< iphdr* >( (char*)t_eth_hdr + ETH_HLEN );
 
-        LWARN( plog, "IP header: version: " << ntohs(t_ip_hdr->version) << ";  ihl: " << ntohs(t_ip_hdr->ihl) << ";  tos: " << ntohs(t_ip_hdr->tos) << ";  tot_len: " << ntohs(t_ip_hdr->tot_len) << ";  protocol: " << unsigned(t_ip_hdr->protocol) << ";  saddr: " << ntohl(t_ip_hdr->saddr) << ";  daddr: " << ntohl(t_ip_hdr->daddr) );
+        char t_source_ip[16], t_dest_ip[16];
+        inet_ntop(AF_INET, &t_ip_hdr->saddr, t_source_ip, 16);
+        inet_ntop(AF_INET, &t_ip_hdr->daddr, t_dest_ip, 16);
+        LWARN( plog, "IP header: version: " << unsigned(t_ip_hdr->version) << ";  ihl: " << unsigned(t_ip_hdr->ihl) << ";  tos: " << ntohs(t_ip_hdr->tos) << ";  tot_len: " << ntohs(t_ip_hdr->tot_len) << ";  protocol: " << unsigned(t_ip_hdr->protocol) << ";  saddr: " << t_source_ip << ";  daddr: " << t_dest_ip );
 
         //TODO: filter on source address?
         //uint32_t t_source_address = t_ip_hdr->saddr;
 
         // get ip packet data
         uint8_t t_ip_header_bytes = t_ip_hdr->ihl * 4;
-        uint8_t* t_ip_data = (uint8_t*)t_ip_hdr + t_ip_header_bytes;
+        char* t_ip_data = reinterpret_cast< char* >( (char*)t_ip_hdr + t_ip_header_bytes );
         //size_t t_ip_data_len = (uint8_t)htons(t_ip_hdr->tot_len) - t_ip_header_bytes;
 
+        LWARN( plog, "IP sizes (total, header, data): " << ntohs(t_ip_hdr->tot_len) << ", " << unsigned(t_ip_header_bytes) << ", " << ntohs(t_ip_hdr->tot_len) - t_ip_header_bytes );
+        LWARN( plog, "IP mem addresses(packet/header, data): " << t_ip_hdr << ", " << (void*)t_ip_data );
 
         //***********
         // UDP Packet
         //***********
 
         // this doesn't appear to be defined anywhere in standard linux headers, at least as far as I could find
-        static const unsigned t_udp_hdr_len = 8;
+        static const unsigned t_udp_hdr_len = sizeof( udphdr );
 
         udphdr* t_udp_hdr = reinterpret_cast< udphdr* >( t_ip_data );
 
@@ -378,20 +388,24 @@ namespace psyllid
             return false;
         }
 
+        size_t t_udp_data_len = ntohs(t_udp_hdr->len) - t_udp_hdr_len;
+
+        LWARN( plog, "UDP sizes (total, header, data): " << ntohs(t_udp_hdr->len) << ", " << t_udp_hdr_len << ", " << t_udp_data_len );
+        LWARN( plog, "UDP mem addresses (packet/header, data): " << t_udp_hdr << ", " << (void*)((char*)t_udp_hdr + t_udp_hdr_len) );
+
         // copy the UPD packet from the IP packet into the appropriate buffer
         //uint8_t* t_udp_data = (uint8_t*)t_udp_hdr + t_udp_hdr_len;
-        size_t t_udp_data_len = ntohs(t_udp_hdr->len) - t_udp_hdr_len;
         memory_block* t_mem_block = out_stream< 0 >().data();
         t_mem_block->resize( f_max_packet_size );
-        ::memcpy( t_mem_block->block(),
-                  reinterpret_cast< uint8_t* >( t_udp_hdr + t_udp_hdr_len ),
+        ::memcpy( reinterpret_cast< void* >( t_mem_block->block() ),
+                  reinterpret_cast< void* >( (char*)t_udp_hdr + t_udp_hdr_len ),
                   t_udp_data_len );
         t_mem_block->set_n_bytes_used( t_udp_data_len );
 
         LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes); block address is " << (void*)t_mem_block->block() );
 
         LTRACE( plog, "Packet words: " << std::hex << strtoull((char*)t_mem_block->block(), NULL, 0) );
-        LTRACE( plog, "Packet bytes: " << ((char*)t_mem_block->block())[0] << " " << ((char*)t_mem_block->block())[1] << " " << ((char*)t_mem_block->block())[2] );
+        LTRACE( plog, "Packet bytes: " << unsigned(((char*)t_mem_block->block())[0]) << " " << unsigned(((char*)t_mem_block->block())[1]) << " " << unsigned(((char*)t_mem_block->block())[2]) );
 
         return true;
     }
