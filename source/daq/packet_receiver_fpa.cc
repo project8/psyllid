@@ -28,6 +28,9 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+// debug
+#include <netinet/ether.h>
+
 using midge::stream;
 
 namespace psyllid
@@ -306,6 +309,8 @@ namespace psyllid
 
     bool packet_receiver_fpa::process_packet( tpacket3_hdr* a_packet )
     {
+        printf("rxhash: 0x%x\n", a_packet->hv1.tp_rxhash);
+
         //****************
         // Ethernet Packet
         //****************
@@ -313,15 +318,19 @@ namespace psyllid
         // grab the ethernet interface header (defined in if_ether.h)
         ethhdr* t_eth_hdr = reinterpret_cast< ethhdr* >( (uint8_t*)a_packet + a_packet->tp_mac );
 
-        // filter only IP packets
-        static const unsigned short t_eth_p_ip = htons(ETH_P_IP);
-        //LWARN( plog, "t_eth_p_ip: " << t_eth_p_ip << "; htons(ETH_P_IP): " << htons(ETH_P_IP) << "; t_eth_hdr->h_proto: " << t_eth_hdr->h_proto );
+        char t_macstr_dest[3*ETH_ALEN], t_macstr_source[3*ETH_ALEN];
+        ether_ntoa_r((struct ether_addr*)&(t_eth_hdr->h_dest), t_macstr_dest);
+        ether_ntoa_r((struct ether_addr*)&(t_eth_hdr->h_source), t_macstr_source);
+        LWARN( plog, "ethhdr: h_dest: " << t_macstr_dest << ";  h_source: " << t_macstr_source << ";  h_proto: " << ntohs(t_eth_hdr->h_proto) );
+        //LWARN( plog, "Ethernet header: " << t_eth_p_ip << "; htons(ETH_P_IP): " << htons(ETH_P_IP) << "; t_eth_hdr->h_proto: " << t_eth_hdr->h_proto );
         //for (int i=0; i<50; ++i)
         //{
         //    printf("%02X", ((char*)a_packet)[i]);
         //}
         //printf("\n");
 
+        // filter only IP packets
+        static const unsigned short t_eth_p_ip = htons(ETH_P_IP);
         if( t_eth_hdr->h_proto != t_eth_p_ip )
         {
             LDEBUG( plog, "Non-IP packet skipped" );
@@ -336,6 +345,8 @@ namespace psyllid
         //LWARN( plog, "Handling IP packet" );
         // grab the ip interface header (defined in ip.h)
         iphdr* t_ip_hdr = reinterpret_cast< iphdr* >( (uint8_t*)t_eth_hdr + ETH_HLEN );
+
+        LWARN( plog, "IP header: version: " << ntohs(t_ip_hdr->version) << ";  ihl: " << ntohs(t_ip_hdr->ihl) << ";  tos: " << ntohs(t_ip_hdr->tos) << ";  tot_len: " << ntohs(t_ip_hdr->tot_len) << ";  protocol: " << unsigned(t_ip_hdr->protocol) << ";  saddr: " << ntohl(t_ip_hdr->saddr) << ";  daddr: " << ntohl(t_ip_hdr->daddr) );
 
         //TODO: filter on source address?
         //uint32_t t_source_address = t_ip_hdr->saddr;
@@ -355,15 +366,21 @@ namespace psyllid
 
         udphdr* t_udp_hdr = reinterpret_cast< udphdr* >( t_ip_data );
 
+        LWARN( plog, "UDP header: source port: " << ntohs(t_udp_hdr->source) << ";  dest port: " << ntohs(t_udp_hdr->dest) << ";  len: " << ntohs(t_udp_hdr->len) << ";  check: " << ntohs(t_udp_hdr->check) );
+
         // get port number
-        unsigned t_port = htons(t_udp_hdr->dest);
+        unsigned t_port = ntohs(t_udp_hdr->dest);
 
         // check port number against configured port
-        if( t_port != f_port ) return false;
+        if( t_port != f_port )
+        {
+            LDEBUG( plog, "Destination port is incorrect: expected " << f_port << " but got " << t_port );
+            return false;
+        }
 
         // copy the UPD packet from the IP packet into the appropriate buffer
         //uint8_t* t_udp_data = (uint8_t*)t_udp_hdr + t_udp_hdr_len;
-        size_t t_udp_data_len = htons(t_udp_hdr->len) - t_udp_hdr_len;
+        size_t t_udp_data_len = ntohs(t_udp_hdr->len) - t_udp_hdr_len;
         memory_block* t_mem_block = out_stream< 0 >().data();
         t_mem_block->resize( f_max_packet_size );
         ::memcpy( t_mem_block->block(),
@@ -373,6 +390,7 @@ namespace psyllid
 
         LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes); block address is " << (void*)t_mem_block->block() );
 
+        LTRACE( plog, "Packet words: " << std::hex << strtoull((char*)t_mem_block->block(), NULL, 0) );
         LTRACE( plog, "Packet bytes: " << ((char*)t_mem_block->block())[0] << " " << ((char*)t_mem_block->block())[1] << " " << ((char*)t_mem_block->block())[2] );
 
         return true;

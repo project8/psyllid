@@ -125,6 +125,7 @@ func main() {
 
 	buffer := new( bytes.Buffer )
 
+    var bin0Counter int8 = 0
 	var signalCounter uint8 = 0
 	const signalCounterMax uint8 = 15
 	const signalTrigger uint8 = 14
@@ -134,7 +135,8 @@ func main() {
 	fmt.Println()
 		
 	for {
-
+        timePkt.payload[0] = bin0Counter
+        freqPkt.payload[0] = bin0Counter
 		for i := 0; i < 2; i++ {
 			// convert the appropriate roach packet to rawPkt
 			if i == 0 {
@@ -180,6 +182,8 @@ func main() {
 		if signalCounter == signalCounterMax {
 			signalCounter = 0
 		}
+		
+		bin0Counter++
 
 	}
 }

@@ -71,10 +71,21 @@ namespace psyllid
                 //out_stream< 1 >().set( stream::s_start );
                 f_paused = f_start_paused;
 
-                uint64_t t_time_batch_pkt = 0;
-                uint64_t t_freq_batch_pkt = 0;
+                //uint64_t t_time_batch_pkt = 0;
+                //uint64_t t_freq_batch_pkt = 0;
 
                 size_t t_pkt_size = 0;
+
+                if( ! f_start_paused )
+                {
+                    LDEBUG( plog, "TF ROACH receiver starting unpaused" );
+                    out_stream< 0 >().data()->set_pkt_in_session( 0 );
+                    out_stream< 1 >().data()->set_pkt_in_session( 0 );
+                    out_stream< 0 >().set( stream::s_start );
+                    out_stream< 1 >().set( stream::s_start );
+                    f_time_session_pkt_counter = 0;
+                    f_freq_session_pkt_counter = 0;
+                }
 
                 LINFO( plog, "Starting main loop; waiting for packets" );
                 while( ! f_canceled.load() )
@@ -151,7 +162,7 @@ namespace psyllid
                         if( t_roach_packet->f_freq_not_time )
                         {
                             // packet is frequency data
-                            t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
+                            //t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
 
                             t_freq_data = out_stream< 1 >().data();
                             t_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
@@ -159,7 +170,8 @@ namespace psyllid
 
                             LTRACE( plog, "Frequency data received (" << t_pkt_size << " bytes):  chan = " << t_freq_data->get_digital_id() <<
                                    "  time = " << t_freq_data->get_unix_time() <<
-                                   "  id = " << t_freq_data->get_pkt_in_session() <<
+                                   "  pkt_session = " << t_freq_data->get_pkt_in_session() <<
+                                   "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
                                    "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
                                    "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
                             LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
@@ -168,7 +180,7 @@ namespace psyllid
                         else
                         {
                             // packet is time data
-                            t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
+                            //t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
 
                             t_time_data = out_stream< 0 >().data();
                             t_time_data->set_pkt_in_session( f_time_session_pkt_counter++ );
@@ -176,7 +188,8 @@ namespace psyllid
 
                             LTRACE( plog, "Time data received (" << t_pkt_size << " bytes):  chan = " << t_time_data->get_digital_id() <<
                                    "  time = " << t_time_data->get_unix_time() <<
-                                   "  id = " << t_time_data->get_pkt_in_session() <<
+                                   "  pkt_session = " << t_time_data->get_pkt_in_session() <<
+                                   "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
                                    "  freqNotTime = " << t_time_data->get_freq_not_time() <<
                                    "  bin 0 [0] = " << (unsigned)t_time_data->get_array()[ 0 ][ 0 ] );
                             LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );

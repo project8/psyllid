@@ -14,6 +14,7 @@ if( Psyllid_ENABLE_EXECUTABLES )
     set( programs
         #single_value_daq
         roach_daq_1chan
+        roach_daq_streaming_1chan
         psyllid
     )
     

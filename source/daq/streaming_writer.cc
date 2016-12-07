@@ -30,7 +30,7 @@ namespace psyllid
     streaming_writer::streaming_writer() :
             control_access(),
             f_file_size_limit_mb(),
-            f_filename( "default_filename_ew.egg" ),
+            f_filename( "default_filename_strw.egg" ),
             f_description( "A very nice run" )
     {
     }
