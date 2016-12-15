@@ -11,6 +11,7 @@
 #include "butterfly_house.hh"
 #include "psyllid_error.hh"
 
+#include "digital.hh"
 #include "logger.hh"
 #include "time.hh"
 
@@ -59,6 +60,7 @@ namespace psyllid
             stream_wrap_ptr t_swrap_ptr;
             monarch3::M3Record* t_record_ptr = nullptr;
 
+            // TODO: make these parameters configurable
             uint64_t t_bit_depth = 8;
             uint64_t t_data_type_size = 1;
             uint64_t t_sample_size = 2;
@@ -66,6 +68,11 @@ namespace psyllid
             uint64_t t_bytes_per_record = t_rec_length * t_sample_size * t_data_type_size;
             uint64_t t_acq_rate = 100; // MHz
             scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)t_acq_rate * 1.e3 );
+            double t_v_offset = 0.;
+            double t_v_range = 0.5;
+
+            scarab::dig_calib_params t_dig_params;
+            scarab::get_calib_params( t_bit_depth, t_data_type_size, t_v_offset, t_v_range, true, &t_dig_params );
 
             unsigned t_stream_no = 0;
             monarch_time_point_t t_run_start_time;
@@ -162,9 +169,9 @@ namespace psyllid
                         //unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
                         for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
                         {
-                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( 0. );
-                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( 0.5 );
-                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( 1. );
+                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( t_dig_params.v_offset );
+                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( t_dig_params.v_range );
+                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( t_dig_params.dac_gain );
                             //++i_chan_psyllid;
                         }
 
