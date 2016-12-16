@@ -53,9 +53,12 @@ namespace psyllid
             bool t_current_trig_flag = false;
             uint64_t t_current_id = 0;
 
-            while( true )
+            while( ! is_canceled() )
             {
                 t_in_command = in_stream< 0 >().get();
+                if( t_in_command == stream::s_none ) continue;
+                if( t_in_command == stream::s_error ) break;
+
                 LDEBUG( plog, "Event builder reading stream at index " << in_stream< 0 >().get_current_index() );
 
                 t_trigger_flag = in_stream< 0 >().data();
@@ -64,7 +67,7 @@ namespace psyllid
                 if( t_in_command == stream::s_start )
                 {
                     LDEBUG( plog, "Starting the event builder" );
-                    out_stream< 0 >().set( stream::s_start );
+                    if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     continue;
                 }
 
@@ -85,14 +88,22 @@ namespace psyllid
                                 t_write_flag->set_id( f_pretrigger_buffer.front() );
                                 t_write_flag->set_flag( true );
                                 LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                                out_stream< 0 >().set( midge::stream::s_run );
+                                if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                                {
+                                    LERROR( plog, "Exiting due to stream error" );
+                                    break;
+                                }
                                 f_pretrigger_buffer.pop_front();
                             }
 
                             t_write_flag->set_id( t_trigger_flag->get_id() );
                             t_write_flag->set_flag( true );
                             LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            out_stream< 0 >().set( midge::stream::s_run );
+                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                            {
+                                LERROR( plog, "Exiting due to stream error" );
+                                break;
+                            }
 
                             f_state = state_t::new_trigger;
                             continue;
@@ -125,14 +136,23 @@ namespace psyllid
                                 t_write_flag->set_id( f_pretrigger_buffer.front() );
                                 t_write_flag->set_flag( true );
                                 LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                                out_stream< 0 >().set( midge::stream::s_run );
+                                if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                                {
+                                    LERROR( plog, "Exiting due to stream error" );
+                                    break;
+
+                                }
                                 f_pretrigger_buffer.pop_front();
                             }
 
                             t_write_flag->set_id( t_trigger_flag->get_id() );
                             t_write_flag->set_flag( true );
                             LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            out_stream< 0 >().set( midge::stream::s_run );
+                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                            {
+                                LERROR( plog, "Exiting due to stream error" );
+                                break;
+                            }
 
                             f_state = state_t::new_trigger;
                             continue;
@@ -146,7 +166,11 @@ namespace psyllid
                             t_write_flag->set_id( f_pretrigger_buffer.front() );
                             t_write_flag->set_flag( false );
                             LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            out_stream< 0 >().set( midge::stream::s_run );
+                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                            {
+                                LERROR( plog, "Exiting due to stream error" );
+                                break;
+                            }
 
                             f_pretrigger_buffer.pop_front();
 
@@ -162,7 +186,11 @@ namespace psyllid
                             t_write_flag->set_id( t_trigger_flag->get_id() );
                             t_write_flag->set_flag( true );
                             LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            out_stream< 0 >().set( midge::stream::s_run );
+                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                            {
+                                LERROR( plog, "Exiting due to stream error" );
+                                break;
+                            }
 
                             f_state = state_t::new_trigger;
                             continue;
@@ -174,7 +202,11 @@ namespace psyllid
                             t_write_flag->set_id( t_trigger_flag->get_id() );
                             t_write_flag->set_flag( false );
                             LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            out_stream< 0 >().set( midge::stream::s_run );
+                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                            {
+                                LERROR( plog, "Exiting due to stream error" );
+                                break;
+                            }
 
                             continue;
                         }
@@ -188,7 +220,11 @@ namespace psyllid
                             t_write_flag->set_id( t_trigger_flag->get_id() );
                             t_write_flag->set_flag( true );
                             LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            out_stream< 0 >().set( midge::stream::s_run );
+                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                            {
+                                LERROR( plog, "Exiting due to stream error" );
+                                break;
+                            }
 
                             f_state = state_t::triggered;
                             continue;
@@ -202,7 +238,11 @@ namespace psyllid
                                 t_write_flag->set_id( t_trigger_flag->get_id() );
                                 t_write_flag->set_flag( false );
                                 LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                                out_stream< 0 >().set( midge::stream::s_run );
+                                if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                                {
+                                    LERROR( plog, "Exiting due to stream error" );
+                                    break;
+                                }
 
                                 f_state = state_t::untriggered_nopt;
                                 continue;
@@ -236,7 +276,11 @@ namespace psyllid
                             t_write_flag->set_id( t_trigger_flag->get_id() );
                             t_write_flag->set_flag( true );
                             LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            out_stream< 0 >().set( midge::stream::s_run );
+                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                            {
+                                LERROR( plog, "Exiting due to stream error" );
+                                break;
+                            }
 
                             continue;
                         }
@@ -249,7 +293,11 @@ namespace psyllid
                                 t_write_flag->set_id( t_trigger_flag->get_id() );
                                 t_write_flag->set_flag( false );
                                 LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                                out_stream< 0 >().set( midge::stream::s_run );
+                                while( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                                {
+                                    LERROR( plog, "Exiting due to stream error" );
+                                    break;
+                                }
 
                                 f_state = state_t::untriggered_nopt;
                                 continue;
@@ -287,12 +335,16 @@ namespace psyllid
                         t_write_flag->set_id( f_pretrigger_buffer.front() );
                         t_write_flag->set_flag( true );
                         LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                        out_stream< 0 >().set( stream::s_run );
+                        if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                        {
+                            LERROR( plog, "Exiting due to stream error" );
+                            break;
+                        }
                         f_pretrigger_buffer.pop_front();
                     }
                     f_state = state_t::filling_pretrigger;
 
-                    out_stream< 0 >().set( stream::s_stop );
+                    if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                     continue;
                 }
 
@@ -305,7 +357,11 @@ namespace psyllid
                         t_write_flag->set_id( f_pretrigger_buffer.front() );
                         t_write_flag->set_flag( true );
                         LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                        out_stream< 0 >().set( stream::s_run );
+                        if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                        {
+                            LERROR( plog, "Exiting due to stream error" );
+                            break;
+                        }
                         f_pretrigger_buffer.pop_front();
                     }
                     f_state = state_t::filling_pretrigger;
@@ -315,6 +371,7 @@ namespace psyllid
                 }
 
             } // end while( true )
+
         }
         catch(...)
         {

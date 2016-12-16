@@ -41,16 +41,19 @@ namespace psyllid
             freq_data* t_freq_data = nullptr;
             trigger_flag* t_trigger_flag = nullptr;
 
-            while( true )
+            while( ! is_canceled() )
             {
                 t_in_command = in_stream< 0 >().get();
+                if( t_in_command == stream::s_none ) continue;
+                if( t_in_command == stream::s_error ) break;
+
                 t_freq_data = in_stream< 0 >().data();
                 t_trigger_flag = out_stream< 0 >().data();
 
                 if( t_in_command == stream::s_start )
                 {
                     LDEBUG( plog, "Starting the svt output" );
-                    out_stream< 0 >().set( stream::s_start );
+                    if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     continue;
                 }
 
@@ -61,13 +64,17 @@ namespace psyllid
 
                     LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " at " << (*t_freq_data->array())[0] << " resulted in flag <" << t_trigger_flag->get_flag() << ">" );
 
-                    out_stream< 0 >().set( stream::s_run );
+                    if( ! out_stream< 0 >().set( stream::s_run ) )
+                    {
+                        LERROR( plog, "Exiting due to stream error" );
+                        break;
+                    }
                     continue;
                 }
 
                 if( t_in_command == stream::s_stop )
                 {
-                    out_stream< 0 >().set( stream::s_stop );
+                    if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                     continue;
                 }
 
@@ -77,7 +84,6 @@ namespace psyllid
                     break;
                 }
             }
-
         }
         catch(...)
         {

@@ -98,9 +98,12 @@ namespace psyllid
             freq_data* t_freq_data = nullptr;
             trigger_flag* t_trigger_flag = nullptr;
 
-            while( true )
+            while( ! is_canceled() )
             {
                 t_in_command = in_stream< 0 >().get();
+                if( t_in_command == stream::s_none ) continue;
+                if( t_in_command == stream::s_error ) break;
+
                 LDEBUG( plog, "FMT reading stream at index " << in_stream< 0 >().get_current_index() );
 
                 t_freq_data = in_stream< 0 >().data();
@@ -109,7 +112,7 @@ namespace psyllid
                 if( t_in_command == stream::s_start )
                 {
                     LDEBUG( plog, "Starting the FMT output at stream index " << out_stream< 0 >().get_current_index() );
-                    out_stream< 0 >().set( stream::s_start );
+                    if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     continue;
                 }
 
@@ -120,14 +123,22 @@ namespace psyllid
                            "  id = " << t_freq_data->get_pkt_in_session() <<
                            "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
                            "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
-                    (this->*f_exe_func)( t_freq_data, t_trigger_flag );
+                    try
+                    {
+                        (this->*f_exe_func)( t_freq_data, t_trigger_flag );
+                    }
+                    catch( error& e )
+                    {
+                        LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
+                        break;
+                    }
                     continue;
                 }
 
                 if( t_in_command == stream::s_stop )
                 {
                     LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
-                    out_stream< 0 >().set( stream::s_stop );
+                    if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                     continue;
                 }
 
@@ -183,7 +194,11 @@ namespace psyllid
         f_mask_mutex.unlock();
 
         LDEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
-        out_stream< 0 >().set( stream::s_run );
+        if( ! out_stream< 0 >().set( stream::s_run ) )
+        {
+            LERROR( plog, "Exiting due to stream error" );
+            throw error() << "Stream error while adding to mask";
+        }
         return;
     }
 
@@ -222,7 +237,11 @@ namespace psyllid
         f_mask_mutex.unlock();
 
         LDEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
-        out_stream< 0 >().set( stream::s_run );
+        if( ! out_stream< 0 >().set( stream::s_run ) )
+        {
+            LERROR( plog, "Exiting due to stream error" );
+            throw error() << "Stream error while applying threshold";
+        }
         return;
     }
 

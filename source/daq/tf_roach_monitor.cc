@@ -55,9 +55,12 @@ namespace psyllid
 
             uint64_t t_current_pkt_in_batch = 0;
 
-            while( true )
+            while( ! is_canceled() )
             {
                 t_time_command = in_stream< 0 >().get();
+                if( t_time_command == stream::s_error ) break;
+                if( t_time_command == stream::s_none ) continue;
+
                 LTRACE( plog, "ROACH time monitor reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
                 if( t_time_command == stream::s_exit )
@@ -166,9 +169,12 @@ namespace psyllid
 
             uint64_t t_current_pkt_in_batch = 0;
 
-            while( true )
+            while( ! is_canceled() )
             {
                 t_freq_command = in_stream< 0 >().get();
+                if( t_freq_command == stream::s_error ) break;
+                if( t_freq_command == stream::s_none ) continue;
+
                 LTRACE( plog, "ROACH freq monitor reading stream 0 (freq) at index " << in_stream< 0 >().get_current_index() );
 
                 if( t_freq_command == stream::s_exit )

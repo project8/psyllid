@@ -118,102 +118,75 @@ namespace psyllid
 
             memory_block* t_block = nullptr;
 
-            try
+            //LDEBUG( plog, "Server is listening" );
+
+            if( ! out_stream< 0 >().set( stream::s_start ) ) return;
+
+            ssize_t t_size_received = 0;
+
+            LINFO( plog, "Starting main loop; waiting for packets" );
+            while( ! is_canceled() )
             {
-                //LDEBUG( plog, "Server is listening" );
+                t_block = out_stream< 0 >().data();
+                t_block->resize( f_max_packet_size );
 
-                out_stream< 0 >().set( stream::s_start );
+                t_size_received = 0;
 
-                ssize_t t_size_received = 0;
-
-                LINFO( plog, "Starting main loop; waiting for packets" );
-                while( ! f_canceled.load() )
+                if( (out_stream< 0 >().get() == stream::s_stop) )
                 {
-                    t_block = out_stream< 0 >().data();
-                    t_block->resize( f_max_packet_size );
+                    LWARN( plog, "Output stream(s) have stop condition" );
+                    break;
+                }
 
-                    t_size_received = 0;
+                LTRACE( plog, "Waiting for packets" );
 
-                    if( (out_stream< 0 >().get() == stream::s_stop) )
+                // inner loop over packet-receive timeouts
+                while( t_size_received <= 0 && ! is_canceled() )
+                {
+                    t_size_received = ::recv( f_socket, (void*)t_block->block(), f_max_packet_size, 0 );
+
+                    if( t_size_received > 0 )
                     {
-                        LWARN( plog, "Output stream(s) have stop condition" );
+                        LTRACE( plog, "Packet received (" << t_size_received << " bytes)" );
+                        LTRACE( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
+
+                        t_block->set_n_bytes_used( t_size_received );
+
+                        if( ! out_stream< 0 >().set( stream::s_run ) )
+                        {
+                            LERROR( plog, "Exiting due to stream error" );
+                            break;
+                        }
                         break;
                     }
 
-                    LTRACE( plog, "Waiting for packets" );
-
-                    // inner loop over packet-receive timeouts
-                    while( t_size_received <= 0 && ! f_canceled.load() )
+                    f_last_errno = errno;
+                    if( f_last_errno == EWOULDBLOCK || f_last_errno == EAGAIN )
                     {
-                        t_size_received = ::recv( f_socket, (void*)t_block->block(), f_max_packet_size, 0 );
-
-                        if( t_size_received > 0 )
-                        {
-                            LTRACE( plog, "Packet received (" << t_size_received << " bytes)" );
-                            LTRACE( plog, "Packet written to stream index <" << out_stream< 0 >().get_current_index() << ">" );
-
-                            t_block->set_n_bytes_used( t_size_received );
-
-                            out_stream< 0 >().set( stream::s_run );
-                            break;
-                        }
-
-                        f_last_errno = errno;
-                        if( f_last_errno == EWOULDBLOCK || f_last_errno == EAGAIN )
-                        {
-                            // recv timed out without anything being available to receive
-                            // nothing seems to be wrong with the socket
-                            break;
-                        }
-                        else if( t_size_received == 0 )
-                        {
-                            LWARN( plog, "No message present" );
-                        }
-                        else  // t_size_received < 0 && f_last_errno != EWOULDBLOCK && f_last_errno != EAGAIN
-                        {
-                            LWARN( "Unable to receive; error message: " << strerror( f_last_errno ) );
-                        }
+                        // recv timed out without anything being available to receive
+                        // nothing seems to be wrong with the socket
+                        break;
+                    }
+                    else if( t_size_received == 0 )
+                    {
+                        LWARN( plog, "No message present" );
+                    }
+                    else  // t_size_received < 0 && f_last_errno != EWOULDBLOCK && f_last_errno != EAGAIN
+                    {
+                        LWARN( "Unable to receive; error message: " << strerror( f_last_errno ) );
                     }
                 }
-
-                LINFO( plog, "Packet receiver is exiting" );
-
-                // normal exit condition
-                LDEBUG( plog, "Stopping output streams" );
-                out_stream< 0 >().set( stream::s_stop );
-
-                LDEBUG( plog, "Exiting output streams" );
-                out_stream< 0 >().set( stream::s_exit );
-
-                return;
-            }
-            catch( midge::error& e )
-            {
-                LERROR( plog, "Midge exception caught: " << e.what() );
-
-                LDEBUG( plog, "Stopping output stream" );
-                out_stream< 0 >().set( stream::s_stop );
-
-                LDEBUG( plog, "Exiting output stream" );
-                out_stream< 0 >().set( stream::s_exit );
-
-                return;
-            }
-            catch( error& e )
-            {
-                LERROR( plog, "Psyllid exception caught: " << e.what() );
-
-                LDEBUG( plog, "Stopping output stream" );
-                out_stream< 0 >().set( stream::s_stop );
-
-                LDEBUG( plog, "Exiting output stream" );
-                out_stream< 0 >().set( stream::s_exit );
-
-                return;
             }
 
-            // control should not reach here
-            LERROR( plog, "Control should not reach this point" );
+            LINFO( plog, "Packet receiver is exiting" );
+
+            // normal exit condition
+            LDEBUG( plog, "Stopping output streams" );
+            if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+
+            LDEBUG( plog, "Exiting output streams" );
+            out_stream< 0 >().set( stream::s_exit );
+
             return;
         }
         catch(...)

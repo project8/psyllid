@@ -79,9 +79,12 @@ namespace psyllid
 
             bool t_is_new_event = true;
 
-            while( true )
+            while( ! is_canceled() )
             {
                 t_time_command = in_stream< 0 >().get();
+                if( t_time_command == stream::s_none ) continue;
+                if( t_time_command == stream::s_error ) break;
+
                 LTRACE( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
                 if( t_time_command == stream::s_exit )

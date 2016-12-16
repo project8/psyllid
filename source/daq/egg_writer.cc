@@ -81,12 +81,21 @@ namespace psyllid
             bool t_is_new_event = true;
             //bool t_was_triggered = false;
 
-            while( true )
+            while( ! is_canceled() )
             {
                 t_time_command = in_stream< 0 >().get();
+                if( t_time_command == stream::s_none ) continue;
+                if( t_time_command == stream::s_error ) break;
+
                 LDEBUG( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
-                t_trig_command = in_stream< 1 >().get();
+                // do this in a while loop so we don't re-do the time stream get()
+                while( t_trig_command == stream::s_none )
+                {
+                    t_trig_command = in_stream< 1 >().get();
+                }
+                if( t_trig_command == stream::s_error ) break;
+
                 LDEBUG( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
     /*
                 if( t_time_command != t_trig_command )
