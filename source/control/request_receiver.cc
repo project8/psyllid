@@ -151,7 +151,7 @@ namespace psyllid
 
         set_status( k_listening );
 
-        while( ! cancelable::f_canceled.load() )
+        while( ! cancelable::is_canceled() )
         {
             // blocking call to wait for incoming message
             listen( f_listen_timeout_ms );

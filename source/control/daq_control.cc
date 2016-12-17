@@ -77,7 +77,7 @@ namespace psyllid
 
         // Errors caught during this loop are handled by setting the status to error, and continuing the loop,
         // which then goes to the error clause of the outer if/elseif logic
-        while( ! f_canceled.load() )
+        while( ! is_canceled() )
         {
             status t_status = get_status();
             if( t_status == status::initialized )
@@ -171,7 +171,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Activating DAQ control" );
 
-        if( f_canceled.load() )
+        if( is_canceled() )
         {
             throw error() << "DAQ control has been canceled";
         }
@@ -191,7 +191,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Deactivating DAQ" );
 
-        if( f_canceled.load() )
+        if( is_canceled() )
         {
             throw error() << "DAQ control has been canceled";
         }
@@ -215,7 +215,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Preparing for run" );
 
-        if( f_canceled.load() )
+        if( is_canceled() )
         {
             throw error() << "daq_control has been canceled";
         }
