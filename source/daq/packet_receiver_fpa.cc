@@ -265,12 +265,6 @@ namespace psyllid
 
             LINFO( plog, "Packet receiver is exiting" );
 
-            if( f_skip_stream_cancelation )
-            {
-                LWARN( plog, "Skipping stream cancelation on exit" );
-                return;
-            }
-
             // normal exit condition
             LDEBUG( plog, "Stopping output streams" );
             if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
