@@ -372,6 +372,11 @@ namespace psyllid
         LTRACE( plog, "UDP sizes (total, header, data): " << ntohs(t_udp_hdr->len) << ", " << t_udp_hdr_len << ", " << t_udp_data_len );
         LTRACE( plog, "UDP mem addresses (packet/header, data): " << t_udp_hdr << ", " << (void*)((char*)t_udp_hdr + t_udp_hdr_len) );
 
+        LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes); block address is " << (void*)t_mem_block->block() );
+
+        LTRACE( plog, "Packet words: " << std::hex << strtoull((char*)t_mem_block->block(), NULL, 0) );
+        LTRACE( plog, "Packet bytes: " << unsigned(((char*)t_mem_block->block())[0]) << " " << unsigned(((char*)t_mem_block->block())[1]) << " " << unsigned(((char*)t_mem_block->block())[2]) );
+
         // copy the UPD packet from the IP packet into the appropriate buffer
         //uint8_t* t_udp_data = (uint8_t*)t_udp_hdr + t_udp_hdr_len;
         memory_block* t_mem_block = out_stream< 0 >().data();
@@ -380,11 +385,6 @@ namespace psyllid
                   reinterpret_cast< void* >( (char*)t_udp_hdr + t_udp_hdr_len ),
                   t_udp_data_len );
         t_mem_block->set_n_bytes_used( t_udp_data_len );
-
-        LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes); block address is " << (void*)t_mem_block->block() );
-
-        LTRACE( plog, "Packet words: " << std::hex << strtoull((char*)t_mem_block->block(), NULL, 0) );
-        LTRACE( plog, "Packet bytes: " << unsigned(((char*)t_mem_block->block())[0]) << " " << unsigned(((char*)t_mem_block->block())[1]) << " " << unsigned(((char*)t_mem_block->block())[2]) );
 
         return true;
     }
