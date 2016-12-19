@@ -30,6 +30,7 @@ namespace psyllid
         if( f_n_bytes != 0 ) ::free( (void*)f_block );
         if( a_n_bytes != 0 ) f_block = (uint8_t*)::malloc( a_n_bytes );
         else f_block = nullptr;
+        f_n_bytes = a_n_bytes;
         return;
     }
 
