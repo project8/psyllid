@@ -48,7 +48,7 @@ namespace psyllid
             f_timeout_sec( 1 ),
             f_n_blocks( 64 ),
             f_block_size( 1 << 22 ),
-            f_frame_size( 1 << 11 ),
+            f_frame_size( 1 << 14 ),
             f_net_interface_index( 0 ),
             f_socket( 0 ),
             f_ring(),
