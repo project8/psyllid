@@ -127,7 +127,7 @@ static void display(tpacket3_hdr *ppd)
     ethhdr *eth = (ethhdr *) ((uint8_t *) ppd + ppd->tp_mac);
     iphdr *ip = (iphdr *) ((uint8_t *) eth + ETH_HLEN);
 
-    printf("packet id: %d, ", eth->h_proto);
+    //printf("packet id: %d, ", eth->h_proto);
     if (eth->h_proto == htons(ETH_P_IP)) {
         sockaddr_in ss, sd;
         char sbuff[NI_MAXHOST], dbuff[NI_MAXHOST];
@@ -144,10 +144,11 @@ static void display(tpacket3_hdr *ppd)
         getnameinfo((sockaddr *) &sd, sizeof(sd),
                 dbuff, sizeof(dbuff), NULL, 0, NI_NUMERICHOST);
 
-        printf("%s -> %s, ", sbuff, dbuff);
+        if( packets_total % 1000 == 0 ) printf("packet %u; bytes read: %u; %s -> %s\n", packets_total, bytes_total, sbuff, dbuff);
     }
 
-    printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
+    //printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
+
     //for (int i=0; i<50; ++i)
     //{
     //    printf("%02X", ((char*)ppd)[i]);
@@ -227,7 +228,7 @@ int main(int argc, char **argp)
         walk_block(pbd, block_num);
         flush_block(pbd);
         block_num = (block_num + 1) % blocks;
-        if (packets_total > 50) raise(SIGINT);
+        //if (packets_total > 50) raise(SIGINT);
     }
 
     len = sizeof(stats);
