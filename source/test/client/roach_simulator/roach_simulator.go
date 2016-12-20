@@ -69,7 +69,7 @@ func (roachPkt *RoachPacket)PackInto( rawPkt *RawPacket ) {
  
 func main() {
 	// Notes on the timing between packets
-	// Packets are sent in (time, freqquency) pairs.  There is a 1 ms delay between them (configurable with the -tf-delay flag)
+	// Packets are sent in (time, frequency) pairs.  There is a 1 ms delay between them (configurable with the -tf-delay flag)
 	// The delay time between pairs is configurable with the -pkt-delay command-line flag.  The default is 500 ms.
 	// For delays much larger than 1 ms, this is approximately the period of the packet cycle.
 
@@ -125,14 +125,18 @@ func main() {
 
 	buffer := new( bytes.Buffer )
 
+    var bin0Counter int8 = 0
 	var signalCounter uint8 = 0
 	const signalCounterMax uint8 = 15
 	const signalTrigger uint8 = 14
 
+	fmt.Printf( "20 elements of the time data array:\n%v", timePkt.payload[0:20] )
+
 	fmt.Println()
 		
 	for {
-
+        timePkt.payload[0] = bin0Counter
+        freqPkt.payload[0] = bin0Counter
 		for i := 0; i < 2; i++ {
 			// convert the appropriate roach packet to rawPkt
 			if i == 0 {
@@ -178,6 +182,8 @@ func main() {
 		if signalCounter == signalCounterMax {
 			signalCounter = 0
 		}
+		
+		bin0Counter++
 
 	}
 }

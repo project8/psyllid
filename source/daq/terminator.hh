@@ -13,9 +13,35 @@
 #include "consumer.hh"
 
 #include "freq_data.hh"
+#include "time_data.hh"
 
 namespace psyllid
 {
+
+    class terminator_time_data :
+            public midge::_consumer< terminator_time_data, typelist_1( time_data ) >
+    {
+        public:
+            terminator_time_data();
+            virtual ~terminator_time_data();
+
+        public:
+            virtual void initialize();
+            virtual void execute( midge::diptera* a_midge = nullptr );
+            virtual void finalize();
+
+    };
+
+    class terminator_time_data_builder : public _node_builder< terminator_time_data >
+    {
+        public:
+            terminator_time_data_builder();
+            virtual ~terminator_time_data_builder();
+
+        private:
+            virtual void apply_config( terminator_time_data* a_node, const scarab::param_node& a_config );
+    };
+
 
     class terminator_freq_data :
             public midge::_consumer< terminator_freq_data, typelist_1( freq_data ) >
@@ -26,7 +52,7 @@ namespace psyllid
 
         public:
             virtual void initialize();
-            virtual void execute();
+            virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
     };

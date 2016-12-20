@@ -9,10 +9,12 @@ set( headers
     #single_value_trigger.hh
     frequency_mask_trigger.hh
     monarch3_wrap.hh
+    packet_receiver_socket.hh
     roach_config.hh
     streaming_writer.hh
     terminator.hh
-    udp_receiver.hh
+    tf_roach_monitor.hh
+    tf_roach_receiver.hh
 )
 
 set( sources
@@ -22,11 +24,25 @@ set( sources
     #single_value_trigger.cc
     frequency_mask_trigger.cc
     monarch3_wrap.cc
+    packet_receiver_socket.cc
     roach_config.cc
     streaming_writer.cc
     terminator.cc
-    udp_receiver.cc
+    tf_roach_monitor.cc
+    tf_roach_receiver.cc
 )
+
+if( UNIX AND NOT APPLE )
+set( headers 
+    ${headers}
+    packet_receiver_fpa.hh
+)
+
+set( sources
+    ${sources}
+    packet_receiver_fpa.cc
+)
+endif( UNIX AND NOT APPLE )
 
 set( dependencies
     PsyllidUtility

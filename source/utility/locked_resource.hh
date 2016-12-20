@@ -32,6 +32,8 @@ namespace psyllid
 
             bool have_lock() const;
 
+            void unlock();
+
         private:
             friend x_parent;
             locked_resource( resource_ptr_t a_resource, x_mutex& a_mutex );
@@ -95,6 +97,15 @@ namespace psyllid
     bool locked_resource< x_resource, x_parent, x_mutex, x_lock >::have_lock() const
     {
         return f_have_lock.load();
+    }
+
+    template< class x_resource, class x_parent, class x_mutex, class x_lock >
+    void locked_resource< x_resource, x_parent, x_mutex, x_lock >::unlock()
+    {
+        f_resource.reset();
+        f_lock.unlock();
+        f_have_lock.store( false );
+        return;
     }
 
 

@@ -12,7 +12,7 @@
 #include <mutex>
 #include <set>
 
-namespace midge
+namespace scarab
 {
     class cancelable;
 }
@@ -26,8 +26,8 @@ namespace psyllid
             signal_handler();
             virtual ~signal_handler();
 
-            void add_cancelable( midge::cancelable* a_cancelable );
-            void remove_cancelable( midge::cancelable* a_cancelable );
+            void add_cancelable( scarab::cancelable* a_cancelable );
+            void remove_cancelable( scarab::cancelable* a_cancelable );
 
             void reset();
 
@@ -38,7 +38,7 @@ namespace psyllid
         private:
             static void print_message();
 
-            typedef std::set< midge::cancelable* > cancelers;
+            typedef std::set< scarab::cancelable* > cancelers;
             typedef cancelers::const_iterator cancelers_cit_t;
             typedef cancelers::iterator cancelers_it_t;
 

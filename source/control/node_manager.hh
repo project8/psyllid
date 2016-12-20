@@ -42,6 +42,8 @@ namespace psyllid
             node_manager( const scarab::param_node& a_master_node );
             virtual ~node_manager();
 
+            void initialize(); // will setup preset nodes if specified; use only after f_daq_control is set
+
             //bool configure( const scarab::param_node* a_node );
             void use_preset( const std::string& a_name ); // can thrown psyllid::error
 
@@ -61,6 +63,7 @@ namespace psyllid
             bool must_reset_midge() const;
 
             midge_package get_midge();
+            void return_midge( midge_package&& a_midge );
 
             std::string get_node_run_str() const;
 
@@ -91,7 +94,7 @@ namespace psyllid
             nodes_t f_nodes;
             connections_t f_connections;
 
-            std::unique_ptr< scarab::param_node > f_daq_config;
+            std::unique_ptr< scarab::param_node > f_config;
     };
 
     inline void node_manager::add_node( const std::string& a_node_type, const std::string& a_node_name )

@@ -9,7 +9,6 @@
 
 #include "psyllid_constants.hh"
 #include "daq_control.hh"
-#include "daq_worker.hh"
 #include "node_manager.hh"
 #include "request_receiver.hh"
 #include "signal_handler.hh"
@@ -30,6 +29,7 @@ namespace psyllid
     LOGGER( plog, "run_server" );
 
     run_server::run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semantic > a_version ) :
+            scarab::cancelable(),
             f_config( a_node ),
             f_version( a_version ),
             f_return( RETURN_ERROR ),
@@ -77,6 +77,7 @@ namespace psyllid
             f_daq_control.reset( new daq_control( f_config, f_node_manager ) );
 
             f_node_manager->set_daq_control( f_daq_control );
+            f_node_manager->initialize();
 
             // request receiver
             LDEBUG( plog, "Creating request receiver" );
@@ -122,7 +123,7 @@ namespace psyllid
         // start threads
         LINFO( plog, "Starting threads" );
         std::exception_ptr t_dc_ex_ptr;
-        std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get(), t_dc_ex_ptr );
+        std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
         t_lock.unlock();
@@ -131,20 +132,10 @@ namespace psyllid
         LINFO( plog, "Running..." );
 
         t_daq_control_thread.join();
-        if( t_dc_ex_ptr )
-        {
-            try
-            {
-                std::rethrow_exception( t_dc_ex_ptr );
-            }
-            catch( error& e )
-            {
-                LERROR( plog, "Exception caught from DAQ control: " << e.what() );
-                cancel();
-            }
-        }
+        LDEBUG( plog, "DAQ control thread has ended" );
 
         t_receiver_thread.join();
+        LDEBUG( plog, "Receiver thread has ended" );
 
         t_sig_hand.remove_cancelable( this );
 

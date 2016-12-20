@@ -14,7 +14,7 @@ namespace psyllid
 
     roach_config::roach_config()
     {
-        node( "udp-receiver", "udpr" );
+        node( "tf-roach-receiver", "tfrr" );
     }
 
 
@@ -22,12 +22,46 @@ namespace psyllid
 
     streaming_1ch::streaming_1ch()
     {
-    	node( "udp-receiver", "udpr" );
-    	node( "streaming-writer", "strw" );
-    	node( "term-freq-data", "term" );
+        node( "packet-receiver-socket", "prs" );
+        node( "tf-roach-receiver", "tfrr" );
+        node( "streaming-writer", "strw" );
+        node( "term-freq-data", "term" );
 
-    	connection( "udpr.out_0:strw.in_0" );
-    	connection( "udpr.out_1:term.in_0" );
+        connection( "prs.out_0:tfrr.in_0" );
+        connection( "tfrr.out_0:strw.in_0" );
+        connection( "tfrr.out_1:term.in_0" );
+    }
+
+#ifdef __linux__
+    REGISTER_PRESET( streaming_1ch_fpa, "str-1ch-fpa" );
+
+    streaming_1ch_fpa::streaming_1ch_fpa()
+    {
+        node( "packet-receiver-fpa", "prf" );
+        node( "tf-roach-receiver", "tfrr" );
+        node( "streaming-writer", "strw" );
+        node( "term-freq-data", "term" );
+
+        connection( "prf.out_0:tfrr.in_0" );
+        connection( "tfrr.out_0:strw.in_0" );
+        connection( "tfrr.out_1:term.in_0" );
+    }
+#endif
+
+    REGISTER_PRESET( fmask_trigger_1ch,"fmask-1ch");
+
+    fmask_trigger_1ch::fmask_trigger_1ch()
+    {
+        node( "packet-receiver-socket", "prs" );
+        node( "tf-roach-receiver", "tfrr");
+        node( "frequency-mask-trigger", "fmt");
+        node( "egg-writer", "ew");
+
+        connection( "prs.out_0:tfrr.in_0" );
+        connection( "tfrr.out_0:ew.in_0");
+        connection( "tfrr.out_1:fmt.in_0");
+        connection( "fmt.out_0:ew.in_1");
     }
 
 } /* namespace psyllid */
+

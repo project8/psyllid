@@ -9,12 +9,10 @@ set( headers
     psyllid_error.hh
     psyllid_version.hh
     signal_handler.hh
-    udp_server.hh
 )
 set( sources
     psyllid_error.cc
     signal_handler.cc
-    udp_server.cc
 )
 
 configure_file( psyllid_version.cc.in ${CMAKE_CURRENT_BINARY_DIR}/psyllid_version.cc )

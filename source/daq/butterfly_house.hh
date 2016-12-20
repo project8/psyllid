@@ -55,6 +55,9 @@ namespace psyllid
             /// Sets the Monarch stage to "finished"
             void write_file( const std::string& a_filename );
 */
+            /// Removes the Monarch3 object for the given filename
+            void remove_file( const std::string& a_filename );
+
         private:
             typedef std::map< std::string, monarch_wrap_ptr > bf_map;
             typedef bf_map::const_iterator bf_cit_t;

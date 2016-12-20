@@ -26,7 +26,7 @@ namespace psyllid
 
     request_receiver::request_receiver( const param_node& a_master_config ) :
             hub(),
-            cancelable(),
+            scarab::cancelable(),
             f_run_handler(),
             f_get_handlers(),
             f_set_handlers(),
@@ -151,7 +151,7 @@ namespace psyllid
 
         set_status( k_listening );
 
-        while( ! cancelable::f_canceled.load() )
+        while( ! cancelable::is_canceled() )
         {
             // blocking call to wait for incoming message
             listen( f_listen_timeout_ms );

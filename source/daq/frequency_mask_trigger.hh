@@ -77,7 +77,7 @@ namespace psyllid
             void update_trigger_mask();
 
             void initialize();
-            void execute();
+            void execute( midge::diptera* a_midge = nullptr );
             void finalize();
 
         private:

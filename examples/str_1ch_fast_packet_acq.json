@@ -1,0 +1,22 @@
+{
+    "amqp":
+    {
+        "broker": "localhost"
+    },
+    
+    "daq":
+    {
+        "preset": "str-1ch-fpa",
+        "activate-at-startup": true
+    },
+
+    "prf": 
+    {
+        "length": 10,
+        "port": 23530,
+        "interface": "eth0",
+        "n-blocks": 64,
+        "block-size": 4194304,
+        "frame-size": 2048
+    }
+}
