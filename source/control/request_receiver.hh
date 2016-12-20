@@ -16,7 +16,7 @@ namespace psyllid
 {
     class run_server;
 
-    class request_receiver : public dripline::hub, public midge::cancelable
+    class request_receiver : public dripline::hub, public scarab::cancelable
     {
         private:
             typedef std::function< bool( const dripline::request_ptr_t, dripline::reply_package& ) > handler_func_t;

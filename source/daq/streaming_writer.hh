@@ -17,6 +17,23 @@
 namespace psyllid
 {
 
+    /*!
+     @class streaming_writer
+     @author N. S. Oblath
+
+     @brief A consumer to that writes all time ROACH packets to an egg file.
+
+     @details
+
+     Parameter setting is not thread-safe.  Executing is thread-safe.
+
+     Node type: "streaming-writer"
+
+     Available configuration values:
+     - "file-size-limit-mb": uint -- Not used
+
+     Output Streams: (none)
+    */
     class streaming_writer :
             public midge::_consumer< streaming_writer, typelist_1( time_data ) >,
             public control_access
@@ -32,8 +49,11 @@ namespace psyllid
 
         public:
             virtual void initialize();
-            virtual void execute();
+            virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
+
+        private:
+            unsigned f_last_pkt_in_batch;
 
     };
 

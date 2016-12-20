@@ -9,8 +9,11 @@
 
 #include "daq_control.hh"
 
+#include "logger.hh"
+
 namespace psyllid
 {
+    LOGGER( plog, "control_access" );
 
     control_access::control_access( std::weak_ptr< daq_control > a_daq_control ) :
             f_daq_control( a_daq_control )
@@ -24,6 +27,7 @@ namespace psyllid
     void control_access::set_daq_control( std::weak_ptr< daq_control > a_daq_control )
     {
         f_daq_control = a_daq_control;
+        LDEBUG( plog, "DAQ control access set; is valid? " << ! f_daq_control.expired() );
     }
 
 } /* namespace psyllid */

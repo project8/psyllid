@@ -103,4 +103,15 @@ namespace psyllid
     }
 */
 
+    void butterfly_house::remove_file( const std::string& a_filename )
+    {
+        std::unique_lock< std::mutex > t_lock( f_house_mutex );
+        auto t_mwp_it = f_butterflies.find( a_filename );
+        if( t_mwp_it != f_butterflies.end() )
+        {
+            f_butterflies.erase( t_mwp_it );
+        }
+        return;
+    }
+
 } /* namespace psyllid */

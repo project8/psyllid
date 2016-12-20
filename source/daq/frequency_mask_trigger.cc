@@ -90,51 +90,70 @@ namespace psyllid
         return;
     }
 
-    void frequency_mask_trigger::execute()
+    void frequency_mask_trigger::execute( midge::diptera* a_midge )
     {
-        midge::enum_t t_in_command = stream::s_none;
-        freq_data* t_freq_data = nullptr;
-        trigger_flag* t_trigger_flag = nullptr;
-
-        while( true )
+        try
         {
-            t_in_command = in_stream< 0 >().get();
-            LDEBUG( plog, "FMT reading stream at index " << in_stream< 0 >().get_current_index() );
+            midge::enum_t t_in_command = stream::s_none;
+            freq_data* t_freq_data = nullptr;
+            trigger_flag* t_trigger_flag = nullptr;
 
-            t_freq_data = in_stream< 0 >().data();
-            t_trigger_flag = out_stream< 0 >().data();
-
-            if( t_in_command == stream::s_start )
+            while( ! is_canceled() )
             {
-                LDEBUG( plog, "Starting the FMT output at stream index " << out_stream< 0 >().get_current_index() );
-                out_stream< 0 >().set( stream::s_start );
-                continue;
-            }
+                t_in_command = in_stream< 0 >().get();
+                if( t_in_command == stream::s_none ) continue;
+                if( t_in_command == stream::s_error ) break;
 
-            if( t_in_command == stream::s_run )
-            {
-                LDEBUG( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
-                       "  time = " << t_freq_data->get_unix_time() <<
-                       "  id = " << t_freq_data->get_pkt_in_session() <<
-                       "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
-                       "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
-                (this->*f_exe_func)( t_freq_data, t_trigger_flag );
-                continue;
-            }
+                LDEBUG( plog, "FMT reading stream at index " << in_stream< 0 >().get_current_index() );
 
-            if( t_in_command == stream::s_stop )
-            {
-                LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
-                out_stream< 0 >().set( stream::s_stop );
-                continue;
-            }
+                t_freq_data = in_stream< 0 >().data();
+                t_trigger_flag = out_stream< 0 >().data();
 
-            if( t_in_command == stream::s_exit )
-            {
-                LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
-                out_stream< 0 >().set( stream::s_exit );
-                break;
+                if( t_in_command == stream::s_start )
+                {
+                    LDEBUG( plog, "Starting the FMT output at stream index " << out_stream< 0 >().get_current_index() );
+                    if( ! out_stream< 0 >().set( stream::s_start ) ) break;
+                    continue;
+                }
+
+                if( t_in_command == stream::s_run )
+                {
+                    LDEBUG( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
+                           "  time = " << t_freq_data->get_unix_time() <<
+                           "  id = " << t_freq_data->get_pkt_in_session() <<
+                           "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
+                           "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
+                    try
+                    {
+                        (this->*f_exe_func)( t_freq_data, t_trigger_flag );
+                    }
+                    catch( error& e )
+                    {
+                        LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
+                        break;
+                    }
+                    continue;
+                }
+
+                if( t_in_command == stream::s_stop )
+                {
+                    LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
+                    if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
+                    continue;
+                }
+
+                if( t_in_command == stream::s_exit )
+                {
+                    LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
+                    out_stream< 0 >().set( stream::s_exit );
+                    break;
+                }
             }
+        }
+        catch(...)
+        {
+            if( a_midge ) a_midge->throw_ex( std::current_exception() );
+            else throw;
         }
     }
 
@@ -175,7 +194,11 @@ namespace psyllid
         f_mask_mutex.unlock();
 
         LDEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
-        out_stream< 0 >().set( stream::s_run );
+        if( ! out_stream< 0 >().set( stream::s_run ) )
+        {
+            LERROR( plog, "Exiting due to stream error" );
+            throw error() << "Stream error while adding to mask";
+        }
         return;
     }
 
@@ -214,7 +237,11 @@ namespace psyllid
         f_mask_mutex.unlock();
 
         LDEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
-        out_stream< 0 >().set( stream::s_run );
+        if( ! out_stream< 0 >().set( stream::s_run ) )
+        {
+            LERROR( plog, "Exiting due to stream error" );
+            throw error() << "Stream error while applying threshold";
+        }
         return;
     }
 

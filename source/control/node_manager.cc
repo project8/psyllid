@@ -43,27 +43,9 @@ namespace psyllid
 			f_midge_mutex(),
             f_nodes(),
             f_connections(),
-            f_daq_config( new param_node() )
+            f_config( new param_node() )
     {
-        // DAQ config is optional; defaults will work just fine
-        if( a_master_config.has( "daq" ) )
-        {
-            f_daq_config.reset( new param_node( *a_master_config.node_at( "daq" ) ) );
-        }
-
-        if( f_daq_config->has( "preset" ) )
-        {
-            try
-            {
-                use_preset( f_daq_config->get_value( "preset" ) );
-            }
-            catch( error& e )
-            {
-                LERROR( plog, "Unable to apply DAQ preset: " << e.what() );
-                raise( SIGINT );
-            }
-        }
-
+        f_config.reset( new param_node( a_master_config ) );
     }
 
     node_manager::~node_manager()
@@ -73,6 +55,31 @@ namespace psyllid
             delete f_nodes.begin()->second;
             f_nodes.erase( f_nodes.begin() );
         }
+    }
+
+    void node_manager::initialize()
+    {
+        // DAQ config is optional; defaults will work just fine
+        if( f_config->has( "daq" ) )
+        {
+            param_node* t_daq_node = f_config->node_at( "daq" );
+            if( t_daq_node != nullptr )
+            {
+                if( t_daq_node->has( "preset" ) )
+                {
+                    try
+                    {
+                        use_preset( t_daq_node->get_value( "preset" ) );
+                    }
+                    catch( error& e )
+                    {
+                        LERROR( plog, "Unable to apply DAQ preset: " << e.what() );
+                        raise( SIGINT );
+                    }
+                }
+            }
+        }
+
     }
 
     void node_manager::use_preset( const std::string& a_name )
@@ -171,10 +178,10 @@ namespace psyllid
 
             try
             {
+                LINFO( plog, "Adding node <" << t_node_it->first << ">" );
                 f_midge->add( t_new_node );
-                LINFO( plog, "Added node <" << t_node_it->first << ">" );
             }
-            catch( midge::error& e )
+            catch( std::exception& e )
             {
                 delete t_new_node;
                 throw error() << "Unable to add processor <" << t_node_it->first << ">: " << e.what();
@@ -186,9 +193,10 @@ namespace psyllid
         {
             try
             {
+                LINFO( plog, "Adding connection <" << *t_conn_it << ">" );
                 f_midge->join( *t_conn_it );
             }
-            catch( midge::error& e )
+            catch( std::exception& e )
             {
                 throw error() << "Unable to join nodes: " << e.what();
             }
@@ -222,6 +230,14 @@ namespace psyllid
         return midge_package( f_midge, f_midge_mutex );
     }
 
+    void node_manager::return_midge( midge_package&& a_midge )
+    {
+        midge_package t_returned( std::move( a_midge ) );
+        t_returned.unlock();
+        f_must_reset_midge = true;
+        return;
+    }
+
 
     void node_manager::_add_node( const std::string& a_node_type, const std::string& a_node_name )
     {
@@ -232,6 +248,10 @@ namespace psyllid
             throw error() << "Cannot find binding for node type <" << a_node_type << ">";
         }
         t_builder->name() = a_node_name;
+        if( f_config->has( a_node_name ) )
+        {
+            t_builder->configure( *f_config->node_at( a_node_name ) );
+        }
         t_builder->set_daq_control( f_daq_control.lock() );
         f_nodes.insert( nodes_t::value_type( a_node_name, t_builder ) );
         return;

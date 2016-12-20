@@ -5,6 +5,7 @@
 set( headers
     freq_data.hh
     id_range_event.hh
+    memory_block.hh
     roach_packet.hh
     time_data.hh
     trigger_flag.hh
@@ -13,6 +14,7 @@ set( headers
 set( sources
     freq_data.cc
     id_range_event.cc
+    memory_block.cc
     roach_packet.cc
     time_data.cc
     trigger_flag.cc

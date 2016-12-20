@@ -30,7 +30,7 @@ namespace psyllid
     class request_receiver;
     class node_manager;
 
-    class run_server : public midge::cancelable
+    class run_server : public scarab::cancelable
     {
         public:
             run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semantic > a_version );

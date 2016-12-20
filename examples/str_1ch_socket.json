@@ -1,0 +1,19 @@
+{
+    "amqp":
+    {
+        "broker": "localhost"
+    },
+    
+    "daq":
+    {
+        "preset": "str-1ch",
+        "activate-at-startup": true
+    },
+
+    "prs": 
+    {
+        "length": 10,
+        "port": 23530,
+        "ip": "127.0.0.1"
+    }
+}

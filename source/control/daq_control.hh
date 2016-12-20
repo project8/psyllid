@@ -10,6 +10,7 @@
 
 #include "member_variables.hh"
 
+#include "node_manager.hh" // for midge_package
 #include "psyllid_error.hh"
 
 #include "cancelable.hh"
@@ -18,15 +19,14 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <future>
 #include <memory>
+#include <mutex>
 #include <thread>
 
 namespace psyllid
 {
-    class daq_worker;
-    class node_manager;
-
-    class daq_control : public midge::cancelable
+    class daq_control : public scarab::cancelable
     {
         public:
             class run_error : public error
@@ -47,7 +47,7 @@ namespace psyllid
             virtual ~daq_control();
 
             /// Run the DAQ control thread
-            void execute( std::exception_ptr a_ex_ptr );
+            void execute();
 
             /// Start the DAQ into the idle state
             /// Deactivated with deactivate()
@@ -89,20 +89,23 @@ namespace psyllid
             bool handle_get_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
         private:
-            void notify_run_stopped( bool a_in_error );
-
             void do_cancellation();
 
-            std::condition_variable f_condition;
+            void do_run( unsigned a_duration );
+
+            std::condition_variable f_activation_condition;
             std::mutex f_daq_mutex;
 
             std::shared_ptr< node_manager > f_node_manager;
 
-            std::shared_ptr< daq_worker > f_daq_worker;
-            std::mutex f_worker_mutex;
-            std::thread f_worker_thread;
-
             std::unique_ptr< scarab::param_node > f_daq_config;
+
+            midge_package f_midge_pkg;
+
+            std::condition_variable f_run_stopper; // ends the run after a given amount of time
+            std::mutex f_run_stop_mutex; // mutex used by the run_stopper
+
+            std::future< void > f_run_return;
 
         public:
             mv_referrable( std::string, run_filename );
