@@ -18,6 +18,8 @@
 
 #include "psyllid_error.hh"
 
+#include "freq_data.hh"
+#include "time_data.hh"
 
 #include "configurator.hh"
 #include "logger.hh"
@@ -41,26 +43,50 @@ using namespace psyllid;
 LOGGER( plog, "grab_packet" );
 
 
+bool ProcessUnknownPacket( uint8_t* a_buffer );
+bool ProcessROACHPacket( uint8_t* a_buffer );
+
+
 int main( int argc, char** argv )
 {
     try
     {
         scarab::param_node t_default_config;
+        t_default_config.add( "n", new scarab::param_value( 1U ) );
         t_default_config.add( "ip", new scarab::param_value( "127.0.0.1" ) );
         t_default_config.add( "port", new scarab::param_value( 23530U ) );
         t_default_config.add( "interface", new scarab::param_value( "eth1" ) );
         t_default_config.add( "timeout", new scarab::param_value( 10U ) );
+        t_default_config.add( "max-packet-size", new scarab::param_value( 16384U ) );
+        t_default_config.add( "packet-type", new scarab::param_value( "roach" ) );
 
         scarab::configurator t_configurator( argc, argv, &t_default_config );
 
+        unsigned t_n_packets( t_configurator.get< unsigned >( "n" ) );
         std::string t_ip( t_configurator.get< std::string >( "ip" ) );
         unsigned t_port = t_configurator.get< unsigned >( "port" );
         std::string t_interface( t_configurator.get< std::string >( "interface" ) );
         unsigned t_timeout_sec = t_configurator.get< unsigned >( "timeout" );
         //bool t_use_fpa( t_configurator.config().has( "fpa" ) );
+        unsigned t_max_packet_size = t_configurator.get< unsigned >( "max-packet-size" );
 
-
-
+        std::string t_packet_type( t_configurator.get< std::string >( "packet-type" ) );
+        bool (*t_proc_pkt_func)( uint8_t* ) = nullptr;
+        if( t_packet_type == "roach" )
+        {
+            t_proc_pkt_func = &ProcessROACHPacket;
+            LDEBUG( plog, "Processing packets as ROACH packets" );
+        }
+        else if( t_packet_type == "unknown" )
+        {
+            t_proc_pkt_func= &ProcessUnknownPacket;
+            LDEBUG( plog, "Processing packets as unknown packets" );
+        }
+        else
+        {
+            LERROR( plog, "Unknown packet type supplied: " << t_packet_type );
+            return -1;
+        }
 
 
         LDEBUG( plog, "Opening UDP socket receiving at " << t_ip << ":" << t_port );
@@ -118,7 +144,27 @@ int main( int argc, char** argv )
 
 
 
+        uint8_t* t_buffer = new uint8_t [t_max_packet_size];
 
+        for( unsigned i_packet = 0; i_packet < t_n_packets; ++i_packet )
+        {
+            LINFO( plog, "Waiting for next packet" );
+            ssize_t t_size_received = 0;
+            while( t_size_received <= 0 )
+            {
+                t_size_received = ::recv( t_socket, (void*)t_buffer, t_max_packet_size, 0 );
+
+                if( t_size_received > 0 )
+                {
+                    LINFO( plog, "Packet received (" << t_size_received << " bytes)" );
+
+                    if( ! (*t_proc_pkt_func)( t_buffer ) )
+                    {
+                        LWARN( plog, "Packet not processed correctly" );
+                    }
+                }
+            }
+        }
 
 
 
@@ -147,3 +193,34 @@ int main( int argc, char** argv )
 
     return 0;
 }
+
+
+bool ProcessROACHPacket( uint8_t* a_buffer )
+{
+    byteswap_inplace( reinterpret_cast< raw_roach_packet* >( a_buffer ) );
+    roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( a_buffer );
+
+    // debug purposes only
+#ifndef NDEBUG
+    raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( a_buffer );
+    LDEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
+#endif
+
+    LINFO( plog, "ROACH data received:\n"
+           "  digital_id (channel) = " << t_roach_packet->f_digital_id << '\n' <<
+           "  unix time = " << t_roach_packet->f_unix_time << '\n' <<
+           "  pkt_batch = " << t_roach_packet->f_pkt_in_batch << '\n' <<
+           "  freqNotTime = " << (int)t_roach_packet->f_freq_not_time << '\n' <<
+           "  if id = " << t_roach_packet->f_if_id << '\n' <<
+           "  first 6 bins = " << (int)t_roach_packet->f_data[ 0 ] << ", " << (int)t_roach_packet->f_data[ 1 ] << ";  " << (int)t_roach_packet->f_data[ 2 ] << ", " << (int)t_roach_packet->f_data[ 3 ] << ";  " << (int)t_roach_packet->f_data[ 4 ] << ", " << (int)t_roach_packet->f_data[ 5 ] );
+
+
+    return true;
+}
+
+bool ProcessUnknownPacket( uint8_t* /*a_buffer*/ )
+{
+    return true;
+}
+
+
