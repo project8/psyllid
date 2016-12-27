@@ -9,6 +9,8 @@
 
 #include "psyllid_error.hh"
 
+///#include "roach_packet.hh"
+
 #include "logger.hh"
 #include "param.hh"
 
@@ -292,10 +294,12 @@ namespace psyllid
         // grab the ethernet interface header (defined in if_ether.h)
         ethhdr* t_eth_hdr = reinterpret_cast< ethhdr* >( (uint8_t*)a_packet + a_packet->tp_mac );
 
+#ifndef NDEBUG
         char t_macstr_dest[3*ETH_ALEN], t_macstr_source[3*ETH_ALEN];
         ether_ntoa_r((struct ether_addr*)&(t_eth_hdr->h_dest), t_macstr_dest);
         ether_ntoa_r((struct ether_addr*)&(t_eth_hdr->h_source), t_macstr_source);
         LTRACE( plog, "ethhdr: h_dest: " << t_macstr_dest << ";  h_source: " << t_macstr_source << ";  h_proto: " << ntohs(t_eth_hdr->h_proto) );
+#endif
         //LWARN( plog, "Ethernet header: " << t_eth_p_ip << "; htons(ETH_P_IP): " << htons(ETH_P_IP) << "; t_eth_hdr->h_proto: " << t_eth_hdr->h_proto );
         //for (int i=0; i<50; ++i)
         //{
@@ -374,6 +378,9 @@ namespace psyllid
 
         memory_block* t_mem_block = out_stream< 0 >().data();
         t_mem_block->resize( f_max_packet_size );
+
+        ///raw_roach_packet* t_rp = reinterpret_cast< raw_roach_packet* >( t_mem_block->block() );
+        ///LERROR( plog, "Payload: " << (int)t_rp->f_data[0] << ", " << (int)t_rp->f_data[1] << " -- " << (int)t_rp->f_data[2] << ", " << (int)t_rp->f_data[3] << " -- " << (int)t_rp->f_data[4] << ", " << (int)t_rp->f_data[5] );
 
         LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes); block address is " << (void*)t_mem_block->block() );
 

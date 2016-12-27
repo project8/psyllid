@@ -204,6 +204,7 @@ bool ProcessROACHPacket( uint8_t* a_buffer )
 #ifndef NDEBUG
     raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( a_buffer );
     LDEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
+    LDEBUG( plog, "Raw packet data, first 6 bins: " << (int)t_raw_packet->f_data[0] << ", " << (int)t_raw_packet->f_data[1] << ";  " << (int)t_raw_packet->f_data[2] << ", " << (int)t_raw_packet->f_data[3] << ";  " << (int)t_raw_packet->f_data[4] << ", " << (int)t_raw_packet->f_data[5] );
 #endif
 
     LINFO( plog, "ROACH data received:\n"

@@ -208,12 +208,12 @@ namespace psyllid
                         t_time_data->set_pkt_in_session( f_time_session_pkt_counter++ );
                         ::memcpy( &t_time_data->packet(), t_roach_packet, t_pkt_size );
 
-                        LTRACE( plog, "Time data received (" << t_pkt_size << " bytes):  chan = " << t_time_data->get_digital_id() <<
+                        LWARN( plog, "Time data received (" << t_pkt_size << " bytes):  chan = " << t_time_data->get_digital_id() <<
                                "  time = " << t_time_data->get_unix_time() <<
                                "  pkt_session = " << t_time_data->get_pkt_in_session() <<
                                "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
                                "  freqNotTime = " << t_time_data->get_freq_not_time() <<
-                               "  bin 0 [0] = " << (int)t_time_data->get_array()[ 0 ][ 0 ] );
+                               "  bin 0 [0] = " << (int)t_time_data->get_array()[ 0 ][ 0 ]  << ", " << (int)t_time_data->get_array()[ 0 ][ 1 ] << " -- " << (int)t_time_data->get_array()[ 1 ][ 0 ] << ", " << (int)t_time_data->get_array()[ 1 ][ 1 ] << " -- " << (int)t_time_data->get_array()[ 2 ][ 0 ] << ", " << (int)t_time_data->get_array()[ 2 ][ 1 ]);
                         LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
                         if( ! out_stream< 0 >().set( stream::s_run ) )
                         {
