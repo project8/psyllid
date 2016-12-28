@@ -23,7 +23,7 @@ const PayloadSize int16 = 8192
 
 type RawPacket struct {
 	word0, word1, word2, word3 uint64
-	payload [PayloadSize]int8
+	payload [PayloadSize]byte
 }
 
 type RoachPacket struct {
@@ -43,7 +43,7 @@ type RoachPacket struct {
 	unixTime, pktInBatch, digitalID, ifID, userData1, userData0 uint32
 	reserved0, reserved1 uint64
 	freqNotTime uint8
-	payload [PayloadSize]int8
+	payload []byte
 }
 
 func (roachPkt *RoachPacket)PackInto( rawPkt *RawPacket ) {
@@ -106,37 +106,78 @@ func main() {
 		ifID: 0,
 		freqNotTime: 0,
 	}
+	timePkt.payload = make([]byte, PayloadSize)
 	freqPkt := RoachPacket{
 		digitalID: 0,
 		ifID: 0,
 		freqNotTime: 1,
 	}
-
-	// fill the payload
-	for i := 0; i < int(PayloadSize); i+=2 {
-		timePkt.payload[i] = int8(256.0 * math.Sin( float64(i) * math.Pi / 16.0 ))
-		timePkt.payload[i+1] = int8(5)
-		freqPkt.payload[i] = int8(1)
-		freqPkt.payload[i+1] = int8(2)
+	freqPkt.payload = make([]byte, PayloadSize)
+	fmt.Printf("Payload size: %v\n", PayloadSize)
+	
+	// fill the slices that we'll use to write to the payloads
+	timePayloadFirst8 := make([]int8, 8) // true order
+	freqPayloadFirst8 := make([]int8, 8) // true order
+    timePayload64Bit := make([]uint64, PayloadSize/8)
+    freqPayload64Bit := make([]uint64, PayloadSize/8)
+    var payloadIndex int
+	for iWord := 0; iWord < int(PayloadSize/8); iWord++ {
+	    timePayload64Bit[ iWord ] = 0
+	    freqPayload64Bit[ iWord ] = 0
+	    for iByte := 0; iByte < 8; iByte+=2 {
+            payloadIndex = iWord*8 + iByte
+            timePayload64Bit[ iWord ] = timePayload64Bit[ iWord ] | ((uint64(256.0 * math.Sin( float64(payloadIndex) * math.Pi / 16.0 )) & 0xFF) << uint64(8*iByte))
+            timePayload64Bit[ iWord ] = timePayload64Bit[ iWord ] | (uint64(5) << uint64(8*(iByte+1)))
+            freqPayload64Bit[ iWord ] = freqPayload64Bit[ iWord ] | (uint64(1) << uint64(8*iByte))
+            freqPayload64Bit[ iWord ] = freqPayload64Bit[ iWord ] | (uint64(2) << uint64(8*(iByte+1)))
+            if iWord < 10 {
+                fmt.Printf( "%v ", timePayload64Bit[iWord])
+                timePayloadFirst8[iByte] = int8(256.0 * math.Sin( float64(payloadIndex) * math.Pi / 16.0 ))
+                timePayloadFirst8[iByte+1] = 5
+                freqPayloadFirst8[iByte] = 1
+                freqPayloadFirst8[iByte+1] = 2
+            }
+	    }
+	    if iWord < 10 {
+            fmt.Printf( "\n$$$ 8 bytes: %v\n", timePayloadFirst8)
+	    }
 	}
+	
+	// write 64-bit-integer slices to buffers; use binary.BigEndian to do 64-bit byte switching
+    timePayloadBuf := new(bytes.Buffer)
+    freqPayloadBuf := new(bytes.Buffer)
+	binary.Write(timePayloadBuf, binary.BigEndian, timePayload64Bit)
+	binary.Write(freqPayloadBuf, binary.BigEndian, freqPayload64Bit)
+
+    //fmt.Printf( "### time buf bytes:\n%v\n", timePayloadBuf.Bytes())
+    fmt.Printf("%v %v", len(timePayloadBuf.Bytes()), cap(timePayloadBuf.Bytes()))
+
+    // copy write buffers to payloads
+    copy(timePkt.payload, timePayloadBuf.Bytes())
+	copy(freqPkt.payload, freqPayloadBuf.Bytes())
+	
+    fmt.Printf( "First 8 elements of the time and freq payloads in true order as signed integers\n(some elements may be changed while simulating each packet)\n" )
+    fmt.Printf( "Time:%v\n", timePayloadFirst8 )
+    fmt.Printf( "Freq:%v\n", freqPayloadFirst8 )
+    fmt.Printf( "First 8 elements of the time and freq payloads in as-sent order as unsigned integers\n(some elements may be changed while simulating each packet)\n" )
+    fmt.Printf( "Time:%v\n", timePkt.payload[:8] )
+    fmt.Printf( "Freq:%v\n", freqPkt.payload[:8] )
 
 	var packetCounter uint32 = 0
 	const packetCounterMax uint32 = 390625
 
 	buffer := new( bytes.Buffer )
 
-    var bin0Counter int8 = 0
-	var signalCounter uint8 = 0
+    var bin0Counter byte = 0
+	var signalCounter byte = 0
 	const signalCounterMax uint8 = 15
 	const signalTrigger uint8 = 14
-
-	fmt.Printf( "20 elements of the time data array:\n%v", timePkt.payload[0:20] )
 
 	fmt.Println()
 		
 	for {
-        timePkt.payload[0] = bin0Counter
-        freqPkt.payload[0] = bin0Counter
+        timePkt.payload[7] = bin0Counter  // put in bin 7 because of byte reordering
+        freqPkt.payload[7] = bin0Counter  // put in bin 7 because of byte reordering
 		for i := 0; i < 2; i++ {
 			// convert the appropriate roach packet to rawPkt
 			if i == 0 {
@@ -144,6 +185,7 @@ func main() {
 				timePkt.pktInBatch = packetCounter
 				(&timePkt).PackInto( &rawPkt )
 				fmt.Printf( "Sending (%v bytes): time = %v,  id = %v,  freqNotTime = %v\n", buffer.Len(), timePkt.unixTime, timePkt.pktInBatch, timePkt.freqNotTime )
+				fmt.Printf( "Payload (8 elements, reverse of true order): %v\n", timePkt.payload[0:8] )
 			} else {
 				freqPkt.unixTime = uint32(time.Now().Unix())
 				freqPkt.pktInBatch = packetCounter
@@ -155,6 +197,7 @@ func main() {
 				}
 				(&freqPkt).PackInto( &rawPkt )
 				fmt.Printf( "Sending (%v bytes): time = %v,  id = %v,  freqNotTime = %v\n", buffer.Len(), freqPkt.unixTime, freqPkt.pktInBatch, freqPkt.freqNotTime )
+				fmt.Printf( "Payload (first 8 elements, reverse of true order): %v\n", freqPkt.payload[0:8] )
 			}
 
 			fmt.Printf( "Raw packet header: %x, %x, %x, %x\n", rawPkt.word0, rawPkt.word1, rawPkt.word2, rawPkt.word3 )
@@ -184,6 +227,7 @@ func main() {
 		}
 		
 		bin0Counter++
-
 	}
+	
+	return
 }

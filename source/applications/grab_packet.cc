@@ -166,8 +166,6 @@ int main( int argc, char** argv )
             }
         }
 
-
-
         //clean up udp_server address
         if( t_address != nullptr )
         {
@@ -181,8 +179,6 @@ int main( int argc, char** argv )
             ::close( t_socket );
             t_socket = 0;
         }
-
-
 
     }
     catch( std::exception& e )
@@ -204,7 +200,7 @@ bool ProcessROACHPacket( uint8_t* a_buffer )
 #ifndef NDEBUG
     raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( a_buffer );
     LDEBUG( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
-    LDEBUG( plog, "Raw packet data, first 6 bins: " << (int)t_raw_packet->f_data[0] << ", " << (int)t_raw_packet->f_data[1] << ";  " << (int)t_raw_packet->f_data[2] << ", " << (int)t_raw_packet->f_data[3] << ";  " << (int)t_raw_packet->f_data[4] << ", " << (int)t_raw_packet->f_data[5] );
+    LDEBUG( plog, "Raw packet data, first 8 bins, true order: " << (int)t_raw_packet->f_data[0] << ", " << (int)t_raw_packet->f_data[1] << ";  " << (int)t_raw_packet->f_data[2] << ", " << (int)t_raw_packet->f_data[3] << ";  " << (int)t_raw_packet->f_data[4] << ", " << (int)t_raw_packet->f_data[5] << ";  " << (int)t_raw_packet->f_data[6] << ", " << (int)t_raw_packet->f_data[7] );
 #endif
 
     LINFO( plog, "ROACH data received:\n"
@@ -213,7 +209,7 @@ bool ProcessROACHPacket( uint8_t* a_buffer )
            "  pkt_batch = " << t_roach_packet->f_pkt_in_batch << '\n' <<
            "  freqNotTime = " << (int)t_roach_packet->f_freq_not_time << '\n' <<
            "  if id = " << t_roach_packet->f_if_id << '\n' <<
-           "  first 8 bins = " << (int)t_roach_packet->f_data[ 0 ] << ", " << (int)t_roach_packet->f_data[ 1 ] << ";  " << (int)t_roach_packet->f_data[ 2 ] << ", " << (int)t_roach_packet->f_data[ 3 ] << ";  " << (int)t_roach_packet->f_data[ 4 ] << ", " << (int)t_roach_packet->f_data[ 5 ] << ";  " << (int)t_roach_packet->f_data[ 6 ] << ", " << (int)t_roach_packet->f_data[ 7 ] );
+           "  first 8 bins (true order) = " << (int)t_roach_packet->f_data[ 0 ] << ", " << (int)t_roach_packet->f_data[ 1 ] << ";  " << (int)t_roach_packet->f_data[ 2 ] << ", " << (int)t_roach_packet->f_data[ 3 ] << ";  " << (int)t_roach_packet->f_data[ 4 ] << ", " << (int)t_roach_packet->f_data[ 5 ] << ";  " << (int)t_roach_packet->f_data[ 6 ] << ", " << (int)t_roach_packet->f_data[ 7 ] );
 /*
     std::stringstream allbins;
     allbins << "[ ";
