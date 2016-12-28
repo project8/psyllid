@@ -213,9 +213,18 @@ bool ProcessROACHPacket( uint8_t* a_buffer )
            "  pkt_batch = " << t_roach_packet->f_pkt_in_batch << '\n' <<
            "  freqNotTime = " << (int)t_roach_packet->f_freq_not_time << '\n' <<
            "  if id = " << t_roach_packet->f_if_id << '\n' <<
-           "  first 6 bins = " << (int)t_roach_packet->f_data[ 0 ] << ", " << (int)t_roach_packet->f_data[ 1 ] << ";  " << (int)t_roach_packet->f_data[ 2 ] << ", " << (int)t_roach_packet->f_data[ 3 ] << ";  " << (int)t_roach_packet->f_data[ 4 ] << ", " << (int)t_roach_packet->f_data[ 5 ] );
-
-
+           "  first 8 bins = " << (int)t_roach_packet->f_data[ 0 ] << ", " << (int)t_roach_packet->f_data[ 1 ] << ";  " << (int)t_roach_packet->f_data[ 2 ] << ", " << (int)t_roach_packet->f_data[ 3 ] << ";  " << (int)t_roach_packet->f_data[ 4 ] << ", " << (int)t_roach_packet->f_data[ 5 ] << ";  " << (int)t_roach_packet->f_data[ 6 ] << ", " << (int)t_roach_packet->f_data[ 7 ] );
+/*
+    std::stringstream allbins;
+    allbins << "[ ";
+    for( unsigned i=0; i<8192; ++i )
+    {
+        allbins << (int)t_roach_packet->f_data[ i ];
+        if( i != 8191 ) allbins << ", ";
+    }
+    allbins << " ]";
+    LWARN( plog, "All bins:\n" << allbins.str() );
+*/
     return true;
 }
 
