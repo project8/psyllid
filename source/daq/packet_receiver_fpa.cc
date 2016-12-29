@@ -29,8 +29,8 @@
 #include <sys/types.h>
 
 // debug
-#include <netinet/ether.h>
-#include <linux/icmp.h>
+//#include <netinet/ether.h>
+//#include <linux/icmp.h>
 
 using midge::stream;
 
@@ -292,10 +292,12 @@ namespace psyllid
         // grab the ethernet interface header (defined in if_ether.h)
         ethhdr* t_eth_hdr = reinterpret_cast< ethhdr* >( (uint8_t*)a_packet + a_packet->tp_mac );
 
+#ifndef NDEBUG
         char t_macstr_dest[3*ETH_ALEN], t_macstr_source[3*ETH_ALEN];
         ether_ntoa_r((struct ether_addr*)&(t_eth_hdr->h_dest), t_macstr_dest);
         ether_ntoa_r((struct ether_addr*)&(t_eth_hdr->h_source), t_macstr_source);
         LTRACE( plog, "ethhdr: h_dest: " << t_macstr_dest << ";  h_source: " << t_macstr_source << ";  h_proto: " << ntohs(t_eth_hdr->h_proto) );
+#endif
         //LWARN( plog, "Ethernet header: " << t_eth_p_ip << "; htons(ETH_P_IP): " << htons(ETH_P_IP) << "; t_eth_hdr->h_proto: " << t_eth_hdr->h_proto );
         //for (int i=0; i<50; ++i)
         //{
