@@ -84,12 +84,12 @@ namespace psyllid
           * Frequency domain:
              - There are 4096 x (8-bit real, 8-bit imaginary) spectrum samples within a packet.
              - Since the input signal is real-valued, the spectrum is symmetric and only the positive half of the spectrum is provided. So each packet contains the full spectral-information for each 8192-point FFT window. (There is a technical detail here, that is by the time the signal gets to the FFT it is already IQ-sampled and contains only information in the positive half-spectrum, but that doesn't affect anything.)
-             - The samples are in canonical order, so the first sample is DC and the last sample is (100MHz - channel width).
+             - The samples are in canonical order, so the first sample is DC and the last sample is (100MHz - channel width), with every set of 8 sequential bytes written as a 64-bit big-endian word.
              - Sample rate at input to FFT is 200Msps.
           * Time-domain:
              - There are 4096 x (8-bit real, 8-bit imaginary) time-domain samples within a packet.
              - The time-domain data is IQ data of the positive half-spectrum of the signal going into the FFT, sampled at 100Msps. In other words, the 200Msps signal going into the FFT is tapped off, filtered and downconverted to shift information from 0MHz to +100MHz down to -50MHz to +50MHz, and then complex-sampled at 100Msps.
-             - The samples are in correct order, so first sample first and last sample last.
+             - The samples are in correct order, so first sample first and last sample last, with every set of 8 sequential bytes written as a 64-bit big-endian word.
              - If you grab a time-domain and frequency-domain packet that have the same serial number (same unix_time and same pkt_in_batch), then you should essentially get the same spectrum (see figure attached). (This is not strictly true, the time-domain data passes through a second filter + downconversion, and then there's quantization in the roach FFT, but to first order this is true.)
      *
      */
