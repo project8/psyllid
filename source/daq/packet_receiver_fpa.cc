@@ -29,8 +29,9 @@
 #include <sys/types.h>
 
 // debug
-//#include <netinet/ether.h>
-//#include <linux/icmp.h>
+#ifndef NDEBUG
+#include <netinet/ether.h>
+#endif
 
 using midge::stream;
 
