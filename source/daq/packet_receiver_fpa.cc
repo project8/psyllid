@@ -9,8 +9,6 @@
 
 #include "psyllid_error.hh"
 
-///#include "roach_packet.hh"
-
 #include "logger.hh"
 #include "param.hh"
 
@@ -31,8 +29,8 @@
 #include <sys/types.h>
 
 // debug
-#include <netinet/ether.h>
-#include <linux/icmp.h>
+//#include <netinet/ether.h>
+//#include <linux/icmp.h>
 
 using midge::stream;
 
@@ -378,9 +376,6 @@ namespace psyllid
 
         memory_block* t_mem_block = out_stream< 0 >().data();
         t_mem_block->resize( f_max_packet_size );
-
-        ///raw_roach_packet* t_rp = reinterpret_cast< raw_roach_packet* >( t_mem_block->block() );
-        ///LERROR( plog, "Payload: " << (int)t_rp->f_data[0] << ", " << (int)t_rp->f_data[1] << " -- " << (int)t_rp->f_data[2] << ", " << (int)t_rp->f_data[3] << " -- " << (int)t_rp->f_data[4] << ", " << (int)t_rp->f_data[5] );
 
         LTRACE( plog, "Packet received (" << t_udp_data_len << " bytes); block address is " << (void*)t_mem_block->block() );
 

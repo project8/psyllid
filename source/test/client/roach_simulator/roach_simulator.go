@@ -93,9 +93,6 @@ func main() {
 	ServerAddr,err := net.ResolveUDPAddr("udp", address)
 	CheckError(err)
  
-	//LocalAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
-	//CheckError(err)
- 
 	Conn, err := net.DialUDP("udp", nil, ServerAddr)
 	CheckError(err)
 	defer Conn.Close()
