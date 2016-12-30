@@ -113,42 +113,36 @@ func main() {
 	fmt.Printf("Payload size: %v\n", PayloadSize)
 	
 	// fill the slices that we'll use to write to the payloads
+    timePayloadBuf := new(bytes.Buffer)
+    freqPayloadBuf := new(bytes.Buffer)
+    var value uint8
 	timePayloadFirst8 := make([]int8, 8) // true order
 	freqPayloadFirst8 := make([]int8, 8) // true order
-    timePayload64Bit := make([]uint64, PayloadSize/8)
-    freqPayload64Bit := make([]uint64, PayloadSize/8)
-    var payloadIndex int
+    var truePayloadIndex int
 	for iWord := 0; iWord < int(PayloadSize/8); iWord++ {
-	    timePayload64Bit[ iWord ] = 0
-	    freqPayload64Bit[ iWord ] = 0
-	    for iByte := 0; iByte < 8; iByte+=2 {
-            payloadIndex = iWord*8 + iByte
-            timePayload64Bit[ iWord ] = timePayload64Bit[ iWord ] | ((uint64(256.0 * math.Sin( float64(payloadIndex) * math.Pi / 16.0 )) & 0xFF) << uint64(8*iByte))
-            timePayload64Bit[ iWord ] = timePayload64Bit[ iWord ] | (uint64(5) << uint64(8*(iByte+1)))
-            freqPayload64Bit[ iWord ] = freqPayload64Bit[ iWord ] | (uint64(1) << uint64(8*iByte))
-            freqPayload64Bit[ iWord ] = freqPayload64Bit[ iWord ] | (uint64(2) << uint64(8*(iByte+1)))
-            if iWord < 10 {
-                fmt.Printf( "%v ", timePayload64Bit[iWord])
-                timePayloadFirst8[iByte] = int8(256.0 * math.Sin( float64(payloadIndex) * math.Pi / 16.0 ))
+	    for iByte := 6; iByte >=0; iByte-=2 {
+            truePayloadIndex = iWord*8 + iByte
+            value = uint8(128.0 * math.Sin( float64(truePayloadIndex/2) * math.Pi / 16.0 ))
+            binary.Write(timePayloadBuf, binary.LittleEndian, value)
+            value = uint8(5)
+            binary.Write(timePayloadBuf, binary.LittleEndian, value)
+            value = uint8(1)
+            binary.Write(freqPayloadBuf, binary.LittleEndian, value)
+            value = uint8(2)
+            binary.Write(freqPayloadBuf, binary.LittleEndian, value)
+            if iWord == 1 {
+                //fmt.Printf( "%v ", timePayload64Bit[iWord])
+                timePayloadFirst8[iByte] = int8(128.0 * math.Sin( float64(truePayloadIndex/2) * math.Pi / 16.0 ))
                 timePayloadFirst8[iByte+1] = 5
                 freqPayloadFirst8[iByte] = 1
                 freqPayloadFirst8[iByte+1] = 2
             }
 	    }
-	    if iWord < 10 {
-            fmt.Printf( "\n$$$ 8 bytes: %v\n", timePayloadFirst8)
-	    }
+	    //if iWord < 10 {
+        //    fmt.Printf( "\n$$$ 8 bytes: %v\n", timePayloadFirst8)
+	    //}
 	}
 	
-	// write 64-bit-integer slices to buffers; use binary.BigEndian to do 64-bit byte switching
-    timePayloadBuf := new(bytes.Buffer)
-    freqPayloadBuf := new(bytes.Buffer)
-	binary.Write(timePayloadBuf, binary.BigEndian, timePayload64Bit)
-	binary.Write(freqPayloadBuf, binary.BigEndian, freqPayload64Bit)
-
-    //fmt.Printf( "### time buf bytes:\n%v\n", timePayloadBuf.Bytes())
-    fmt.Printf("%v %v", len(timePayloadBuf.Bytes()), cap(timePayloadBuf.Bytes()))
-
     // copy write buffers to payloads
     copy(timePkt.payload, timePayloadBuf.Bytes())
 	copy(freqPkt.payload, freqPayloadBuf.Bytes())
@@ -173,8 +167,8 @@ func main() {
 	fmt.Println()
 		
 	for {
-        timePkt.payload[7] = bin0Counter  // put in bin 7 because of byte reordering
-        freqPkt.payload[7] = bin0Counter  // put in bin 7 because of byte reordering
+        timePkt.payload[6] = bin0Counter  // put in bin 6 because of byte reordering
+        freqPkt.payload[6] = bin0Counter  // put in bin 6 because of byte reordering
 		for i := 0; i < 2; i++ {
 			// convert the appropriate roach packet to rawPkt
 			if i == 0 {
