@@ -8,16 +8,12 @@
 #ifndef UTILITY_BYTE_SWAP_HH_
 #define UTILITY_BYTE_SWAP_HH_
 
-
 #ifdef __APPLE__
-#include <libkern/OSByteOrder.h>
-#define bswap_16 OSSwapInt16
-#define bswap_32 OSSwapInt32
-#define bswap_64 OSSwapInt64
+#include <machine/endian.h>
+// this is the only function currently used in psyllid; more could be added as necessary
+#define be64toh(x) ntohll(x)
 #else
-#include <byteswap.h>
+#include <endian.h>
 #endif
-
-
 
 #endif /* UTILITY_BYTE_SWAP_HH_ */
