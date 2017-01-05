@@ -14,6 +14,11 @@
 #include <set>
 #include <string>
 
+namespace scarab
+{
+    class param_node;
+}
+
 namespace psyllid
 {
     class node_manager;
@@ -26,7 +31,11 @@ namespace psyllid
 
         public:
             node_config_preset();
+            node_config_preset( const std::string& a_name );
+            node_config_preset( const node_config_preset& a_orig );
             virtual ~node_config_preset();
+
+            node_config_preset& operator=( const node_config_preset& a_rhs );
 
             const nodes_t& get_nodes() const;
             const connections_t& get_connections() const;
@@ -35,11 +44,33 @@ namespace psyllid
             void node( const std::string& a_type, const std::string& a_name );
             void connection( const std::string& a_conn );
 
-        private:
+        protected:
+            std::string f_name;
             nodes_t f_nodes;
             connections_t f_connections;
+    };
+
+
+    class node_config_runtime_preset : public node_config_preset
+    {
+        public:
+            node_config_runtime_preset();
+            node_config_runtime_preset( const std::string& a_name );
+            node_config_runtime_preset( const node_config_runtime_preset& a_orig );
+            virtual ~node_config_runtime_preset();
+
+            node_config_runtime_preset& operator=( const node_config_runtime_preset& a_rhs );
+
+        public:
+            static bool add_preset( const scarab::param_node* a_preset_node );
+
+        protected:
+            static std::map< std::string, node_config_runtime_preset> s_runtime_presets;
 
     };
+
+
+
 
     inline const node_config_preset::nodes_t& node_config_preset::get_nodes() const
     {
@@ -51,6 +82,7 @@ namespace psyllid
         return f_connections;
     }
 
+
 } /* namespace psyllid */
 
 
@@ -59,11 +91,12 @@ namespace psyllid
 	class preset_class : public node_config_preset \
     { \
         public: \
-    		preset_class(); \
+    		preset_class( const std::string& a_name ); \
             virtual ~preset_class() {}; \
     };
 
 #define REGISTER_PRESET( preset_class, preset_name ) \
-        static ::scarab::registrar< ::psyllid::node_config_preset, preset_class > s_node_config_preset_##preset_class##_registrar( preset_name );
+        static ::scarab::registrar< ::psyllid::node_config_preset, preset_class, const std::string& > s_node_config_preset_##preset_class##_registrar( preset_name );
+
 
 #endif /* CONTROL_NODE_CONFIG_PRESET_HH_ */

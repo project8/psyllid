@@ -88,7 +88,7 @@ namespace psyllid
 
         f_must_reset_midge = true;
 
-        node_config_preset* t_preset = scarab::factory< node_config_preset >::get_instance()->create( a_name );
+        node_config_preset* t_preset = scarab::factory< node_config_preset, const std::string& >::get_instance()->create( a_name, a_name );
 
         if( t_preset == nullptr )
         {
