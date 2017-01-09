@@ -42,13 +42,59 @@ namespace psyllid
         }
     }
 
+    bool stream_manager::initialize( const scarab::param_array& a_config )
+    {
+        for( scarab::param_array::const_iterator t_str_conf_it = a_config.begin(); t_str_conf_it != a_config.end(); ++t_str_conf_it )
+        {
+            if( ! (*t_str_conf_it)->is_node() )
+            {
+                LERROR( plog, "Invalid stream configuration" );
+                return false;
+            }
+            if( add_stream( &(*t_str_conf_it)->as_node() ) < 0 )
+            {
+                LERROR( plog, "Something went wrong while adding a stream" );
+                return true;
+            }
+        }
+        return true;
+    }
+
     int stream_manager::add_stream( const scarab::param_node* a_node )
     {
         // do not need to lock the mutex here because we're not doing anything to the stream_manager until inside _add_stream()
+        try
+        {
+            return _add_stream( a_node );
+        }
+        catch( error& e )
+        {
+            LERROR( plog, e.what() );
+            return -1;
+        }
+    }
+
+    void stream_manager::remove_stream( unsigned a_stream_no )
+    {
+        // do not need to lock the mutex here because we're not doing anything to the stream_manager until inside _remove_stream()
+        try
+        {
+            return _remove_stream( a_stream_no );
+        }
+        catch( error& e )
+        {
+            LWARN( plog, e.what() );
+            return;
+        }
+    }
+
+    int stream_manager::_add_stream( const scarab::param_node* a_node )
+    {
+        // do not need to lock the mutex here because we're not doing anything to the stream_manager until inside _add_stream( string, param_node )
 
         if( a_node == nullptr )
         {
-            LWARN( plog, "Null config received" );
+            throw error() << "Null config received";
             return -1;
         }
 
@@ -56,7 +102,7 @@ namespace psyllid
 
         if( t_preset_param == nullptr )
         {
-            LWARN( plog, "No preset specified" );
+            throw error() << "No preset specified";
             return -1;
         }
         else if( t_preset_param->is_node() )
@@ -64,7 +110,7 @@ namespace psyllid
             const scarab::param_node* t_preset_param_node = &t_preset_param->as_node();
             if( ! node_config_runtime_preset::add_preset( t_preset_param_node ) )
             {
-                LWARN( plog, "Runtime preset could not be added" );
+                throw error() << "Runtime preset could not be added";
                 return -1;
             }
             // "name" is guaranteed to be there by the successful completion of node_config_runtime_preset::add_preset
@@ -76,33 +122,8 @@ namespace psyllid
         }
         else
         {
-            LWARN( plog, "Invalid preset specification" );
-            return -1;
+            throw error() << "Invalid preset specification";
         }
-    }
-
-    void stream_manager::remove_stream( unsigned a_stream_no )
-    {
-        if( a_stream_no >= f_streams.size() )
-        {
-            LWARN( plog, "Stream <" << a_stream_no << "> does not exist" );
-            return;
-        }
-
-        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
-        f_must_reset_midge = true;
-
-        // delete node_builder objects
-        streams_t::iterator t_to_erase = f_streams.begin() + a_stream_no;
-        for( stream_template::nodes_t::iterator t_node_it = t_to_erase->f_nodes.begin(); t_node_it != t_to_erase->f_nodes.end(); ++t_node_it )
-        {
-            delete t_node_it->second;
-            t_node_it->second = nullptr;
-        }
-
-        f_streams.erase( t_to_erase );
-
-        return;
     }
 
     int stream_manager::_add_stream( const std::string& a_name, const scarab::param_node* a_node )
@@ -176,6 +197,33 @@ namespace psyllid
         f_streams.push_back( t_stream );
         return f_streams.size() - 1;
     }
+
+    void stream_manager::_remove_stream( unsigned a_stream_no )
+    {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
+
+        if( a_stream_no >= f_streams.size() )
+        {
+            throw error() << "Stream <" << a_stream_no << "> does not exist";
+            return;
+        }
+
+        f_must_reset_midge = true;
+
+        // delete node_builder objects
+        streams_t::iterator t_to_erase = f_streams.begin() + a_stream_no;
+        for( stream_template::nodes_t::iterator t_node_it = t_to_erase->f_nodes.begin(); t_node_it != t_to_erase->f_nodes.end(); ++t_node_it )
+        {
+            delete t_node_it->second;
+            t_node_it->second = nullptr;
+        }
+
+        f_streams.erase( t_to_erase );
+
+        return;
+    }
+
+
 
     void stream_manager::reset_midge()
     {
@@ -269,5 +317,43 @@ namespace psyllid
         }
         else return true;
     }
+
+    bool stream_manager::handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        int t_stream_no = -1;
+        try
+        {
+            t_stream_no = add_stream( &a_request->get_payload() );
+        }
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::warning_no_action_taken, e.what() );
+        }
+
+        a_reply_pkg.f_payload.add( "stream", new scarab::param_value( (unsigned)t_stream_no ) );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + a_reply_pkg.f_payload.get_value( "stream" ) + " has been added" );
+    }
+
+    bool stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        if( ! a_request->get_payload().has( "stream" ) )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "No stream specified for removal" );
+        }
+
+        unsigned t_to_remove = a_request->get_payload().get_value< unsigned >( "stream" );
+
+        try
+        {
+            remove_stream( t_to_remove );
+        }
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::warning_no_action_taken, e.what() );
+        }
+
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + a_request->get_payload().get_value( "stream" ) + " has been removed" );
+    }
+
 
 } /* namespace psyllid */

@@ -10,7 +10,7 @@
 
 #include "member_variables.hh"
 
-#include "node_manager.hh" // for midge_package
+#include "stream_manager.hh" // for midge_package
 #include "psyllid_error.hh"
 
 #include "cancelable.hh"
@@ -43,7 +43,7 @@ namespace psyllid
             };
 
         public:
-            daq_control( const scarab::param_node& a_master_config, std::shared_ptr< node_manager > a_mgr );
+            daq_control( const scarab::param_node& a_master_config, std::shared_ptr< stream_manager > a_mgr );
             virtual ~daq_control();
 
             /// Run the DAQ control thread
@@ -96,7 +96,7 @@ namespace psyllid
             std::condition_variable f_activation_condition;
             std::mutex f_daq_mutex;
 
-            std::shared_ptr< node_manager > f_node_manager;
+            std::shared_ptr< stream_manager > f_node_manager;
 
             std::unique_ptr< scarab::param_node > f_daq_config;
 

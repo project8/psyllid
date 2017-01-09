@@ -7,8 +7,6 @@
 
 #include "daq_control.hh"
 
-#include "node_manager.hh"
-
 #include "diptera.hh"
 #include "midge_error.hh"
 
@@ -33,7 +31,7 @@ namespace psyllid
 {
     LOGGER( plog, "daq_control" );
 
-    daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< node_manager > a_mgr ) :
+    daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< stream_manager > a_mgr ) :
             scarab::cancelable(),
             f_activation_condition(),
             f_daq_mutex(),

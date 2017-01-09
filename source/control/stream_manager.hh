@@ -14,6 +14,8 @@
 
 #include "diptera.hh"
 
+#include "hub.hh"
+
 #include "param.hh"
 
 #include <memory>
@@ -49,6 +51,8 @@ namespace psyllid
             stream_manager();
             virtual ~stream_manager();
 
+            bool initialize( const scarab::param_array& a_config );
+
         public:
             int add_stream( const scarab::param_node* a_node );
 
@@ -67,8 +71,15 @@ namespace psyllid
 
             bool is_in_use() const;
 
+        public:
+            bool handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            bool handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+
+
         private:
+            int _add_stream( const scarab::param_node* a_node );
             int _add_stream( const std::string& a_name, const scarab::param_node* a_node );
+            void _remove_stream( unsigned a_stream_no );
 
             typedef std::vector< stream_template > streams_t;
             streams_t f_streams;

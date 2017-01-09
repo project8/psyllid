@@ -28,7 +28,7 @@ namespace psyllid
 {
     class daq_control;
     class request_receiver;
-    class node_manager;
+    class stream_manager;
 
     class run_server : public scarab::cancelable
     {
@@ -61,7 +61,7 @@ namespace psyllid
             std::shared_ptr< request_receiver > f_request_receiver;
             //std::shared_ptr< daq_worker > f_daq_worker;
             std::shared_ptr< daq_control > f_daq_control;
-            std::shared_ptr< node_manager > f_node_manager;
+            std::shared_ptr< stream_manager > f_stream_manager;
 
             std::mutex f_component_mutex;
 
