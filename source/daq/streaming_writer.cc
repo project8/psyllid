@@ -33,6 +33,13 @@ namespace psyllid
             f_file_size_limit_mb(),
             f_filename( "default_filename_strw.egg" ),
             f_description( "A very nice run" ),
+            f_bit_depth( 8 ),
+            f_data_type_size( 1 ),
+            f_sample_size( 2 ),
+            f_record_size( 4096 ),
+            f_acq_rate( 100 ),
+            f_v_offset( 0. ),
+            f_v_range( 0.5 ),
             f_last_pkt_in_batch( 0 )
     {
     }
@@ -59,19 +66,11 @@ namespace psyllid
             stream_wrap_ptr t_swrap_ptr;
             monarch3::M3Record* t_record_ptr = nullptr;
 
-            // TODO: make these parameters configurable
-            uint64_t t_bit_depth = 8;
-            uint64_t t_data_type_size = 1;
-            uint64_t t_sample_size = 2;
-            uint64_t t_rec_length = PAYLOAD_SIZE / t_sample_size;
-            uint64_t t_bytes_per_record = t_rec_length * t_sample_size * t_data_type_size;
-            uint64_t t_acq_rate = 100; // MHz
-            scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)t_acq_rate * 1.e3 );
-            double t_v_offset = 0.;
-            double t_v_range = 0.5;
+            uint64_t t_bytes_per_record = f_record_size * f_sample_size * f_data_type_size;
+            scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)f_acq_rate * 1.e3 );
 
             scarab::dig_calib_params t_dig_params;
-            scarab::get_calib_params( t_bit_depth, t_data_type_size, t_v_offset, t_v_range, true, &t_dig_params );
+            scarab::get_calib_params( f_bit_depth, f_data_type_size, f_v_offset, f_v_range, true, &t_dig_params );
 
             unsigned t_stream_no = 0;
             monarch_time_point_t t_run_start_time;
@@ -153,8 +152,8 @@ namespace psyllid
 
                         vector< unsigned > t_chan_vec;
                         t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2",
-                                t_acq_rate, t_rec_length, t_sample_size, t_data_type_size,
-                                monarch3::sDigitizedS, t_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
+                                f_acq_rate, f_record_size, f_sample_size, f_data_type_size,
+                                monarch3::sDigitizedS, f_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
 
                         //unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
                         for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
@@ -234,6 +233,17 @@ namespace psyllid
     void streaming_writer_builder::apply_config( streaming_writer* a_node, const scarab::param_node& a_config )
     {
         a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
+        const scarab::param_node *t_dev_config = a_config.node_at( "device" );
+        if( t_dev_config != nullptr )
+        {
+            a_node->set_bit_depth( t_dev_config->get_value( "bit-depth", a_node->get_bit_depth() ) );
+            a_node->set_data_type_size( t_dev_config->get_value( "data-type-size", a_node->get_data_type_size() ) );
+            a_node->set_sample_size( t_dev_config->get_value( "sample-size", a_node->get_sample_size() ) );
+            a_node->set_record_size( t_dev_config->get_value( "record-size", a_node->get_record_size() ) );
+            a_node->set_acq_rate( t_dev_config->get_value( "acq-rate", a_node->get_acq_rate() ) );
+            a_node->set_v_offset( t_dev_config->get_value( "v-offset", a_node->get_v_offset() ) );
+            a_node->set_v_range( t_dev_config->get_value( "v-range", a_node->get_v_range() ) );
+        }
         return;
     }
 
