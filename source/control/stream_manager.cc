@@ -23,6 +23,7 @@ namespace psyllid
 
     stream_manager::stream_manager() :
             f_streams(),
+            f_stream_counter( 0 ),
             f_manager_mutex(),
             f_midge(),
             f_must_reset_midge( true ),
@@ -34,7 +35,7 @@ namespace psyllid
     {
         for( streams_t::iterator t_stream_it = f_streams.begin(); t_stream_it != f_streams.end(); ++t_stream_it )
         {
-            for( stream_template::nodes_t::iterator t_node_it = t_stream_it->f_nodes.begin(); t_node_it != t_stream_it->f_nodes.end(); ++t_node_it )
+            for( stream_template::nodes_t::iterator t_node_it = t_stream_it->second.f_nodes.begin(); t_node_it != t_stream_it->second.f_nodes.end(); ++t_node_it )
             {
                 delete t_node_it->second;
                 t_node_it->second = nullptr;
@@ -140,10 +141,10 @@ namespace psyllid
 
         // lock the mutex here so that we know which stream number this will be if it succeeds
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
-        unsigned t_stream_no = f_streams.size();
+        unsigned t_stream_id = f_stream_counter;
         std::map< std::string, std::string > t_name_replacements;
 
-        LINFO( plog, "Preparing stream <" << t_stream_no << ">");
+        LINFO( plog, "Preparing stream <" << t_stream_id << ">");
 
         stream_template t_stream;
 
@@ -152,7 +153,7 @@ namespace psyllid
         for( preset_nodes_t::const_iterator t_node_it = t_new_nodes.begin(); t_node_it != t_new_nodes.end(); ++t_node_it )
         {
             std::stringstream t_nn_str;
-            t_nn_str << t_stream_no << "_" << t_node_it->first;
+            t_nn_str << t_stream_id << "_" << t_node_it->first;
             std::string t_node_name = t_nn_str.str();
             t_name_replacements[ t_node_it->first ] = t_node_name;
 
@@ -194,25 +195,25 @@ namespace psyllid
 
         // add the new stream to the vector of streams
         f_must_reset_midge = true;
-        f_streams.push_back( t_stream );
-        return f_streams.size() - 1;
+        f_streams.insert( streams_t::value_type( t_stream_id, t_stream ) );
+        ++f_stream_counter;
+        return t_stream_id;
     }
 
     void stream_manager::_remove_stream( unsigned a_stream_no )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
 
-        if( a_stream_no >= f_streams.size() )
+        // delete node_builder objects
+        streams_t::iterator t_to_erase = f_streams.find( a_stream_no );
+        if( t_to_erase == f_streams.end() )
         {
             throw error() << "Stream <" << a_stream_no << "> does not exist";
-            return;
         }
 
         f_must_reset_midge = true;
 
-        // delete node_builder objects
-        streams_t::iterator t_to_erase = f_streams.begin() + a_stream_no;
-        for( stream_template::nodes_t::iterator t_node_it = t_to_erase->f_nodes.begin(); t_node_it != t_to_erase->f_nodes.end(); ++t_node_it )
+        for( stream_template::nodes_t::iterator t_node_it = t_to_erase->second.f_nodes.begin(); t_node_it != t_to_erase->second.f_nodes.end(); ++t_node_it )
         {
             delete t_node_it->second;
             t_node_it->second = nullptr;
@@ -229,6 +230,11 @@ namespace psyllid
     {
         std::unique_lock< std::mutex > t_mgr_lock( f_manager_mutex );
 
+        if( f_streams.empty() )
+        {
+            throw error() << "No streams have been setup";
+        }
+
         f_must_reset_midge = true;
 
         std::unique_lock< std::mutex > t_midge_lock( f_midge_mutex );
@@ -236,7 +242,7 @@ namespace psyllid
 
         for( streams_t::const_iterator t_stream_it = f_streams.begin(); t_stream_it != f_streams.end(); ++t_stream_it )
         {
-            for( stream_template::nodes_t::const_iterator t_node_it = t_stream_it->f_nodes.begin(); t_node_it != t_stream_it->f_nodes.end(); ++t_node_it )
+            for( stream_template::nodes_t::const_iterator t_node_it = t_stream_it->second.f_nodes.begin(); t_node_it != t_stream_it->second.f_nodes.end(); ++t_node_it )
             {
                 midge::node* t_new_node = t_node_it->second->build();
 
@@ -253,7 +259,7 @@ namespace psyllid
             }
 
             // Then deal with connections
-            for( stream_template::connections_t::const_iterator t_conn_it = t_stream_it->f_connections.begin(); t_conn_it != t_stream_it->f_connections.end(); ++t_conn_it )
+            for( stream_template::connections_t::const_iterator t_conn_it = t_stream_it->second.f_connections.begin(); t_conn_it != t_stream_it->second.f_connections.end(); ++t_conn_it )
             {
                 try
                 {
@@ -297,9 +303,9 @@ namespace psyllid
         std::string t_run_str;
         for( streams_t::const_iterator t_stream_it = f_streams.begin(); t_stream_it != f_streams.end(); ++t_stream_it )
         {
-            stream_template::nodes_t::const_iterator t_node_it = t_stream_it->f_nodes.begin();
+            stream_template::nodes_t::const_iterator t_node_it = t_stream_it->second.f_nodes.begin();
             t_run_str = t_node_it->first;
-            for( ++t_node_it; t_node_it != t_stream_it->f_nodes.end(); ++t_node_it )
+            for( ++t_node_it; t_node_it != t_stream_it->second.f_nodes.end(); ++t_node_it )
             {
                 t_run_str += midge::diptera::separator() + t_node_it->first;
             }
@@ -336,7 +342,7 @@ namespace psyllid
 
     bool stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
-        if( ! a_request->get_payload().has( "stream" ) )
+        if( ! a_request->get_payload().has( "stream" ) || ! a_request->get_payload().at( "stream" )->is_value() )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "No stream specified for removal" );
         }
@@ -345,7 +351,7 @@ namespace psyllid
 
         try
         {
-            remove_stream( t_to_remove );
+            _remove_stream( t_to_remove );
         }
         catch( error& e )
         {

@@ -18,9 +18,9 @@
 
 #include "param.hh"
 
+#include <map>
 #include <memory>
 #include <mutex>
-#include <vector>
 
 namespace psyllid
 {
@@ -81,8 +81,9 @@ namespace psyllid
             int _add_stream( const std::string& a_name, const scarab::param_node* a_node );
             void _remove_stream( unsigned a_stream_no );
 
-            typedef std::vector< stream_template > streams_t;
+            typedef std::map< unsigned, stream_template > streams_t;
             streams_t f_streams;
+            unsigned f_stream_counter;
 
             mutable std::mutex f_manager_mutex;
 
@@ -96,7 +97,7 @@ namespace psyllid
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
         if( a_stream_no >= f_streams.size() ) return nullptr;
-        return &f_streams[ a_stream_no ];
+        return &f_streams.at( a_stream_no );
     }
 
     inline bool stream_manager::must_reset_midge() const
