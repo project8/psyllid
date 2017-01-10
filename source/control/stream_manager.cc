@@ -304,10 +304,10 @@ namespace psyllid
         for( streams_t::const_iterator t_stream_it = f_streams.begin(); t_stream_it != f_streams.end(); ++t_stream_it )
         {
             stream_template::nodes_t::const_iterator t_node_it = t_stream_it->second.f_nodes.begin();
-            t_run_str = t_node_it->first;
+            t_run_str = std::to_string(t_stream_it->first) + "_" + t_node_it->first;
             for( ++t_node_it; t_node_it != t_stream_it->second.f_nodes.end(); ++t_node_it )
             {
-                t_run_str += midge::diptera::separator() + t_node_it->first;
+                t_run_str += midge::diptera::separator() + std::to_string(t_stream_it->first) + "_" + t_node_it->first;
             }
         }
         return t_run_str;
