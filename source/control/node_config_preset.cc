@@ -7,7 +7,6 @@
 
 #include "node_config_preset.hh"
 
-#include "node_manager.hh"
 #include "psyllid_error.hh"
 
 #include "logger.hh"
