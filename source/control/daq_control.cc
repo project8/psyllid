@@ -321,10 +321,13 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_start_run_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    bool daq_control::handle_start_run_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
+            f_run_filename = a_request->get_payload().get_value( "filename", f_run_filename );
+            f_run_description = a_request->get_payload().get_value( "description", f_run_description );
+            f_run_duration = a_request->get_payload().get_value( "duration", f_run_duration );
             start_run();
             return a_reply_pkg.send_reply( retcode_t::success, "Run started" );
         }
