@@ -31,7 +31,7 @@ namespace psyllid
 
         public:
             node_config_preset();
-            node_config_preset( const std::string& a_name );
+            node_config_preset( const std::string& a_type );
             node_config_preset( const node_config_preset& a_orig );
             virtual ~node_config_preset();
 
@@ -45,7 +45,7 @@ namespace psyllid
             void connection( const std::string& a_conn );
 
         protected:
-            std::string f_name;
+            std::string f_type;
             nodes_t f_nodes;
             connections_t f_connections;
     };
@@ -91,12 +91,12 @@ namespace psyllid
 	class preset_class : public node_config_preset \
     { \
         public: \
-    		preset_class( const std::string& a_name ); \
+    		preset_class( const std::string& a_type ); \
             virtual ~preset_class() {}; \
     };
 
-#define REGISTER_PRESET( preset_class, preset_name ) \
-        static ::scarab::registrar< ::psyllid::node_config_preset, preset_class, const std::string& > s_node_config_preset_##preset_class##_registrar( preset_name );
+#define REGISTER_PRESET( preset_class, preset_type ) \
+        static ::scarab::registrar< ::psyllid::node_config_preset, preset_class, const std::string& > s_node_config_preset_##preset_class##_registrar( preset_type );
 
 
 #endif /* CONTROL_NODE_CONFIG_PRESET_HH_ */

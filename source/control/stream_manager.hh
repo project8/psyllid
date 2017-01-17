@@ -51,14 +51,14 @@ namespace psyllid
             stream_manager();
             virtual ~stream_manager();
 
-            bool initialize( const scarab::param_array& a_config );
+            bool initialize( const scarab::param_node& a_config );
 
         public:
-            int add_stream( const scarab::param_node* a_node );
+            bool add_stream( const std::string& a_name, const scarab::param_node* a_node );
+            const stream_template* get_stream( const std::string& a_name ) const;
+            void remove_stream( const std::string& a_name );
 
-            const stream_template* get_stream( unsigned a_stream_no ) const;
 
-            void remove_stream( unsigned a_stream_no );
 
         public:
             void reset_midge(); // throws psyllid::error in the event of an error configuring midge
@@ -77,13 +77,12 @@ namespace psyllid
 
 
         private:
-            int _add_stream( const scarab::param_node* a_node );
-            int _add_stream( const std::string& a_name, const scarab::param_node* a_node );
-            void _remove_stream( unsigned a_stream_no );
+            void _add_stream( const std::string& a_name, const scarab::param_node* a_node );
+            void _add_stream( const std::string& a_name, const std::string& a_type, const scarab::param_node* a_node );
+            void _remove_stream( const std::string& a_name );
 
-            typedef std::map< unsigned, stream_template > streams_t;
+            typedef std::map< std::string, stream_template > streams_t;
             streams_t f_streams;
-            unsigned f_stream_counter;
 
             mutable std::mutex f_manager_mutex;
 
@@ -93,11 +92,12 @@ namespace psyllid
     };
 
 
-    inline const stream_manager::stream_template* stream_manager::get_stream( unsigned a_stream_no ) const
+    inline const stream_manager::stream_template* stream_manager::get_stream( const std::string& a_name ) const
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
-        if( a_stream_no >= f_streams.size() ) return nullptr;
-        return &f_streams.at( a_stream_no );
+        streams_t::const_iterator t_stream = f_streams.find( a_name );
+        if( t_stream == f_streams.end() ) return nullptr;
+        return &(t_stream->second);
     }
 
     inline bool stream_manager::must_reset_midge() const

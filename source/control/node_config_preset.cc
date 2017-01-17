@@ -21,21 +21,21 @@ namespace psyllid
     //********************
 
     node_config_preset::node_config_preset() :
-            f_name( "unknown" ),
+            f_type( "unknown" ),
             f_nodes(),
             f_connections()
     {
     }
 
-    node_config_preset::node_config_preset( const std::string& a_name ) :
-            f_name( a_name ),
+    node_config_preset::node_config_preset( const std::string& a_type ) :
+            f_type( a_type ),
             f_nodes(),
             f_connections()
     {
     }
 
     node_config_preset::node_config_preset( const node_config_preset& a_orig ) :
-            f_name( a_orig.f_name ),
+            f_type( a_orig.f_type ),
             f_nodes( a_orig.f_nodes ),
             f_connections( a_orig.f_connections )
     {
@@ -47,7 +47,7 @@ namespace psyllid
 
     node_config_preset& node_config_preset::operator=( const node_config_preset& a_rhs )
     {
-        f_name = a_rhs.f_name;
+        f_type = a_rhs.f_type;
         f_nodes = a_rhs.f_nodes;
         f_connections = a_rhs.f_connections;
         return *this;
@@ -84,11 +84,11 @@ namespace psyllid
     {
     }
 
-    node_config_runtime_preset::node_config_runtime_preset( const std::string& a_name ) :
-            node_config_preset( a_name )
+    node_config_runtime_preset::node_config_runtime_preset( const std::string& a_type ) :
+            node_config_preset( a_type )
     {
-        f_nodes = s_runtime_presets.at( a_name ).f_nodes;
-        f_connections = s_runtime_presets.at( a_name ).f_connections;
+        f_nodes = s_runtime_presets.at( a_type ).f_nodes;
+        f_connections = s_runtime_presets.at( a_type ).f_connections;
     }
 
     node_config_runtime_preset::node_config_runtime_preset( const node_config_runtime_preset& a_orig ) :
@@ -110,50 +110,50 @@ namespace psyllid
     {
         if( a_preset_node == nullptr )
         {
-            LERROR( plog, "Null prest config received" );
+            LERROR( plog, "Null preset config received" );
             return false;
         }
 
-        if( ! a_preset_node->has( "name" ) )
+        if( ! a_preset_node->has( "type" ) )
         {
-            LERROR( plog, "Preset must have a name.  Preset config:\n" << *a_preset_node );
+            LERROR( plog, "Preset must have a type.  Preset config:\n" << *a_preset_node );
             return false;
         }
-        std::string t_preset_name = a_preset_node->get_value( "name" );
+        std::string t_preset_type = a_preset_node->get_value( "type" );
 
         const scarab::param_array* t_nodes_array = a_preset_node->array_at( "nodes" );
         if( t_nodes_array == nullptr )
         {
-            LERROR( plog, "No \"nodes\" configuration was present for preset <" << t_preset_name << ">" );
+            LERROR( plog, "No \"nodes\" configuration was present for preset <" << t_preset_type << ">" );
             return false;
         }
 
-        node_config_runtime_preset t_new_preset( t_preset_name );
+        node_config_runtime_preset t_new_preset( t_preset_type );
 
         std::string t_type;
         for( scarab::param_array::const_iterator t_nodes_it = t_nodes_array->begin(); t_nodes_it != t_nodes_array->end(); ++t_nodes_it )
         {
             if( ! (*t_nodes_it)->is_node() )
             {
-                LERROR( plog, "Invalid node specification in preset <" << t_preset_name << ">" );
+                LERROR( plog, "Invalid node specification in preset <" << t_preset_type << ">" );
                 return false;
             }
 
             t_type = (*t_nodes_it)->as_node().get_value( "type", "" );
             if( t_type.empty() )
             {
-                LERROR( plog, "No type given for one of the nodes in preset <" << t_preset_name << ">" );
+                LERROR( plog, "No type given for one of the nodes in preset <" << t_preset_type << ">" );
                 return false;
             }
 
-            LDEBUG( plog, "Adding node <" << t_type << ":" << (*t_nodes_it)->as_node().get_value( "name", t_type ) << "> to preset <" << t_preset_name << ">" );
+            LDEBUG( plog, "Adding node <" << t_type << ":" << (*t_nodes_it)->as_node().get_value( "name", t_type ) << "> to preset <" << t_preset_type << ">" );
             t_new_preset.node( t_type, (*t_nodes_it)->as_node().get_value( "name", t_type ) );
         }
 
         const scarab::param_array* t_conn_array = a_preset_node->array_at( "connections" );
         if( t_conn_array == nullptr )
         {
-            LDEBUG( plog, "Preset <" << t_preset_name << "> is being setup with no connections" );
+            LDEBUG( plog, "Preset <" << t_preset_type << "> is being setup with no connections" );
         }
         else
         {
@@ -161,17 +161,17 @@ namespace psyllid
             {
                 if( ! (*t_conn_it)->is_value() )
                 {
-                    LERROR( plog, "Invalid connection specification in preset <" << t_preset_name << ">" );
+                    LERROR( plog, "Invalid connection specification in preset <" << t_preset_type << ">" );
                     return false;
                 }
 
-                LDEBUG( plog, "Adding connection <" << (*t_conn_it)->as_value().as_string() << "> to preset <" << t_preset_name << ">");
+                LDEBUG( plog, "Adding connection <" << (*t_conn_it)->as_value().as_string() << "> to preset <" << t_preset_type << ">");
                 t_new_preset.connection( (*t_conn_it)->as_value().as_string() );
             }
         }
 
-        s_runtime_presets[ t_preset_name ] = t_new_preset;
-        LINFO( plog, "Preset <" << t_preset_name << "> is now available" );
+        s_runtime_presets[ t_preset_type ] = t_new_preset;
+        LINFO( plog, "Preset <" << t_preset_type << "> is now available" );
 
         return true;
     }
