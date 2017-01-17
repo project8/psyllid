@@ -10,19 +10,10 @@
 namespace psyllid
 {
 
-    REGISTER_PRESET( roach_config, "roach" );
-
-    roach_config::roach_config( const std::string& a_name ) :
-            node_config_preset( a_name )
-    {
-        node( "tf-roach-receiver", "tfrr" );
-    }
-
-
     REGISTER_PRESET( streaming_1ch, "str-1ch" );
 
     streaming_1ch::streaming_1ch( const std::string& a_name ) :
-            node_config_preset( a_name )
+            stream_preset( a_name )
     {
         node( "packet-receiver-socket", "prs" );
         node( "tf-roach-receiver", "tfrr" );
@@ -38,7 +29,7 @@ namespace psyllid
     REGISTER_PRESET( streaming_1ch_fpa, "str-1ch-fpa" );
 
     streaming_1ch_fpa::streaming_1ch_fpa( const std::string& a_name ) :
-            node_config_preset( a_name )
+            stream_preset( a_name )
     {
         node( "packet-receiver-fpa", "prf" );
         node( "tf-roach-receiver", "tfrr" );
@@ -54,7 +45,7 @@ namespace psyllid
     REGISTER_PRESET( fmask_trigger_1ch,"fmask-1ch");
 
     fmask_trigger_1ch::fmask_trigger_1ch( const std::string& a_name ) :
-            node_config_preset( a_name )
+            stream_preset( a_name )
     {
         node( "packet-receiver-socket", "prs" );
         node( "tf-roach-receiver", "tfrr");

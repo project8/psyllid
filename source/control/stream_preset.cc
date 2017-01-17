@@ -1,11 +1,11 @@
 /*
- * node_config_preset.cc
+ * stream_preset.cc
  *
  *  Created on: Jan 27, 2016
  *      Author: nsoblath
  */
 
-#include "node_config_preset.hh"
+#include "stream_preset.hh"
 
 #include "psyllid_error.hh"
 
@@ -14,38 +14,38 @@
 
 namespace psyllid
 {
-    LOGGER( plog, "node_config_preset" );
+    LOGGER( plog, "stream_preset" );
 
     //********************
-    // node_config_preset
+    // stream_preset
     //********************
 
-    node_config_preset::node_config_preset() :
+    stream_preset::stream_preset() :
             f_type( "unknown" ),
             f_nodes(),
             f_connections()
     {
     }
 
-    node_config_preset::node_config_preset( const std::string& a_type ) :
+    stream_preset::stream_preset( const std::string& a_type ) :
             f_type( a_type ),
             f_nodes(),
             f_connections()
     {
     }
 
-    node_config_preset::node_config_preset( const node_config_preset& a_orig ) :
+    stream_preset::stream_preset( const stream_preset& a_orig ) :
             f_type( a_orig.f_type ),
             f_nodes( a_orig.f_nodes ),
             f_connections( a_orig.f_connections )
     {
     }
 
-    node_config_preset::~node_config_preset()
+    stream_preset::~stream_preset()
     {
     }
 
-    node_config_preset& node_config_preset::operator=( const node_config_preset& a_rhs )
+    stream_preset& stream_preset::operator=( const stream_preset& a_rhs )
     {
         f_type = a_rhs.f_type;
         f_nodes = a_rhs.f_nodes;
@@ -53,7 +53,7 @@ namespace psyllid
         return *this;
     }
 
-    void node_config_preset::node( const std::string& a_type, const std::string& a_name )
+    void stream_preset::node( const std::string& a_type, const std::string& a_name )
     {
         if( f_nodes.find( a_name ) != f_nodes.end() )
         {
@@ -63,7 +63,7 @@ namespace psyllid
         return;
     }
 
-    void node_config_preset::connection( const std::string& a_conn )
+    void stream_preset::connection( const std::string& a_conn )
     {
         if( f_connections.find( a_conn ) != f_connections.end() )
         {
@@ -80,19 +80,19 @@ namespace psyllid
     std::map< std::string, node_config_runtime_preset> node_config_runtime_preset::s_runtime_presets;
 
     node_config_runtime_preset::node_config_runtime_preset() :
-            node_config_preset()
+            stream_preset()
     {
     }
 
     node_config_runtime_preset::node_config_runtime_preset( const std::string& a_type ) :
-            node_config_preset( a_type )
+            stream_preset( a_type )
     {
         f_nodes = s_runtime_presets.at( a_type ).f_nodes;
         f_connections = s_runtime_presets.at( a_type ).f_connections;
     }
 
     node_config_runtime_preset::node_config_runtime_preset( const node_config_runtime_preset& a_orig ) :
-            node_config_preset( a_orig )
+            stream_preset( a_orig )
     {
     }
 
@@ -102,7 +102,7 @@ namespace psyllid
 
     node_config_runtime_preset& node_config_runtime_preset::operator=( const node_config_runtime_preset& a_rhs )
     {
-        node_config_preset::operator=( a_rhs );
+        stream_preset::operator=( a_rhs );
         return *this;
     }
 

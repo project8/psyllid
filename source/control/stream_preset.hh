@@ -1,12 +1,12 @@
 /*
- * node_config_preset.hh
+ * stream_preset.hh
  *
  *  Created on: Jan 27, 2016
  *      Author: nsoblath
  */
 
-#ifndef PSYLLID_NODE_CONFIG_PRESET_HH_
-#define PSYLLID_NODE_CONFIG_PRESET_HH_
+#ifndef PSYLLID_STREAM_PRESET_HH_
+#define PSYLLID_STREAM_PRESET_HH_
 
 #include "factory.hh"
 
@@ -23,19 +23,19 @@ namespace psyllid
 {
     class node_manager;
 
-    class node_config_preset
+    class stream_preset
     {
         public:
             typedef std::map< std::string, std::string > nodes_t;
             typedef std::set< std::string > connections_t;
 
         public:
-            node_config_preset();
-            node_config_preset( const std::string& a_type );
-            node_config_preset( const node_config_preset& a_orig );
-            virtual ~node_config_preset();
+            stream_preset();
+            stream_preset( const std::string& a_type );
+            stream_preset( const stream_preset& a_orig );
+            virtual ~stream_preset();
 
-            node_config_preset& operator=( const node_config_preset& a_rhs );
+            stream_preset& operator=( const stream_preset& a_rhs );
 
             const nodes_t& get_nodes() const;
             const connections_t& get_connections() const;
@@ -51,7 +51,7 @@ namespace psyllid
     };
 
 
-    class node_config_runtime_preset : public node_config_preset
+    class node_config_runtime_preset : public stream_preset
     {
         public:
             node_config_runtime_preset();
@@ -72,12 +72,12 @@ namespace psyllid
 
 
 
-    inline const node_config_preset::nodes_t& node_config_preset::get_nodes() const
+    inline const stream_preset::nodes_t& stream_preset::get_nodes() const
     {
         return f_nodes;
     }
 
-    inline const node_config_preset::connections_t& node_config_preset::get_connections() const
+    inline const stream_preset::connections_t& stream_preset::get_connections() const
     {
         return f_connections;
     }
@@ -88,7 +88,7 @@ namespace psyllid
 
 
 #define DECLARE_PRESET( preset_class ) \
-	class preset_class : public node_config_preset \
+	class preset_class : public stream_preset \
     { \
         public: \
     		preset_class( const std::string& a_type ); \
@@ -96,7 +96,7 @@ namespace psyllid
     };
 
 #define REGISTER_PRESET( preset_class, preset_type ) \
-        static ::scarab::registrar< ::psyllid::node_config_preset, preset_class, const std::string& > s_node_config_preset_##preset_class##_registrar( preset_type );
+        static ::scarab::registrar< ::psyllid::stream_preset, preset_class, const std::string& > s_stream_preset_##preset_class##_registrar( preset_type );
 
 
-#endif /* CONTROL_NODE_CONFIG_PRESET_HH_ */
+#endif /* CONTROL_STREAM_PRESET_HH_ */
