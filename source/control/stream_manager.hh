@@ -42,7 +42,7 @@ namespace psyllid
                 nodes_t f_nodes;
                 connections_t f_connections;
 
-                std::string f_run_string;
+                //std::string f_run_string;
             };
 
             typedef std::shared_ptr< midge::diptera > midge_ptr_t;
@@ -58,7 +58,8 @@ namespace psyllid
             const stream_template* get_stream( const std::string& a_name ) const;
             void remove_stream( const std::string& a_name );
 
-
+            bool configure_node( const std::string& a_stream_name, const std::string& a_node_name, const scarab::param_node& a_config );
+            bool dump_node_config( const std::string& a_stream_name, const std::string& a_node_name, scarab::param_node& a_config ) const;
 
         public:
             void reset_midge(); // throws psyllid::error in the event of an error configuring midge
@@ -75,11 +76,16 @@ namespace psyllid
             bool handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
+            //bool handle_configure_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            //bool handle_dump_config_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
         private:
             void _add_stream( const std::string& a_name, const scarab::param_node* a_node );
             void _add_stream( const std::string& a_name, const std::string& a_type, const scarab::param_node* a_node );
             void _remove_stream( const std::string& a_name );
+
+            void _configure_node( const std::string& a_stream_name, const std::string& a_node_name, const scarab::param_node& a_config );
+            void _dump_node_config( const std::string& a_stream_name, const std::string& a_node_name, scarab::param_node& a_config ) const;
 
             typedef std::map< std::string, stream_template > streams_t;
             streams_t f_streams;

@@ -8,8 +8,8 @@
 #include "stream_manager.hh"
 
 #include "node_builder.hh"
-#include "node_config_preset.hh"
 #include "psyllid_error.hh"
+#include "stream_preset.hh"
 
 #include "node.hh"
 
@@ -89,6 +89,78 @@ namespace psyllid
         }
     }
 
+    bool stream_manager::configure_node( const std::string& a_stream_name, const std::string& a_node_name, const scarab::param_node& a_config )
+    {
+        try
+        {
+            _configure_node( a_stream_name, a_node_name, a_config );
+            return true;
+        }
+        catch( error& e )
+        {
+            LWARN( plog, "Unable to configure node <" << a_stream_name << "." << a_node_name << ">: " << e.what() );
+            return false;
+        }
+    }
+
+    bool stream_manager::dump_node_config( const std::string& a_stream_name, const std::string& a_node_name, scarab::param_node& a_config ) const
+    {
+        try
+        {
+            _dump_node_config( a_stream_name, a_node_name, a_config );
+            return true;
+        }
+        catch( error& e )
+        {
+            LWARN( plog, "Unable to dump node config <" << a_stream_name << "." << a_node_name << ">: " << e.what() );
+            return false;
+        }
+    }
+
+    void stream_manager::_configure_node( const std::string& a_stream_name, const std::string& a_node_name, const scarab::param_node& a_config )
+    {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
+
+        streams_t::iterator t_stream_it = f_streams.find( a_stream_name );
+        if( t_stream_it == f_streams.end() )
+        {
+            throw error() << "Did not find stream <" << a_stream_name << ">";
+        }
+
+        stream_template::nodes_t::iterator t_node_it = t_stream_it->second.f_nodes.find( a_node_name );
+        if( t_node_it == t_stream_it->second.f_nodes.end() )
+        {
+            throw error() << "Did not find node <" << a_node_name << "> in stream <" << a_stream_name << ">";
+        }
+
+        t_node_it->second->configure( a_config );
+
+        return;
+    }
+
+    void stream_manager::_dump_node_config( const std::string& a_stream_name, const std::string& a_node_name, scarab::param_node& a_config ) const
+    {
+        std::unique_lock< std::mutex > t_lock( f_manager_mutex );
+
+        streams_t::const_iterator t_stream_it = f_streams.find( a_stream_name );
+        if( t_stream_it == f_streams.end() )
+        {
+            throw error() << "Did not find stream <" << a_stream_name << ">";
+        }
+
+        stream_template::nodes_t::const_iterator t_node_it = t_stream_it->second.f_nodes.find( a_node_name );
+        if( t_node_it == t_stream_it->second.f_nodes.end() )
+        {
+            throw error() << "Did not find node <" << a_node_name << "> in stream <" << a_stream_name << ">";
+        }
+
+        t_node_it->second->dump_config( a_config );
+
+        return;
+
+    }
+
+
     void stream_manager::_add_stream( const std::string& a_name, const scarab::param_node* a_node )
     {
         // do not need to lock the mutex here because we're not doing anything to the stream_manager until inside _add_stream( string, param_node )
@@ -142,7 +214,7 @@ namespace psyllid
     {
         // do not need to lock the mutex here because we're not doing anything to the stream_manager until later
 
-        node_config_preset* t_preset = scarab::factory< node_config_preset, const std::string& >::get_instance()->create( a_type, a_type );
+        stream_preset* t_preset = scarab::factory< stream_preset, const std::string& >::get_instance()->create( a_type, a_type );
 
         if( t_preset == nullptr )
         {
@@ -161,7 +233,7 @@ namespace psyllid
 
         stream_template t_stream;
 
-        typedef node_config_preset::nodes_t preset_nodes_t;
+        typedef stream_preset::nodes_t preset_nodes_t;
         const preset_nodes_t& t_new_nodes = t_preset->get_nodes();
         std::map< std::string, std::string > t_name_replacements;
         for( preset_nodes_t::const_iterator t_node_it = t_new_nodes.begin(); t_node_it != t_new_nodes.end(); ++t_node_it )
@@ -193,7 +265,7 @@ namespace psyllid
             t_stream.f_nodes.insert( stream_template::nodes_t::value_type( t_node_it->first, t_builder ) );
         }
 
-        typedef node_config_preset::connections_t preset_conn_t;
+        typedef stream_preset::connections_t preset_conn_t;
         const preset_conn_t& t_new_connections = t_preset->get_connections();
         for( preset_conn_t::const_iterator t_conn_it = t_new_connections.begin(); t_conn_it != t_new_connections.end(); ++t_conn_it )
         {
