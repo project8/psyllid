@@ -316,5 +316,17 @@ namespace psyllid
         return;
     }
 
+    void tf_roach_receiver_builder::dump_config( tf_roach_receiver* a_node, scarab::param_node& a_config )
+    {
+        LDEBUG( plog, "Dumping tf_roach_receiver configuration" );
+        a_config.add( "time-length", new scarab::param_value( a_node->get_time_length() ) );
+        a_config.add( "freq-length", new scarab::param_value( a_node->get_freq_length() ) );
+        a_config.add( "udp-buffer-size", new scarab::param_value( a_node->get_udp_buffer_size() ) );
+        a_config.add( "time-sync-tol", new scarab::param_value( a_node->get_time_sync_tol() ) );
+        a_config.add( "start-paused", new scarab::param_value( a_node->get_start_paused() ) );
+        return;
+
+    }
+
 
 } /* namespace psyllid */

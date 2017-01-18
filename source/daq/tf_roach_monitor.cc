@@ -136,6 +136,11 @@ namespace psyllid
         return;
     }
 
+    void roach_time_monitor_builder::dump_config( roach_time_monitor*, scarab::param_node& )
+    {
+        return;
+    }
+
 
 
     //****************
@@ -246,6 +251,11 @@ namespace psyllid
     }
 
     void roach_freq_monitor_builder::apply_config( roach_freq_monitor*, const scarab::param_node& )
+    {
+        return;
+    }
+
+    void roach_freq_monitor_builder::dump_config( roach_freq_monitor*, scarab::param_node& )
     {
         return;
     }

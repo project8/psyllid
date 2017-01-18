@@ -232,6 +232,7 @@ namespace psyllid
 
     void streaming_writer_builder::apply_config( streaming_writer* a_node, const scarab::param_node& a_config )
     {
+        LDEBUG( plog, "Configuring streaming_writer with:\n" << a_config );
         a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
         const scarab::param_node *t_dev_config = a_config.node_at( "device" );
         if( t_dev_config != nullptr )
@@ -244,6 +245,22 @@ namespace psyllid
             a_node->set_v_offset( t_dev_config->get_value( "v-offset", a_node->get_v_offset() ) );
             a_node->set_v_range( t_dev_config->get_value( "v-range", a_node->get_v_range() ) );
         }
+        return;
+    }
+
+    void streaming_writer_builder::dump_config( streaming_writer* a_node, scarab::param_node& a_config )
+    {
+        LDEBUG( plog, "Dumping configuration for streaming_writer" );
+        a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );
+        scarab::param_node* t_dev_node = new scarab::param_node();
+        t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );
+        t_dev_node->add( "data-type-size", new scarab::param_value( a_node->get_data_type_size() ) );
+        t_dev_node->add( "sample-size", new scarab::param_value( a_node->get_sample_size() ) );
+        t_dev_node->add( "record-size", new scarab::param_value( a_node->get_record_size() ) );
+        t_dev_node->add( "acq-rate", new scarab::param_value( a_node->get_acq_rate() ) );
+        t_dev_node->add( "v-offset", new scarab::param_value( a_node->get_v_offset() ) );
+        t_dev_node->add( "v-range", new scarab::param_value( a_node->get_v_range() ) );
+        a_config.add( "device", t_dev_node );
         return;
     }
 

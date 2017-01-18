@@ -407,9 +407,19 @@ namespace psyllid
 
     void event_builder_builder::apply_config( event_builder* a_node, const scarab::param_node& a_config )
     {
+        LDEBUG( plog, "Configuring event_builder with:\n" << a_config );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
         a_node->set_pretrigger( a_config.get_value( "pretrigger", a_node->get_pretrigger() ) );
         a_node->set_skip_tolerance( a_config.get_value( "skip-tolerance", a_node->get_skip_tolerance() ) );
+        return;
+    }
+
+    void event_builder_builder::dump_config( event_builder* a_node, scarab::param_node& a_config )
+    {
+        LDEBUG( plog, "Dumping configuration for event_builder" );
+        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
+        a_config.add( "pretrigger", new scarab::param_value( a_node->get_pretrigger() ) );
+        a_config.add( "skip-tolerance", new scarab::param_value( a_node->get_skip_tolerance() ) );
         return;
     }
 

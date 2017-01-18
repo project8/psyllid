@@ -54,8 +54,8 @@ namespace psyllid
 
         public:
             mv_accessible( uint64_t, length );
-            mv_accessible( size_t, max_packet_size );
-            mv_accessible( size_t, port );
+            mv_accessible( uint32_t, max_packet_size );
+            mv_accessible( uint32_t, port );
             mv_referrable( std::string, ip );
             mv_accessible( unsigned, timeout_sec );  /// Timeout in seconds for waiting on socket recv function
 
@@ -84,6 +84,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( packet_receiver_socket* a_node, const scarab::param_node& a_config );
+            virtual void dump_config( packet_receiver_socket* a_node, scarab::param_node& a_config );
     };
 
 } /* namespace psyllid */

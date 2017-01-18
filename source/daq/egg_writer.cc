@@ -295,6 +295,9 @@ namespace psyllid
         return;
     }
 
+    void egg_writer_builder::dump_config( egg_writer* a_node, scarab::param_node& a_config )
+    {
 
+    }
 
 } /* namespace psyllid */
