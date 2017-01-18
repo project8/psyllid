@@ -34,6 +34,7 @@ namespace psyllid
         t_daq_node->add( "activate-at-startup", new param_value( true ) );
         add( "daq", t_daq_node );
 
+        // this devices node can be used for multiple streams
         param_node* t_dev_node = new param_node();
         t_dev_node->add( "n-channels", new param_value( 1U ) );
         t_dev_node->add( "bit-depth", new param_value( 8U ) );
@@ -47,10 +48,12 @@ namespace psyllid
         param_node* t_streams_node = new param_node();
 
         param_node* t_stream0_node = new param_node();
-        t_stream0_node->add( "preset", new param_value( "str_1ch") );
+        t_stream0_node->add( "preset", new param_value( "str-1ch") );
         t_stream0_node->add( "device", t_dev_node );
 
         t_streams_node->add( "stream0", t_stream0_node );
+
+        add( "streams", t_streams_node );
     }
 
     server_config::~server_config()

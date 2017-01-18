@@ -79,7 +79,10 @@ namespace psyllid
             f_stream_manager->set_daq_control( f_daq_control );
             if( f_config.has( "streams" ) && f_config.at( "streams" )->is_node() )
             {
-                f_stream_manager->initialize( *f_config.node_at( "streams" ) );
+                if( ! f_stream_manager->initialize( *f_config.node_at( "streams" ) ) )
+                {
+                    throw error() << "Unable to initialize the stream manager";
+                }
             }
 
             // request receiver
@@ -102,12 +105,14 @@ namespace psyllid
 
         // add get request handlers
         //f_request_receiver->register_get_handler( "server-status", std::bind( &run_server::handle_get_server_status_request, this, _1, _2 ) );
+        f_request_receiver->register_get_handler( "node-config", std::bind( &stream_manager::handle_dump_config_node_request, f_stream_manager, _1, _2 ) );
         f_request_receiver->register_get_handler( "daq-status", std::bind( &daq_control::handle_get_status_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_get_handler( "filename", std::bind( &daq_control::handle_get_filename_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_get_handler( "description", std::bind( &daq_control::handle_get_description_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_get_handler( "duration", std::bind( &daq_control::handle_get_duration_request, f_daq_control, _1, _2 ) );
 
         // add set request handlers
+        f_request_receiver->register_set_handler( "node-config", std::bind( &stream_manager::handle_configure_node_request, f_stream_manager, _1, _2 ) );
         f_request_receiver->register_set_handler( "filename", std::bind( &daq_control::handle_set_filename_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_set_handler( "description", std::bind( &daq_control::handle_set_description_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_set_handler( "duration", std::bind( &daq_control::handle_set_duration_request, f_daq_control, _1, _2 ) );

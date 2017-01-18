@@ -98,8 +98,9 @@ namespace psyllid
                 }
                 catch( error& e )
                 {
-                    LERROR( plog, "Exception caught while resetting midge: " << e.what() );
-                    set_status( status::error );
+                    LWARN( plog, "Exception caught while resetting midge: " << e.what() );
+                    LWARN( plog, "Returning to the \"initialized\" state and awaiting further instructions" );
+                    set_status( status::initialized );
                     continue;
                 }
 
