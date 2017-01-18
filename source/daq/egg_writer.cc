@@ -39,7 +39,9 @@ namespace psyllid
             f_record_size( 4096 ),
             f_acq_rate( 100 ),
             f_v_offset( 0. ),
-            f_v_range( 0.5 )
+            f_v_range( 0.5 ),
+            f_center_freq( 0. ),
+            f_freq_range( 100. )
     {
     }
 
@@ -180,6 +182,8 @@ namespace psyllid
                             t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( t_dig_params.v_offset );
                             t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( t_dig_params.v_range );
                             t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( t_dig_params.dac_gain );
+                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyMin( f_center_freq - 0.5 * f_freq_range );
+                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyRange( f_freq_range );
                             //++i_chan_psyllid;
                         }
 
@@ -280,6 +284,7 @@ namespace psyllid
 
     void egg_writer_builder::apply_config( egg_writer* a_node, const scarab::param_node& a_config )
     {
+        LDEBUG( plog, "Configuring egg_writer with:\n" << a_config );
         a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
         const scarab::param_node *t_dev_config = a_config.node_at( "device" );
         if( t_dev_config != nullptr )
@@ -292,12 +297,27 @@ namespace psyllid
             a_node->set_v_offset( t_dev_config->get_value( "v-offset", a_node->get_v_offset() ) );
             a_node->set_v_range( t_dev_config->get_value( "v-range", a_node->get_v_range() ) );
         }
+        a_node->set_center_freq( a_config.get_value( "center-freq", a_node->get_center_freq() ) );
+        a_node->set_freq_range( a_config.get_value( "freq-range", a_node->get_freq_range() ) );
         return;
     }
 
     void egg_writer_builder::dump_config( egg_writer* a_node, scarab::param_node& a_config )
     {
-
+        LDEBUG( plog, "Dumping configuration for egg_writer" );
+        a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );
+        scarab::param_node* t_dev_node = new scarab::param_node();
+        t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );
+        t_dev_node->add( "data-type-size", new scarab::param_value( a_node->get_data_type_size() ) );
+        t_dev_node->add( "sample-size", new scarab::param_value( a_node->get_sample_size() ) );
+        t_dev_node->add( "record-size", new scarab::param_value( a_node->get_record_size() ) );
+        t_dev_node->add( "acq-rate", new scarab::param_value( a_node->get_acq_rate() ) );
+        t_dev_node->add( "v-offset", new scarab::param_value( a_node->get_v_offset() ) );
+        t_dev_node->add( "v-range", new scarab::param_value( a_node->get_v_range() ) );
+        a_config.add( "device", t_dev_node );
+        a_config.add( "center-freq", new scarab::param_value( a_node->get_center_freq() ) );
+        a_config.add( "freq-range", new scarab::param_value( a_node->get_freq_range() ) );
+        return;
     }
 
 } /* namespace psyllid */

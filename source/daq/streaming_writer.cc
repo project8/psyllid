@@ -40,6 +40,8 @@ namespace psyllid
             f_acq_rate( 100 ),
             f_v_offset( 0. ),
             f_v_range( 0.5 ),
+            f_center_freq( 0. ),
+            f_freq_range( 100. ),
             f_last_pkt_in_batch( 0 )
     {
     }
@@ -161,6 +163,9 @@ namespace psyllid
                             t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( t_dig_params.v_offset );
                             t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( t_dig_params.v_range );
                             t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( t_dig_params.dac_gain );
+                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyMin( f_center_freq - 0.5 * f_freq_range );
+                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyRange( f_freq_range );
+
                             //++i_chan_psyllid;
                         }
 
@@ -245,6 +250,8 @@ namespace psyllid
             a_node->set_v_offset( t_dev_config->get_value( "v-offset", a_node->get_v_offset() ) );
             a_node->set_v_range( t_dev_config->get_value( "v-range", a_node->get_v_range() ) );
         }
+        a_node->set_center_freq( a_config.get_value( "center-freq", a_node->get_center_freq() ) );
+        a_node->set_freq_range( a_config.get_value( "freq-range", a_node->get_freq_range() ) );
         return;
     }
 

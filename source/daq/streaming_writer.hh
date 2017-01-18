@@ -68,6 +68,8 @@ namespace psyllid
             mv_accessible( unsigned, acq_rate ); // MHz
             mv_accessible( double, v_offset ); // V
             mv_accessible( double, v_range ); // V
+            mv_accessible( double, center_freq ); // MHz
+            mv_accessible( double, freq_range ); // MHz
 
         public:
             virtual void initialize();
