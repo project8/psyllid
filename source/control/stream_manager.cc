@@ -429,21 +429,26 @@ namespace psyllid
 
     bool stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
-        if( ! a_request->get_payload().has( "stream" ) || ! a_request->get_payload().at( "stream" )->is_value() )
+        if( ! a_request->get_payload().has( "values" ) )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "No stream specified for removal" );
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: values array is missing" );
+        }
+        const scarab::param_array* t_values_array = a_request->get_payload().array_at( "values" );
+        if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
         }
 
         try
         {
-            _remove_stream( a_request->get_payload().get_value( "stream" ) );
+            _remove_stream( t_values_array->get_value( 0 ) );
         }
         catch( error& e )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::warning_no_action_taken, e.what() );
         }
 
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + a_request->get_payload().get_value( "stream" ) + " has been removed" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + t_values_array->get_value( 0 ) + " has been removed" );
     }
 
     bool stream_manager::handle_configure_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
