@@ -2,13 +2,31 @@
 Node Configurations
 ===================
 
-**Note:** Classes that are registered with some name (e.g. nodes and presets) are specified below as: ``class`` (``name``).  Named instances (e.g. nodes in use in a preset) are specified below as: ``class-name`` (``instance-name``).
-
 Nodes
 =====
 
 Producers
 ---------
+
+``packet_receiver_fpa``
+^^^^^^^^^^^^^^^^^^^^^^^
+UDP packet receiver using fast-packet-acquisition (Linux only)
+
+* Type: ``packet-receiver-fpa``
+* Configuration
+* Output
+
+  * 0: ``memory_block``
+
+``packet_receiver_socket``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+UDP packet receiver using standard socket networking
+
+* Type: ``packet-receiver-socket``
+* Configuration
+* Output
+
+  * 0: ``memory_block``
 
 * ``udp_receiver`` (``udp-receiver``)
 
@@ -18,37 +36,119 @@ Producers
 Transformers
 ------------
 
-* ``event_builder`` (``event-builder``)
-  
-  * Input: ``trigger_flag``
-  * Output: ``trigger_flag``
+``event_builder``
+^^^^^^^^^^^^^^^^^
+Considers triggered packets and accounts for pretrigger and skipped packets
 
-* ``frequency_mask_trigger`` (``frequency-mask-trigger``)
+* Type: ``event-builder``
+* Configuration
+* Input
 
-  * Input: ``freq_data``
-  * Output: ``trigger_flag``
+  * 0: ``trigger_flag``
 
-* ``single_valaue_trigger`` (``single-valaue-trigger``) [Obsolete]
+* Output
 
-  * Input: ``freq_data``
-  * Output: ``trigger_flag``
+  * 0: ``trigger_flag``
+
+``frequency_mask_trigger``
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+Packet trigger based on high power above a pre-calculated frequency mask
+
+* Type: ``frequency-mask-trigger``
+* Configuration
+* Input
+
+  * 0: ``freq_data``
+
+* Output
+
+  * 0: ``trigger_flag``
+
+``tf_roach_receiver``
+^^^^^^^^^^^^^^^^^^^^^
+Splits raw combined time-frequency stream into time and frequency streams
+
+* Type: ``tf-roach-receiver``
+* Configuration
+* Input
+
+  * 0: ``memory_block``
+
+* Output
+
+  * 0: ``time_data``
+  * 1: ``freq_data``
 
 
 Consumers
 ---------
 
-* ``egg_writer`` (``egg_writer``)
+``egg_writer``
+^^^^^^^^^^^^^^
+Writes triggered data to an egg file
 
-  * Input 0: ``time_data``
-  * Input 1: ``trigger_flag``
+* Type: ``egg-writer``
+* Configuration
+* Input
 
-* ``streaming_writer``  (``streaming-writer``)
+  * 0: ``time_data``
+  * 1: ``trigger_flag``
 
-  * Input: ``time_data``
+``roach_freq_monitor``
+^^^^^^^^^^^^^^^^^^^^^^
+Checks for missing frequency packets
 
-* ``terminator_freq_data`` (``term_freq_data``)
+* Type: ``roach-freq-monitor``
+* Configuration
+* Input
 
-  * Input: ``freq_data``
+  * 0: ``freq_data``
+
+``roach_time_monitor``
+^^^^^^^^^^^^^^^^^^^^^^
+Checks for missing time packets
+
+* Type: ``roach-time-monitor``
+* Configuration
+* Input
+
+  * 0: ``time_data``
+
+``streaming_writer``
+^^^^^^^^^^^^^^^^^^^^
+Writes streamed data to an egg file
+
+* Type: ``streaming-writer``
+* Configuration
+* Input
+
+  * 0: ``time_data``
+
+``terminator_freq``
+^^^^^^^^^^^^^^^^^^^
+Does nothing with frequency data
+
+* Type: ``terminator-freq``
+* Configuration
+
+  * (none)
+
+* Input
+
+  * 0: ``freq_data``
+
+``terminator_time``
+^^^^^^^^^^^^^^^^^^^
+Does nothing with time data
+
+* Type: ``terminator-time``
+* Configuration
+
+  * (none)
+
+* Input
+
+  * 0: ``time_data``
 
 
 Preset Configurations
