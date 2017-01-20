@@ -56,7 +56,7 @@ streams:
         preset:  # this preset is identical to str-1ch-fpa; it's given like this as a demonstration of how to specify a preset in a configuration file
             type: str-1ch-fpa-alt
             nodes:
-              - { type: packet-receiver-fpa,   name: prs }
+              - { type: packet-receiver-fpa,   name: prf }
               - { type: tf-roach-receiver,     name: tfrr }
               - { type: streaming-writer,      name: strw }
               - { type: term-freq-data,        name: term }
@@ -75,7 +75,7 @@ streams:
             v-offset: 0.0
             v-range: 0.5
   
-        prs:
+        prf:
             length: 10
             port: 23530
             interface: eth3
