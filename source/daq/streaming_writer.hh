@@ -39,6 +39,8 @@ namespace psyllid
        - "acq-rate": uint -- acquisition rate in MHz
        - "v-offset": double -- voltage offset for ADC calibration
        - "v-range": double -- voltage range for ADC calibration
+     - "center-freq": double -- the center frequency of the data being digitized
+     - "freq-range": double -- the frequency window (bandwidth) of the data being digitized
 
      ADC calibration: analog (V) = digital * gain + v-offset
                       gain = v-range / # of digital levels
