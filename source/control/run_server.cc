@@ -90,7 +90,7 @@ namespace psyllid
             f_request_receiver.reset( new request_receiver( f_config ) );
 
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             LERROR( plog, "Exception caught while creating server objects: " << e.what() );
             return;

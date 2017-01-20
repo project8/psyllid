@@ -68,7 +68,7 @@ namespace psyllid
             _add_stream( a_name, a_node );
             return true;
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             LERROR( plog, e.what() );
             return false;
@@ -82,7 +82,7 @@ namespace psyllid
         {
             return _remove_stream( a_name );
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             LWARN( plog, e.what() );
             return;
@@ -96,7 +96,7 @@ namespace psyllid
             _configure_node( a_stream_name, a_node_name, a_config );
             return true;
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             LWARN( plog, "Unable to configure node <" << a_stream_name << "." << a_node_name << ">: " << e.what() );
             return false;
@@ -110,7 +110,7 @@ namespace psyllid
             _dump_node_config( a_stream_name, a_node_name, a_config );
             return true;
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             LWARN( plog, "Unable to dump node config <" << a_stream_name << "." << a_node_name << ">: " << e.what() );
             return false;
@@ -188,7 +188,7 @@ namespace psyllid
             {
                 return _add_stream( a_name, t_preset_param_node->get_value( "type" ), a_node );
             }
-            catch( error& e )
+            catch( std::exception& e )
             {
                 throw( e );
             }
@@ -199,7 +199,7 @@ namespace psyllid
             {
                 return _add_stream( a_name, t_preset_param->as_value().as_string(), a_node );
             }
-            catch( error& e )
+            catch( std::exception& e )
             {
                 throw( e );
             }
@@ -281,6 +281,7 @@ namespace psyllid
         // add the new stream to the vector of streams
         f_must_reset_midge = true;
         f_streams.insert( streams_t::value_type( a_name, t_stream ) );
+        LDEBUG( plog, "Added stream <" << a_name << ">" );
         return;
     }
 
