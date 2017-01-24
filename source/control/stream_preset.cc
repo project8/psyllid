@@ -16,9 +16,9 @@ namespace psyllid
 {
     LOGGER( plog, "stream_preset" );
 
-    //********************
+    //*****************
     // stream_preset
-    //********************
+    //*****************
 
     stream_preset::stream_preset() :
             f_type( "unknown" ),
@@ -73,40 +73,47 @@ namespace psyllid
     }
 
 
-    //****************************
-    // node_config_runtime_preset
-    //****************************
+    //*************************
+    // runtime_stream_preset
+    //*************************
 
-    std::map< std::string, node_config_runtime_preset> node_config_runtime_preset::s_runtime_presets;
+    runtime_stream_preset::runtime_presets runtime_stream_preset::s_runtime_presets;
+    std::mutex runtime_stream_preset::s_runtime_presets_mutex;
 
-    node_config_runtime_preset::node_config_runtime_preset() :
+    runtime_stream_preset::runtime_stream_preset() :
             stream_preset()
     {
     }
 
-    node_config_runtime_preset::node_config_runtime_preset( const std::string& a_type ) :
+    runtime_stream_preset::runtime_stream_preset( const std::string& a_type ) :
             stream_preset( a_type )
     {
-        f_nodes = s_runtime_presets.at( a_type ).f_nodes;
-        f_connections = s_runtime_presets.at( a_type ).f_connections;
+        std::unique_lock< std::mutex >( s_runtime_presets_mutex );
+        runtime_presets::const_iterator t_preset_it = s_runtime_presets.find( a_type );
+        if( t_preset_it != s_runtime_presets.end() )
+        {
+            *this = *t_preset_it->second.f_preset_ptr.get();
+            //f_nodes = s_runtime_presets.at( a_type ).f_preset.f_nodes;
+            //f_connections = s_runtime_presets.at( a_type ).f_preset.f_connections;
+        }
     }
 
-    node_config_runtime_preset::node_config_runtime_preset( const node_config_runtime_preset& a_orig ) :
+    runtime_stream_preset::runtime_stream_preset( const runtime_stream_preset& a_orig ) :
             stream_preset( a_orig )
     {
     }
 
-    node_config_runtime_preset::~node_config_runtime_preset()
+    runtime_stream_preset::~runtime_stream_preset()
     {
     }
 
-    node_config_runtime_preset& node_config_runtime_preset::operator=( const node_config_runtime_preset& a_rhs )
+    runtime_stream_preset& runtime_stream_preset::operator=( const runtime_stream_preset& a_rhs )
     {
         stream_preset::operator=( a_rhs );
         return *this;
     }
 
-    bool node_config_runtime_preset::add_preset( const scarab::param_node* a_preset_node )
+    bool runtime_stream_preset::add_preset( const scarab::param_node* a_preset_node )
     {
         if( a_preset_node == nullptr )
         {
@@ -121,6 +128,8 @@ namespace psyllid
         }
         std::string t_preset_type = a_preset_node->get_value( "type" );
 
+        LDEBUG( plog, "Adding preset of type <" << t_preset_type << ">" );
+
         const scarab::param_array* t_nodes_array = a_preset_node->array_at( "nodes" );
         if( t_nodes_array == nullptr )
         {
@@ -128,7 +137,15 @@ namespace psyllid
             return false;
         }
 
-        node_config_runtime_preset t_new_preset( t_preset_type );
+        std::unique_lock< std::mutex >( s_runtime_presets_mutex );
+
+        auto t_rp_pair = s_runtime_presets.insert( runtime_presets::value_type( t_preset_type, rsp_creator( t_preset_type ) ) );
+        if( ! t_rp_pair.second )
+        {
+            LERROR( plog, "Unable to add new runtime preset <" << t_preset_type << ">" );
+            return false;
+        }
+        runtime_presets::iterator t_new_rsp_creator = t_rp_pair.first;
 
         std::string t_type;
         for( scarab::param_array::const_iterator t_nodes_it = t_nodes_array->begin(); t_nodes_it != t_nodes_array->end(); ++t_nodes_it )
@@ -136,6 +153,8 @@ namespace psyllid
             if( ! (*t_nodes_it)->is_node() )
             {
                 LERROR( plog, "Invalid node specification in preset <" << t_preset_type << ">" );
+                scarab::factory< stream_preset, runtime_stream_preset, const std::string& >::get_instance()->remove_class( t_preset_type );
+                s_runtime_presets.erase( t_new_rsp_creator );
                 return false;
             }
 
@@ -143,11 +162,13 @@ namespace psyllid
             if( t_type.empty() )
             {
                 LERROR( plog, "No type given for one of the nodes in preset <" << t_preset_type << ">" );
+                scarab::factory< stream_preset, runtime_stream_preset, const std::string& >::get_instance()->remove_class( t_preset_type );
+                s_runtime_presets.erase( t_new_rsp_creator );
                 return false;
             }
 
             LDEBUG( plog, "Adding node <" << t_type << ":" << (*t_nodes_it)->as_node().get_value( "name", t_type ) << "> to preset <" << t_preset_type << ">" );
-            t_new_preset.node( t_type, (*t_nodes_it)->as_node().get_value( "name", t_type ) );
+            t_new_rsp_creator->second.f_preset_ptr->node( t_type, (*t_nodes_it)->as_node().get_value( "name", t_type ) );
         }
 
         const scarab::param_array* t_conn_array = a_preset_node->array_at( "connections" );
@@ -162,15 +183,16 @@ namespace psyllid
                 if( ! (*t_conn_it)->is_value() )
                 {
                     LERROR( plog, "Invalid connection specification in preset <" << t_preset_type << ">" );
+                    scarab::factory< stream_preset, runtime_stream_preset, const std::string& >::get_instance()->remove_class( t_preset_type );
+                    s_runtime_presets.erase( t_new_rsp_creator );
                     return false;
                 }
 
                 LDEBUG( plog, "Adding connection <" << (*t_conn_it)->as_value().as_string() << "> to preset <" << t_preset_type << ">");
-                t_new_preset.connection( (*t_conn_it)->as_value().as_string() );
+                t_new_rsp_creator->second.f_preset_ptr->connection( (*t_conn_it)->as_value().as_string() );
             }
         }
 
-        s_runtime_presets[ t_preset_type ] = t_new_preset;
         LINFO( plog, "Preset <" << t_preset_type << "> is now available" );
 
         return true;

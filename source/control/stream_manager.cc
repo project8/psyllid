@@ -179,11 +179,12 @@ namespace psyllid
         else if( t_preset_param->is_node() )
         {
             const scarab::param_node* t_preset_param_node = &t_preset_param->as_node();
-            if( ! node_config_runtime_preset::add_preset( t_preset_param_node ) )
+            if( ! runtime_stream_preset::add_preset( t_preset_param_node ) )
             {
                 throw error() << "Runtime preset could not be added";
             }
-            // "name" is guaranteed to be there by the successful completion of node_config_runtime_preset::add_preset
+
+            // "name" is guaranteed to be there by the successful completion of runtime_stream_preset::add_preset
             try
             {
                 return _add_stream( a_name, t_preset_param_node->get_value( "type" ), a_node );

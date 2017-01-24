@@ -51,21 +51,31 @@ namespace psyllid
     };
 
 
-    class node_config_runtime_preset : public stream_preset
+    class runtime_stream_preset : public stream_preset
     {
         public:
-            node_config_runtime_preset();
-            node_config_runtime_preset( const std::string& a_name );
-            node_config_runtime_preset( const node_config_runtime_preset& a_orig );
-            virtual ~node_config_runtime_preset();
+            runtime_stream_preset();
+            runtime_stream_preset( const std::string& a_type );
+            runtime_stream_preset( const runtime_stream_preset& a_orig );
+            virtual ~runtime_stream_preset();
 
-            node_config_runtime_preset& operator=( const node_config_runtime_preset& a_rhs );
+            runtime_stream_preset& operator=( const runtime_stream_preset& a_rhs );
 
         public:
             static bool add_preset( const scarab::param_node* a_preset_node );
 
         protected:
-            static std::map< std::string, node_config_runtime_preset> s_runtime_presets;
+            struct rsp_creator
+            {
+                std::shared_ptr< runtime_stream_preset > f_preset_ptr;
+                typedef scarab::registrar< stream_preset, runtime_stream_preset, const std::string& > registrar_t;
+                std::shared_ptr< registrar_t > f_registrar_ptr;
+                rsp_creator() : f_preset_ptr( new runtime_stream_preset() ), f_registrar_ptr( new registrar_t( "" ) ) {}
+                rsp_creator( const std::string& a_type ) : f_preset_ptr( new runtime_stream_preset( a_type ) ), f_registrar_ptr( new registrar_t( a_type ) ) {}
+            };
+            typedef std::map< std::string, rsp_creator> runtime_presets;
+            static runtime_presets s_runtime_presets;
+            static std::mutex s_runtime_presets_mutex;
 
     };
 
