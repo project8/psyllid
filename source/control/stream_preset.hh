@@ -11,6 +11,7 @@
 #include "factory.hh"
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 
