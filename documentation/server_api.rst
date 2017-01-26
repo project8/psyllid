@@ -217,15 +217,15 @@ Same as the OP_RUN command above.
 
 ``activate-daq``
 ----------------
-Put the DAQ in its actiavated ("idle") state to be ready to take data.  Psyllid must be in its deactivated ("initialized") state before this call.
+Put the DAQ in its actiavated state to be ready to take data.  Psyllid must be in its deactivated state before this call.
 
 ``reactivate-daq``
 ------------------
-Deactivate, then reactivate the DAQ; it will end in its activated ("idle") state, ready to take data.  Psyllid must be in its activated ("idle") state before this call.
+Deactivate, then reactivate the DAQ; it will end in its activated state, ready to take data.  Psyllid must be in its activated state before this call.
 
 ``deactivate-daq``
 ------------------
-Put in its deactivated ("initialized") state, in which it is not immediately ready to take data.  Psyllid must be in its activated ("idle") state before this call.
+Put in its deactivated state, in which it is not immediately ready to take data.  Psyllid must be in its activated state before this call.
 
 ``quit-psyllid``
 ----------------

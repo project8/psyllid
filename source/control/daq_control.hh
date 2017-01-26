@@ -49,15 +49,15 @@ namespace psyllid
             /// Run the DAQ control thread
             void execute();
 
-            /// Start the DAQ into the idle state
+            /// Start the DAQ into the activated state
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void activate();
-            /// Restarts the DAQ into the idle state
+            /// Restarts the DAQ into the activated state
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void reactivate();
-            /// Returns the DAQ to the initialized state
+            /// Returns the DAQ to the deactivated state
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void deactivate();
@@ -118,9 +118,9 @@ namespace psyllid
         public:
             enum class status:uint32_t
             {
-                initialized = 0,
+                deactivated = 0,
                 activating = 2,
-                idle = 4,
+                activated = 4,
                 running = 5,
                 deactivating = 6,
                 canceled = 8,
