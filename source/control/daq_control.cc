@@ -186,6 +186,20 @@ namespace psyllid
         return;
     }
 
+    void daq_control::reactivate()
+    {
+        try
+        {
+            deactivate();
+            reactivate();
+        }
+        catch( error& e )
+        {
+            throw e;
+        }
+        return;
+    }
+
     void daq_control::deactivate()
     {
         LDEBUG( plog, "Deactivating DAQ" );
@@ -306,6 +320,19 @@ namespace psyllid
         catch( error& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to activate DAQ control: " ) + e.what() );
+        }
+    }
+
+    bool daq_control::handle_reactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        try
+        {
+            reactivate();
+            return a_reply_pkg.send_reply( retcode_t::success, "DAQ control reactivated" );
+        }
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to reactivate DAQ control: " ) + e.what() );
         }
     }
 

@@ -50,10 +50,13 @@ namespace psyllid
             void execute();
 
             /// Start the DAQ into the idle state
-            /// Deactivated with deactivate()
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void activate();
+            /// Restarts the DAQ into the idle state
+            /// Can throw daq_control::status_error; daq_control will still be usable
+            /// Can throw psyllid::error; daq_control will NOT be usable
+            void reactivate();
             /// Returns the DAQ to the initialized state
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
@@ -72,7 +75,7 @@ namespace psyllid
 
         public:
             bool handle_activate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-
+            bool handle_reactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_deactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
             bool handle_start_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
