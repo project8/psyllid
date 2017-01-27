@@ -286,6 +286,7 @@ namespace psyllid
 
     void frequency_mask_trigger_builder::apply_config( frequency_mask_trigger* a_node, const scarab::param_node& a_config )
     {
+        LDEBUG( plog, "Configuring frequency_mask_trigger with:\n" << a_config );
         a_node->set_n_packets_for_mask( a_config.get_value( "n-packets-for-mask", a_node->get_n_packets_for_mask() ) );
 
         if( a_config.has( "threshold-ampl-snr" ) )
@@ -302,6 +303,15 @@ namespace psyllid
         }
 
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
+        return;
+    }
+
+    void frequency_mask_trigger_builder::dump_config( frequency_mask_trigger* a_node, scarab::param_node& a_config )
+    {
+        LDEBUG( plog, "Dumping configuration for frequency_mask_trigger" );
+        a_config.add( "n-packets-for-mask", new scarab::param_value( a_node->get_n_packets_for_mask() ) );
+        a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
+        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         return;
     }
 

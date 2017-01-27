@@ -10,7 +10,7 @@
 
 #include "member_variables.hh"
 
-#include "node_manager.hh" // for midge_package
+#include "stream_manager.hh" // for midge_package
 #include "psyllid_error.hh"
 
 #include "cancelable.hh"
@@ -43,18 +43,21 @@ namespace psyllid
             };
 
         public:
-            daq_control( const scarab::param_node& a_master_config, std::shared_ptr< node_manager > a_mgr );
+            daq_control( const scarab::param_node& a_master_config, std::shared_ptr< stream_manager > a_mgr );
             virtual ~daq_control();
 
             /// Run the DAQ control thread
             void execute();
 
-            /// Start the DAQ into the idle state
-            /// Deactivated with deactivate()
+            /// Start the DAQ into the activated state
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void activate();
-            /// Returns the DAQ to the initialized state
+            /// Restarts the DAQ into the activated state
+            /// Can throw daq_control::status_error; daq_control will still be usable
+            /// Can throw psyllid::error; daq_control will NOT be usable
+            void reactivate();
+            /// Returns the DAQ to the deactivated state
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void deactivate();
@@ -72,7 +75,7 @@ namespace psyllid
 
         public:
             bool handle_activate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-
+            bool handle_reactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_deactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
             bool handle_start_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
@@ -96,7 +99,7 @@ namespace psyllid
             std::condition_variable f_activation_condition;
             std::mutex f_daq_mutex;
 
-            std::shared_ptr< node_manager > f_node_manager;
+            std::shared_ptr< stream_manager > f_node_manager;
 
             std::unique_ptr< scarab::param_node > f_daq_config;
 
@@ -115,9 +118,9 @@ namespace psyllid
         public:
             enum class status:uint32_t
             {
-                initialized = 0,
+                deactivated = 0,
                 activating = 2,
-                idle = 4,
+                activated = 4,
                 running = 5,
                 deactivating = 6,
                 canceled = 8,

@@ -51,6 +51,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( x_node_type* a_node, const scarab::param_node& a_config ) = 0;
+            virtual void dump_config( x_node_type* a_node, scarab::param_node& a_config ) = 0;
 
     };
 
@@ -66,6 +67,12 @@ namespace psyllid
     midge::node* _node_builder< x_node_type >::build()
     {
         x_node_type* t_node = new x_node_type();
+
+        // before we do anything else, get the default configuration and merge anything in f_config with it
+        scarab::param_node t_temp_config( f_config );
+        f_config.clear();
+        dump_config( t_node, f_config );
+        f_config.merge( t_temp_config );
 
         control_access* t_cont_acc = dynamic_cast< control_access* >( t_node );
         if( t_cont_acc != nullptr )

@@ -60,7 +60,7 @@ namespace psyllid
         public:
             mv_accessible( uint64_t, time_length );
             mv_accessible( uint64_t, freq_length );
-            mv_accessible( size_t, udp_buffer_size );
+            mv_accessible( uint64_t, udp_buffer_size );
             mv_accessible( unsigned, time_sync_tol );
             mv_accessible( bool, start_paused );
 
@@ -88,6 +88,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config );
+            virtual void dump_config( tf_roach_receiver* a_node, scarab::param_node& a_config );
     };
 
 } /* namespace psyllid */

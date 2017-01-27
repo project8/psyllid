@@ -19,6 +19,38 @@
 namespace psyllid
 {
 
+    /*!
+     @class event_builder
+     @author N. S. Oblath
+
+     @brief A transformer that considers a sequence of triggered packets and decides what constitutes a contiguous event
+
+     @details
+
+     Keeps track of the state of the packet sequence (is-triggered, or not).
+
+     When going from untriggered to triggered, adds some number of pretrigger packets.
+
+     Includes a skip tolerance for untriggered packets between two triggered packets.
+
+     Events are built by switching some untriggered packets to triggered packets according to the pretrigger and skip-tolerance parameters.
+     Contiguous sequences of triggered packets constitute events.
+
+     Parameter setting is not thread-safe.  Executing is thread-safe.
+
+     Node type: "packet-receiver-socket"
+
+     Available configuration values:
+     - "length": uint -- The size of the output buffer
+     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet
+     - "skip-tolerance": uint -- Number of untriggered packets to include in the event between two triggered
+
+     Input Streams:
+     - 1: trigger_flag
+
+     Output Streams:
+     - 0: trigger_flag
+    */
     class event_builder :
             public midge::_transformer< event_builder, typelist_1( trigger_flag ), typelist_1( trigger_flag ) >
     {
@@ -72,6 +104,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( event_builder* a_node, const scarab::param_node& a_config );
+            virtual void dump_config( event_builder* a_node, scarab::param_node& a_config );
     };
 
 

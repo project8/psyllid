@@ -40,6 +40,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( terminator_time_data* a_node, const scarab::param_node& a_config );
+            virtual void dump_config( terminator_time_data* a_node, scarab::param_node& a_config );
     };
 
 
@@ -65,6 +66,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( terminator_freq_data* a_node, const scarab::param_node& a_config );
+            virtual void dump_config( terminator_freq_data* a_node, scarab::param_node& a_config );
     };
 
 

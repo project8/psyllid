@@ -1,8 +1,8 @@
-==========
+##########
 Server API
-==========
+##########
 
-The server communicates with `dripline-standard <https://github.com/project8/hardware/wiki/Wire-Protocol>`_ AMQP messages.
+The server communicates with `dripline-standard <https://github.com/project8/dripline>`_ AMQP messages.
 
 The API documentation below is organized by message type.
 
@@ -11,75 +11,11 @@ The routing key should consist of the server queue name, followed by the Routing
 For each message type, the API includes the allowed RKS, Payload options, and contents of the Reply Payload.
 
 
-Lockout
-=======
-
-The server can be locked out to require a key for some types of messages.  
-It obeys the lockout behavior specified by the dripline wire protocol.  
-The server keeps a lockout tag that holds the information about who enabled the lock.  
-Additionally, there is a ``OP_GET`` request ``is-locked`` that can be used to assess the state of the lock.
-
-
-Message Types
-=============
-
-OP_RUN
-^^^^^^
-
-The `run` message type is used to start an acquisition.
-
-All `run` requests are lockable.
-
-There are no Routing Key Specifiers for *run* requests.
-
-*Payload*
-
-- ``file=[filename (string)]`` -- *(not implemented yet)* *(optional)* Filename for the acquisition.
-- ``description=[description (string)]`` -- *(not implemented yet)* *(optional)* Text description for the acquisition; saved in the file header.
-- ``duration=[ms (unsigned int)]`` -- *(not implemented yet)* *(optional)* Duration of the run in ms.
-
-*Reply Payload*
-
-- ``[Acquisition Request]`` -- The full request for the acquisition.
-- ``status-meaning`` -- A human-readable interpretation of the acquisition status.
-
+Dripline API
+============
 
 OP_GET
 ^^^^^^
-
-The `get` message is used to request the status of various components of the server.
-
-No `get` requests are lockable.
-
-Routing Key Specifiers
-----------------------
-
-The Routing Key Specifier (RKS) indicates the information that is being requested from the server.  Some specifiers have *Payload* options.  The RKS and *Payload* options are listed below, along with the relevant *Reply Payload*.
-
-``daq-status``
---------------
-Returns the current acquisition configuration.
-
-*Reply Payload*
-
-- ``status=[status (string)]`` -- human-readable status message
-- ``status-value=[status code (unsigned int)]`` -- machine-redable status message
-
-``node.[node name]``
---------------------
-Returns the configuration of the node requested.
-
-*Reply Payload*
-
-- ``[Full node configuration]``
-
-``node.[node name].[parameter]``
---------------------------------
-Returns the configuration value requested from the node requested.
-
-*Reply Payload*
-
-- ``values=[[value]]`` -- Array with the value requested
 
 ``is-locked``
 -------------
@@ -90,79 +26,8 @@ Returns whether or not the server is locked out.
 - ``is-locked=[true/false (bool)]``
 
 
-IGNORE EVERYTHING BELOW THIS
-============================
-
-OP_SET
-^^^^^^
-
-The `set` message type is used to set a value to a parameter in the acquisition configuration.
-
-All `set` requests are lockable.
-
-Routing Key Specifiers
-----------------------
-
-The RKS for `set` commands is the name of the configuration parameter being set.  For example:
-
-- ``devices.pxie.enabled``
-- ``duration``
-
-*Payload*
-
-- ``value=[value (varied)]`` -- *(required)* Specify the value to which the run-configuration item should be set.  Any values valid in the JSON standard will work, including strings, numbers, and ``true`` or ``false`` for booleans.
-
-*Reply Payload*
-
-- ``[Acquisition configuration]`` -- the full acquisition configuration **after** the `set` operation
-
-
 OP_CMD
 ^^^^^^
-
-The `cmd` message type is used to run a variety of different command instructions.  The instruction can be specified either as a Routing Key Specifier or as the first element in the ``values`` array in the payload.  They are listed below in the Command Instructions section.
-
-All `command` requests are lockable.
-
-Global Payload Options
-----------------------
-- ``values=[[instruction]]`` -- *(optional)* If the command instruction is not included in the routing key specifier, it should be given in the payload as the first element of the ``values`` array.
-
-
-Command Instructions
---------------------
-
-``add.device``
---------------
-Adds a device to the master run configuration. Requires that the device be specified as an instruction option (see Payload section below).
-
-*Payload*
-
-- ``[device type]=[device name (string)]`` -- *(required)* The device type should be one of the valid device types for the server being run.  The device name is the name that will be used to refer to this particular instance of the device in the server configuration.
-
-*Reply Payload*
-
-- ``[acquisition configuration]``
-
-``remove.device.[device name]``
--------------------------------
-Removes a device from the master run configuration.
-
-*Reply Payload*
-
-- ``[acquisition configuration]``
-
-``replace-config``
-------------------
-Replaces the server's run configuration with the contents of the instruction options, or the JSON file specified in those options (see below).
-
-*Payload*
-
-- ``[acquisition configuration]`` -- *(required)* The full acquisition configuration should be specified.  The payload, whatever it is, is assumed to be the acquisition configuration.
-
-*Reply Payload*
-
-- ``[acquisition configuration]``
 
 ``lock``
 --------
@@ -185,35 +50,183 @@ Requests that the server lockout be disabled.
 --------
 Check that the server receives requests and sends replies. No other action is taken.
 
-``cancel-acq``
+
+Psyllid API
+===========
+
+OP_RUN
+^^^^^^
+
+The `run` message type is used to start a run.
+
+All `run` requests are lockable.
+
+There are no Routing Key Specifiers for *run* requests.
+
+*Payload*
+
+- ``file: [filename (string)]`` -- *(not implemented yet)* *(optional)* Filename for the acquisition.
+- ``description: [description (string)]`` -- *(not implemented yet)* *(optional)* Text description for the acquisition; saved in the file header.
+- ``duration: [ms (unsigned int)]`` -- *(not implemented yet)* *(optional)* Duration of the run in ms.
+
+
+OP_GET
+^^^^^^
+
+The `get` message is used to request information from the server.
+
+No `get` requests are lockable.
+
+``daq-status``
 --------------
-Remove an acquisition that is waiting to run from the queue.
+Returns the current acquisition configuration.
 
 *Reply Payload*
 
-- ``[Acquisition Request]`` -- The full request for the acquisition.
-- ``status-meaning`` -- A human-readable interpretation of the acquisition status.
+- ``status: [status (string)]`` -- human-readable status message
+- ``status-value: [status code (unsigned int)]`` -- machine-redable status message
 
-``clear-queue``
+``node-config.[stream].[node]``
+-------------------------------
+Returns the configuration of the node requested.
+
+*Reply Payload*
+
+- ``[Full node configuration]``
+
+``node-config.[stream].[node].[parameter]``
+-------------------------------------------
+Returns the configuration value requested from the node requested.
+
+*Reply Payload*
+
+- ``[parameter name]: [value]`` -- Parameter name and value
+
+``filename``
+------------
+Returns the filename that will be written to.
+
+*Reply Payload*
+
+- ``values: [[filename (string)]]`` -- Filename as the first element of the ``values`` array
+
+``description``
 ---------------
-Clear scheduled acquisitions from the queue.
+Returns the description that will be written to the file header.
 
-``start-queue``
+*Reply Payload*
+
+- ``values: [[description (string)]]`` -- Description as the first element of the ``values`` array
+
+``duration``
+------------
+Returns the run duration (in ms).
+
+*Reply Payload*
+
+- ``values: [[duration (unsigned int)]]`` -- Duration in ms as the first element of the ``values`` array
+
+
+OP_SET
+^^^^^^
+
+The `set` message type is used to set a value to a parameter in the configuration.
+
+All `set` requests are lockable.
+
+``node-config.[stream].[node]``
+-------------------------------
+Configures one or more parameters within a node.  Takes effect next time the DAQ is activated.
+
+*Payload*
+
+- ``[node configuration (dictionary)]`` -- Parameters to set in the node
+
+*Reply Payload*
+
+- ``[the parameters that were set (dictionary)]`` -- Parameter name:value pairs that were set
+
+``node-config.[stream].[node].[parameter]``
+-------------------------------------------
+Configure a single parameter in a node.  Takes effect next time the DAQ is activated.
+
+*Payload*
+
+- ``values: [[value]]`` -- Parameter value to be set as the first element of the ``values`` array.
+
+``filename``
+------------
+Sets the filename (relative or absolute) that will be written to. Takes effect for the next run.
+
+*Payload*
+
+- ``values: [[filename (string)]]`` -- Filename
+
+``description``
 ---------------
-Start processing the requests in the queue (if the queue had previously been stopped)
+Sets the description that will be written to the file header. Takes effect for the next run.
 
-``stop-queue``
+*Payload*
+
+- ``values: [[description (string)]]`` -- Description
+
+*Reply Payload*
+
+- ``[the parameter that was set as a dictionary]`` -- Parameter name:value pair that was set
+
+``duration``
+------------
+Sets the run duration in ms. Takes effect for the next run.
+
+*Payload*
+
+- ``values: [[duration (unsigned int)]]`` -- Duration in ms
+
+
+OP_CMD
+^^^^^^
+
+The `cmd` message type is used to run a variety of different command instructions.
+
+All `command` requests are lockable.
+
+``add-stream``
 --------------
-Stop processing the requests in the queue (queue is left intact and acquisition in progress is not stopped; restart with ``start-queue``)
+Adds a stream to the DAQ configuration.  Takes effect next time the DAQ is activated.
 
-``stop-acq``
+*Payload*
+
+- ``name: [stream name (string)]`` -- Unique name for the stream.
+- ``config: [stream configuration (dictionary)]`` -- Configuration for the stream
+
+``remove-stream``
+-----------------
+Remove a stream from the DAQ configuration.  Takes effect next time the DAQ is activated.
+
+*Payload*
+
+- ``values: [[stream name (string)]]`` -- Name of the stream to remove as the first element of the ``values`` array
+
+``stop-run``
 ------------
-Stop any acquisition that is currently running (queue processing will continue).
+Stop a run that's currently going on.
 
-``stop-all``
-------------
-Stop processing the requests in the queue and any acquisition that is currently running. This is the same as issuing both a ``stop-queue`` command and a ``stop-acq`` command.
+``start-run``
+-------------
+Same as the OP_RUN command above.
 
-``quit-mantis``
----------------
-Stop execution of the Mantis server.
+``activate-daq``
+----------------
+Put the DAQ in its actiavated state to be ready to take data.  Psyllid must be in its deactivated state before this call.
+
+``reactivate-daq``
+------------------
+Deactivate, then reactivate the DAQ; it will end in its activated state, ready to take data.  Psyllid must be in its activated state before this call.
+
+``deactivate-daq``
+------------------
+Put in its deactivated state, in which it is not immediately ready to take data.  Psyllid must be in its activated state before this call.
+
+``quit-psyllid``
+----------------
+Instruct the Psyllid executable to exit.

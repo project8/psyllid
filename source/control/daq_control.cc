@@ -7,8 +7,6 @@
 
 #include "daq_control.hh"
 
-#include "node_manager.hh"
-
 #include "diptera.hh"
 #include "midge_error.hh"
 
@@ -33,7 +31,7 @@ namespace psyllid
 {
     LOGGER( plog, "daq_control" );
 
-    daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< node_manager > a_mgr ) :
+    daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< stream_manager > a_mgr ) :
             scarab::cancelable(),
             f_activation_condition(),
             f_daq_mutex(),
@@ -46,7 +44,7 @@ namespace psyllid
             f_run_filename( "default_filename_dc.egg" ),
             f_run_description( "default_description" ),
             f_run_duration( 1000 ),
-            f_status( status::initialized )
+            f_status( status::deactivated )
     {
         // DAQ config is optional; defaults will work just fine
         if( a_master_config.has( "daq" ) )
@@ -80,10 +78,10 @@ namespace psyllid
         while( ! is_canceled() )
         {
             status t_status = get_status();
-            if( t_status == status::initialized )
+            if( t_status == status::deactivated )
             {
                 std::unique_lock< std::mutex > t_lock( f_daq_mutex );
-                //LDEBUG( plog, "DAQ control initialized and waiting for activation signal" );
+                //LDEBUG( plog, "DAQ control deactivated and waiting for activation signal" );
                 f_activation_condition.wait_for( t_lock, std::chrono::seconds(1) );
             }
             else if( t_status == status::activating )
@@ -100,8 +98,9 @@ namespace psyllid
                 }
                 catch( error& e )
                 {
-                    LERROR( plog, "Exception caught while resetting midge: " << e.what() );
-                    set_status( status::error );
+                    LWARN( plog, "Exception caught while resetting midge: " << e.what() );
+                    LWARN( plog, "Returning to the \"deactivated\" state and awaiting further instructions" );
+                    set_status( status::deactivated );
                     continue;
                 }
 
@@ -119,7 +118,7 @@ namespace psyllid
                 {
                     std::string t_run_string( f_node_manager->get_node_run_str() );
                     LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
-                    set_status( status::idle );
+                    set_status( status::activated );
                     f_midge_pkg->run( t_run_string );
                     LINFO( plog, "DAQ control is shutting down after midge exited" );
                 }
@@ -141,16 +140,16 @@ namespace psyllid
                     continue;
                 }
             }
-            else if( t_status == status::idle )
+            else if( t_status == status::activated )
             {
-                LERROR( plog, "DAQ control status is idle in the outer execution loop!" );
+                LERROR( plog, "DAQ control status is activated in the outer execution loop!" );
                 set_status( status::error );
                 continue;
             }
             else if( t_status == status::deactivating )
             {
-                LDEBUG( plog, "DAQ control deactivating; status now set to \"initialized\"" );
-                set_status( status::initialized );
+                LDEBUG( plog, "DAQ control deactivating; status now set to \"deactivated\"" );
+                set_status( status::deactivated );
             }
             else if( t_status == status::done )
             {
@@ -176,14 +175,28 @@ namespace psyllid
             throw error() << "DAQ control has been canceled";
         }
 
-        if( get_status() != status::initialized )
+        if( get_status() != status::deactivated )
         {
-            throw status_error() << "DAQ control is not in the initialized state";
+            throw status_error() << "DAQ control is not in the deactivated state";
         }
 
         set_status( status::activating );
         f_activation_condition.notify_one();
 
+        return;
+    }
+
+    void daq_control::reactivate()
+    {
+        try
+        {
+            deactivate();
+            activate();
+        }
+        catch( error& e )
+        {
+            throw e;
+        }
         return;
     }
 
@@ -196,9 +209,9 @@ namespace psyllid
             throw error() << "DAQ control has been canceled";
         }
 
-        if( get_status() != status::idle )
+        if( get_status() != status::activated )
         {
-            throw status_error() << "Invalid state for deactivating: <" + daq_control::interpret_status( get_status() ) + ">; DAQ control must be in idle state";
+            throw status_error() << "Invalid state for deactivating: <" + daq_control::interpret_status( get_status() ) + ">; DAQ control must be in activated state";
         }
 
         set_status( status::deactivating );
@@ -220,9 +233,9 @@ namespace psyllid
             throw error() << "daq_control has been canceled";
         }
 
-        if( get_status() != status::idle )
+        if( get_status() != status::activated )
         {
-            throw status_error() << "DAQ control must be in the idle state to start a run; activate the DAQ and try again";
+            throw status_error() << "DAQ control must be in the activated state to start a run; activate the DAQ and try again";
         }
 
         if( ! f_midge_pkg.have_lock() )
@@ -259,7 +272,7 @@ namespace psyllid
         LDEBUG( plog, "Run stopper has been released" );
 
         f_midge_pkg->instruct( midge::instruction::pause );
-        set_status( status::idle );
+        set_status( status::activated );
 
         LINFO( plog, "Run has stopped" );
 
@@ -310,6 +323,19 @@ namespace psyllid
         }
     }
 
+    bool daq_control::handle_reactivate_daq_control( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    {
+        try
+        {
+            reactivate();
+            return a_reply_pkg.send_reply( retcode_t::success, "DAQ control reactivated" );
+        }
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to reactivate DAQ control: " ) + e.what() );
+        }
+    }
+
     bool daq_control::handle_deactivate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         try
@@ -323,10 +349,13 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_start_run_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    bool daq_control::handle_start_run_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
+            f_run_filename = a_request->get_payload().get_value( "filename", f_run_filename );
+            f_run_description = a_request->get_payload().get_value( "description", f_run_description );
+            f_run_duration = a_request->get_payload().get_value( "duration", f_run_duration );
             start_run();
             return a_reply_pkg.send_reply( retcode_t::success, "Run started" );
         }
@@ -448,14 +477,14 @@ namespace psyllid
     {
         switch( a_status )
         {
-            case status::initialized:
-                return std::string( "Initialized" );
+            case status::deactivated:
+                return std::string( "Deactivated" );
                 break;
             case status::activating:
                 return std::string( "Activating" );
                 break;
-            case status::idle:
-                return std::string( "Idle" );
+            case status::activated:
+                return std::string( "Activated" );
                 break;
             case status::running:
                 return std::string( "Running" );

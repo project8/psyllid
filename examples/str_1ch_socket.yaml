@@ -1,11 +1,30 @@
 amqp:
     broker: localhost
-    
+    broker-port: 5672
+    request-exchange: requests
+    alert-exchange: alerts
+    queue: psyllid
+    listen-timeout-ms: 100
+
 daq:
-    preset: str-1ch
     activate-at-startup: true
-    
-prs:
-    length: 10
-    port: 23530
-    ip: 127.0.0.1
+
+streams:
+    ch0:
+        preset: str-1ch
+  
+        device:
+            n-channels: 1
+            bit-depth: 8
+            data-type-size: 1
+            sample-size: 2
+            record-size: 4096
+            acq-rate: 100 # MHz
+            v-offset: 0.0
+            v-range: 0.5
+  
+        prs:
+            length: 10
+            port: 23530
+            ip: 127.0.0.1
+           
