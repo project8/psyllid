@@ -114,7 +114,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( frequency_mask_trigger* a_node, const scarab::param_node& a_config );
-            virtual void dump_config( frequency_mask_trigger* a_node, scarab::param_node& a_config );
+            virtual void dump_config( const frequency_mask_trigger* a_node, scarab::param_node& a_config );
     };
 
 

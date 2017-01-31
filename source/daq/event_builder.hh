@@ -104,7 +104,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( event_builder* a_node, const scarab::param_node& a_config );
-            virtual void dump_config( event_builder* a_node, scarab::param_node& a_config );
+            virtual void dump_config( const event_builder* a_node, scarab::param_node& a_config );
     };
 
 

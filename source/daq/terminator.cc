@@ -104,7 +104,7 @@ namespace psyllid
     void terminator_time_data_builder::apply_config( terminator_time_data*, const scarab::param_node& )
     {}
 
-    void terminator_time_data_builder::dump_config( terminator_time_data*, scarab::param_node& )
+    void terminator_time_data_builder::dump_config( const terminator_time_data*, scarab::param_node& )
     {}
 
 
@@ -191,7 +191,7 @@ namespace psyllid
     void terminator_freq_data_builder::apply_config( terminator_freq_data*, const scarab::param_node& )
     {}
 
-    void terminator_freq_data_builder::dump_config( terminator_freq_data*, scarab::param_node& )
+    void terminator_freq_data_builder::dump_config( const terminator_freq_data*, scarab::param_node& )
     {}
 
 } /* namespace psyllid */

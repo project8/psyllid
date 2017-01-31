@@ -302,7 +302,7 @@ namespace psyllid
         return;
     }
 
-    void egg_writer_builder::dump_config( egg_writer* a_node, scarab::param_node& a_config )
+    void egg_writer_builder::dump_config( const egg_writer* a_node, scarab::param_node& a_config )
     {
         LDEBUG( plog, "Dumping configuration for egg_writer" );
         a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );

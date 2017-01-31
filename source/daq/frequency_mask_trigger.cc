@@ -306,7 +306,7 @@ namespace psyllid
         return;
     }
 
-    void frequency_mask_trigger_builder::dump_config( frequency_mask_trigger* a_node, scarab::param_node& a_config )
+    void frequency_mask_trigger_builder::dump_config( const frequency_mask_trigger* a_node, scarab::param_node& a_config )
     {
         LDEBUG( plog, "Dumping configuration for frequency_mask_trigger" );
         a_config.add( "n-packets-for-mask", new scarab::param_value( a_node->get_n_packets_for_mask() ) );

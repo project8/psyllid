@@ -414,7 +414,7 @@ namespace psyllid
         return;
     }
 
-    void event_builder_builder::dump_config( event_builder* a_node, scarab::param_node& a_config )
+    void event_builder_builder::dump_config( const event_builder* a_node, scarab::param_node& a_config )
     {
         LDEBUG( plog, "Dumping configuration for event_builder" );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );

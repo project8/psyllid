@@ -316,7 +316,7 @@ namespace psyllid
         return;
     }
 
-    void tf_roach_receiver_builder::dump_config( tf_roach_receiver* a_node, scarab::param_node& a_config )
+    void tf_roach_receiver_builder::dump_config( const tf_roach_receiver* a_node, scarab::param_node& a_config )
     {
         LDEBUG( plog, "Dumping tf_roach_receiver configuration" );
         a_config.add( "time-length", new scarab::param_value( a_node->get_time_length() ) );

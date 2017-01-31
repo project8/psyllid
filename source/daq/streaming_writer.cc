@@ -255,7 +255,7 @@ namespace psyllid
         return;
     }
 
-    void streaming_writer_builder::dump_config( streaming_writer* a_node, scarab::param_node& a_config )
+    void streaming_writer_builder::dump_config( const streaming_writer* a_node, scarab::param_node& a_config )
     {
         LDEBUG( plog, "Dumping configuration for streaming_writer" );
         a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );

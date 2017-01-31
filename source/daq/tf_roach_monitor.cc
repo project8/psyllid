@@ -136,7 +136,7 @@ namespace psyllid
         return;
     }
 
-    void roach_time_monitor_builder::dump_config( roach_time_monitor*, scarab::param_node& )
+    void roach_time_monitor_builder::dump_config( const roach_time_monitor*, scarab::param_node& )
     {
         return;
     }
@@ -255,7 +255,7 @@ namespace psyllid
         return;
     }
 
-    void roach_freq_monitor_builder::dump_config( roach_freq_monitor*, scarab::param_node& )
+    void roach_freq_monitor_builder::dump_config( const roach_freq_monitor*, scarab::param_node& )
     {
         return;
     }

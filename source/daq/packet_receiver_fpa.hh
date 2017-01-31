@@ -156,7 +156,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( packet_receiver_fpa* a_node, const scarab::param_node& a_config );
-            virtual void dump_config( packet_receiver_fpa* a_node, scarab::param_node& a_config );
+            virtual void dump_config( const packet_receiver_fpa* a_node, scarab::param_node& a_config );
     };
 
 } /* namespace psyllid */

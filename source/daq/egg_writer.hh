@@ -91,7 +91,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( egg_writer* a_node, const scarab::param_node& a_config );
-            virtual void dump_config( egg_writer* a_node, scarab::param_node& a_config );
+            virtual void dump_config( const egg_writer* a_node, scarab::param_node& a_config );
     };
 
 } /* namespace psyllid */

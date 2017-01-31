@@ -457,7 +457,7 @@ namespace psyllid
         return;
     }
 
-    void packet_receiver_fpa_builder::dump_config( packet_receiver_fpa* a_node, scarab::param_node& a_config )
+    void packet_receiver_fpa_builder::dump_config( const packet_receiver_fpa* a_node, scarab::param_node& a_config )
     {
         LDEBUG( plog, "Dumping configuration for packet_receiver_fpa" );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );

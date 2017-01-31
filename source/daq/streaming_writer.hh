@@ -92,7 +92,7 @@ namespace psyllid
 
         private:
             virtual void apply_config( streaming_writer* a_node, const scarab::param_node& a_config );
-            virtual void dump_config( streaming_writer* a_node, scarab::param_node& a_config );
+            virtual void dump_config( const streaming_writer* a_node, scarab::param_node& a_config );
     };
 
 } /* namespace psyllid */
