@@ -17,6 +17,8 @@
 
 #include <boost/algorithm/string/replace.hpp>
 
+#include <utility>
+
 namespace psyllid
 {
     LOGGER( plog, "stream_manager" );
@@ -25,6 +27,7 @@ namespace psyllid
             f_streams(),
             f_manager_mutex(),
             f_midge(),
+            f_node_bindings(),
             f_must_reset_midge( true ),
             f_midge_mutex()
     {
@@ -40,6 +43,8 @@ namespace psyllid
                 t_node_it->second = nullptr;
             }
         }
+
+        clear_node_bindings();
     }
 
     bool stream_manager::initialize( const scarab::param_node& a_config )
@@ -325,6 +330,7 @@ namespace psyllid
 
         std::unique_lock< std::mutex > t_midge_lock( f_midge_mutex );
         f_midge.reset( new midge::diptera() );
+        clear_node_bindings();
 
         for( streams_t::const_iterator t_stream_it = f_streams.begin(); t_stream_it != f_streams.end(); ++t_stream_it )
         {
@@ -336,9 +342,14 @@ namespace psyllid
                 {
                     LINFO( plog, "Adding node <" << t_node_it->first << ">" );
                     f_midge->add( t_new_node );
+
+                    node_builder* t_new_binding = t_node_it->second->clone();
+                    LDEBUG( plog, "Adding new node binding for node <" << t_new_binding->name() << ">");
+                    f_node_bindings[ t_new_binding->name() ] = std::make_pair( t_new_binding, t_new_node );
                 }
                 catch( std::exception& e )
                 {
+                    clear_node_bindings();
                     delete t_new_node;
                     throw error() << "Unable to add processor <" << t_node_it->first << ">: " << e.what();
                 }
@@ -408,6 +419,18 @@ namespace psyllid
             return false;
         }
         else return true;
+    }
+
+    void stream_manager::clear_node_bindings()
+    {
+        LDEBUG( plog, "Clearing node bindings" );
+        for( active_node_bindings::iterator t_it = f_node_bindings.begin(); t_it != f_node_bindings.end(); ++t_it )
+        {
+            delete t_it->second.first;
+            t_it->second.first = nullptr;
+        }
+        f_node_bindings.clear();
+        return;
     }
 
     bool stream_manager::handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )

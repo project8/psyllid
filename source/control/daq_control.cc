@@ -7,6 +7,8 @@
 
 #include "daq_control.hh"
 
+#include "node_builder.hh"
+
 #include "diptera.hh"
 #include "midge_error.hh"
 
@@ -38,6 +40,7 @@ namespace psyllid
             f_node_manager( a_mgr ),
             f_daq_config( new param_node() ),
             f_midge_pkg(),
+            f_node_bindings( nullptr ),
             f_run_stopper(),
             f_run_stop_mutex(),
             f_run_return(),
@@ -114,6 +117,8 @@ namespace psyllid
                     continue;
                 }
 
+                f_node_bindings = f_node_manager->get_node_bindings();
+
                 try
                 {
                     std::string t_run_string( f_node_manager->get_node_run_str() );
@@ -131,6 +136,7 @@ namespace psyllid
                 }
 
                 f_node_manager->return_midge( std::move( f_midge_pkg ) );
+                f_node_bindings = nullptr;
 
                 if( get_status() == status::running )
                 {
@@ -154,11 +160,13 @@ namespace psyllid
             else if( t_status == status::done )
             {
                 LINFO( plog, "Exiting DAQ control" );
+                f_node_bindings = nullptr;
                 break;
             }
             else if( t_status == status::error )
             {
                 LERROR( plog, "DAQ control is in an error state" );
+                f_node_bindings = nullptr;
                 raise( SIGINT );
                 break;
             }
@@ -304,11 +312,94 @@ namespace psyllid
         LDEBUG( plog, "Canceling midge" );
         if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
         return;
+    }
 
+    void daq_control::apply_config( const std::string& a_node_name, const scarab::param_node& a_config )
+    {
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't apply config to node <" << a_node_name << ">: node bindings aren't available";
+        }
 
+        active_node_bindings::iterator t_binding_it = f_node_bindings->find( a_node_name );
+        if( t_binding_it == f_node_bindings->end() )
+        {
+            throw error() << "Can't apply config to node <" << a_node_name << ">: did not find node";
+        }
 
+        try
+        {
+            LDEBUG( plog, "Applying config to active node <" << a_node_name << ">: " << a_config );
+            t_binding_it->second.first->replace_config( a_config );
+            t_binding_it->second.first->apply_config( t_binding_it->second.second );
+        }
+        catch( std::exception& e )
+        {
+            throw error() << "Can't apply config to node <" << a_node_name << ">: " << e.what();
+        }
         return;
     }
+
+    void daq_control::dump_config( const std::string& a_node_name, scarab::param_node& a_config )
+    {
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't dump config from node <" << a_node_name << ">: node bindings aren't available";
+        }
+
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't dump config from node <" << a_node_name << ">: node bindings aren't available";
+        }
+
+        active_node_bindings::iterator t_binding_it = f_node_bindings->find( a_node_name );
+        if( t_binding_it == f_node_bindings->end() )
+        {
+            throw error() << "Can't dump config from node <" << a_node_name << ">: did not find node";
+        }
+
+        try
+        {
+            LDEBUG( plog, "Dumping config from active node <" << a_node_name << ">" );
+            t_binding_it->second.first->extract_config( t_binding_it->second.second, a_config );
+        }
+        catch( std::exception& e )
+        {
+            throw error() << "Can't dump config from node <" << a_node_name << ">: " << e.what();
+        }
+        return;
+    }
+
+    void daq_control::run_command( const std::string& a_node_name, const scarab::param_node& a_cmd )
+    {
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't run command on node <" << a_node_name << ">: node bindings aren't available";
+        }
+
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't run command on node <" << a_node_name << ">: node bindings aren't available";
+        }
+
+        active_node_bindings::iterator t_binding_it = f_node_bindings->find( a_node_name );
+        if( t_binding_it == f_node_bindings->end() )
+        {
+            throw error() << "Can't run command on node <" << a_node_name << ">: did not find node";
+        }
+
+        try
+        {
+            LDEBUG( plog, "Running command on active node <" << a_node_name << ">" );
+            t_binding_it->second.first->run_command( t_binding_it->second.second, a_cmd );
+        }
+        catch( std::exception& e )
+        {
+            throw error() << "Can't run command on node <" << a_node_name << ">: " << e.what();
+        }
+        return;
+    }
+
 
     bool daq_control::handle_activate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {

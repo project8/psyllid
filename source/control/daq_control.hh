@@ -74,6 +74,12 @@ namespace psyllid
             void stop_run();
 
         public:
+            void apply_config( const std::string& a_node_name, const scarab::param_node& a_config );
+            void dump_config( const std::string& a_node_name, scarab::param_node& a_config );
+
+            void run_command( const std::string& a_node_name, const scarab::param_node& a_cmd );
+
+        public:
             bool handle_activate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_reactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_deactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
@@ -104,6 +110,7 @@ namespace psyllid
             std::unique_ptr< scarab::param_node > f_daq_config;
 
             midge_package f_midge_pkg;
+            active_node_bindings* f_node_bindings;
 
             std::condition_variable f_run_stopper; // ends the run after a given amount of time
             std::mutex f_run_stop_mutex; // mutex used by the run_stopper

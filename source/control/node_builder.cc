@@ -16,8 +16,21 @@ namespace psyllid
     {
     }
 
+    node_builder::node_builder( const node_builder& a_orig ) :
+            f_name( a_orig.f_name ),
+            f_config( a_orig.f_config )
+    {
+    }
+
     node_builder::~node_builder()
     {
+    }
+
+    node_builder& node_builder::operator=( const node_builder& a_rhs )
+    {
+        f_name = a_rhs.f_name;
+        f_config = a_rhs.f_config;
+        return *this;
     }
 
     void node_builder::configure( const scarab::param_node& a_config )

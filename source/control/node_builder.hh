@@ -27,8 +27,14 @@ namespace psyllid
     {
         public:
             node_builder();
+            node_builder( const node_builder& a_orig );
             virtual ~node_builder();
 
+            node_builder& operator=( const node_builder& a_rhs );
+
+            virtual node_builder* clone() const = 0;
+
+        public:
             void configure( const scarab::param_node& a_config );
             void replace_config( const scarab::param_node& a_config );
 
@@ -39,9 +45,10 @@ namespace psyllid
         public:
             virtual void apply_config( midge::node* a_node ) = 0;
             virtual void extract_config( const midge::node* a_node ) = 0;
+            virtual void extract_config( const midge::node* a_node, scarab::param_node& a_config ) = 0;
 
             /// throws psyllid::error if the command is unknown or fails
-            virtual void run_command( midge::node* a_node, const scarab::param_node& a_config ) = 0;
+            virtual void run_command( midge::node* a_node, const scarab::param_node& a_cmd ) = 0;
 
             mv_referrable( std::string, name );
 
@@ -54,8 +61,12 @@ namespace psyllid
     {
         public:
             _node_builder();
+            _node_builder( const _node_builder& a_orig );
             virtual ~_node_builder();
 
+            _node_builder& operator=( const _node_builder& a_rhs );
+
+        public:
             /// Builds a new node and applies the builder's configuration information
             virtual midge::node* build();
 
@@ -72,7 +83,7 @@ namespace psyllid
 
             /// Calls a command on the given node
             /// Throws psyllid::error if the command is unknown or fails
-            virtual void run_command( midge::node* a_node, const scarab::param_node& a_config );
+            virtual void run_command( midge::node* a_node, const scarab::param_node& a_cmd );
 
 
         private:
@@ -84,12 +95,25 @@ namespace psyllid
     };
 
     template< class x_node_type >
-    _node_builder< x_node_type >::_node_builder()
+    _node_builder< x_node_type >::_node_builder() :
+            node_builder()
+    {}
+
+    template< class x_node_type >
+    _node_builder< x_node_type >::_node_builder( const _node_builder< x_node_type >& a_orig ) :
+            node_builder( a_orig )
     {}
 
     template< class x_node_type >
     _node_builder< x_node_type >::~_node_builder()
     {}
+
+    template< class x_node_type >
+    _node_builder< x_node_type >& _node_builder< x_node_type >::operator=( const _node_builder< x_node_type >& a_rhs )
+    {
+        this->node_builder::operator=( a_rhs );
+        return *this;
+    }
 
     template< class x_node_type >
     midge::node* _node_builder< x_node_type >::build()
