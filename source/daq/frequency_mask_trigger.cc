@@ -275,16 +275,23 @@ namespace psyllid
     }
 
 
-    frequency_mask_trigger_builder::frequency_mask_trigger_builder() :
-            _node_builder< frequency_mask_trigger >()
+    frequency_mask_trigger_binding::frequency_mask_trigger_binding() :
+            _node_binding< frequency_mask_trigger >()
     {
     }
 
-    frequency_mask_trigger_builder::~frequency_mask_trigger_builder()
+    frequency_mask_trigger_binding::~frequency_mask_trigger_binding()
     {
     }
 
-    void frequency_mask_trigger_builder::apply_config( frequency_mask_trigger* a_node, const scarab::param_node& a_config )
+    node_binding* frequency_mask_trigger_binding::clone() const
+    {
+        frequency_mask_trigger_binding* t_node = new frequency_mask_trigger_binding();
+        t_node->operator=( *this );
+        return t_node;
+    }
+
+    void frequency_mask_trigger_binding::apply_config( frequency_mask_trigger* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring frequency_mask_trigger with:\n" << a_config );
         a_node->set_n_packets_for_mask( a_config.get_value( "n-packets-for-mask", a_node->get_n_packets_for_mask() ) );
@@ -306,7 +313,7 @@ namespace psyllid
         return;
     }
 
-    void frequency_mask_trigger_builder::dump_config( const frequency_mask_trigger* a_node, scarab::param_node& a_config )
+    void frequency_mask_trigger_binding::dump_config( const frequency_mask_trigger* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for frequency_mask_trigger" );
         a_config.add( "n-packets-for-mask", new scarab::param_value( a_node->get_n_packets_for_mask() ) );

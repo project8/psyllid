@@ -138,7 +138,7 @@ namespace psyllid
             throw error() << "Did not find node <" << a_node_name << "> in stream <" << a_stream_name << ">";
         }
 
-        t_node_it->second->configure( a_config );
+        t_node_it->second->configure_builder( a_config );
 
         return;
     }
@@ -159,7 +159,7 @@ namespace psyllid
             throw error() << "Did not find node <" << a_node_name << "> in stream <" << a_stream_name << ">";
         }
 
-        t_node_it->second->dump_config( a_config );
+        t_node_it->second->dump_builder_config( a_config );
 
         return;
 
@@ -265,7 +265,7 @@ namespace psyllid
             // add stream-wide config data to the node config
             if( a_node->has( "device" ) ) t_node_config.add( "device", *a_node->node_at( "device" ) );
             // pass the configuration to the builder
-            t_builder->configure( t_node_config );
+            t_builder->configure_builder( t_node_config );
 
             t_builder->set_daq_control( f_daq_control.lock() );
             t_stream.f_nodes.insert( stream_template::nodes_t::value_type( t_node_it->first, t_builder ) );
@@ -343,9 +343,9 @@ namespace psyllid
                     LINFO( plog, "Adding node <" << t_node_it->first << ">" );
                     f_midge->add( t_new_node );
 
-                    node_builder* t_new_binding = t_node_it->second->clone();
-                    LDEBUG( plog, "Adding new node binding for node <" << t_new_binding->name() << ">");
-                    f_node_bindings[ t_new_binding->name() ] = std::make_pair( t_new_binding, t_new_node );
+                    node_binding* t_new_binding = t_node_it->second->binding().clone();
+                    LDEBUG( plog, "Adding new node binding for node <" << t_node_it->second->name() << ">");
+                    f_node_bindings[ t_node_it->second->name() ] = std::make_pair( t_new_binding, t_new_node );
                 }
                 catch( std::exception& e )
                 {

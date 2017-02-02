@@ -9,6 +9,53 @@
 
 namespace psyllid
 {
+    //****************
+    // node_binding
+    //****************
+
+    node_binding::node_binding()
+    {}
+
+    node_binding::~node_binding()
+    {}
+
+    node_binding& node_binding::operator=( const node_binding& )
+    {
+        return *this;
+    }
+
+
+    //****************
+    // node_builder
+    //****************
+
+    node_builder::node_builder( node_binding* a_binding ) :
+            node_binding(),
+            control_access(),
+            f_binding( a_binding ),
+            f_config(),
+            f_name()
+    {
+    }
+
+    node_builder::~node_builder()
+    {
+        delete f_binding;
+    }
+
+    node_builder& node_builder::operator=( const node_builder& a_rhs )
+    {
+        delete f_binding;
+        f_binding = a_rhs.f_binding->clone();
+        f_config = a_rhs.f_config;
+        f_name = a_rhs.f_name;
+        this->node_binding::operator=( a_rhs );
+        return *this;
+    }
+
+
+
+/*
 
     node_builder::node_builder() :
             f_name(),
@@ -52,5 +99,6 @@ namespace psyllid
         a_config.merge( f_config );
         return;
     }
+    */
 
 } /* namespace psyllid */

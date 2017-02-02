@@ -148,15 +148,17 @@ namespace psyllid
             uint64_t f_bytes_total;
     };
 
-    class packet_receiver_fpa_builder : public _node_builder< packet_receiver_fpa >
+    class packet_receiver_fpa_binding : public _node_binding< packet_receiver_fpa >
     {
         public:
-            packet_receiver_fpa_builder();
-            virtual ~packet_receiver_fpa_builder();
+            packet_receiver_fpa_binding();
+            virtual ~packet_receiver_fpa_binding();
+
+            node_binding* clone() const;
 
         private:
-            virtual void apply_config( packet_receiver_fpa* a_node, const scarab::param_node& a_config );
-            virtual void dump_config( const packet_receiver_fpa* a_node, scarab::param_node& a_config );
+            virtual void apply_config( packet_receiver_fpa* a_node, const scarab::param_node& a_config ) const;
+            virtual void dump_config( const packet_receiver_fpa* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */

@@ -27,9 +27,9 @@ namespace psyllid
     class stream_manager;
     typedef locked_resource< midge::diptera, stream_manager > midge_package;
 
-    class node_builder;
-    // the node_builder is owned by this map; the node is not
-    typedef std::map< std::string, std::pair< node_builder*, midge::node* > > active_node_bindings;
+    class node_binding;
+    // the node_binding is owned by this map; the node is not
+    typedef std::map< std::string, std::pair< node_binding*, midge::node* > > active_node_bindings;
 
     class node_builder;
 

@@ -230,16 +230,23 @@ namespace psyllid
 
 
 
-    packet_receiver_socket_builder::packet_receiver_socket_builder() :
-            _node_builder< packet_receiver_socket >()
+    packet_receiver_socket_binding::packet_receiver_socket_binding() :
+            _node_binding< packet_receiver_socket >()
     {
     }
 
-    packet_receiver_socket_builder::~packet_receiver_socket_builder()
+    packet_receiver_socket_binding::~packet_receiver_socket_binding()
     {
     }
 
-    void packet_receiver_socket_builder::apply_config( packet_receiver_socket* a_node, const scarab::param_node& a_config )
+    node_binding* packet_receiver_socket_binding::clone() const
+    {
+        packet_receiver_socket_binding* t_node = new packet_receiver_socket_binding();
+        t_node->operator=( *this );
+        return t_node;
+    }
+
+    void packet_receiver_socket_binding::apply_config( packet_receiver_socket* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring packet_receiver_socket with:\n" << a_config );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
@@ -249,7 +256,7 @@ namespace psyllid
         return;
     }
 
-    void packet_receiver_socket_builder::dump_config( const packet_receiver_socket* a_node, scarab::param_node& a_config )
+    void packet_receiver_socket_binding::dump_config( const packet_receiver_socket* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for packet_receiver_socket" );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );

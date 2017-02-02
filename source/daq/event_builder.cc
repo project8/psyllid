@@ -396,16 +396,23 @@ namespace psyllid
     }
 
 
-    event_builder_builder::event_builder_builder() :
-            _node_builder< event_builder >()
+    event_builder_binding::event_builder_binding() :
+            _node_binding< event_builder >()
     {
     }
 
-    event_builder_builder::~event_builder_builder()
+    event_builder_binding::~event_builder_binding()
     {
     }
 
-    void event_builder_builder::apply_config( event_builder* a_node, const scarab::param_node& a_config )
+    node_binding* event_builder_binding::clone() const
+    {
+        event_builder_binding* t_node = new event_builder_binding();
+        t_node->operator=( *this );
+        return t_node;
+    }
+
+    void event_builder_binding::apply_config( event_builder* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring event_builder with:\n" << a_config );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
@@ -414,7 +421,7 @@ namespace psyllid
         return;
     }
 
-    void event_builder_builder::dump_config( const event_builder* a_node, scarab::param_node& a_config )
+    void event_builder_binding::dump_config( const event_builder* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for event_builder" );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );

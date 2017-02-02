@@ -226,16 +226,23 @@ namespace psyllid
     }
 
 
-    streaming_writer_builder::streaming_writer_builder() :
-            _node_builder< streaming_writer >()
+    streaming_writer_binding::streaming_writer_binding() :
+            _node_binding< streaming_writer >()
     {
     }
 
-    streaming_writer_builder::~streaming_writer_builder()
+    streaming_writer_binding::~streaming_writer_binding()
     {
     }
 
-    void streaming_writer_builder::apply_config( streaming_writer* a_node, const scarab::param_node& a_config )
+    node_binding* streaming_writer_binding::clone() const
+    {
+        streaming_writer_binding* t_node = new streaming_writer_binding();
+        t_node->operator=( *this );
+        return t_node;
+    }
+
+    void streaming_writer_binding::apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring streaming_writer with:\n" << a_config );
         a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
@@ -255,7 +262,7 @@ namespace psyllid
         return;
     }
 
-    void streaming_writer_builder::dump_config( const streaming_writer* a_node, scarab::param_node& a_config )
+    void streaming_writer_binding::dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for streaming_writer" );
         a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );

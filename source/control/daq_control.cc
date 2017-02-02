@@ -330,8 +330,7 @@ namespace psyllid
         try
         {
             LDEBUG( plog, "Applying config to active node <" << a_node_name << ">: " << a_config );
-            t_binding_it->second.first->replace_config( a_config );
-            t_binding_it->second.first->apply_config( t_binding_it->second.second );
+            t_binding_it->second.first->apply_config( t_binding_it->second.second, a_config );
         }
         catch( std::exception& e )
         {
@@ -361,7 +360,7 @@ namespace psyllid
         try
         {
             LDEBUG( plog, "Dumping config from active node <" << a_node_name << ">" );
-            t_binding_it->second.first->extract_config( t_binding_it->second.second, a_config );
+            t_binding_it->second.first->dump_config( t_binding_it->second.second, a_config );
         }
         catch( std::exception& e )
         {
