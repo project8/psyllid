@@ -468,6 +468,165 @@ namespace psyllid
         }
     }
 
+    bool daq_control::handle_apply_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        if( a_request->parsed_rks().size() < 2 )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].active-config.[stream].[node] or [queue].node-config.[stream].[node].[parameter]" );
+        }
+
+        //size_t t_rks_size = a_request->parsed_rks().size();
+
+        std::string t_target_stream = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        if( a_request->parsed_rks().empty() )
+        {
+            // payload should be a map of all parameters to be set
+            LDEBUG( plog, "Performing config for multiple values in active node <" << t_target_node << ">" );
+
+            if( a_request->get_payload().empty() )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config request: payload is empty" );
+            }
+
+            try
+            {
+                apply_config( t_target_node, a_request->get_payload() );
+                a_reply_pkg.f_payload.merge( a_request->get_payload() );
+            }
+            catch( std::exception& e )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform node-config request: ") + e.what() );
+            }
+        }
+        else
+        {
+            // payload should be values array with a single entry for the particular parameter to be set
+            LDEBUG( plog, "Performing node config for a single value in active node <" << t_target_node << ">" );
+
+            if( ! a_request->get_payload().has( "values" ) )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): values array is missing" );
+            }
+            const scarab::param_array* t_values_array = a_request->get_payload().array_at( "values" );
+            if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
+            }
+
+            scarab::param_node t_param_to_set;
+            t_param_to_set.add( a_request->parsed_rks().front(), new scarab::param_value( (*t_values_array)[0].as_value() ) );
+
+            try
+            {
+                apply_config( t_target_node, t_param_to_set );
+                a_reply_pkg.f_payload.merge( t_param_to_set );
+            }
+            catch( std::exception& e )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform active-config request (single value): ") + e.what() );
+            }
+        }
+
+        LDEBUG( plog, "Node-config was successful" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed node-config" );
+    }
+
+    bool daq_control::handle_dump_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        if( a_request->parsed_rks().size() < 2 )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].active-config.[stream].[node] or [queue].active-config.[stream].[node].[parameter]" );
+        }
+
+        //size_t t_rks_size = a_request->parsed_rks().size();
+
+        std::string t_target_stream = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        if( a_request->parsed_rks().empty() )
+        {
+            // getting full node configuration
+            LDEBUG( plog, "Getting node config for active node <" << t_target_node << ">" );
+
+            try
+            {
+                dump_config( t_target_node, a_reply_pkg.f_payload );
+            }
+            catch( std::exception& e )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform get-active-config request: ") + e.what() );
+            }
+        }
+        else
+        {
+            // getting value for a single parameter
+            LDEBUG( plog, "Getting value for a single parameter in active node <" << t_target_node << ">" );
+
+            std::string t_param_to_get = a_request->parsed_rks().front();
+
+            try
+            {
+                scarab::param_node t_param_dump;
+                dump_config( t_target_node, t_param_dump );
+                if( ! t_param_dump.has( t_param_to_get ) )
+                {
+                    return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get active-node parameter: cannot find parameter <" + t_param_to_get + ">" );
+                }
+                a_reply_pkg.f_payload.add( t_param_to_get, new scarab::param_value( *t_param_dump.value_at( t_param_to_get ) ) );
+            }
+            catch( std::exception& e )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to get active-node parameter (single value): ") + e.what() );
+            }
+        }
+
+        LDEBUG( plog, "Get-active-node-config was successful" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-active-node-config" );
+    }
+
+    bool daq_control::handle_run_command_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        if( a_request->parsed_rks().size() < 2 )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].run-command.[stream].[node].[command]" );
+        }
+
+        //size_t t_rks_size = a_request->parsed_rks().size();
+
+        std::string t_target_stream = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        scarab::param_node t_command_node( a_request->get_payload() );
+        t_command_node.add( "cmd", new param_value( a_request->parsed_rks().front() ) );
+        a_request->parsed_rks().pop_front();
+
+        LDEBUG( plog, "Performing run-command for active node <" << t_target_node << ">; command:\n" << t_command_node );
+
+        try
+        {
+            run_command( t_target_node, t_command_node );
+            a_reply_pkg.f_payload.merge( t_command_node );
+        }
+        catch( std::exception& e )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform run-command request: ") + e.what() );
+        }
+
+        LDEBUG( plog, "Active run-command execution was successful" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed active run-command execution" );
+    }
+
     bool daq_control::handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try

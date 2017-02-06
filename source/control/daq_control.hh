@@ -88,6 +88,10 @@ namespace psyllid
 
             bool handle_stop_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
+            bool handle_apply_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            bool handle_dump_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            bool handle_run_command_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+
             bool handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_set_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_set_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
