@@ -78,7 +78,8 @@ namespace psyllid
             monarch_time_point_t t_run_start_time;
             uint64_t t_first_pkt_in_run = 0;
 
-            bool t_is_new_event = true;
+            bool t_is_new_acquisition = true;
+            bool t_start_file_with_next_data = false;
 
             while( ! is_canceled() )
             {
@@ -116,75 +117,83 @@ namespace psyllid
                     continue;
                 }
 
-                t_time_data = in_stream< 0 >().data();
-
                 if( t_time_command == stream::s_start )
                 {
-                    LDEBUG( plog, "Preparing egg file" );
-
-                    try
-                    {
-                        unsigned t_run_duration = 0;
-                        if( ! f_daq_control.expired() )
-                        {
-                            std::shared_ptr< daq_control > t_daq_control = f_daq_control.lock();
-                            f_filename = t_daq_control->run_filename();
-                            f_description = t_daq_control->run_description();
-                            t_run_duration = t_daq_control->get_run_duration();
-                            LDEBUG( plog, "Updated filename, description, and duration from daq_control" );
-                        }
-
-                        LDEBUG( plog, "Declaring monarch file <" << f_filename << ">" );
-                        t_monarch_ptr = t_bf_house->declare_file( f_filename );
-                        header_wrap_ptr t_hwrap_ptr = t_monarch_ptr->get_header();
-
-                        if( ! t_hwrap_ptr->global_setup_done() )
-                        {
-                            t_hwrap_ptr->header().SetDescription( f_description );
-
-                            time_t t_raw_time = t_time_data->get_unix_time();
-                            struct tm* t_processed_time = gmtime( &t_raw_time );
-                            char t_timestamp[ 512 ];
-                            strftime( t_timestamp, 512, scarab::date_time_format, t_processed_time );
-                            t_hwrap_ptr->header().SetTimestamp( t_timestamp );
-
-                            t_hwrap_ptr->header().SetRunDuration( t_run_duration );
-                            t_hwrap_ptr->global_setup_done( true );
-                        }
-
-                        vector< unsigned > t_chan_vec;
-                        t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2",
-                                f_acq_rate, f_record_size, f_sample_size, f_data_type_size,
-                                monarch3::sDigitizedS, f_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
-
-                        //unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
-                        for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
-                        {
-                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( t_dig_params.v_offset );
-                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( t_dig_params.v_range );
-                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( t_dig_params.dac_gain );
-                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyMin( f_center_freq - 0.5 * f_freq_range );
-                            t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyRange( f_freq_range );
-
-                            //++i_chan_psyllid;
-                        }
-
-                        t_run_start_time = t_monarch_ptr->get_run_start_time();
-                        t_first_pkt_in_run = t_time_data->get_pkt_in_session();
-
-                        t_is_new_event = true;
-
-                    }
-                    catch( error& e )
-                    {
-                        throw midge::error() << "Unable to prepare the egg file <" << f_filename << ">: " << e.what();
-                    }
-
+                    LDEBUG( plog, "Will start file with next data" );
+                    t_start_file_with_next_data = true;
                     continue;
                 }
 
                 if( t_time_command == stream::s_run )
                 {
+                    t_time_data = in_stream< 0 >().data();
+
+                    if( t_start_file_with_next_data )
+                    {
+                        LDEBUG( plog, "Preparing egg file" );
+
+                        try
+                        {
+                            unsigned t_run_duration = 0;
+                            if( ! f_daq_control.expired() )
+                            {
+                                std::shared_ptr< daq_control > t_daq_control = f_daq_control.lock();
+                                f_filename = t_daq_control->run_filename();
+                                f_description = t_daq_control->run_description();
+                                t_run_duration = t_daq_control->get_run_duration();
+                                LDEBUG( plog, "Updated filename, description, and duration from daq_control" );
+                            }
+
+                            LDEBUG( plog, "Declaring monarch file <" << f_filename << ">" );
+                            t_monarch_ptr = t_bf_house->declare_file( f_filename );
+                            header_wrap_ptr t_hwrap_ptr = t_monarch_ptr->get_header();
+
+                            if( ! t_hwrap_ptr->global_setup_done() )
+                            {
+                                t_hwrap_ptr->header().SetDescription( f_description );
+
+                                time_t t_raw_time = t_time_data->get_unix_time();
+                                struct tm* t_processed_time = gmtime( &t_raw_time );
+                                char t_timestamp[ 512 ];
+                                strftime( t_timestamp, 512, scarab::date_time_format, t_processed_time );
+                                LWARN( plog, "raw: " << t_raw_time << "   proc'd: " << t_processed_time->tm_hour << " " << t_processed_time->tm_min << " " << t_processed_time->tm_year << "   timestamp: " << t_timestamp );
+                                t_hwrap_ptr->header().SetTimestamp( t_timestamp );
+
+                                t_hwrap_ptr->header().SetRunDuration( t_run_duration );
+                                t_hwrap_ptr->global_setup_done( true );
+                            }
+
+                            vector< unsigned > t_chan_vec;
+                            t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2",
+                                    f_acq_rate, f_record_size, f_sample_size, f_data_type_size,
+                                    monarch3::sDigitizedS, f_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
+
+                            //unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
+                            for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
+                            {
+                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( t_dig_params.v_offset );
+                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( t_dig_params.v_range );
+                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( t_dig_params.dac_gain );
+                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyMin( f_center_freq - 0.5 * f_freq_range );
+                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyRange( f_freq_range );
+
+                                //++i_chan_psyllid;
+                            }
+
+                            t_run_start_time = t_monarch_ptr->get_run_start_time();
+                            t_first_pkt_in_run = t_time_data->get_pkt_in_session();
+
+                            t_is_new_acquisition = true;
+
+                        }
+                        catch( error& e )
+                        {
+                            throw midge::error() << "Unable to prepare the egg file <" << f_filename << ">: " << e.what();
+                        }
+
+                        t_start_file_with_next_data = false;
+                    }
+
                     if( ! t_swrap_ptr )
                     {
                         LDEBUG( plog, "Getting stream <" << t_stream_no << ">" );
@@ -196,15 +205,15 @@ namespace psyllid
 
                     uint32_t t_expected_pkt_in_batch = f_last_pkt_in_batch + 1;
                     if( t_expected_pkt_in_batch >= BATCH_COUNTER_SIZE ) t_expected_pkt_in_batch = 0;
-                    if( ! t_is_new_event && t_time_data->get_pkt_in_batch() != t_expected_pkt_in_batch ) t_is_new_event = true;
+                    if( ! t_is_new_acquisition && t_time_data->get_pkt_in_batch() != t_expected_pkt_in_batch ) t_is_new_acquisition = true;
                     f_last_pkt_in_batch = t_time_data->get_pkt_in_batch();
 
                     t_record_ptr->SetRecordId( t_time_id );
                     t_record_ptr->SetTime( t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ) );
                     ::memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
-                    t_swrap_ptr->write_record( t_is_new_event );
+                    t_swrap_ptr->write_record( t_is_new_acquisition );
 
-                    t_is_new_event = false;
+                    t_is_new_acquisition = false;
 
                     continue;
                 }
