@@ -106,15 +106,17 @@ namespace psyllid
     };
 
 
-    class frequency_mask_trigger_builder : public _node_builder< frequency_mask_trigger >
+    class frequency_mask_trigger_binding : public _node_binding< frequency_mask_trigger >
     {
         public:
-            frequency_mask_trigger_builder();
-            virtual ~frequency_mask_trigger_builder();
+            frequency_mask_trigger_binding();
+            virtual ~frequency_mask_trigger_binding();
+
+            node_binding* clone() const;
 
         private:
-            virtual void apply_config( frequency_mask_trigger* a_node, const scarab::param_node& a_config );
-            virtual void dump_config( frequency_mask_trigger* a_node, scarab::param_node& a_config );
+            virtual void apply_config( frequency_mask_trigger* a_node, const scarab::param_node& a_config ) const;
+            virtual void dump_config( const frequency_mask_trigger* a_node, scarab::param_node& a_config ) const;
     };
 
 

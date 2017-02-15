@@ -273,16 +273,23 @@ namespace psyllid
     }
 
 
-    egg_writer_builder::egg_writer_builder() :
-            _node_builder< egg_writer >()
+    egg_writer_binding::egg_writer_binding() :
+            _node_binding< egg_writer >()
     {
     }
 
-    egg_writer_builder::~egg_writer_builder()
+    egg_writer_binding::~egg_writer_binding()
     {
     }
 
-    void egg_writer_builder::apply_config( egg_writer* a_node, const scarab::param_node& a_config )
+    node_binding* egg_writer_binding::clone() const
+    {
+        egg_writer_binding* t_node = new egg_writer_binding();
+        t_node->_node_binding< egg_writer >::operator=( *this );
+        return t_node;
+    }
+
+    void egg_writer_binding::apply_config( egg_writer* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring egg_writer with:\n" << a_config );
         a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
@@ -302,7 +309,7 @@ namespace psyllid
         return;
     }
 
-    void egg_writer_builder::dump_config( egg_writer* a_node, scarab::param_node& a_config )
+    void egg_writer_binding::dump_config( const egg_writer* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for egg_writer" );
         a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );

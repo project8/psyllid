@@ -94,17 +94,24 @@ namespace psyllid
     }
 
 
-    terminator_time_data_builder::terminator_time_data_builder() :
-            _node_builder< terminator_time_data >()
+    terminator_time_data_binding::terminator_time_data_binding() :
+            _node_binding< terminator_time_data >()
     {}
 
-    terminator_time_data_builder::~terminator_time_data_builder()
+    terminator_time_data_binding::~terminator_time_data_binding()
     {}
 
-    void terminator_time_data_builder::apply_config( terminator_time_data*, const scarab::param_node& )
+    node_binding* terminator_time_data_binding::clone() const
+    {
+        terminator_time_data_binding* t_node = new terminator_time_data_binding();
+        t_node->operator=( *this );
+        return t_node;
+    }
+
+    void terminator_time_data_binding::apply_config( terminator_time_data*, const scarab::param_node& ) const
     {}
 
-    void terminator_time_data_builder::dump_config( terminator_time_data*, scarab::param_node& )
+    void terminator_time_data_binding::dump_config( const terminator_time_data*, scarab::param_node& ) const
     {}
 
 
@@ -181,17 +188,24 @@ namespace psyllid
     }
 
 
-    terminator_freq_data_builder::terminator_freq_data_builder() :
-            _node_builder< terminator_freq_data >()
+    terminator_freq_data_binding::terminator_freq_data_binding() :
+            _node_binding< terminator_freq_data >()
     {}
 
-    terminator_freq_data_builder::~terminator_freq_data_builder()
+    terminator_freq_data_binding::~terminator_freq_data_binding()
     {}
 
-    void terminator_freq_data_builder::apply_config( terminator_freq_data*, const scarab::param_node& )
+    node_binding* terminator_freq_data_binding::clone() const
+    {
+        terminator_freq_data_binding* t_node = new terminator_freq_data_binding();
+        t_node->operator=( *this );
+        return t_node;
+    }
+
+    void terminator_freq_data_binding::apply_config( terminator_freq_data*, const scarab::param_node& ) const
     {}
 
-    void terminator_freq_data_builder::dump_config( terminator_freq_data*, scarab::param_node& )
+    void terminator_freq_data_binding::dump_config( const terminator_freq_data*, scarab::param_node& ) const
     {}
 
 } /* namespace psyllid */

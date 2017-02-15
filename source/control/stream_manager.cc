@@ -17,6 +17,8 @@
 
 #include <boost/algorithm/string/replace.hpp>
 
+#include <utility>
+
 namespace psyllid
 {
     LOGGER( plog, "stream_manager" );
@@ -25,6 +27,7 @@ namespace psyllid
             f_streams(),
             f_manager_mutex(),
             f_midge(),
+            f_node_bindings(),
             f_must_reset_midge( true ),
             f_midge_mutex()
     {
@@ -40,6 +43,8 @@ namespace psyllid
                 t_node_it->second = nullptr;
             }
         }
+
+        clear_node_bindings();
     }
 
     bool stream_manager::initialize( const scarab::param_node& a_config )
@@ -133,7 +138,7 @@ namespace psyllid
             throw error() << "Did not find node <" << a_node_name << "> in stream <" << a_stream_name << ">";
         }
 
-        t_node_it->second->configure( a_config );
+        t_node_it->second->configure_builder( a_config );
 
         return;
     }
@@ -154,7 +159,7 @@ namespace psyllid
             throw error() << "Did not find node <" << a_node_name << "> in stream <" << a_stream_name << ">";
         }
 
-        t_node_it->second->dump_config( a_config );
+        t_node_it->second->dump_builder_config( a_config );
 
         return;
 
@@ -260,7 +265,7 @@ namespace psyllid
             // add stream-wide config data to the node config
             if( a_node->has( "device" ) ) t_node_config.add( "device", *a_node->node_at( "device" ) );
             // pass the configuration to the builder
-            t_builder->configure( t_node_config );
+            t_builder->configure_builder( t_node_config );
 
             t_builder->set_daq_control( f_daq_control.lock() );
             t_stream.f_nodes.insert( stream_template::nodes_t::value_type( t_node_it->first, t_builder ) );
@@ -325,6 +330,7 @@ namespace psyllid
 
         std::unique_lock< std::mutex > t_midge_lock( f_midge_mutex );
         f_midge.reset( new midge::diptera() );
+        clear_node_bindings();
 
         for( streams_t::const_iterator t_stream_it = f_streams.begin(); t_stream_it != f_streams.end(); ++t_stream_it )
         {
@@ -336,9 +342,14 @@ namespace psyllid
                 {
                     LINFO( plog, "Adding node <" << t_node_it->first << ">" );
                     f_midge->add( t_new_node );
+
+                    node_binding* t_new_binding = t_node_it->second->binding().clone();
+                    LDEBUG( plog, "Adding new node binding for node <" << t_node_it->second->name() << ">");
+                    f_node_bindings[ t_node_it->second->name() ] = std::make_pair( t_new_binding, t_new_node );
                 }
                 catch( std::exception& e )
                 {
+                    clear_node_bindings();
                     delete t_new_node;
                     throw error() << "Unable to add processor <" << t_node_it->first << ">: " << e.what();
                 }
@@ -408,6 +419,18 @@ namespace psyllid
             return false;
         }
         else return true;
+    }
+
+    void stream_manager::clear_node_bindings()
+    {
+        LDEBUG( plog, "Clearing node bindings" );
+        for( active_node_bindings::iterator t_it = f_node_bindings.begin(); t_it != f_node_bindings.end(); ++t_it )
+        {
+            delete t_it->second.first;
+            t_it->second.first = nullptr;
+        }
+        f_node_bindings.clear();
+        return;
     }
 
     bool stream_manager::handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )

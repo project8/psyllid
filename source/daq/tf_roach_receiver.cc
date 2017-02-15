@@ -296,16 +296,23 @@ namespace psyllid
     }
 
 
-    tf_roach_receiver_builder::tf_roach_receiver_builder() :
-            _node_builder< tf_roach_receiver >()
+    tf_roach_receiver_binding::tf_roach_receiver_binding() :
+            _node_binding< tf_roach_receiver >()
     {
     }
 
-    tf_roach_receiver_builder::~tf_roach_receiver_builder()
+    tf_roach_receiver_binding::~tf_roach_receiver_binding()
     {
     }
 
-    void tf_roach_receiver_builder::apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config )
+    node_binding* tf_roach_receiver_binding::clone() const
+    {
+        tf_roach_receiver_binding* t_node = new tf_roach_receiver_binding();
+        t_node->operator=( *this );
+        return t_node;
+    }
+
+    void tf_roach_receiver_binding::apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring tf_roach_receiver with:\n" << a_config );
         a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );
@@ -316,7 +323,7 @@ namespace psyllid
         return;
     }
 
-    void tf_roach_receiver_builder::dump_config( tf_roach_receiver* a_node, scarab::param_node& a_config )
+    void tf_roach_receiver_binding::dump_config( const tf_roach_receiver* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping tf_roach_receiver configuration" );
         a_config.add( "time-length", new scarab::param_value( a_node->get_time_length() ) );

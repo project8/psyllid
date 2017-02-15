@@ -96,15 +96,17 @@ namespace psyllid
     }
 
 
-    class event_builder_builder : public _node_builder< event_builder >
+    class event_builder_binding : public _node_binding< event_builder >
     {
         public:
-            event_builder_builder();
-            virtual ~event_builder_builder();
+            event_builder_binding();
+            virtual ~event_builder_binding();
+
+            node_binding* clone() const;
 
         private:
-            virtual void apply_config( event_builder* a_node, const scarab::param_node& a_config );
-            virtual void dump_config( event_builder* a_node, scarab::param_node& a_config );
+            virtual void apply_config( event_builder* a_node, const scarab::param_node& a_config ) const;
+            virtual void dump_config( const event_builder* a_node, scarab::param_node& a_config ) const;
     };
 
 

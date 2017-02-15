@@ -27,6 +27,10 @@ namespace psyllid
     class stream_manager;
     typedef locked_resource< midge::diptera, stream_manager > midge_package;
 
+    class node_binding;
+    // the node_binding is owned by this map; the node is not
+    typedef std::map< std::string, std::pair< node_binding*, midge::node* > > active_node_bindings;
+
     class node_builder;
 
     class stream_manager : public control_access
@@ -68,6 +72,8 @@ namespace psyllid
             midge_package get_midge();
             void return_midge( midge_package&& a_midge );
 
+            active_node_bindings* get_node_bindings();
+
             std::string get_node_run_str() const;
 
             bool is_in_use() const;
@@ -87,12 +93,15 @@ namespace psyllid
             void _configure_node( const std::string& a_stream_name, const std::string& a_node_name, const scarab::param_node& a_config );
             void _dump_node_config( const std::string& a_stream_name, const std::string& a_node_name, scarab::param_node& a_config ) const;
 
+            void clear_node_bindings();
+
             typedef std::map< std::string, stream_template > streams_t;
             streams_t f_streams;
 
             mutable std::mutex f_manager_mutex;
 
             midge_ptr_t f_midge;
+            active_node_bindings f_node_bindings;
             bool f_must_reset_midge;
             mutable std::mutex f_midge_mutex;
     };
@@ -110,6 +119,11 @@ namespace psyllid
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
         return f_must_reset_midge;
+    }
+
+    inline active_node_bindings* stream_manager::get_node_bindings()
+    {
+        return &f_node_bindings;
     }
 
 
