@@ -64,6 +64,7 @@ namespace psyllid
 
             stream_wrap_ptr get_stream( unsigned a_stream_no );
 
+            void switch_to_new_file();
 
             void finish_stream( unsigned a_stream_no, bool a_finish_if_streams_done = false );
             void finish_file();
@@ -77,6 +78,11 @@ namespace psyllid
 
             monarch_wrapper( const monarch_wrapper& ) = delete;
             monarch_wrapper& operator=( const monarch_wrapper& ) = delete;
+
+            std::string f_orig_filename;
+            std::string f_filename_base;
+            std::string f_filename_ext;
+            unsigned f_file_count;
 
             std::unique_ptr< monarch3::Monarch3 > f_monarch;
             mutable std::mutex f_monarch_mutex;
@@ -148,8 +154,8 @@ namespace psyllid
             /// Write the record contents to the file
             bool write_record( bool a_is_new_acq );
 
-            //void lock();
-            //void unlock();
+            void lock() const;
+            void unlock() const;
 
             /// Complete use of this stream; does not write the file to disk
             //void finish();
@@ -158,13 +164,13 @@ namespace psyllid
             stream_wrapper( const stream_wrapper& ) = delete;
             stream_wrapper& operator=( const stream_wrapper& ) = delete;
 
-            //friend class monarch_wrapper;
+            friend class monarch_wrapper;
 
             //void monarch_stage_change( monarch_stage a_new_stage );
 
             monarch3::M3Stream* f_stream;
             bool f_is_valid;
-            //std::mutex f_stream_mutex;
+            mutable std::mutex f_stream_mutex;
             //std::unique_lock< std::mutex > f_lock;
     };
 
@@ -188,6 +194,28 @@ namespace psyllid
     inline bool stream_wrapper::is_valid() const
     {
         return f_is_valid;
+    }
+
+    inline monarch3::M3Record* stream_wrapper::get_stream_record()
+    {
+        return f_stream->GetStreamRecord();
+    }
+
+    inline monarch3::M3Record* stream_wrapper::get_channel_record( unsigned a_chan_no )
+    {
+        return f_stream->GetChannelRecord( a_chan_no );
+    }
+
+    inline void stream_wrapper::lock() const
+    {
+        f_stream_mutex.lock();
+        return;
+    }
+
+    inline void stream_wrapper::unlock() const
+    {
+        f_stream_mutex.unlock();
+        return;
     }
 
 

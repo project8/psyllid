@@ -124,21 +124,14 @@ namespace psyllid
         return *f_stream;
     }
 */
-    monarch3::M3Record* stream_wrapper::get_stream_record()
-    {
-        return f_stream->GetStreamRecord();
-    }
-
-    /// Get the pointer to a particular channel record
-    monarch3::M3Record* stream_wrapper::get_channel_record( unsigned a_chan_no )
-    {
-        return f_stream->GetChannelRecord( a_chan_no );
-    }
-
     /// Write the record contents to the file
     bool stream_wrapper::write_record( bool a_is_new_acq )
     {
-        return f_stream->WriteRecord( a_is_new_acq );
+        f_stream_mutex.lock();
+        bool t_return = f_stream->WriteRecord( a_is_new_acq );
+        f_stream_mutex.unlock();
+        return t_return;
+        //return f_stream->WriteRecord( a_is_new_acq );
     }
 
 
@@ -172,22 +165,37 @@ namespace psyllid
 
 
     monarch_wrapper::monarch_wrapper( const std::string& a_filename ) :
-        f_monarch(),
-        f_monarch_mutex(),
-        f_header_wrap(),
-        f_header_mutex(),
-        f_stream_wraps(),
-        f_run_start_time( std::chrono::steady_clock::now() ),
-        f_stage( monarch_stage::initialized )
+            f_orig_filename( a_filename ),
+            f_filename_base(),
+            f_filename_ext(),
+            f_file_count( 1 ),
+            f_monarch(),
+            f_monarch_mutex(),
+            f_header_wrap(),
+            f_header_mutex(),
+            f_stream_wraps(),
+            f_run_start_time( std::chrono::steady_clock::now() ),
+            f_stage( monarch_stage::initialized )
     {
+        std::string::size_type t_ext_pos = a_filename.find_last_of( '.' );
+        if( t_ext_pos == std::string::npos )
+        {
+            f_filename_base = f_orig_filename;
+        }
+        else
+        {
+            f_filename_base = f_orig_filename.substr( 0, t_ext_pos );
+            f_filename_ext = f_orig_filename.substr( t_ext_pos );
+        }
+
         std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
         try
         {
-            f_monarch.reset( monarch3::Monarch3::OpenForWriting( a_filename ) );
+            f_monarch.reset( monarch3::Monarch3::OpenForWriting( f_orig_filename ) );
         }
         catch( monarch3::M3Exception& e )
         {
-            throw error() << "Unable to open the file <" << a_filename << "\n" <<
+            throw error() << "Unable to open the file <" << f_orig_filename << "\n" <<
                     "Reason: " << e.what();
         }
     }
@@ -334,7 +342,88 @@ namespace psyllid
         f_monarch->FinishWriting();
         set_stage( monarch_stage::finished );
         f_monarch.reset();
-        butterfly_house::get_instance()->remove_file( t_filename );
+        butterfly_house::get_instance()->remove_file( f_orig_filename );
+        return;
+    }
+
+    void monarch_wrapper::switch_to_new_file()
+    {
+        if( f_stage != monarch_stage::writing ) throw error() << "Invalid monarch stage for starting a new file: " << f_stage;
+
+        std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
+
+        set_stage( monarch_stage::initialized );
+
+        // create the new filename
+        std::stringstream t_count_stream;
+        t_count_stream << f_file_count;
+        std::string t_new_filename = f_filename_base + '_' + t_count_stream.str() + f_filename_ext;
+
+        // open the new file
+        std::unique_ptr< monarch3::Monarch3 > t_new_monarch;
+        try
+        {
+            t_new_monarch.reset( monarch3::Monarch3::OpenForWriting( t_new_filename ) );
+        }
+        catch( monarch3::M3Exception& e )
+        {
+            throw error() << "Unable to open the file <" << t_new_filename << "\n" <<
+                    "Reason: " << e.what();
+        }
+
+        set_stage( monarch_stage::preparing );
+
+        // copy info into the new header
+        monarch3::M3Header* t_new_header = t_new_monarch->GetHeader();
+        t_new_header->CopyBasicInfo( *(f_monarch->GetHeader()) );
+        t_new_header->SetFilename( t_new_filename );
+        t_new_header->SetDescription( t_new_header->GetDescription() + "\nContinuation of file " + f_orig_filename );
+
+        // for each stream, lock stream pointer, create new stream in new file, and remove the reference to the old stream (the stream itself is deleted in Monarch3::FinishWriting())
+        std::vector< monarch3::M3StreamHeader >* t_old_stream_headers = &f_monarch->GetHeader()->GetStreamHeaders();
+        for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
+        {
+            t_stream_it->second->lock();
+            monarch3::M3StreamHeader* t_old_stream_header = &t_old_stream_headers->operator[]( t_stream_it->first );
+            if( t_old_stream_header->GetNChannels() > 1 )
+            {
+                t_new_header->AddStream( t_old_stream_header->GetSource(), t_old_stream_header->GetNChannels(), t_old_stream_header->GetChannelFormat(),
+                        t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
+                        t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
+                        t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment() );
+            }
+            else
+            {
+                t_new_header->AddStream( t_old_stream_header->GetSource(),
+                        t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
+                        t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
+                        t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment() );
+            }
+            t_stream_it->second->f_stream = nullptr;
+        }
+
+        // finish the old file
+        f_monarch->FinishWriting();
+        f_monarch.reset();
+
+        // write the new header
+        t_new_monarch->WriteHeader();
+
+        // switch out the monarch pointers, f_monarch <--> t_new_monarch
+        f_monarch.swap( t_new_monarch );
+        set_stage( monarch_stage::writing );
+
+        // put references to new streams in each stream pointer, and then unlock the streams
+        for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
+        {
+            t_stream_it->second->f_stream = f_monarch->GetStream( t_stream_it->first );
+            if( t_stream_it->second->f_stream == nullptr )
+            {
+                throw error() << "Stream <" << t_stream_it->first << "> was invalid";
+            }
+            t_stream_it->second->unlock();
+        }
+
         return;
     }
 
