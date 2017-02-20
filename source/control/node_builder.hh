@@ -286,7 +286,7 @@ namespace psyllid
 
     template< class x_node_type >
     _node_builder< x_node_type >::_node_builder() :
-            node_builder( new _node_builder< x_node_type >() )
+            node_builder( new _node_binding< x_node_type >() )
     {}
 
     template< class x_node_type >
