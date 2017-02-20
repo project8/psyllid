@@ -80,17 +80,15 @@ namespace psyllid
 
     };
 
-    class tf_roach_receiver_binding : public _node_binding< tf_roach_receiver >
+    class tf_roach_receiver_binding : public _node_binding< tf_roach_receiver, tf_roach_receiver_binding >
     {
         public:
             tf_roach_receiver_binding();
             virtual ~tf_roach_receiver_binding();
 
-            node_binding* clone() const;
-
         private:
-            virtual void apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config ) const;
-            virtual void dump_config( const tf_roach_receiver* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const tf_roach_receiver* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */

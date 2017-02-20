@@ -32,17 +32,15 @@ namespace psyllid
 
     };
 
-    class terminator_time_data_binding : public _node_binding< terminator_time_data >
+    class terminator_time_data_binding : public _node_binding< terminator_time_data, terminator_time_data_binding >
     {
         public:
             terminator_time_data_binding();
             virtual ~terminator_time_data_binding();
 
-            node_binding* clone() const;
-
         private:
-            virtual void apply_config( terminator_time_data* a_node, const scarab::param_node& a_config ) const;
-            virtual void dump_config( const terminator_time_data* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( terminator_time_data* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const terminator_time_data* a_node, scarab::param_node& a_config ) const;
     };
 
 
@@ -60,17 +58,15 @@ namespace psyllid
 
     };
 
-    class terminator_freq_data_binding : public _node_binding< terminator_freq_data >
+    class terminator_freq_data_binding : public _node_binding< terminator_freq_data, terminator_freq_data_binding >
     {
         public:
             terminator_freq_data_binding();
             virtual ~terminator_freq_data_binding();
 
-            node_binding* clone() const;
-
         private:
-            virtual void apply_config( terminator_freq_data* a_node, const scarab::param_node& a_config ) const;
-            virtual void dump_config( const terminator_freq_data* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( terminator_freq_data* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const terminator_freq_data* a_node, scarab::param_node& a_config ) const;
     };
 
 

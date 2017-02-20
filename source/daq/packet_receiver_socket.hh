@@ -76,17 +76,15 @@ namespace psyllid
 
     };
 
-    class packet_receiver_socket_binding : public _node_binding< packet_receiver_socket >
+    class packet_receiver_socket_binding : public _node_binding< packet_receiver_socket, packet_receiver_socket_binding >
     {
         public:
             packet_receiver_socket_binding();
             virtual ~packet_receiver_socket_binding();
 
-            node_binding* clone() const;
-
         private:
-            virtual void apply_config( packet_receiver_socket* a_node, const scarab::param_node& a_config ) const;
-            virtual void dump_config( const packet_receiver_socket* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( packet_receiver_socket* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const packet_receiver_socket* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */

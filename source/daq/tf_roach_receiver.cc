@@ -21,7 +21,7 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( tf_roach_receiver, "tf-roach-receiver" );
+    REGISTER_NODE_AND_BUILDER( tf_roach_receiver, "tf-roach-receiver", tf_roach_receiver_binding );
 
     LOGGER( plog, "tf_roach_receiver" );
 
@@ -297,7 +297,7 @@ namespace psyllid
 
 
     tf_roach_receiver_binding::tf_roach_receiver_binding() :
-            _node_binding< tf_roach_receiver >()
+            _node_binding< tf_roach_receiver, tf_roach_receiver_binding >()
     {
     }
 
@@ -305,14 +305,7 @@ namespace psyllid
     {
     }
 
-    node_binding* tf_roach_receiver_binding::clone() const
-    {
-        tf_roach_receiver_binding* t_node = new tf_roach_receiver_binding();
-        t_node->operator=( *this );
-        return t_node;
-    }
-
-    void tf_roach_receiver_binding::apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config ) const
+    void tf_roach_receiver_binding::do_apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring tf_roach_receiver with:\n" << a_config );
         a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );
@@ -323,7 +316,7 @@ namespace psyllid
         return;
     }
 
-    void tf_roach_receiver_binding::dump_config( const tf_roach_receiver* a_node, scarab::param_node& a_config ) const
+    void tf_roach_receiver_binding::do_dump_config( const tf_roach_receiver* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping tf_roach_receiver configuration" );
         a_config.add( "time-length", new scarab::param_value( a_node->get_time_length() ) );

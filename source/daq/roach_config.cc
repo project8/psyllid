@@ -59,7 +59,7 @@ namespace psyllid
     }
 
 #ifdef __linux__
-    fmask_trigger_1ch::fmask_trigger_1ch_fpa( const std::string& a_name ) :
+    fmask_trigger_1ch_fpa::fmask_trigger_1ch_fpa( const std::string& a_name ) :
             stream_preset( a_name )
     {
         node( "packet-receiver-fpa", "prf" );
