@@ -60,17 +60,15 @@ namespace psyllid
     };
 
 
-    class roach_time_monitor_binding : public _node_binding< roach_time_monitor >
+    class roach_time_monitor_binding : public _node_binding< roach_time_monitor, roach_time_monitor_binding >
     {
         public:
             roach_time_monitor_binding();
             virtual ~roach_time_monitor_binding();
 
-            node_binding* clone() const;
-
         private:
-            virtual void apply_config( roach_time_monitor* a_node, const scarab::param_node& a_config ) const;
-            virtual void dump_config( const roach_time_monitor* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( roach_time_monitor* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const roach_time_monitor* a_node, scarab::param_node& a_config ) const;
     };
 
     /*!
@@ -116,17 +114,15 @@ namespace psyllid
     };
 
 
-    class roach_freq_monitor_binding : public _node_binding< roach_freq_monitor >
+    class roach_freq_monitor_binding : public _node_binding< roach_freq_monitor, roach_freq_monitor_binding >
     {
         public:
             roach_freq_monitor_binding();
             virtual ~roach_freq_monitor_binding();
 
-            node_binding* clone() const;
-
         private:
-            virtual void apply_config( roach_freq_monitor* a_node, const scarab::param_node& a_config ) const;
-            virtual void dump_config( const roach_freq_monitor* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( roach_freq_monitor* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const roach_freq_monitor* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */

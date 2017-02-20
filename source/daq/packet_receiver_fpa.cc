@@ -37,7 +37,7 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( packet_receiver_fpa, "packet-receiver-fpa" );
+    REGISTER_NODE_AND_BUILDER( packet_receiver_fpa, "packet-receiver-fpa", packet_receiver_fpa_binding );
 
     LOGGER( plog, "packet_receiver_fpa" );
 
@@ -436,7 +436,7 @@ namespace psyllid
 
 
     packet_receiver_fpa_binding::packet_receiver_fpa_binding() :
-            _node_binding< packet_receiver_fpa >()
+            _node_binding< packet_receiver_fpa, packet_receiver_fpa_binding >()
     {
     }
 
@@ -444,14 +444,7 @@ namespace psyllid
     {
     }
 
-    node_binding* packet_receiver_fpa_binding::clone() const
-    {
-        packet_receiver_fpa_binding* t_node = new packet_receiver_fpa_binding();
-        t_node->operator=( *this );
-        return t_node;
-    }
-
-    void packet_receiver_fpa_binding::apply_config( packet_receiver_fpa* a_node, const scarab::param_node& a_config ) const
+    void packet_receiver_fpa_binding::do_apply_config( packet_receiver_fpa* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring packet_receiver_fpa with:\n" << a_config );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
@@ -464,7 +457,7 @@ namespace psyllid
         return;
     }
 
-    void packet_receiver_fpa_binding::dump_config( const packet_receiver_fpa* a_node, scarab::param_node& a_config ) const
+    void packet_receiver_fpa_binding::do_dump_config( const packet_receiver_fpa* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for packet_receiver_fpa" );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );

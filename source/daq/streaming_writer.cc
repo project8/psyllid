@@ -24,7 +24,7 @@ using std::vector;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( streaming_writer, "streaming-writer" );
+    REGISTER_NODE_AND_BUILDER( streaming_writer, "streaming-writer", streaming_writer_binding );
 
     LOGGER( plog, "streaming_writer" );
 
@@ -236,7 +236,7 @@ namespace psyllid
 
 
     streaming_writer_binding::streaming_writer_binding() :
-            _node_binding< streaming_writer >()
+            _node_binding< streaming_writer, streaming_writer_binding >()
     {
     }
 
@@ -244,14 +244,7 @@ namespace psyllid
     {
     }
 
-    node_binding* streaming_writer_binding::clone() const
-    {
-        streaming_writer_binding* t_node = new streaming_writer_binding();
-        t_node->operator=( *this );
-        return t_node;
-    }
-
-    void streaming_writer_binding::apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const
+    void streaming_writer_binding::do_apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring streaming_writer with:\n" << a_config );
         a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
@@ -271,7 +264,7 @@ namespace psyllid
         return;
     }
 
-    void streaming_writer_binding::dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const
+    void streaming_writer_binding::do_dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for streaming_writer" );
         a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );

@@ -84,17 +84,15 @@ namespace psyllid
     };
 
 
-    class streaming_writer_binding : public _node_binding< streaming_writer >
+    class streaming_writer_binding : public _node_binding< streaming_writer, streaming_writer_binding >
     {
         public:
             streaming_writer_binding();
             virtual ~streaming_writer_binding();
 
-            node_binding* clone() const;
-
         private:
-            virtual void apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const;
-            virtual void dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */
