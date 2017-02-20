@@ -73,6 +73,9 @@ namespace psyllid
 
             void set_stage( monarch_stage a_stage );
 
+            void set_max_file_size( double a_size );
+            void record_file_contribution( double a_size );
+
         private:
             void finish_file_nolock();
 
@@ -83,6 +86,9 @@ namespace psyllid
             std::string f_filename_base;
             std::string f_filename_ext;
             unsigned f_file_count;
+
+            double f_max_file_size; /// in MB
+            double f_file_size_est;
 
             std::unique_ptr< monarch3::Monarch3 > f_monarch;
             mutable std::mutex f_monarch_mutex;
@@ -134,7 +140,7 @@ namespace psyllid
     class stream_wrapper
     {
         public:
-            stream_wrapper( monarch3::Monarch3&, unsigned a_stream_no );
+            stream_wrapper( monarch3::Monarch3&, unsigned a_stream_no, monarch_wrapper* a_monarch_wrapper );
             stream_wrapper( stream_wrapper&& a_orig );
             ~stream_wrapper();
 
@@ -165,6 +171,7 @@ namespace psyllid
             stream_wrapper& operator=( const stream_wrapper& ) = delete;
 
             friend class monarch_wrapper;
+            monarch_wrapper* f_monarch_wrapper;
 
             //void monarch_stage_change( monarch_stage a_new_stage );
 
@@ -178,6 +185,13 @@ namespace psyllid
     {
         return f_run_start_time;
     }
+
+    inline void monarch_wrapper::set_max_file_size( double a_size )
+    {
+        f_max_file_size = a_size;
+        return;
+    }
+
 
     inline bool header_wrapper::global_setup_done() const
     {

@@ -89,9 +89,10 @@ namespace psyllid
 
 
 
-    stream_wrapper::stream_wrapper( monarch3::Monarch3& a_monarch, unsigned a_stream_no ) :
-        f_stream( a_monarch.GetStream( a_stream_no ) ),
-        f_is_valid( true )
+    stream_wrapper::stream_wrapper( monarch3::Monarch3& a_monarch, unsigned a_stream_no, monarch_wrapper* a_monarch_wrapper ) :
+            f_monarch_wrapper( a_monarch_wrapper ),
+            f_stream( a_monarch.GetStream( a_stream_no ) ),
+            f_is_valid( true )
     {
         if( f_stream == nullptr )
         {
@@ -100,6 +101,7 @@ namespace psyllid
     }
 
     stream_wrapper::stream_wrapper( stream_wrapper&& a_orig ) :
+            f_monarch_wrapper( a_orig.f_monarch_wrapper ),
             f_stream( a_orig.f_stream ),
             f_is_valid( a_orig.f_is_valid )
     {
@@ -112,6 +114,7 @@ namespace psyllid
 
     stream_wrapper& stream_wrapper::operator=( stream_wrapper&& a_orig )
     {
+        f_monarch_wrapper = a_orig.f_monarch_wrapper;
         f_stream = a_orig.f_stream;
         a_orig.f_stream = nullptr;
         a_orig.f_is_valid = false;
