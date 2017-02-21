@@ -30,7 +30,7 @@ namespace psyllid
 
     streaming_writer::streaming_writer() :
             control_access(),
-            f_file_size_limit_mb(),
+            f_max_file_size_mb( 2000 ),
             f_filename( "default_filename_strw.egg" ),
             f_description( "A very nice run" ),
             f_bit_depth( 8 ),
@@ -146,6 +146,7 @@ namespace psyllid
 
                             LDEBUG( plog, "Declaring monarch file <" << f_filename << ">" );
                             t_monarch_ptr = t_bf_house->declare_file( f_filename );
+                            t_monarch_ptr->set_max_file_size( f_max_file_size_mb );
                             header_wrap_ptr t_hwrap_ptr = t_monarch_ptr->get_header();
 
                             if( ! t_hwrap_ptr->global_setup_done() )
@@ -247,7 +248,7 @@ namespace psyllid
     void streaming_writer_binding::do_apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring streaming_writer with:\n" << a_config );
-        a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
+        a_node->set_max_file_size_mb( a_config.get_value( "max-file-size-mb", a_node->get_max_file_size_mb() ) );
         const scarab::param_node *t_dev_config = a_config.node_at( "device" );
         if( t_dev_config != nullptr )
         {
@@ -267,7 +268,7 @@ namespace psyllid
     void streaming_writer_binding::do_dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for streaming_writer" );
-        a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );
+        a_config.add( "max-file-size-mb", new scarab::param_value( a_node->get_max_file_size_mb() ) );
         scarab::param_node* t_dev_node = new scarab::param_node();
         t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );
         t_dev_node->add( "data-type-size", new scarab::param_value( a_node->get_data_type_size() ) );
