@@ -87,8 +87,8 @@ namespace psyllid
             std::string f_filename_ext;
             unsigned f_file_count;
 
-            double f_max_file_size; /// in MB
-            double f_file_size_est;
+            double f_max_file_size_mb; /// in MB
+            double f_file_size_est_mb;
 
             std::unique_ptr< monarch3::Monarch3 > f_monarch;
             mutable std::mutex f_monarch_mutex;
@@ -179,6 +179,8 @@ namespace psyllid
             bool f_is_valid;
             mutable std::mutex f_stream_mutex;
             //std::unique_lock< std::mutex > f_lock;
+
+            double f_record_size_mb;
     };
 
     inline monarch_time_point_t monarch_wrapper::get_run_start_time() const
@@ -188,7 +190,7 @@ namespace psyllid
 
     inline void monarch_wrapper::set_max_file_size( double a_size )
     {
-        f_max_file_size = a_size;
+        f_max_file_size_mb = a_size;
         return;
     }
 

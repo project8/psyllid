@@ -13,6 +13,8 @@
 
 #include "logger.hh"
 
+#include <future>
+
 
 namespace psyllid
 {
@@ -92,7 +94,8 @@ namespace psyllid
     stream_wrapper::stream_wrapper( monarch3::Monarch3& a_monarch, unsigned a_stream_no, monarch_wrapper* a_monarch_wrapper ) :
             f_monarch_wrapper( a_monarch_wrapper ),
             f_stream( a_monarch.GetStream( a_stream_no ) ),
-            f_is_valid( true )
+            f_is_valid( true ),
+            f_record_size_mb( 1.e-6 * (double)f_stream->GetStreamRecordNBytes() )
     {
         if( f_stream == nullptr )
         {
@@ -103,7 +106,8 @@ namespace psyllid
     stream_wrapper::stream_wrapper( stream_wrapper&& a_orig ) :
             f_monarch_wrapper( a_orig.f_monarch_wrapper ),
             f_stream( a_orig.f_stream ),
-            f_is_valid( a_orig.f_is_valid )
+            f_is_valid( a_orig.f_is_valid ),
+            f_record_size_mb( a_orig.f_record_size_mb )
     {
         a_orig.f_stream = nullptr;
         a_orig.f_is_valid = false;
@@ -118,6 +122,7 @@ namespace psyllid
         f_stream = a_orig.f_stream;
         a_orig.f_stream = nullptr;
         a_orig.f_is_valid = false;
+        f_record_size_mb = a_orig.f_record_size_mb;
         return *this;
     }
 /*
@@ -132,6 +137,7 @@ namespace psyllid
     {
         f_stream_mutex.lock();
         bool t_return = f_stream->WriteRecord( a_is_new_acq );
+        f_monarch_wrapper->record_file_contribution( f_record_size_mb );
         f_stream_mutex.unlock();
         return t_return;
         //return f_stream->WriteRecord( a_is_new_acq );
@@ -172,6 +178,8 @@ namespace psyllid
             f_filename_base(),
             f_filename_ext(),
             f_file_count( 1 ),
+            f_max_file_size_mb( 0. ),
+            f_file_size_est_mb( 0. ),
             f_monarch(),
             f_monarch_mutex(),
             f_header_wrap(),
@@ -261,7 +269,7 @@ namespace psyllid
         {
             try
             {
-                stream_wrap_ptr t_stream_ptr( new stream_wrapper( *f_monarch.get(), a_stream_no ) );
+                stream_wrap_ptr t_stream_ptr( new stream_wrapper( *f_monarch.get(), a_stream_no, this ) );
                 f_stream_wraps[ a_stream_no ] = t_stream_ptr;
             }
             catch( error& e )
@@ -346,6 +354,7 @@ namespace psyllid
         set_stage( monarch_stage::finished );
         f_monarch.reset();
         butterfly_house::get_instance()->remove_file( f_orig_filename );
+        f_file_size_est_mb = 0.;
         return;
     }
 
@@ -361,12 +370,14 @@ namespace psyllid
         std::stringstream t_count_stream;
         t_count_stream << f_file_count;
         std::string t_new_filename = f_filename_base + '_' + t_count_stream.str() + f_filename_ext;
+        LDEBUG( plog, "Switching to new file <" << t_new_filename << ">" );
 
         // open the new file
         std::unique_ptr< monarch3::Monarch3 > t_new_monarch;
         try
         {
             t_new_monarch.reset( monarch3::Monarch3::OpenForWriting( t_new_filename ) );
+            LTRACE( plog, "New file is open" );
         }
         catch( monarch3::M3Exception& e )
         {
@@ -406,17 +417,22 @@ namespace psyllid
         }
 
         // finish the old file
+        LTRACE( plog, "Finishing old file" );
         f_monarch->FinishWriting();
         f_monarch.reset();
 
         // write the new header
+        LTRACE( plog, "Writing new header" );
         t_new_monarch->WriteHeader();
 
         // switch out the monarch pointers, f_monarch <--> t_new_monarch
         f_monarch.swap( t_new_monarch );
         set_stage( monarch_stage::writing );
 
+        f_file_size_est_mb = 0.;
+
         // put references to new streams in each stream pointer, and then unlock the streams
+        LTRACE( plog, "Swapping streams" );
         for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
         {
             t_stream_it->second->f_stream = f_monarch->GetStream( t_stream_it->first );
@@ -426,6 +442,8 @@ namespace psyllid
             }
             t_stream_it->second->unlock();
         }
+
+        LTRACE( plog, "New file is ready" );
 
         return;
     }
@@ -446,5 +464,27 @@ namespace psyllid
         */
         return;
     }
+
+    void monarch_wrapper::record_file_contribution( double a_size )
+    {
+        f_monarch_mutex.lock();
+        f_file_size_est_mb += a_size;
+        if( f_file_size_est_mb >= f_max_file_size_mb )
+        {
+            LDEBUG( plog, "Max file size exceeded (" << f_file_size_est_mb << " MB >= " << f_max_file_size_mb << " MB)" );
+            // launch asynchronous function to start a new egg file
+            auto t_new_file_return = std::async( std::launch::async,
+                        [this]()
+                        {
+                            //std::this_thread::sleep_for( std::chrono::milliseconds(250));
+                            LDEBUG( plog, "Starting a new egg file" );
+                            switch_to_new_file();
+                        } );
+
+        }
+        f_monarch_mutex.unlock();
+        return;
+    }
+
 
 } /* namespace psyllid */
