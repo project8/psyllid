@@ -127,6 +127,19 @@ namespace psyllid
 
                 if( t_trig_command == stream::s_stop || t_time_command == stream::s_stop )
                 {
+                    LTRACE( plog, "Received at least one stop command" );
+                    if( ! (t_trig_command == stream::s_stop && t_time_command == stream::s_stop) )
+                    {
+                        LTRACE( plog, "Pausing to allow second stop command to arrive" );
+                        std::this_thread::sleep_for( std::chrono::milliseconds( 500 ) );
+                        if( t_trig_command != stream::s_stop ) t_trig_command = in_stream< 1 >().get();
+                        if( t_time_command != stream::s_stop ) t_time_command = in_stream< 0 >().get();
+                        if( ! (t_trig_command == stream::s_stop && t_time_command == stream::s_stop) )
+                        {
+                            LTRACE( plog, "Did not receive second stop command: trigger stream: " << t_trig_command << "; time stream: " << t_time_command <<
+                                    ". This may cause thread deadlock" );
+                        }
+                    }
                     LDEBUG( plog, "Egg writer is stopping" );
 
                     if( t_swrap_ptr )
