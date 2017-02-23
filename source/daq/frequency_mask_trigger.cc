@@ -11,6 +11,7 @@
 
 #include "logger.hh"
 #include "param_codec.hh"
+#include "time.hh"
 
 #include <cmath>
 
@@ -97,7 +98,7 @@ namespace psyllid
         std::unique_lock< std::mutex > t_lock( f_mask_mutex );
 
         scarab::param_node t_output_node;
-        t_output_node.add( "timestamp", new scarab::param_value( ) );
+        t_output_node.add( "timestamp", new scarab::param_value( scarab::get_absolute_time_string() ) );
         t_output_node.add( "n-packets", new scarab::param_value( f_n_packets_for_mask ) );
 
         scarab::param_array* t_mask_array = new scarab::param_array();

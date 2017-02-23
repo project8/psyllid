@@ -58,6 +58,12 @@ namespace psyllid
                 t_in_command = in_stream< 0 >().get();
                 if( t_in_command == stream::s_none ) continue;
                 if( t_in_command == stream::s_error ) break;
+                if( t_in_command == stream::s_skip )
+                {
+                    LTRACE( plog, "Skipping" );
+                    if( ! out_stream< 0 >().set( stream::s_skip ) ) break;
+                    continue;
+                }
 
                 LDEBUG( plog, "Event builder reading stream at index " << in_stream< 0 >().get_current_index() );
 
