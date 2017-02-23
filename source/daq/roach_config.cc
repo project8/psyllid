@@ -59,6 +59,7 @@ namespace psyllid
     }
 
 #ifdef __linux__
+    REGISTER_PRESET( fmask_trigger_1ch_fpa,"fmask-1ch-fpa");
     fmask_trigger_1ch_fpa::fmask_trigger_1ch_fpa( const std::string& a_name ) :
             stream_preset( a_name )
     {
