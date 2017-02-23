@@ -160,12 +160,6 @@ namespace psyllid
             {
                 t_in_command = in_stream< 0 >().get();
                 if( t_in_command == stream::s_none ) continue;
-                if( t_in_command == stream::s_skip )
-                {
-                    LTRACE( plog, "Skipping" );
-                    if( ! out_stream< 0 >().set( stream::s_skip ) ) break;
-                    continue;
-                }
                 if( t_in_command == stream::s_error ) break;
 
                 LTRACE( plog, "FMT (update-mask) reading stream at index " << in_stream< 0 >().get_current_index() );
@@ -295,12 +289,6 @@ namespace psyllid
             {
                 t_in_command = in_stream< 0 >().get();
                 if( t_in_command == stream::s_none ) continue;
-                if( t_in_command == stream::s_skip )
-                {
-                    LTRACE( plog, "Skipping" );
-                    if( ! out_stream< 0 >().set( stream::s_skip ) ) break;
-                    continue;
-                }
                 if( t_in_command == stream::s_error ) break;
 
                 LTRACE( plog, "FMT (apply-threshold) reading stream at index " << in_stream< 0 >().get_current_index() );

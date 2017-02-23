@@ -31,7 +31,7 @@ namespace psyllid
             f_udp_buffer_size( sizeof( roach_packet ) ),
             f_time_sync_tol( 2 ),
             f_start_paused( true ),
-            f_skip_after_stop( 10 ),
+            f_skip_after_stop( 0 ),
             f_paused( true ),
             f_time_session_pkt_counter( 0 ),
             f_freq_session_pkt_counter( 0 )
@@ -102,13 +102,6 @@ namespace psyllid
 
                 t_in_command = in_stream< 0 >().get();
                 if( t_in_command == stream::s_none ) continue;
-                if( t_in_command == stream::s_skip )
-                {
-                    LTRACE( plog, "Skipping" );
-                    if( ! out_stream< 0 >().set( stream::s_skip ) ) break;
-                    if( ! out_stream< 1 >().set( stream::s_skip ) ) break;
-                    continue;
-                }
                 if( t_in_command == stream::s_error ) break;
 
                 LTRACE( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
@@ -131,11 +124,6 @@ namespace psyllid
                     // receiving a stop command from upstream overrides that.
                     if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                     if( ! out_stream< 1 >().set( stream::s_stop ) ) break;
-                    for( unsigned i_skip = 0; i_skip < f_skip_after_stop; ++i_skip )
-                    {
-                        if( ! out_stream< 0 >().set( stream::s_skip ) ) break;
-                        if( ! out_stream< 1 >().set( stream::s_skip ) ) break;
-                    }
                     continue;
                 }
 
