@@ -8,7 +8,9 @@
 #include "frequency_mask_trigger.hh"
 
 #include "psyllid_error.hh"
+
 #include "logger.hh"
+#include "param_codec.hh"
 
 #include <cmath>
 
@@ -68,18 +70,56 @@ namespace psyllid
     }
 
 
-    void frequency_mask_trigger::update_trigger_mask()
+    void frequency_mask_trigger::switch_to_update_mask()
     {
         std::unique_lock< std::mutex > t_lock( f_mask_mutex );
 
+        LINFO( plog, "Switching to update-mask mode" );
         f_status = status::mask_update;
         f_exe_func = &frequency_mask_trigger::exe_add_to_mask;
 
-        f_n_summed = 0;
+        return;
+    }
+
+    void frequency_mask_trigger::switch_to_apply_trigger()
+    {
+        std::unique_lock< std::mutex > t_lock( f_mask_mutex );
+
+        LINFO( plog, "Switching to apply-trigger mode" );
+        f_status = status::triggering;
+        f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
+
+        return;
+    }
+
+    void frequency_mask_trigger::write_mask( const std::string& a_filename )
+    {
+        std::unique_lock< std::mutex > t_lock( f_mask_mutex );
+
+        scarab::param_node t_output_node;
+        t_output_node.add( "timestamp", new scarab::param_value( ) );
+        t_output_node.add( "n-packets", new scarab::param_value( f_n_packets_for_mask ) );
+
+        scarab::param_array* t_mask_array = new scarab::param_array();
+        t_mask_array->resize( f_mask.size() );
         for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
         {
-            f_mask[ i_bin ] = 0.;
+            t_mask_array->assign( i_bin, new scarab::param_value( f_mask[ i_bin ] ) );
         }
+        t_output_node.add( "mask", t_mask_array );
+
+        scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "json" );
+        if( t_json_codec == nullptr )
+        {
+            throw error() << "Unable to create output-codec for JSON";
+        }
+
+        if( ! t_json_codec->write_file( t_output_node, a_filename ) )
+        {
+            throw error() << "Unable to write mask to file <" << a_filename << ">";
+        }
+
+        delete t_json_codec;
 
         return;
     }
@@ -94,38 +134,116 @@ namespace psyllid
     {
         try
         {
+            (this->*f_exe_func)( a_midge );
+        }
+        catch( error& e )
+        {
+            throw;
+        }
+        return;
+    }
+
+    void frequency_mask_trigger::exe_add_to_mask( midge::diptera* a_midge )
+    {
+        try
+        {
             midge::enum_t t_in_command = stream::s_none;
             freq_data* t_freq_data = nullptr;
             trigger_flag* t_trigger_flag = nullptr;
+            bool t_clear_mask_next_packet = false;
+            bool t_mask_is_locked = false; // we can't use try_lock to determine if the mask is locked by this thread (that behavior is undefined), so we use a bool to track it instead
+            double t_real = 0., t_imag = 0.;
+            unsigned t_array_size = 0;
 
             while( ! is_canceled() )
             {
                 t_in_command = in_stream< 0 >().get();
                 if( t_in_command == stream::s_none ) continue;
+                if( t_in_command == stream::s_skip )
+                {
+                    LTRACE( plog, "Skipping" );
+                    if( ! out_stream< 0 >().set( stream::s_skip ) ) break;
+                    continue;
+                }
                 if( t_in_command == stream::s_error ) break;
 
-                LDEBUG( plog, "FMT reading stream at index " << in_stream< 0 >().get_current_index() );
+                LTRACE( plog, "FMT (update-mask) reading stream at index " << in_stream< 0 >().get_current_index() );
 
                 t_freq_data = in_stream< 0 >().data();
                 t_trigger_flag = out_stream< 0 >().data();
 
                 if( t_in_command == stream::s_start )
                 {
-                    LDEBUG( plog, "Starting the FMT output at stream index " << out_stream< 0 >().get_current_index() );
+                    f_mask_mutex.lock();
+                    t_mask_is_locked = true;
+                    LDEBUG( plog, "Starting mask update; output stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_start ) ) break;
+
+                    t_clear_mask_next_packet = true;
+                    f_n_summed = 0;
                     continue;
                 }
 
                 if( t_in_command == stream::s_run )
                 {
-                    LDEBUG( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
-                           "  time = " << t_freq_data->get_unix_time() <<
-                           "  id = " << t_freq_data->get_pkt_in_session() <<
-                           "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
-                           "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
                     try
                     {
-                        (this->*f_exe_func)( t_freq_data, t_trigger_flag );
+                        if( f_n_summed >= f_n_packets_for_mask )
+                        {
+                            LTRACE( plog, "Already have enough packets for the mask; skipping this packet" );
+                        }
+                        else
+                        {
+                            LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
+                                   "  time = " << t_freq_data->get_unix_time() <<
+                                   "  id = " << t_freq_data->get_pkt_in_session() <<
+                                   "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
+                                   "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
+
+                            if( t_clear_mask_next_packet )
+                            {
+                                t_array_size = t_freq_data->get_array_size();
+                                f_mask.resize( t_array_size );
+                                for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                                {
+                                    f_mask[ i_bin ] = 0.;
+                                }
+                                t_clear_mask_next_packet = false;
+                            }
+                            for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                            {
+                                t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
+                                t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
+                                f_mask[ i_bin ] = f_mask[ i_bin ] + t_real*t_real + t_imag*t_imag;
+                    /*#ifndef NDEBUG
+                                if( i_bin < 5 )
+                                {
+                                    LWARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
+                                            ";  mask = " << f_mask[ i_bin ] );
+                                }
+                    #endif*/
+                            }
+
+                            ++f_n_summed;
+                            LTRACE( plog, "Added data to frequency mask; mask now has " << f_n_summed << " packets" );
+
+                            if( f_n_summed == f_n_packets_for_mask )
+                            {
+                                calculate_mask();
+                            }
+                        }
+
+                        // advance the output stream with the trigger set to false
+                        // since something else is presumably looking at the time stream, and it needs to stay synchronized
+                        t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
+                        t_trigger_flag->set_flag( false );
+
+                        LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
+                        if( ! out_stream< 0 >().set( stream::s_run ) )
+                        {
+                            LERROR( plog, "Exiting due to stream error" );
+                            throw error() << "Stream error while adding to mask";
+                        }
                     }
                     catch( error& e )
                     {
@@ -137,6 +255,8 @@ namespace psyllid
 
                 if( t_in_command == stream::s_stop )
                 {
+                    f_mask_mutex.unlock();
+                    t_mask_is_locked = false;
                     LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                     continue;
@@ -149,6 +269,8 @@ namespace psyllid
                     break;
                 }
             }
+            // make sure the mutex is unlocked
+            if( t_mask_is_locked ) f_mask_mutex.unlock();
         }
         catch(...)
         {
@@ -157,92 +279,115 @@ namespace psyllid
         }
     }
 
-    void frequency_mask_trigger::exe_add_to_mask( freq_data* a_freq_data, trigger_flag* a_trigger_flag )
+    void frequency_mask_trigger::exe_apply_threshold( midge::diptera* a_midge )
     {
-        static unsigned s_array_size = f_mask.size();
-
-        f_mask_mutex.lock();
-
-        double t_real, t_imag;
-        for( unsigned i_bin = 0; i_bin < s_array_size; ++i_bin )
+        try
         {
-            t_real = a_freq_data->get_array()[ i_bin ][ 0 ];
-            t_imag = a_freq_data->get_array()[ i_bin ][ 1 ];
-            f_mask[ i_bin ] = f_mask[ i_bin ] + t_real*t_real + t_imag*t_imag;
-/*#ifndef NDEBUG
-            if( i_bin < 5 )
+            midge::enum_t t_in_command = stream::s_none;
+            freq_data* t_freq_data = nullptr;
+            trigger_flag* t_trigger_flag = nullptr;
+            bool t_mask_is_locked = false; // we can't use try_lock to determine if the mask is locked by this thread (that behavior is undefined), so we use a bool to track it instead
+            double t_real = 0., t_imag = 0.;
+            unsigned t_array_size = 0;
+
+            while( ! is_canceled() )
             {
-                LWARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
-                        ";  mask = " << f_mask[ i_bin ] );
+                t_in_command = in_stream< 0 >().get();
+                if( t_in_command == stream::s_none ) continue;
+                if( t_in_command == stream::s_skip )
+                {
+                    LTRACE( plog, "Skipping" );
+                    if( ! out_stream< 0 >().set( stream::s_skip ) ) break;
+                    continue;
+                }
+                if( t_in_command == stream::s_error ) break;
+
+                LTRACE( plog, "FMT (apply-threshold) reading stream at index " << in_stream< 0 >().get_current_index() );
+
+                t_freq_data = in_stream< 0 >().data();
+                t_trigger_flag = out_stream< 0 >().data();
+
+                if( t_in_command == stream::s_start )
+                {
+                    f_mask_mutex.lock();
+                    t_mask_is_locked = true;
+                    LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
+                    if( ! out_stream< 0 >().set( stream::s_start ) ) break;
+
+                    continue;
+                }
+
+                if( t_in_command == stream::s_run )
+                {
+                    LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
+                           "  time = " << t_freq_data->get_unix_time() <<
+                           "  id = " << t_freq_data->get_pkt_in_session() <<
+                           "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
+                           "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
+                    try
+                    {
+                        t_trigger_flag->set_flag( false );
+
+                        t_array_size = t_freq_data->get_array_size();
+                        for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                        {
+                            t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
+                            t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
+                /*#ifndef NDEBUG
+                            if( i_bin < 5 )
+                            {
+                                LWARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
+                                        ";  mask = " << f_mask[ i_bin ] );
+                            }
+                #endif*/
+                            t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
+                            if( t_real*t_real + t_imag*t_imag >= f_mask[ i_bin ] )
+                            {
+                                t_trigger_flag->set_flag( true );
+                                LTRACE( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                       "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << f_mask[ i_bin ] );
+                                break;
+                            }
+                        }
+
+                        LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
+                        if( ! out_stream< 0 >().set( stream::s_run ) )
+                        {
+                            LERROR( plog, "Exiting due to stream error" );
+                            throw error() << "Stream error while applying threshold";
+                        }                    }
+                    catch( error& e )
+                    {
+                        LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
+                        break;
+                    }
+                    continue;
+                }
+
+                if( t_in_command == stream::s_stop )
+                {
+                    f_mask_mutex.unlock();
+                    t_mask_is_locked = false;
+                    LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
+                    if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
+                    continue;
+                }
+
+                if( t_in_command == stream::s_exit )
+                {
+                    LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
+                    out_stream< 0 >().set( stream::s_exit );
+                    break;
+                }
             }
-#endif*/
+            // make sure the mutex is unlocked
+            if( t_mask_is_locked ) f_mask_mutex.unlock();
         }
-
-        ++f_n_summed;
-        LDEBUG( plog, "Added data to frequency mask; mask now has " << f_n_summed << " packets" );
-
-        if( f_n_summed == f_n_packets_for_mask )
+        catch(...)
         {
-            calculate_mask();
+            if( a_midge ) a_midge->throw_ex( std::current_exception() );
+            else throw;
         }
-
-        // advance the output stream with the trigger set to false
-        // since something else is presumably looking at the time stream, and it needs to stay synchronized
-        a_trigger_flag->set_id( a_freq_data->get_pkt_in_session() );
-        a_trigger_flag->set_flag( false );
-
-        f_mask_mutex.unlock();
-
-        LDEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
-        if( ! out_stream< 0 >().set( stream::s_run ) )
-        {
-            LERROR( plog, "Exiting due to stream error" );
-            throw error() << "Stream error while adding to mask";
-        }
-        return;
-    }
-
-    void frequency_mask_trigger::exe_apply_threshold( freq_data* a_freq_data, trigger_flag* a_trigger_flag )
-    {
-        static unsigned s_array_size = f_mask.size();
-
-        LDEBUG( plog, "Checking data against mask" );
-
-        f_mask_mutex.lock();
-
-        a_trigger_flag->set_flag( false );
-
-        double t_real, t_imag;
-        for( unsigned i_bin = 0; i_bin < s_array_size; ++i_bin )
-        {
-            t_real = a_freq_data->get_array()[ i_bin ][ 0 ];
-            t_imag = a_freq_data->get_array()[ i_bin ][ 1 ];
-/*#ifndef NDEBUG
-            if( i_bin < 5 )
-            {
-                LWARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
-                        ";  mask = " << f_mask[ i_bin ] );
-            }
-#endif*/
-            a_trigger_flag->set_id( a_freq_data->get_pkt_in_session() );
-            if( t_real*t_real + t_imag*t_imag >= f_mask[ i_bin ] )
-            {
-                a_trigger_flag->set_flag( true );
-                LDEBUG( plog, "Data " << a_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << a_trigger_flag->get_flag() << ">" << '\n' <<
-                       "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << f_mask[ i_bin ] );
-                break;
-            }
-        }
-
-        f_mask_mutex.unlock();
-
-        LDEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
-        if( ! out_stream< 0 >().set( stream::s_run ) )
-        {
-            LERROR( plog, "Exiting due to stream error" );
-            throw error() << "Stream error while applying threshold";
-        }
-        return;
     }
 
     void frequency_mask_trigger::finalize()
@@ -313,6 +458,37 @@ namespace psyllid
         a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         return;
+    }
+
+    bool frequency_mask_trigger_binding::do_run_command( frequency_mask_trigger* a_node, const std::string& a_cmd, const scarab::param_node& a_args ) const
+    {
+        if( a_cmd == "update-mask" )
+        {
+            a_node->switch_to_update_mask();
+            return true;
+        }
+        else if( a_cmd == "apply-trigger" )
+        {
+            a_node->switch_to_apply_trigger();
+            return true;
+        }
+        else if( a_cmd == "write-mask" )
+        {
+            try
+            {
+                a_node->write_mask( a_args.get_value( "filename", "fmt_mask.json" ) );
+            }
+            catch( error& e )
+            {
+                throw e;
+            }
+            return true;
+        }
+        else
+        {
+            LWARN( plog, "Unrecognized command: <" << a_cmd << ">" );
+            return false;
+        }
     }
 
 

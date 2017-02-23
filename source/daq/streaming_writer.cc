@@ -85,6 +85,11 @@ namespace psyllid
             {
                 t_time_command = in_stream< 0 >().get();
                 if( t_time_command == stream::s_none ) continue;
+                if( t_time_command == stream::s_skip )
+                {
+                    LTRACE( plog, "Skipping" );
+                    continue;
+                }
                 if( t_time_command == stream::s_error ) break;
 
                 LTRACE( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );

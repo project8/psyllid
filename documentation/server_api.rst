@@ -245,8 +245,8 @@ Remove a stream from the DAQ configuration.  Takes effect next time the DAQ is a
 
 - ``values: [[stream name (string)]]`` -- Name of the stream to remove as the first element of the ``values`` array
 
-``run-daq-cmd``
----------------
+``run-daq-cmd.[stream].[node].[cmd]``
+-------------------------------------
 Instruct an active DAQ node to execute a particular command.  Please note that this action is not necessarily thread-safe.
 
 *Payload*

@@ -369,32 +369,32 @@ namespace psyllid
         return;
     }
 
-    void daq_control::run_command( const std::string& a_node_name, const scarab::param_node& a_cmd )
+    void daq_control::run_command( const std::string& a_node_name, const std::string& a_cmd, const scarab::param_node& a_args )
     {
         if( f_node_bindings == nullptr )
         {
-            throw error() << "Can't run command on node <" << a_node_name << ">: node bindings aren't available";
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: node bindings aren't available";
         }
 
         if( f_node_bindings == nullptr )
         {
-            throw error() << "Can't run command on node <" << a_node_name << ">: node bindings aren't available";
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: node bindings aren't available";
         }
 
         active_node_bindings::iterator t_binding_it = f_node_bindings->find( a_node_name );
         if( t_binding_it == f_node_bindings->end() )
         {
-            throw error() << "Can't run command on node <" << a_node_name << ">: did not find node";
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: did not find node";
         }
 
         try
         {
-            LDEBUG( plog, "Running command on active node <" << a_node_name << ">" );
-            t_binding_it->second.first->run_command( t_binding_it->second.second, a_cmd );
+            LDEBUG( plog, "Running command <" << a_cmd << "> on active node <" << a_node_name << ">" );
+            t_binding_it->second.first->run_command( t_binding_it->second.second, a_cmd, a_args );
         }
         catch( std::exception& e )
         {
-            throw error() << "Can't run command on node <" << a_node_name << ">: " << e.what();
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: " << e.what();
         }
         return;
     }
@@ -607,16 +607,17 @@ namespace psyllid
         std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
         a_request->parsed_rks().pop_front();
 
-        scarab::param_node t_command_node( a_request->get_payload() );
-        t_command_node.add( "cmd", new param_value( a_request->parsed_rks().front() ) );
+        scarab::param_node t_args_node( a_request->get_payload() );
+        std::string t_command( a_request->parsed_rks().front() );
         a_request->parsed_rks().pop_front();
 
-        LDEBUG( plog, "Performing run-command for active node <" << t_target_node << ">; command:\n" << t_command_node );
+        LDEBUG( plog, "Performing run-command <" << t_command << "> for active node <" << t_target_node << ">; args:\n" << t_args_node );
 
         try
         {
-            run_command( t_target_node, t_command_node );
-            a_reply_pkg.f_payload.merge( t_command_node );
+            run_command( t_target_node, t_command, t_args_node );
+            a_reply_pkg.f_payload.merge( t_args_node );
+            a_reply_pkg.f_payload.add( "command", new scarab::param_value( t_command ) );
         }
         catch( std::exception& e )
         {

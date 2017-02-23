@@ -16,8 +16,8 @@
 
 #include "member_variables.hh"
 
-#include <array>
 #include <mutex>
+#include <vector>
 
 namespace psyllid
 {
@@ -39,6 +39,13 @@ namespace psyllid
      In triggering mode, each arriving spectrum is compared to the mask bin-by-bin.  If a bin crosses the threshold, the spectrum passes
      the trigger and the bin-by-bin comparison is stopped.
 
+     The mask can be written to a JSON file via the write_mask() function.  The format for the file is:
+     {
+         "timestamp": "[timestamp]",
+         "n-packets": [number of packets averaged],
+         "mask": [value_0, value_1, . . . .]
+     }
+
      Parameter setting is not thread-safe.  Executing (including switching modes) is thread-safe.
 
      Node type: "frequency-mask-trigger"
@@ -49,6 +56,11 @@ namespace psyllid
      - "threshold-ampl-snr": float -- The threshold SNR, given as an amplitude SNR
      - "threshold-power-snr": float -- The threshold SNR, given as a power SNR
      - "threshold-dB": float -- The threshold SNR, given as a dB factor
+
+     Available DAQ commands:
+     - "update-mask" (no args) -- Switch the execution mode to updating the trigger mask
+     - "apply-trigger" (no args) -- Switch the execution mode to applying the trigger
+     - "write-mask" ("filename" string) -- Write the mask in JSON format to the given file
 
      Input Streams:
      - 0: freq_data (assumed to be frequency data)
@@ -74,22 +86,25 @@ namespace psyllid
             mv_accessible_noset( double, threshold_snr );
 
         public:
-            void update_trigger_mask();
+            void switch_to_update_mask();
+            void switch_to_apply_trigger();
+
+            void write_mask( const std::string& a_filename );
 
             void initialize();
             void execute( midge::diptera* a_midge = nullptr );
             void finalize();
 
         private:
-            void exe_apply_threshold( freq_data* a_freq_data, trigger_flag* a_trig_flag );
-            void exe_add_to_mask( freq_data* a_freq_data, trigger_flag* a_trig_flag );
+            void exe_apply_threshold( midge::diptera* a_midge );
+            void exe_add_to_mask( midge::diptera* a_midge );
 
-            void (frequency_mask_trigger::*f_exe_func)( freq_data* a_freq_data, trigger_flag* a_trig_flag );
+            void (frequency_mask_trigger::*f_exe_func)( midge::diptera* a_midge );
 
             void calculate_mask();
 
         private:
-            std::array< double, PAYLOAD_SIZE / 2 > f_mask;
+            std::vector< double > f_mask;
             unsigned f_n_summed;
 
             std::mutex f_mask_mutex;
@@ -115,6 +130,8 @@ namespace psyllid
         private:
             virtual void do_apply_config( frequency_mask_trigger* a_node, const scarab::param_node& a_config ) const;
             virtual void do_dump_config( const frequency_mask_trigger* a_node, scarab::param_node& a_config ) const;
+
+            virtual bool do_run_command( frequency_mask_trigger* a_node, const std::string& a_cmd, const scarab::param_node& a_args ) const;
     };
 
 

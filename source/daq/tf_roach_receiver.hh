@@ -63,6 +63,7 @@ namespace psyllid
             mv_accessible( uint64_t, udp_buffer_size );
             mv_accessible( unsigned, time_sync_tol );
             mv_accessible( bool, start_paused );
+            mv_accessible( unsigned, skip_after_stop );
 
         public:
             virtual void initialize();

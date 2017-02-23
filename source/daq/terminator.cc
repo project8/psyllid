@@ -50,6 +50,11 @@ namespace psyllid
             {
                 t_command = in_stream< 0 >().get();
                 if( t_command == midge::stream::s_none ) continue;
+                if( t_command == midge::stream::s_skip )
+                {
+                    LTRACE( plog, "Skipping" );
+                    continue;
+                }
                 if( t_command == midge::stream::s_error ) break;
 
                 if( t_command == midge::stream::s_exit )
@@ -137,6 +142,11 @@ namespace psyllid
             {
                 t_command = in_stream< 0 >().get();
                 if( t_command == midge::stream::s_none ) continue;
+                if( t_command == midge::stream::s_skip )
+                {
+                    LTRACE( plog, "Skipping" );
+                    continue;
+                }
                 if( t_command == midge::stream::s_error ) break;
 
                 if( t_command == midge::stream::s_exit )
