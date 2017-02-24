@@ -369,7 +369,7 @@ namespace psyllid
         return;
     }
 
-    void daq_control::run_command( const std::string& a_node_name, const std::string& a_cmd, const scarab::param_node& a_args )
+    bool daq_control::run_command( const std::string& a_node_name, const std::string& a_cmd, const scarab::param_node& a_args )
     {
         if( f_node_bindings == nullptr )
         {
@@ -390,13 +390,12 @@ namespace psyllid
         try
         {
             LDEBUG( plog, "Running command <" << a_cmd << "> on active node <" << a_node_name << ">" );
-            t_binding_it->second.first->run_command( t_binding_it->second.second, a_cmd, a_args );
+            return t_binding_it->second.first->run_command( t_binding_it->second.second, a_cmd, a_args );
         }
         catch( std::exception& e )
         {
             throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: " << e.what();
         }
-        return;
     }
 
 
@@ -613,9 +612,10 @@ namespace psyllid
 
         LDEBUG( plog, "Performing run-command <" << t_command << "> for active node <" << t_target_node << ">; args:\n" << t_args_node );
 
+        bool t_return = false;
         try
         {
-            run_command( t_target_node, t_command, t_args_node );
+            t_return = run_command( t_target_node, t_command, t_args_node );
             a_reply_pkg.f_payload.merge( t_args_node );
             a_reply_pkg.f_payload.add( "command", new scarab::param_value( t_command ) );
         }
@@ -624,8 +624,16 @@ namespace psyllid
             return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform run-command request: ") + e.what() );
         }
 
-        LDEBUG( plog, "Active run-command execution was successful" );
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed active run-command execution" );
+        if( t_return )
+        {
+            LDEBUG( plog, "Active run-command execution was successful" );
+            return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed active run-command execution" );
+        }
+        else
+        {
+            LWARN( plog, "Active run-command execution failed" );
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_method, "Command was not recognized" );
+        }
     }
 
     bool daq_control::handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
