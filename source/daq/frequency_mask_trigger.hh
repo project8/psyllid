@@ -63,13 +63,14 @@ namespace psyllid
      - "write-mask" ("filename" string) -- Write the mask in JSON format to the given file
 
      Input Streams:
-     - 0: freq_data (assumed to be frequency data)
+     - 0: freq_data (for the apply-trigger mode)
+     - 1: freq_data (for the update-mask mode)
 
      Output Streams:
      - 0: trigger_flag
     */
     class frequency_mask_trigger :
-            public midge::_transformer< frequency_mask_trigger, typelist_1( freq_data ), typelist_1( trigger_flag ) >
+            public midge::_transformer< frequency_mask_trigger, typelist_2( freq_data, freq_data ), typelist_1( trigger_flag ) >
     {
         public:
             frequency_mask_trigger();

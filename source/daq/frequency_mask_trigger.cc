@@ -27,7 +27,7 @@ namespace psyllid
             f_length( 10 ),
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 3. ),
-            f_exe_func( &frequency_mask_trigger::exe_add_to_mask ),
+            f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_n_summed( 0 ),
             f_mask_mutex(),
@@ -150,7 +150,7 @@ namespace psyllid
         {
             midge::enum_t t_in_command = stream::s_none;
             freq_data* t_freq_data = nullptr;
-            trigger_flag* t_trigger_flag = nullptr;
+            //trigger_flag* t_trigger_flag = nullptr;
             bool t_clear_mask_next_packet = false;
             bool t_mask_is_locked = false; // we can't use try_lock to determine if the mask is locked by this thread (that behavior is undefined), so we use a bool to track it instead
             double t_real = 0., t_imag = 0.;
@@ -158,22 +158,21 @@ namespace psyllid
 
             while( ! is_canceled() )
             {
-                t_in_command = in_stream< 0 >().get();
+                t_in_command = in_stream< 1 >().get();
                 if( t_in_command == stream::s_none ) continue;
                 if( t_in_command == stream::s_error ) break;
 
-                LTRACE( plog, "FMT (update-mask) reading stream at index " << in_stream< 0 >().get_current_index() );
+                LTRACE( plog, "FMT (update-mask) reading stream at index " << in_stream< 1 >().get_current_index() );
 
-                t_freq_data = in_stream< 0 >().data();
-                t_trigger_flag = out_stream< 0 >().data();
+                t_freq_data = in_stream< 1 >().data();
+                //t_trigger_flag = out_stream< 0 >().data();
 
                 if( t_in_command == stream::s_start )
                 {
                     f_mask_mutex.lock();
                     t_mask_is_locked = true;
-                    LDEBUG( plog, "Starting mask update; output stream index " << out_stream< 0 >().get_current_index() );
-                    if( ! out_stream< 0 >().set( stream::s_start ) ) break;
-
+                    LDEBUG( plog, "Starting mask update" ) //; output stream index " << out_stream< 0 >().get_current_index() );
+                    //if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     t_clear_mask_next_packet = true;
                     f_n_summed = 0;
                     continue;
@@ -230,15 +229,15 @@ namespace psyllid
 
                         // advance the output stream with the trigger set to false
                         // since something else is presumably looking at the time stream, and it needs to stay synchronized
-                        t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
-                        t_trigger_flag->set_flag( false );
+                        //t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
+                        //t_trigger_flag->set_flag( false );
 
-                        LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
-                        if( ! out_stream< 0 >().set( stream::s_run ) )
-                        {
-                            LERROR( plog, "Exiting due to stream error" );
-                            throw error() << "Stream error while adding to mask";
-                        }
+                        //LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
+                        //if( ! out_stream< 0 >().set( stream::s_run ) )
+                        //{
+                        //    LERROR( plog, "Exiting due to stream error" );
+                        //    throw error() << "Stream error while adding to mask";
+                        //}
                     }
                     catch( error& e )
                     {
@@ -252,15 +251,15 @@ namespace psyllid
                 {
                     f_mask_mutex.unlock();
                     t_mask_is_locked = false;
-                    LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
-                    if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
+                    LDEBUG( plog, "FMT is stopping" );// at stream index " << out_stream< 0 >().get_current_index() );
+                    //if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                     continue;
                 }
 
                 if( t_in_command == stream::s_exit )
                 {
-                    LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
-                    out_stream< 0 >().set( stream::s_exit );
+                    LDEBUG( plog, "FMT is exiting" );// at stream index " << out_stream< 0 >().get_current_index() );
+                    //out_stream< 0 >().set( stream::s_exit );
                     break;
                 }
             }
@@ -281,6 +280,7 @@ namespace psyllid
             midge::enum_t t_in_command = stream::s_none;
             freq_data* t_freq_data = nullptr;
             trigger_flag* t_trigger_flag = nullptr;
+            bool t_check_mask_next_packet = false;
             bool t_mask_is_locked = false; // we can't use try_lock to determine if the mask is locked by this thread (that behavior is undefined), so we use a bool to track it instead
             double t_real = 0., t_imag = 0.;
             unsigned t_array_size = 0;
@@ -302,7 +302,7 @@ namespace psyllid
                     t_mask_is_locked = true;
                     LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_start ) ) break;
-
+                    t_check_mask_next_packet = true;
                     continue;
                 }
 
@@ -315,6 +315,11 @@ namespace psyllid
                            "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
                     try
                     {
+                        if( t_check_mask_next_packet )
+                        {
+                            if( f_mask.size() != t_array_size ) f_mask.resize( t_array_size, 0. );
+                            t_check_mask_next_packet = false;
+                        }
                         t_trigger_flag->set_flag( false );
 
                         t_array_size = t_freq_data->get_array_size();
