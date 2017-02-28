@@ -73,29 +73,40 @@ namespace psyllid
 
     void frequency_mask_trigger::switch_to_update_mask()
     {
-        std::unique_lock< std::mutex > t_lock( f_mask_mutex );
-
-        LINFO( plog, "Switching to update-mask mode" );
-        f_status = status::mask_update;
-        f_exe_func = &frequency_mask_trigger::exe_add_to_mask;
-
+        LDEBUG( plog, "Requesting switch to update-mask mode" );
+        f_exe_func_mutex.lock();
+        if( f_exe_func != &frequency_mask_trigger::exe_add_to_mask )
+        {
+            f_break_exe_func.store( true );
+            f_status = status::mask_update;
+            f_exe_func = &frequency_mask_trigger::exe_add_to_mask;
+        }
+        f_exe_func_mutex.unlock();
         return;
     }
 
     void frequency_mask_trigger::switch_to_apply_trigger()
     {
-        std::unique_lock< std::mutex > t_lock( f_mask_mutex );
-
-        LINFO( plog, "Switching to apply-trigger mode" );
-        f_status = status::triggering;
-        f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
-
+        LDEBUG( plog, "Requesting switch to apply-trigger mode" );
+        f_exe_func_mutex.lock();
+        if( f_exe_func != &frequency_mask_trigger::exe_apply_threshold )
+        {
+            f_break_exe_func.store( true );
+            f_status = status::triggering;
+            f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
+        }
+        f_exe_func_mutex.unlock();
         return;
     }
 
     void frequency_mask_trigger::write_mask( const std::string& a_filename )
     {
         std::unique_lock< std::mutex > t_lock( f_mask_mutex );
+
+        if( f_mask.empty() )
+        {
+            throw error() << "Mask is empty";
+        }
 
         scarab::param_node t_output_node;
         t_output_node.add( "timestamp", new scarab::param_value( scarab::get_absolute_time_string() ) );
@@ -135,7 +146,14 @@ namespace psyllid
     {
         try
         {
-            (this->*f_exe_func)( a_midge );
+            LINFO( plog, "Starting main loop" );
+            f_break_exe_func.store( true );
+            while( f_break_exe_func.load() )
+            {
+                f_break_exe_func.store( false );
+                f_exe_func_mutex.lock();
+                (this->*f_exe_func)( a_midge );
+            }
         }
         catch( error& e )
         {
@@ -146,6 +164,8 @@ namespace psyllid
 
     void frequency_mask_trigger::exe_add_to_mask( midge::diptera* a_midge )
     {
+        f_exe_func_mutex.unlock();
+
         try
         {
             midge::enum_t t_in_command = stream::s_none;
@@ -156,7 +176,8 @@ namespace psyllid
             double t_real = 0., t_imag = 0.;
             unsigned t_array_size = 0;
 
-            while( ! is_canceled() )
+            LDEBUG( plog, "Entering add-to-mask loop" );
+            while( ! is_canceled() && ! f_break_exe_func.load() )
             {
                 t_in_command = in_stream< 1 >().get();
                 if( t_in_command == stream::s_none ) continue;
@@ -175,6 +196,8 @@ namespace psyllid
                     //if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     t_clear_mask_next_packet = true;
                     f_n_summed = 0;
+                    f_mask_mutex.unlock();
+                    t_mask_is_locked = false;
                     continue;
                 }
 
@@ -188,6 +211,8 @@ namespace psyllid
                         }
                         else
                         {
+                            f_mask_mutex.lock();
+                            t_mask_is_locked = true;
                             LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
                                    "  time = " << t_freq_data->get_unix_time() <<
                                    "  id = " << t_freq_data->get_pkt_in_session() <<
@@ -225,6 +250,8 @@ namespace psyllid
                             {
                                 calculate_mask();
                             }
+                            f_mask_mutex.unlock();
+                            t_mask_is_locked = false;
                         }
 
                         // advance the output stream with the trigger set to false
@@ -249,8 +276,6 @@ namespace psyllid
 
                 if( t_in_command == stream::s_stop )
                 {
-                    f_mask_mutex.unlock();
-                    t_mask_is_locked = false;
                     LDEBUG( plog, "FMT is stopping" );// at stream index " << out_stream< 0 >().get_current_index() );
                     //if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                     continue;
@@ -275,6 +300,8 @@ namespace psyllid
 
     void frequency_mask_trigger::exe_apply_threshold( midge::diptera* a_midge )
     {
+        f_exe_func_mutex.unlock();
+
         try
         {
             midge::enum_t t_in_command = stream::s_none;
@@ -285,7 +312,8 @@ namespace psyllid
             double t_real = 0., t_imag = 0.;
             unsigned t_array_size = 0;
 
-            while( ! is_canceled() )
+            LDEBUG( plog, "Entering apply-threshold loop" );
+            while( ! is_canceled() && ! f_break_exe_func.load() )
             {
                 t_in_command = in_stream< 0 >().get();
                 if( t_in_command == stream::s_none ) continue;

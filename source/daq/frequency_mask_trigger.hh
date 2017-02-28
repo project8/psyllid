@@ -101,6 +101,8 @@ namespace psyllid
             void exe_add_to_mask( midge::diptera* a_midge );
 
             void (frequency_mask_trigger::*f_exe_func)( midge::diptera* a_midge );
+            std::mutex f_exe_func_mutex;
+            std::atomic< bool > f_break_exe_func;
 
             void calculate_mask();
 
