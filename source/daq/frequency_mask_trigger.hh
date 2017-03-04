@@ -70,7 +70,7 @@ namespace psyllid
      - 0: trigger_flag
     */
     class frequency_mask_trigger :
-            public midge::_transformer< frequency_mask_trigger, typelist_2( freq_data, freq_data ), typelist_1( trigger_flag ) >
+            public midge::_transformer< frequency_mask_trigger, typelist_1( freq_data ), typelist_1( trigger_flag ) >
     {
         public:
             frequency_mask_trigger();
@@ -103,8 +103,6 @@ namespace psyllid
             void (frequency_mask_trigger::*f_exe_func)( midge::diptera* a_midge );
             std::mutex f_exe_func_mutex;
             std::atomic< bool > f_break_exe_func;
-
-            void calculate_mask();
 
         private:
             std::vector< double > f_mask;

@@ -172,32 +172,29 @@ namespace psyllid
             freq_data* t_freq_data = nullptr;
             //trigger_flag* t_trigger_flag = nullptr;
             bool t_clear_mask_next_packet = false;
-            bool t_mask_is_locked = false; // we can't use try_lock to determine if the mask is locked by this thread (that behavior is undefined), so we use a bool to track it instead
             double t_real = 0., t_imag = 0.;
             unsigned t_array_size = 0;
+            std::vector< double > t_mask_buffer;
 
             LDEBUG( plog, "Entering add-to-mask loop" );
             while( ! is_canceled() && ! f_break_exe_func.load() )
             {
-                t_in_command = in_stream< 1 >().get();
+                t_in_command = in_stream< 0 >().get();
                 if( t_in_command == stream::s_none ) continue;
                 if( t_in_command == stream::s_error ) break;
 
-                LTRACE( plog, "FMT (update-mask) reading stream at index " << in_stream< 1 >().get_current_index() );
+                LTRACE( plog, "FMT (update-mask) reading stream at index " << in_stream< 0 >().get_current_index() );
 
-                t_freq_data = in_stream< 1 >().data();
+                t_freq_data = in_stream< 0 >().data();
                 //t_trigger_flag = out_stream< 0 >().data();
 
                 if( t_in_command == stream::s_start )
                 {
-                    f_mask_mutex.lock();
-                    t_mask_is_locked = true;
                     LDEBUG( plog, "Starting mask update" ) //; output stream index " << out_stream< 0 >().get_current_index() );
                     //if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     t_clear_mask_next_packet = true;
                     f_n_summed = 0;
-                    f_mask_mutex.unlock();
-                    t_mask_is_locked = false;
+                    t_mask_buffer.clear();
                     continue;
                 }
 
@@ -211,8 +208,7 @@ namespace psyllid
                         }
                         else
                         {
-                            f_mask_mutex.lock();
-                            t_mask_is_locked = true;
+
                             LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
                                    "  time = " << t_freq_data->get_unix_time() <<
                                    "  id = " << t_freq_data->get_pkt_in_session() <<
@@ -222,10 +218,10 @@ namespace psyllid
                             if( t_clear_mask_next_packet )
                             {
                                 t_array_size = t_freq_data->get_array_size();
-                                f_mask.resize( t_array_size );
+                                t_mask_buffer.resize( t_array_size );
                                 for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                                 {
-                                    f_mask[ i_bin ] = 0.;
+                                    t_mask_buffer[ i_bin ] = 0.;
                                 }
                                 t_clear_mask_next_packet = false;
                             }
@@ -233,7 +229,7 @@ namespace psyllid
                             {
                                 t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
                                 t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
-                                f_mask[ i_bin ] = f_mask[ i_bin ] + t_real*t_real + t_imag*t_imag;
+                                t_mask_buffer[ i_bin ] = t_mask_buffer[ i_bin ] + t_real*t_real + t_imag*t_imag;
                     /*#ifndef NDEBUG
                                 if( i_bin < 5 )
                                 {
@@ -248,10 +244,24 @@ namespace psyllid
 
                             if( f_n_summed == f_n_packets_for_mask )
                             {
-                                calculate_mask();
+                                f_mask_mutex.lock();
+                                LDEBUG( plog, "Calculating frequency mask" );
+
+                                f_mask.resize( t_mask_buffer.size() );
+                                double t_multiplier = f_threshold_snr / (double)f_n_summed;
+                                for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
+                                {
+                        /*#ifndef NDEBUG
+                                    if( i_bin < 5 )
+                                    {
+                                        LWARN( plog, "Bin " << i_bin << " -- threshold snr = " << f_threshold_snr << ";  n_summed = " << f_n_summed << ";  multiplier = " << t_multiplier <<
+                                                ";  summed value = " << f_mask[ i_bin ] << ";  final mask = " << f_mask[ i_bin ] * t_multiplier );
+                                    }
+                        #endif*/
+                                    f_mask[ i_bin ] = t_mask_buffer[ i_bin ] * t_multiplier;
+                                }
+                                f_mask_mutex.unlock();
                             }
-                            f_mask_mutex.unlock();
-                            t_mask_is_locked = false;
                         }
 
                         // advance the output stream with the trigger set to false
@@ -277,6 +287,10 @@ namespace psyllid
                 if( t_in_command == stream::s_stop )
                 {
                     LDEBUG( plog, "FMT is stopping" );// at stream index " << out_stream< 0 >().get_current_index() );
+                    if( f_n_summed < f_n_packets_for_mask )
+                    {
+                        LWARN( plog, "FMT is stopping: it did not process enough packets to update the mask" );
+                    }
                     //if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                     continue;
                 }
@@ -284,12 +298,14 @@ namespace psyllid
                 if( t_in_command == stream::s_exit )
                 {
                     LDEBUG( plog, "FMT is exiting" );// at stream index " << out_stream< 0 >().get_current_index() );
+                    if( f_n_summed < f_n_packets_for_mask )
+                    {
+                        LWARN( plog, "FMT is exiting: it did not process enough packets to update the mask" );
+                    }
                     //out_stream< 0 >().set( stream::s_exit );
                     break;
                 }
             }
-            // make sure the mutex is unlocked
-            if( t_mask_is_locked ) f_mask_mutex.unlock();
         }
         catch(...)
         {
@@ -308,16 +324,27 @@ namespace psyllid
             freq_data* t_freq_data = nullptr;
             trigger_flag* t_trigger_flag = nullptr;
             bool t_check_mask_next_packet = false;
-            bool t_mask_is_locked = false; // we can't use try_lock to determine if the mask is locked by this thread (that behavior is undefined), so we use a bool to track it instead
             double t_real = 0., t_imag = 0.;
             unsigned t_array_size = 0;
+
+            f_mask_mutex.lock();
+            std::vector< double > t_mask_buffer( f_mask );
+            f_mask_mutex.unlock();
 
             LDEBUG( plog, "Entering apply-threshold loop" );
             while( ! is_canceled() && ! f_break_exe_func.load() )
             {
                 t_in_command = in_stream< 0 >().get();
-                if( t_in_command == stream::s_none ) continue;
-                if( t_in_command == stream::s_error ) break;
+                if( t_in_command == stream::s_none )
+                {
+                    LTRACE( plog, "FMT read s_none" );
+                    continue;
+                }
+                if( t_in_command == stream::s_error )
+                {
+                    LTRACE( plog, "FMT read s_error" );
+                    break;
+                }
 
                 LTRACE( plog, "FMT (apply-threshold) reading stream at index " << in_stream< 0 >().get_current_index() );
 
@@ -326,8 +353,6 @@ namespace psyllid
 
                 if( t_in_command == stream::s_start )
                 {
-                    f_mask_mutex.lock();
-                    t_mask_is_locked = true;
                     LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     t_check_mask_next_packet = true;
@@ -343,14 +368,15 @@ namespace psyllid
                            "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
                     try
                     {
+                        t_array_size = t_freq_data->get_array_size();
                         if( t_check_mask_next_packet )
                         {
-                            if( f_mask.size() != t_array_size ) f_mask.resize( t_array_size, 0. );
+                            LDEBUG( plog, "Resizing mask to " << t_array_size << " bins" );
+                            if( t_mask_buffer.size() != t_array_size ) t_mask_buffer.resize( t_array_size, 0. );
                             t_check_mask_next_packet = false;
                         }
                         t_trigger_flag->set_flag( false );
 
-                        t_array_size = t_freq_data->get_array_size();
                         for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                         {
                             t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
@@ -363,11 +389,11 @@ namespace psyllid
                             }
                 #endif*/
                             t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
-                            if( t_real*t_real + t_imag*t_imag >= f_mask[ i_bin ] )
+                            if( t_real*t_real + t_imag*t_imag >= t_mask_buffer[ i_bin ] )
                             {
                                 t_trigger_flag->set_flag( true );
                                 LTRACE( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                       "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << f_mask[ i_bin ] );
+                                       "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ] );
                                 break;
                             }
                         }
@@ -388,8 +414,6 @@ namespace psyllid
 
                 if( t_in_command == stream::s_stop )
                 {
-                    f_mask_mutex.unlock();
-                    t_mask_is_locked = false;
                     LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                     continue;
@@ -402,8 +426,6 @@ namespace psyllid
                     break;
                 }
             }
-            // make sure the mutex is unlocked
-            if( t_mask_is_locked ) f_mask_mutex.unlock();
         }
         catch(...)
         {
@@ -415,29 +437,6 @@ namespace psyllid
     void frequency_mask_trigger::finalize()
     {
         out_buffer< 0 >().finalize();
-        return;
-    }
-
-    void frequency_mask_trigger::calculate_mask()
-    {
-        LDEBUG( plog, "Calculating frequency mask" );
-
-        f_status = status::triggering;
-        f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
-
-        double t_multiplier = f_threshold_snr / (double)f_n_summed;
-        for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
-        {
-/*#ifndef NDEBUG
-            if( i_bin < 5 )
-            {
-                LWARN( plog, "Bin " << i_bin << " -- threshold snr = " << f_threshold_snr << ";  n_summed = " << f_n_summed << ";  multiplier = " << t_multiplier <<
-                        ";  summed value = " << f_mask[ i_bin ] << ";  final mask = " << f_mask[ i_bin ] * t_multiplier );
-            }
-#endif*/
-            f_mask[ i_bin ] = f_mask[ i_bin ] * t_multiplier;
-        }
-
         return;
     }
 

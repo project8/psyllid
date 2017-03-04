@@ -75,7 +75,6 @@ namespace psyllid
     {
         out_buffer< 0 >().initialize( f_time_length );
         out_buffer< 1 >().initialize( f_freq_length );
-        out_buffer< 2 >().initialize( f_freq_length );
         return;
     }
 
@@ -147,7 +146,6 @@ namespace psyllid
             if( ! out_stream< 0 >().set( stream::s_exit ) ) return;
             out_stream< 0 >().set( stream::s_exit );
             out_stream< 1 >().set( stream::s_exit );
-            out_stream< 2 >().set( stream::s_exit );
 
             return;
         }
@@ -179,8 +177,16 @@ namespace psyllid
             //}
 
             a_ctx.f_in_command = in_stream< 0 >().get();
-            if( a_ctx.f_in_command == stream::s_none ) continue;
-            if( a_ctx.f_in_command == stream::s_error ) break;
+            if( a_ctx.f_in_command == stream::s_none )
+            {
+                LTRACE( plog, "tfrr read s_none" );
+                continue;
+            }
+            if( a_ctx.f_in_command == stream::s_error )
+            {
+                LTRACE( plog, "tfrr read s_error" );
+                break;
+            }
 
             LTRACE( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
 
@@ -192,7 +198,6 @@ namespace psyllid
                 // receiving a stop command from upstream overrides that.
                 out_stream< 0 >().set( stream::s_exit );
                 out_stream< 1 >().set( stream::s_exit );
-                out_stream< 2 >().set( stream::s_exit );
                 break;
             }
 
@@ -364,7 +369,6 @@ namespace psyllid
                 // receiving a stop command from upstream overrides that.
                 out_stream< 0 >().set( stream::s_exit );
                 out_stream< 1 >().set( stream::s_exit );
-                out_stream< 2 >().set( stream::s_exit );
                 break;
             }
 
@@ -373,7 +377,7 @@ namespace psyllid
                 LDEBUG( plog, "TF ROACH receiver is stopping" );
                 // Output streams are stopped here because even though this is controlled by the pause/unpause commands,
                 // receiving a stop command from upstream overrides that.
-                if( ! out_stream< 2 >().set( stream::s_stop ) ) break;
+                if( ! out_stream< 1 >().set( stream::s_stop ) ) break;
                 continue;
             }
 
@@ -397,8 +401,8 @@ namespace psyllid
                 if( have_instruction() && use_instruction() == midge::instruction::resume )
                 {
                     LDEBUG( plog, "TF ROACH receiver resuming" );
-                    out_stream< 2 >().data()->set_pkt_in_session( 0 );
-                    if( ! out_stream< 2 >().set( stream::s_start ) ) throw error() << "Stream 2 error while starting";
+                    out_stream< 1 >().data()->set_pkt_in_session( 0 );
+                    if( ! out_stream< 1 >().set( stream::s_start ) ) throw error() << "Stream 2 error while starting";
                     f_freq_session_pkt_counter = 0;
                     f_paused = false;
                 }
@@ -408,7 +412,7 @@ namespace psyllid
                 if( have_instruction() && use_instruction() == midge::instruction::pause )
                 {
                     LDEBUG( plog, "TF ROACH receiver pausing" );
-                    if( ! out_stream< 2 >().set( stream::s_stop ) ) throw error() << "Stream 2 error while stopping";
+                    if( ! out_stream< 1 >().set( stream::s_stop ) ) throw error() << "Stream 2 error while stopping";
                     f_paused = true;
                 }
             }
@@ -447,7 +451,7 @@ namespace psyllid
                     // packet is frequency data
                     //t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
 
-                    a_ctx.f_freq_data = out_stream< 2 >().data();
+                    a_ctx.f_freq_data = out_stream< 1 >().data();
                     a_ctx.f_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
                     ::memcpy( &a_ctx.f_freq_data->packet(), t_roach_packet, a_ctx.f_pkt_size );
 
@@ -457,8 +461,8 @@ namespace psyllid
                            "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
                            "  freqNotTime = " << a_ctx.f_freq_data->get_freq_not_time() <<
                            "  first 8 bins: " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 0 ]  << ", " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 1 ]);
-                    LTRACE( plog, "Frequency data written to stream index <" << out_stream< 2 >().get_current_index() << ">" );
-                    if( ! out_stream< 2 >().set( stream::s_run ) )
+                    LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                    if( ! out_stream< 1 >().set( stream::s_run ) )
                     {
                         LERROR( plog, "Exiting due to stream error" );
                         break;
@@ -475,7 +479,6 @@ namespace psyllid
     {
         out_buffer< 0 >().finalize();
         out_buffer< 1 >().finalize();
-        out_buffer< 2 >().finalize();
         return;
     }
 

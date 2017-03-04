@@ -207,8 +207,15 @@ namespace psyllid
             while( ! is_canceled() )
             {
                 t_command = in_stream< 0 >().get();
-                if( t_command == midge::stream::s_none ) continue;
-                if( t_command == midge::stream::s_error ) break;
+                if( t_command == midge::stream::s_none )
+                {
+                    LTRACE( plog, "Terminator s_none" );
+                    continue;
+                }
+                if( t_command == midge::stream::s_error )
+                {
+                    LTRACE( plog, "Terminator s_error" );
+                    break;
 
                 if( t_command == midge::stream::s_exit )
                 {
@@ -230,6 +237,7 @@ namespace psyllid
 
                 if( t_command == midge::stream::s_run )
                 {
+                    LTRACE( plog, "Terminator run" );
                     continue;
                 }
 
