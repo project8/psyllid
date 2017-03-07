@@ -13,6 +13,8 @@
 #include "param_codec.hh"
 #include "time.hh"
 
+#include "tk_spline.hh"
+
 #include <cmath>
 
 using midge::stream;
@@ -27,6 +29,7 @@ namespace psyllid
             f_length( 10 ),
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 3. ),
+            f_n_spline_points( 20 ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_n_summed( 0 ),
@@ -248,38 +251,46 @@ namespace psyllid
 
                             if( f_n_summed == f_n_packets_for_mask )
                             {
+                                LDEBUG( plog, "Calculating spline for frequency mask" );
+
+                                double t_multiplier = f_threshold_snr / (double)f_n_summed;
+                                LDEBUG( plog, "Size: " << t_mask_buffer.size() << "   Multiplier = " << t_multiplier << " = (threshold_snr) " << f_threshold_snr << " / (n_summed) " << f_n_summed );
+
+                                std::vector< double > t_x_vals( f_n_spline_points );
+                                std::vector< double > t_y_vals( f_n_spline_points );
+                                unsigned t_n_bins_per_point = t_mask_buffer.size() / f_n_spline_points;
+
+                                // calculate spline points
+                                for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
+                                {
+                                    unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
+                                    unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? t_mask_buffer.size() : t_bin_begin + t_n_bins_per_point;
+                                    double t_mean = 0.;
+                                    for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
+                                    {
+                                        t_mean += t_mask_buffer[ i_bin ];
+                                    }
+                                    t_mean *= t_multiplier / (double)(t_bin_end - t_bin_begin);
+                                    t_y_vals[ i_spline_point ] = t_mean;
+                                    t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
+                                }
+
+                                // create the spline
+                                tk::spline t_spline;
+                                t_spline.set_points( t_x_vals, t_y_vals );
+
                                 f_mask_mutex.lock();
                                 LDEBUG( plog, "Calculating frequency mask" );
 
                                 f_mask.resize( t_mask_buffer.size() );
-                                double t_multiplier = f_threshold_snr / (double)f_n_summed;
                                 for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
                                 {
-                        /*#ifndef NDEBUG
-                                    if( i_bin < 5 )
-                                    {
-                                        LWARN( plog, "Bin " << i_bin << " -- threshold snr = " << f_threshold_snr << ";  n_summed = " << f_n_summed << ";  multiplier = " << t_multiplier <<
-                                                ";  summed value = " << f_mask[ i_bin ] << ";  final mask = " << f_mask[ i_bin ] * t_multiplier );
-                                    }
-                        #endif*/
-                                    f_mask[ i_bin ] = t_mask_buffer[ i_bin ] * t_multiplier;
+                                    f_mask[ i_bin ] = t_spline( i_bin );
                                 }
-                                LWARN( plog, "Is the mask empty? " << f_mask.empty() );
+
                                 f_mask_mutex.unlock();
                             }
                         }
-
-                        // advance the output stream with the trigger set to false
-                        // since something else is presumably looking at the time stream, and it needs to stay synchronized
-                        //t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
-                        //t_trigger_flag->set_flag( false );
-
-                        //LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
-                        //if( ! out_stream< 0 >().set( stream::s_run ) )
-                        //{
-                        //    LERROR( plog, "Exiting due to stream error" );
-                        //    throw error() << "Stream error while adding to mask";
-                        //}
                     }
                     catch( error& e )
                     {
@@ -458,6 +469,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Configuring frequency_mask_trigger with:\n" << a_config );
         a_node->set_n_packets_for_mask( a_config.get_value( "n-packets-for-mask", a_node->get_n_packets_for_mask() ) );
+        a_node->set_n_spline_points( a_config.get_value( "n-spline-points", a_node->get_n_spline_points() ) );
 
         if( a_config.has( "threshold-ampl-snr" ) )
         {
@@ -480,6 +492,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Dumping configuration for frequency_mask_trigger" );
         a_config.add( "n-packets-for-mask", new scarab::param_value( a_node->get_n_packets_for_mask() ) );
+        a_config.add( "n-spline-points", new scarab::param_value( a_node->get_n_spline_points() ) );
         a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         return;

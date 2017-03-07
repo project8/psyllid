@@ -56,6 +56,7 @@ namespace psyllid
      - "threshold-ampl-snr": float -- The threshold SNR, given as an amplitude SNR
      - "threshold-power-snr": float -- The threshold SNR, given as a power SNR
      - "threshold-dB": float -- The threshold SNR, given as a dB factor
+     - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
 
      Available DAQ commands:
      - "update-mask" (no args) -- Switch the execution mode to updating the trigger mask
@@ -85,6 +86,7 @@ namespace psyllid
             accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
             mv_accessible_noset( double, threshold_snr );
+            mv_accessible( unsigned, n_spline_points );
 
         public:
             void switch_to_update_mask();
