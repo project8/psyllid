@@ -97,10 +97,16 @@ namespace psyllid
             void finalize();
 
         private:
-            void exe_apply_threshold( midge::diptera* a_midge );
-            void exe_add_to_mask( midge::diptera* a_midge );
+            struct exe_func_context
+            {
+                midge::diptera* f_midge;
+                bool f_first_packet_after_start;
+            };
 
-            void (frequency_mask_trigger::*f_exe_func)( midge::diptera* a_midge );
+            void exe_apply_threshold( exe_func_context& a_ctx );
+            void exe_add_to_mask( exe_func_context& a_ctx );
+
+            void (frequency_mask_trigger::*f_exe_func)( exe_func_context& a_ctx );
             std::mutex f_exe_func_mutex;
             std::atomic< bool > f_break_exe_func;
 

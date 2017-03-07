@@ -144,6 +144,10 @@ namespace psyllid
 
     void frequency_mask_trigger::execute( midge::diptera* a_midge )
     {
+        exe_func_context t_ctx;
+        t_ctx.f_midge = a_midge;
+        t_ctx.f_first_packet_after_start = false;
+
         try
         {
             LINFO( plog, "Starting main loop" );
@@ -152,7 +156,7 @@ namespace psyllid
             {
                 f_break_exe_func.store( false );
                 f_exe_func_mutex.lock();
-                (this->*f_exe_func)( a_midge );
+                (this->*f_exe_func)( t_ctx );
             }
         }
         catch( error& e )
@@ -162,7 +166,7 @@ namespace psyllid
         return;
     }
 
-    void frequency_mask_trigger::exe_add_to_mask( midge::diptera* a_midge )
+    void frequency_mask_trigger::exe_add_to_mask( exe_func_context& a_ctx )
     {
         f_exe_func_mutex.unlock();
 
@@ -171,7 +175,6 @@ namespace psyllid
             midge::enum_t t_in_command = stream::s_none;
             freq_data* t_freq_data = nullptr;
             //trigger_flag* t_trigger_flag = nullptr;
-            bool t_clear_mask_next_packet = false;
             double t_real = 0., t_imag = 0.;
             unsigned t_array_size = 0;
             std::vector< double > t_mask_buffer;
@@ -192,7 +195,7 @@ namespace psyllid
                 {
                     LDEBUG( plog, "Starting mask update" ) //; output stream index " << out_stream< 0 >().get_current_index() );
                     //if( ! out_stream< 0 >().set( stream::s_start ) ) break;
-                    t_clear_mask_next_packet = true;
+                    a_ctx.f_first_packet_after_start = true;
                     f_n_summed = 0;
                     t_mask_buffer.clear();
                     continue;
@@ -215,15 +218,16 @@ namespace psyllid
                                    "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
                                    "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
 
-                            if( t_clear_mask_next_packet )
+                            if( a_ctx.f_first_packet_after_start )
                             {
                                 t_array_size = t_freq_data->get_array_size();
+                                LWARN( plog, "changing the size of the array buffer to " << t_array_size );
                                 t_mask_buffer.resize( t_array_size );
                                 for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                                 {
                                     t_mask_buffer[ i_bin ] = 0.;
                                 }
-                                t_clear_mask_next_packet = false;
+                                a_ctx.f_first_packet_after_start = false;
                             }
                             for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                             {
@@ -260,6 +264,7 @@ namespace psyllid
                         #endif*/
                                     f_mask[ i_bin ] = t_mask_buffer[ i_bin ] * t_multiplier;
                                 }
+                                LWARN( plog, "Is the mask empty? " << f_mask.empty() );
                                 f_mask_mutex.unlock();
                             }
                         }
@@ -309,12 +314,12 @@ namespace psyllid
         }
         catch(...)
         {
-            if( a_midge ) a_midge->throw_ex( std::current_exception() );
+            if( a_ctx.f_midge ) a_ctx.f_midge->throw_ex( std::current_exception() );
             else throw;
         }
     }
 
-    void frequency_mask_trigger::exe_apply_threshold( midge::diptera* a_midge )
+    void frequency_mask_trigger::exe_apply_threshold( exe_func_context& a_ctx )
     {
         f_exe_func_mutex.unlock();
 
@@ -323,7 +328,6 @@ namespace psyllid
             midge::enum_t t_in_command = stream::s_none;
             freq_data* t_freq_data = nullptr;
             trigger_flag* t_trigger_flag = nullptr;
-            bool t_check_mask_next_packet = false;
             double t_real = 0., t_imag = 0.;
             unsigned t_array_size = 0;
 
@@ -355,7 +359,7 @@ namespace psyllid
                 {
                     LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_start ) ) break;
-                    t_check_mask_next_packet = true;
+                    a_ctx.f_first_packet_after_start = true;
                     continue;
                 }
 
@@ -369,11 +373,11 @@ namespace psyllid
                     try
                     {
                         t_array_size = t_freq_data->get_array_size();
-                        if( t_check_mask_next_packet )
+                        if( a_ctx.f_first_packet_after_start )
                         {
                             LDEBUG( plog, "Resizing mask to " << t_array_size << " bins" );
                             if( t_mask_buffer.size() != t_array_size ) t_mask_buffer.resize( t_array_size, 0. );
-                            t_check_mask_next_packet = false;
+                            a_ctx.f_first_packet_after_start = false;
                         }
                         t_trigger_flag->set_flag( false );
 
@@ -429,7 +433,7 @@ namespace psyllid
         }
         catch(...)
         {
-            if( a_midge ) a_midge->throw_ex( std::current_exception() );
+            if( a_ctx.f_midge ) a_ctx.f_midge->throw_ex( std::current_exception() );
             else throw;
         }
     }
