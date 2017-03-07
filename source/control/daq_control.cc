@@ -262,21 +262,52 @@ namespace psyllid
     {
         LINFO( plog, "Run is commencing" );
 
+        const unsigned t_sub_duration = 100;
+        unsigned t_n_sub_durations = 0;
+        unsigned t_duration_remainder = 0;
+        if( a_duration != 0 )
+        {
+            t_n_sub_durations = a_duration / t_sub_duration; // number of complete sub-durations, not including the remainder
+            t_duration_remainder = a_duration - t_n_sub_durations * t_sub_duration;
+        }
+
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
 
         set_status( status::running );
         f_midge_pkg->instruct( midge::instruction::resume );
 
+        std::cv_status t_wait_return = std::cv_status::timeout;
+
         if( a_duration == 0 )
         {
             LDEBUG( plog, "Untimed run stopper in use" );
             f_run_stopper.wait( t_run_stop_lock );
+            while( t_wait_return == std::cv_status::timeout && ! is_canceled() )
+            {
+                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
+            }
         }
         else
         {
             LDEBUG( plog, "Timed run stopper in use; limit is " << a_duration << " ms" );
-            f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( a_duration ) );
+            for( unsigned i_sub_duration = 0;
+                    i_sub_duration < t_n_sub_durations && t_wait_return == std::cv_status::timeout && ! is_canceled();
+                    ++i_sub_duration )
+            {
+                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
+            }
+            if( t_wait_return == std::cv_status::timeout && ! is_canceled() )
+            {
+                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_duration_remainder ) );
+            }
         }
+
+        if( t_wait_return != std::cv_status::timeout || is_canceled() )
+        {
+            LDEBUG( plog, "Run was cancelled or manually stopped" );
+            return;
+        }
+
         LDEBUG( plog, "Run stopper has been released" );
 
         f_midge_pkg->instruct( midge::instruction::pause );
