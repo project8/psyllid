@@ -75,7 +75,6 @@ namespace psyllid
         connection( "prf.out_0:tfrr.in_0" );
         connection( "tfrr.out_0:ew.in_0" );
         connection( "tfrr.out_1:fmt.in_0" );
-        connection( "tfrr.out_2:fmt.in_1" );
         connection( "fmt.out_0:ew.in_1" );
     }
 #endif

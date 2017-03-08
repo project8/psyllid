@@ -23,7 +23,7 @@ streams:
             v-offset: 0.0
             v-range: 0.5
   
-        prs:
+        prf:
             length: 10
             port: 23530
             interface: eth1
