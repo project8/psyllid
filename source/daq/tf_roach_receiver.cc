@@ -144,7 +144,6 @@ namespace psyllid
 
             LDEBUG( plog, "Exiting output streams" );
             if( ! out_stream< 0 >().set( stream::s_exit ) ) return;
-            out_stream< 0 >().set( stream::s_exit );
             out_stream< 1 >().set( stream::s_exit );
 
             return;

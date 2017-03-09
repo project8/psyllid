@@ -282,7 +282,11 @@ namespace psyllid
         {
             LDEBUG( plog, "Untimed run stopper in use" );
             f_run_stopper.wait( t_run_stop_lock );
-            while( t_wait_return == std::cv_status::timeout && ! is_canceled() )
+            // conditions that will break the loop:
+            //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
+            //   - daq_control has been canceled
+            //   - daq_control has been deactivated
+            while( t_wait_return == std::cv_status::timeout && ! is_canceled() && get_status() == status::activated )
             {
                 t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
             }
@@ -290,23 +294,34 @@ namespace psyllid
         else
         {
             LDEBUG( plog, "Timed run stopper in use; limit is " << a_duration << " ms" );
+            // all but the last sub-duration last for t_sub_duration ms
+            // conditions that will break the loop:
+            //   - all sub-durations have been completed
+            //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
+            //   - daq_control has been canceled
+            //   - daq_control has been deactivated
             for( unsigned i_sub_duration = 0;
-                    i_sub_duration < t_n_sub_durations && t_wait_return == std::cv_status::timeout && ! is_canceled();
+                    i_sub_duration < t_n_sub_durations && t_wait_return == std::cv_status::timeout && ! is_canceled() && get_status() == status::activated;
                     ++i_sub_duration )
             {
                 t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
             }
-            if( t_wait_return == std::cv_status::timeout && ! is_canceled() )
+            // the last sub-duration is for a different amount of time (t_duration_remainder) than the standard sub-duration (t_sub_duration)
+            if( t_wait_return == std::cv_status::timeout && ! is_canceled() && get_status() == status::activated )
             {
                 t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_duration_remainder ) );
             }
         }
 
-        if( t_wait_return != std::cv_status::timeout || is_canceled() )
+        // if daq_control has been canceled or deactivated, assume that midge has been canceled by other methods, and this function should just exit
+        if( is_canceled() || get_status() != status::activated )
         {
-            LDEBUG( plog, "Run was cancelled or manually stopped" );
+            LDEBUG( plog, "Run was already cancelled or daq_control has been deactivated" );
             return;
         }
+
+        // if we've reached here, we need to pause midge.
+        // reasons for this include the timer has run out in a timed run, or the run has been manually stopped
 
         LDEBUG( plog, "Run stopper has been released" );
 

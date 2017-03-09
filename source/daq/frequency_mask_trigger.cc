@@ -224,7 +224,6 @@ namespace psyllid
                             if( a_ctx.f_first_packet_after_start )
                             {
                                 t_array_size = t_freq_data->get_array_size();
-                                LWARN( plog, "changing the size of the array buffer to " << t_array_size );
                                 t_mask_buffer.resize( t_array_size );
                                 for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                                 {
