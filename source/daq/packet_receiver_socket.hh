@@ -66,7 +66,6 @@ namespace psyllid
 
         private:
             void cleanup_socket();
-            virtual void do_cancellation();
 
             int f_socket;
             sockaddr_in* f_address;

@@ -91,11 +91,11 @@ namespace psyllid
                 LTRACE( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
                 // do this in a while loop so we don't re-do the time stream get()
-                while( t_trig_command == stream::s_none )
+                while( t_trig_command == stream::s_none && ! is_canceled() )
                 {
                     t_trig_command = in_stream< 1 >().get();
                 }
-                if( t_trig_command == stream::s_error ) break;
+                if( t_trig_command == stream::s_error || is_canceled() ) break;
 
                 LTRACE( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
     /*
@@ -131,7 +131,7 @@ namespace psyllid
                         if( t_time_command != stream::s_stop ) t_time_command = in_stream< 0 >().get();
                         if( ! (t_trig_command == stream::s_stop && t_time_command == stream::s_stop) )
                         {
-                            LTRACE( plog, "Did not receive second stop command: trigger stream: " << t_trig_command << "; time stream: " << t_time_command <<
+                            LWARN( plog, "Did not receive second stop command: trigger stream: " << t_trig_command << "; time stream: " << t_time_command <<
                                     ". This may cause thread deadlock" );
                         }
                     }

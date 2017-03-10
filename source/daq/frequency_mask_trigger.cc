@@ -129,6 +129,7 @@ namespace psyllid
             throw error() << "Unable to create output-codec for JSON";
         }
 
+        LERROR( plog, "Mask file:\n" << t_output_node );
         if( ! t_json_codec->write_file( t_output_node, a_filename ) )
         {
             throw error() << "Unable to write mask to file <" << a_filename << ">";
@@ -321,6 +322,16 @@ namespace psyllid
                     break;
                 }
             }
+
+            LINFO( plog, "FMT is exiting" );
+
+            LDEBUG( plog, "Stopping output stream" );
+            if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+
+            LDEBUG( plog, "Exiting output stream" );
+            out_stream< 0 >().set( stream::s_exit );
+
+            return;
         }
         catch(...)
         {
@@ -440,6 +451,16 @@ namespace psyllid
                     break;
                 }
             }
+
+            LINFO( plog, "FMT is exiting" );
+
+            LDEBUG( plog, "Stopping output stream" );
+            if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+
+            LDEBUG( plog, "Exiting output stream" );
+            out_stream< 0 >().set( stream::s_exit );
+
+            return;
         }
         catch(...)
         {

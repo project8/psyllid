@@ -90,10 +90,10 @@ namespace psyllid
                 size_t f_pkt_size;
             };
 
-            void exe_time_and_freq( exe_func_context& a_ctx );
-            void exe_freq_only( exe_func_context& a_ctx );
+            bool exe_time_and_freq( exe_func_context& a_ctx );
+            bool exe_freq_only( exe_func_context& a_ctx );
 
-            void (tf_roach_receiver::*f_exe_func)( exe_func_context& a_ctx );
+            bool (tf_roach_receiver::*f_exe_func)( exe_func_context& a_ctx );
             std::mutex f_exe_func_mutex;
             std::atomic< bool > f_break_exe_func;
 

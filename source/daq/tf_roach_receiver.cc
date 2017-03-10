@@ -127,7 +127,7 @@ namespace psyllid
                 {
                     f_break_exe_func.store( false );
                     f_exe_func_mutex.lock();
-                    (this->*f_exe_func)( t_ctx );
+                    if( ! (this->*f_exe_func)( t_ctx ) ) return;
                 }
             }
             catch( error& e )
@@ -157,7 +157,7 @@ namespace psyllid
         return;
     }
 
-    void tf_roach_receiver::exe_time_and_freq( exe_func_context& a_ctx )
+    bool tf_roach_receiver::exe_time_and_freq( exe_func_context& a_ctx )
     {
         f_exe_func_mutex.unlock();
 
@@ -197,7 +197,7 @@ namespace psyllid
                 // receiving a stop command from upstream overrides that.
                 out_stream< 0 >().set( stream::s_exit );
                 out_stream< 1 >().set( stream::s_exit );
-                break;
+                return false;
             }
 
             if( a_ctx.f_in_command == stream::s_stop )
@@ -333,9 +333,10 @@ namespace psyllid
             } // if block for run command
         } // main while loop
 
+        return true;
     }
 
-    void tf_roach_receiver::exe_freq_only( exe_func_context& a_ctx )
+    bool tf_roach_receiver::exe_freq_only( exe_func_context& a_ctx )
     {
         f_exe_func_mutex.unlock();
 
@@ -368,7 +369,7 @@ namespace psyllid
                 // receiving a stop command from upstream overrides that.
                 out_stream< 0 >().set( stream::s_exit );
                 out_stream< 1 >().set( stream::s_exit );
-                break;
+                return false;
             }
 
             if( a_ctx.f_in_command == stream::s_stop )
@@ -471,7 +472,7 @@ namespace psyllid
             } // if block for run command
         } // main while loop
 
-        return;
+        return true;
     }
 
     void tf_roach_receiver::finalize()
