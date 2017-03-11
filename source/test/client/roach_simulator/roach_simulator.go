@@ -143,16 +143,16 @@ func main() {
             binary.Write(timePayloadBuf, binary.LittleEndian, value)
             value = uint8(5)
             binary.Write(timePayloadBuf, binary.LittleEndian, value)
-            value = uint8(1)
+            value = uint8(200. * truePayloadIndex / int(PayloadSize))
             binary.Write(freqPayloadBuf, binary.LittleEndian, value)
-            value = uint8(2)
+            value = uint8(1)
             binary.Write(freqPayloadBuf, binary.LittleEndian, value)
             if iWord == 1 {
                 //fmt.Printf( "%v ", timePayload64Bit[iWord])
                 timePayloadFirst8[iByte] = int8(128.0 * math.Sin( float64(truePayloadIndex/2) * math.Pi / 16.0 ))
                 timePayloadFirst8[iByte+1] = 5
-                freqPayloadFirst8[iByte] = 1
-                freqPayloadFirst8[iByte+1] = 2
+                freqPayloadFirst8[iByte] = int8(200. * truePayloadIndex / int(PayloadSize))
+                freqPayloadFirst8[iByte+1] = 1
             }
 	    }
 	    //if iWord < 10 {
