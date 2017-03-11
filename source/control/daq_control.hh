@@ -77,7 +77,9 @@ namespace psyllid
             void apply_config( const std::string& a_node_name, const scarab::param_node& a_config );
             void dump_config( const std::string& a_node_name, scarab::param_node& a_config );
 
-            void run_command( const std::string& a_node_name, const scarab::param_node& a_cmd );
+            /// Instruct a node to run a command
+            /// Throws psyllid::error if the command fails; returns false if the command is not recognized
+            bool run_command( const std::string& a_node_name, const std::string& a_cmd, const scarab::param_node& a_args );
 
         public:
             bool handle_activate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );

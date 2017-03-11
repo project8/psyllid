@@ -223,12 +223,6 @@ namespace psyllid
         return;
     }
 
-    void packet_receiver_socket::do_cancellation()
-    {
-        return;
-    }
-
-
 
     packet_receiver_socket_binding::packet_receiver_socket_binding() :
             _node_binding< packet_receiver_socket, packet_receiver_socket_binding >()

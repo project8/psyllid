@@ -88,16 +88,16 @@ namespace psyllid
                 if( t_time_command == stream::s_none ) continue;
                 if( t_time_command == stream::s_error ) break;
 
-                LDEBUG( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
+                LTRACE( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
                 // do this in a while loop so we don't re-do the time stream get()
-                while( t_trig_command == stream::s_none )
+                while( t_trig_command == stream::s_none && ! is_canceled() )
                 {
                     t_trig_command = in_stream< 1 >().get();
                 }
-                if( t_trig_command == stream::s_error ) break;
+                if( t_trig_command == stream::s_error || is_canceled() ) break;
 
-                LDEBUG( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
+                LTRACE( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
     /*
                 if( t_time_command != t_trig_command )
                 {
@@ -122,6 +122,19 @@ namespace psyllid
 
                 if( t_trig_command == stream::s_stop || t_time_command == stream::s_stop )
                 {
+                    LTRACE( plog, "Received at least one stop command" );
+                    if( ! (t_trig_command == stream::s_stop && t_time_command == stream::s_stop) )
+                    {
+                        LTRACE( plog, "Pausing to allow second stop command to arrive" );
+                        std::this_thread::sleep_for( std::chrono::milliseconds( 500 ) );
+                        if( t_trig_command != stream::s_stop ) t_trig_command = in_stream< 1 >().get();
+                        if( t_time_command != stream::s_stop ) t_time_command = in_stream< 0 >().get();
+                        if( ! (t_trig_command == stream::s_stop && t_time_command == stream::s_stop) )
+                        {
+                            LWARN( plog, "Did not receive second stop command: trigger stream: " << t_trig_command << "; time stream: " << t_time_command <<
+                                    ". This may cause thread deadlock" );
+                        }
+                    }
                     LDEBUG( plog, "Egg writer is stopping" );
 
                     if( t_swrap_ptr )
@@ -213,7 +226,7 @@ namespace psyllid
 
                     if( t_time_id != t_trig_id )
                     {
-                        LDEBUG( plog, "Mismatch between time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
+                        LTRACE( plog, "Mismatch between time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
                         while( t_time_id < t_trig_id )
                         {
                             LDEBUG( plog, "Moving time stream forward" );
@@ -223,7 +236,7 @@ namespace psyllid
                         }
                         while( t_time_id > t_trig_id )
                         {
-                            LDEBUG( plog, "Moving trig stream forward" );
+                            LTRACE( plog, "Moving trig stream forward" );
                             t_trig_command = in_stream< 1 >().get();
                             t_trig_data = in_stream< 1 >().data();
                             t_trig_id = t_trig_data->get_id();
@@ -232,13 +245,13 @@ namespace psyllid
                         {
                             throw midge::error() << "Unable to match time and trigger streams";
                         }
-                        LDEBUG( plog, "Mismatch resolved: time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
+                        LTRACE( plog, "Mismatch resolved: time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
                     }
 
 
                     if( t_trig_data->get_flag() )
                     {
-                        LDEBUG( plog, "Triggered packet, id <" << t_trig_data->get_id() << ">" );
+                        LTRACE( plog, "Triggered packet, id <" << t_trig_data->get_id() << ">" );
 
                         if( t_is_new_event ) LDEBUG( plog, "New event" );
                         t_record_ptr->SetRecordId( t_time_id );
@@ -249,7 +262,7 @@ namespace psyllid
                     }
                     else
                     {
-                        LDEBUG( plog, "Untriggered packet, id <" << t_trig_id << ">" );
+                        LTRACE( plog, "Untriggered packet, id <" << t_trig_id << ">" );
                         t_is_new_event = true;
                     }
 

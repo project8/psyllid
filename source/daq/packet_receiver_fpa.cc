@@ -403,11 +403,6 @@ namespace psyllid
         return;
     }
 
-    void packet_receiver_fpa::do_cancellation()
-    {
-        return;
-    }
-
     void packet_receiver_fpa::cleanup_fpa()
     {
         if( f_ring.f_map != nullptr )

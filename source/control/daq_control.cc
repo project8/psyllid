@@ -262,21 +262,67 @@ namespace psyllid
     {
         LINFO( plog, "Run is commencing" );
 
+        const unsigned t_sub_duration = 100;
+        unsigned t_n_sub_durations = 0;
+        unsigned t_duration_remainder = 0;
+        if( a_duration != 0 )
+        {
+            t_n_sub_durations = a_duration / t_sub_duration; // number of complete sub-durations, not including the remainder
+            t_duration_remainder = a_duration - t_n_sub_durations * t_sub_duration;
+        }
+
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
 
         set_status( status::running );
         f_midge_pkg->instruct( midge::instruction::resume );
 
+        std::cv_status t_wait_return = std::cv_status::timeout;
+
         if( a_duration == 0 )
         {
             LDEBUG( plog, "Untimed run stopper in use" );
             f_run_stopper.wait( t_run_stop_lock );
+            // conditions that will break the loop:
+            //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
+            //   - daq_control has been canceled
+            //   - daq_control has been deactivated
+            while( t_wait_return == std::cv_status::timeout && ! is_canceled() && get_status() == status::activated )
+            {
+                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
+            }
         }
         else
         {
             LDEBUG( plog, "Timed run stopper in use; limit is " << a_duration << " ms" );
-            f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( a_duration ) );
+            // all but the last sub-duration last for t_sub_duration ms
+            // conditions that will break the loop:
+            //   - all sub-durations have been completed
+            //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
+            //   - daq_control has been canceled
+            //   - daq_control has been deactivated
+            for( unsigned i_sub_duration = 0;
+                    i_sub_duration < t_n_sub_durations && t_wait_return == std::cv_status::timeout && ! is_canceled() && get_status() == status::activated;
+                    ++i_sub_duration )
+            {
+                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
+            }
+            // the last sub-duration is for a different amount of time (t_duration_remainder) than the standard sub-duration (t_sub_duration)
+            if( t_wait_return == std::cv_status::timeout && ! is_canceled() && get_status() == status::activated )
+            {
+                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_duration_remainder ) );
+            }
         }
+
+        // if daq_control has been canceled or deactivated, assume that midge has been canceled by other methods, and this function should just exit
+        if( is_canceled() || get_status() != status::activated )
+        {
+            LDEBUG( plog, "Run was already cancelled or daq_control has been deactivated" );
+            return;
+        }
+
+        // if we've reached here, we need to pause midge.
+        // reasons for this include the timer has run out in a timed run, or the run has been manually stopped
+
         LDEBUG( plog, "Run stopper has been released" );
 
         f_midge_pkg->instruct( midge::instruction::pause );
@@ -369,34 +415,33 @@ namespace psyllid
         return;
     }
 
-    void daq_control::run_command( const std::string& a_node_name, const scarab::param_node& a_cmd )
+    bool daq_control::run_command( const std::string& a_node_name, const std::string& a_cmd, const scarab::param_node& a_args )
     {
         if( f_node_bindings == nullptr )
         {
-            throw error() << "Can't run command on node <" << a_node_name << ">: node bindings aren't available";
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: node bindings aren't available";
         }
 
         if( f_node_bindings == nullptr )
         {
-            throw error() << "Can't run command on node <" << a_node_name << ">: node bindings aren't available";
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: node bindings aren't available";
         }
 
         active_node_bindings::iterator t_binding_it = f_node_bindings->find( a_node_name );
         if( t_binding_it == f_node_bindings->end() )
         {
-            throw error() << "Can't run command on node <" << a_node_name << ">: did not find node";
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: did not find node";
         }
 
         try
         {
-            LDEBUG( plog, "Running command on active node <" << a_node_name << ">" );
-            t_binding_it->second.first->run_command( t_binding_it->second.second, a_cmd );
+            LDEBUG( plog, "Running command <" << a_cmd << "> on active node <" << a_node_name << ">" );
+            return t_binding_it->second.first->run_command( t_binding_it->second.second, a_cmd, a_args );
         }
         catch( std::exception& e )
         {
-            throw error() << "Can't run command on node <" << a_node_name << ">: " << e.what();
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: " << e.what();
         }
-        return;
     }
 
 
@@ -607,24 +652,34 @@ namespace psyllid
         std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
         a_request->parsed_rks().pop_front();
 
-        scarab::param_node t_command_node( a_request->get_payload() );
-        t_command_node.add( "cmd", new param_value( a_request->parsed_rks().front() ) );
+        scarab::param_node t_args_node( a_request->get_payload() );
+        std::string t_command( a_request->parsed_rks().front() );
         a_request->parsed_rks().pop_front();
 
-        LDEBUG( plog, "Performing run-command for active node <" << t_target_node << ">; command:\n" << t_command_node );
+        LDEBUG( plog, "Performing run-command <" << t_command << "> for active node <" << t_target_node << ">; args:\n" << t_args_node );
 
+        bool t_return = false;
         try
         {
-            run_command( t_target_node, t_command_node );
-            a_reply_pkg.f_payload.merge( t_command_node );
+            t_return = run_command( t_target_node, t_command, t_args_node );
+            a_reply_pkg.f_payload.merge( t_args_node );
+            a_reply_pkg.f_payload.add( "command", new scarab::param_value( t_command ) );
         }
         catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform run-command request: ") + e.what() );
         }
 
-        LDEBUG( plog, "Active run-command execution was successful" );
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed active run-command execution" );
+        if( t_return )
+        {
+            LDEBUG( plog, "Active run-command execution was successful" );
+            return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed active run-command execution" );
+        }
+        else
+        {
+            LWARN( plog, "Active run-command execution failed" );
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_method, "Command was not recognized" );
+        }
     }
 
     bool daq_control::handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )

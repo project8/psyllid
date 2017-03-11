@@ -51,6 +51,9 @@ pbuilder_add_submodule( Dripline dripline-cpp )
 # Monarch
 pbuilder_add_submodule( Monarch monarch )
 
+# tk_spline
+include_directories( BEFORE ${PROJECT_SOURCE_DIR}/external/tk_spline )
+
 
 ###########
 # psyllid #
