@@ -40,8 +40,8 @@ namespace psyllid
             f_acq_rate( 100 ),
             f_v_offset( 0. ),
             f_v_range( 0.5 ),
-            f_center_freq( 0. ),
-            f_freq_range( 100. )
+            f_center_freq( 50.e6 ),
+            f_freq_range( 100.e6 )
     {
     }
 
