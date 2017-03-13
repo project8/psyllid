@@ -17,6 +17,10 @@ namespace psyllid
 
 
     butterfly_house::butterfly_house() :
+            control_access(),
+            f_file_infos(),
+            f_mw_ptrs(),
+            f_writers(),
             f_butterflies(),
             f_house_mutex()
     {
@@ -25,6 +29,77 @@ namespace psyllid
     butterfly_house::~butterfly_house()
     {
     }
+
+
+    void butterfly_house::prepare_files( const scarab::param_node* a_files_config )
+    {
+        // default is 1 file
+        f_file_infos.clear();
+        f_file_infos.resize( a_files_config->get_value( "n-files", 1U ) );
+        for( file_infos_it fi_it = f_file_infos.begin(); fi_it != f_file_infos.end(); ++fi_it )
+        {
+            std::stringstream t_filename_sstr;
+            t_filename_sstr << "psyllid_out_" << fi_it - f_file_infos.begin() << ".egg";
+            fi_it->f_filename = t_filename_sstr.str();
+            fi_it->f_description = "";
+        }
+        return;
+    }
+
+    void butterfly_house::start_files()
+    {
+        unsigned t_run_duration = 0;
+        if( ! f_daq_control.expired() )
+        {
+            std::shared_ptr< daq_control > t_daq_control = f_daq_control.lock();
+            //f_filename = t_daq_control->run_filename();
+            //f_description = t_daq_control->run_description();
+            t_run_duration = t_daq_control->get_run_duration();
+            //LDEBUG( plog, "Updated filename, description, and duration from daq_control" );
+        }
+        else
+        {
+            LERROR( plog, "Unable to get access to the DAQ control" );
+            throw error() << "Butterfly house is unable to get access to the DAQ control";
+        }
+
+        f_mw_ptrs.clear();
+        f_mw_ptrs.resize( f_file_infos.size() );
+        for( unsigned t_file_num = 0; t_file_num < f_file_infos.size(); ++t_file_num )
+        {
+            f_mw_ptrs[ t_file_num ] = declare_file( f_file_infos[ t_file_num ].f_filename );
+            f_mw_ptrs[ t_file_num ]->
+        }
+    }
+
+    void butterfly_house::finish_files()
+    {
+        for( auto file_it = f_mw_ptrs.begin(); file_it != f_mw_ptrs.end(); ++file_it )
+        {
+
+        }
+    }
+
+    void butterfly_house::register_writer( egg_writer* a_writer, unsigned a_file_num )
+    {
+        //TODO: what happens if the writer has already been registered for this file number
+        f_writers.insert( std::pair< egg_writer*, unsigned >( a_writer, a_file_num ) );
+        return;
+    }
+
+    void butterfly_house::unregister_writer( egg_writer* a_writer )
+    {
+        //TODO: can this be done w/out iterating?
+        //TODO: does erasing one destroy the other iterators?
+        auto t_range = f_writers.equal_range( a_writer );
+        for( auto it_writer = t_range.first; it_writer != t_range.second; ++it_writer )
+        {
+            f_writers.erase( it_writer );
+        }
+        return;
+    }
+
+
 
     monarch_wrap_ptr butterfly_house::declare_file( const std::string& a_filename )
     {

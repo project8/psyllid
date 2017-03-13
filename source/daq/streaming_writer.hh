@@ -8,6 +8,7 @@
 #ifndef PSYLLID_STREAMING_WRITER_HH_
 #define PSYLLID_STREAMING_WRITER_HH_
 
+#include "butterfly_house.hh"
 #include "control_access.hh"
 #include "node_builder.hh"
 #include "time_data.hh"
@@ -52,13 +53,15 @@ namespace psyllid
     */
     class streaming_writer :
             public midge::_consumer< streaming_writer, typelist_1( time_data ) >,
-            public control_access
+            public control_access,
+            public egg_writer
     {
         public:
             streaming_writer();
             virtual ~streaming_writer();
 
         public:
+            mv_accessible( unsigned, file_num );
             mv_accessible( unsigned, max_file_size_mb );
             mv_referrable( std::string, filename ); /// used if f_daq_control is not set
             mv_referrable( std::string, description ); /// used if f_daq_control is not set

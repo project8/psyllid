@@ -1,13 +1,14 @@
 /*
- * egg_writer.hh
+ * triggered_writer.hh
  *
  *  Created on: Dec 30, 2015
  *      Author: nsoblath
  */
 
-#ifndef PSYLLID_EGG_WRITER_HH_
-#define PSYLLID_EGG_WRITER_HH_
+#ifndef PSYLLID_TRIGGERED_WRITER_HH_
+#define PSYLLID_TRIGGERED_WRITER_HH_
 
+#include "butterfly_house.hh"
 #include "control_access.hh"
 #include "node_builder.hh"
 #include "trigger_flag.hh"
@@ -19,7 +20,7 @@ namespace psyllid
 {
 
     /*!
-     @class egg_writer
+     @class triggered_writer
      @author N. S. Oblath
 
      @brief A consumer to that writes triggered time ROACH packets to an egg file.
@@ -28,7 +29,7 @@ namespace psyllid
 
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
-     Node type: "egg-writer"
+     Node type: "triggered-writer"
 
      Available configuration values:
      - "file-size-limit-mb": uint -- Not used currently
@@ -52,15 +53,17 @@ namespace psyllid
 
      Output Streams: (none)
     */
-    class egg_writer :
-            public midge::_consumer< egg_writer, typelist_2( time_data, trigger_flag ) >,
-            public control_access
+    class triggered_writer :
+            public midge::_consumer< triggered_writer, typelist_2( time_data, trigger_flag ) >,
+            public control_access,
+            public egg_writer
     {
         public:
-            egg_writer();
-            virtual ~egg_writer();
+            triggered_writer();
+            virtual ~triggered_writer();
 
         public:
+            mv_accessible( unsigned, file_num );
             mv_accessible( unsigned, file_size_limit_mb );
             mv_referrable( std::string, filename ); /// used if f_daq_control is not set
             mv_referrable( std::string, description ); /// used if f_daq_control is not set
@@ -83,17 +86,17 @@ namespace psyllid
     };
 
 
-    class egg_writer_binding : public _node_binding< egg_writer, egg_writer_binding >
+    class triggered_writer_binding : public _node_binding< triggered_writer, triggered_writer_binding >
     {
         public:
-            egg_writer_binding();
-            virtual ~egg_writer_binding();
+            triggered_writer_binding();
+            virtual ~triggered_writer_binding();
 
         private:
-            virtual void do_apply_config( egg_writer* a_node, const scarab::param_node& a_config ) const;
-            virtual void do_dump_config( const egg_writer* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( triggered_writer* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const triggered_writer* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */
 
-#endif /* PSYLLID_EGG_WRITER_HH_ */
+#endif /* PSYLLID_TRIGGERED_WRITER_HH_ */

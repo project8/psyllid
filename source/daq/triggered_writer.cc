@@ -1,14 +1,14 @@
 /*
- * egg_writer.cc
+ * triggered_writer.cc
  *
  *  Created on: Dec 30, 2015
  *      Author: nsoblath
  */
 
-#include "egg_writer.hh"
+#include "triggered_writer.hh"
 
-#include "daq_control.hh"
 #include "butterfly_house.hh"
+#include "daq_control.hh"
 #include "psyllid_error.hh"
 
 #include "digital.hh"
@@ -24,14 +24,16 @@ using std::vector;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( egg_writer, "egg-writer", egg_writer_binding );
+    REGISTER_NODE_AND_BUILDER( triggered_writer, "triggered-writer", triggered_writer_binding );
 
-    LOGGER( plog, "egg_writer" );
+    LOGGER( plog, "triggered_writer" );
 
-    egg_writer::egg_writer() :
+    triggered_writer::triggered_writer() :
             control_access(),
-            f_file_size_limit_mb(),
-            f_filename( "default_filename_ew.egg" ),
+            egg_writer(),
+            f_file_num( 0 ),
+            f_file_size_limit_mb( 2000 ),
+            f_filename( "default_filename_tw.egg" ),
             f_description( "A very nice run" ),
             f_bit_depth( 8 ),
             f_data_type_size( 1 ),
@@ -45,16 +47,17 @@ namespace psyllid
     {
     }
 
-    egg_writer::~egg_writer()
+    triggered_writer::~triggered_writer()
     {
     }
 
-    void egg_writer::initialize()
+    void triggered_writer::initialize()
     {
+        butterfly_house::get_instance()->register_writer( this, f_file_num );
         return;
     }
 
-    void egg_writer::execute( midge::diptera* a_midge )
+    void triggered_writer::execute( midge::diptera* a_midge )
     {
         try
         {
@@ -280,24 +283,25 @@ namespace psyllid
         }
     }
 
-    void egg_writer::finalize()
+    void triggered_writer::finalize()
     {
+        butterfly_house::get_instance()->unregister_writer( this );
         return;
     }
 
 
-    egg_writer_binding::egg_writer_binding() :
-            _node_binding< egg_writer, egg_writer_binding >()
+    triggered_writer_binding::triggered_writer_binding() :
+            _node_binding< triggered_writer, triggered_writer_binding >()
     {
     }
 
-    egg_writer_binding::~egg_writer_binding()
+    triggered_writer_binding::~triggered_writer_binding()
     {
     }
 
-    void egg_writer_binding::do_apply_config( egg_writer* a_node, const scarab::param_node& a_config ) const
+    void triggered_writer_binding::do_apply_config( triggered_writer* a_node, const scarab::param_node& a_config ) const
     {
-        LDEBUG( plog, "Configuring egg_writer with:\n" << a_config );
+        LDEBUG( plog, "Configuring triggered_writer with:\n" << a_config );
         a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
         const scarab::param_node *t_dev_config = a_config.node_at( "device" );
         if( t_dev_config != nullptr )
@@ -315,9 +319,9 @@ namespace psyllid
         return;
     }
 
-    void egg_writer_binding::do_dump_config( const egg_writer* a_node, scarab::param_node& a_config ) const
+    void triggered_writer_binding::do_dump_config( const triggered_writer* a_node, scarab::param_node& a_config ) const
     {
-        LDEBUG( plog, "Dumping configuration for egg_writer" );
+        LDEBUG( plog, "Dumping configuration for triggered_writer" );
         a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );
         scarab::param_node* t_dev_node = new scarab::param_node();
         t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );

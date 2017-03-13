@@ -26,15 +26,54 @@
 #ifndef PSYLLID_BUTTERFLY_HOUSE_HH_
 #define PSYLLID_BUTTERFLY_HOUSE_HH_
 
+#include "control_access.hh"
 #include "monarch3_wrap.hh"
-
 #include "singleton.hh"
 
 namespace psyllid
 {
 
-    class butterfly_house : public scarab::singleton< butterfly_house >
+    class egg_writer
     {
+        public:
+            egg_writer();
+            virtual ~egg_writer();
+
+            virtual void prepare_to_write( monarch_wrap_ptr a_mw_ptr ) = 0;
+
+
+    };
+
+    class butterfly_house : public scarab::singleton< butterfly_house >, public control_access
+    {
+        public:
+
+            void register_file( unsigned a_file_num, const std::string& a_filename, const std::string& a_description, unsigned a_duration_ms );
+
+            void prepare_files( const scarab::param_node* a_files_config );
+
+            void start_files();
+
+            void finish_files();
+
+            void register_writer( egg_writer* a_writer, unsigned a_file_num );
+
+            void unregister_writer( egg_writer* a_writer );
+
+        private:
+            struct file_info
+            {
+                std::string f_filename;
+                std::string f_description;
+            };
+            typedef std::vector< file_info > file_infos_t;
+            typedef file_infos_t::const_iterator file_infos_cit;
+            typedef file_infos_t::iterator file_infos_it;
+            file_infos_t f_file_infos;
+
+            std::vector< monarch_wrap_ptr > f_mw_ptrs;
+            std::multimap< egg_writer*, unsigned > f_writers;
+
         public:
 
             /// Creates the Monarch3 object for the given filename

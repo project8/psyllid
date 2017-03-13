@@ -5,10 +5,10 @@
  *      Author: nsoblath
  */
 
-#include "egg_writer.hh"
 #include "event_builder.hh"
 #include "frequency_mask_trigger.hh"
 #include "tf_roach_receiver.hh"
+#include "triggered_writer.hh"
 
 #include "diptera.hh"
 

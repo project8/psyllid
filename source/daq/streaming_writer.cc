@@ -7,8 +7,8 @@
 
 #include "streaming_writer.hh"
 
-#include "daq_control.hh"
 #include "butterfly_house.hh"
+#include "daq_control.hh"
 #include "psyllid_error.hh"
 
 #include "digital.hh"
@@ -30,6 +30,8 @@ namespace psyllid
 
     streaming_writer::streaming_writer() :
             control_access(),
+            egg_writer(),
+            f_file_num( 0 ),
             f_max_file_size_mb( 2000 ),
             f_filename( "default_filename_strw.egg" ),
             f_description( "A very nice run" ),
@@ -52,6 +54,7 @@ namespace psyllid
 
     void streaming_writer::initialize()
     {
+        butterfly_house::get_instance()->register_writer( this, f_file_num );
         return;
     }
 
@@ -232,6 +235,7 @@ namespace psyllid
 
     void streaming_writer::finalize()
     {
+        butterfly_house::get_instance()->unregister_writer( this );
         return;
     }
 

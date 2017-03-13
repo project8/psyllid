@@ -54,6 +54,11 @@ namespace psyllid
         {
             f_daq_config.reset( new param_node( *a_master_config.node_at( "daq" ) ) );
         }
+
+        if( a_master_config.has( "files" ) )
+        {
+            butterfly_house::get_instance()->prepare_files( a_master_config.node_at( "files" ) );
+        }
     }
 
     daq_control::~daq_control()
@@ -262,6 +267,9 @@ namespace psyllid
     {
         LINFO( plog, "Run is commencing" );
 
+        LDEBUG( plog, "Starting egg files" );
+        butterfly_house::get_instance()->start_files();
+
         const unsigned t_sub_duration = 100;
         unsigned t_n_sub_durations = 0;
         unsigned t_duration_remainder = 0;
@@ -312,6 +320,9 @@ namespace psyllid
                 t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_duration_remainder ) );
             }
         }
+
+        LDEBUG( plog, "Finishing egg files" );
+        butterfly_house::get_instance()->finish_files();
 
         // if daq_control has been canceled or deactivated, assume that midge has been canceled by other methods, and this function should just exit
         if( is_canceled() || get_status() != status::activated )
