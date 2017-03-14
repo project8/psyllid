@@ -293,8 +293,7 @@ namespace psyllid
             // conditions that will break the loop:
             //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
             //   - daq_control has been canceled
-            //   - daq_control has been deactivated
-            while( t_wait_return == std::cv_status::timeout && ! is_canceled() && get_status() == status::activated )
+            while( t_wait_return == std::cv_status::timeout && ! is_canceled() )
             {
                 t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
             }
@@ -307,15 +306,14 @@ namespace psyllid
             //   - all sub-durations have been completed
             //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
             //   - daq_control has been canceled
-            //   - daq_control has been deactivated
             for( unsigned i_sub_duration = 0;
-                    i_sub_duration < t_n_sub_durations && t_wait_return == std::cv_status::timeout && ! is_canceled() && get_status() == status::activated;
+                    i_sub_duration < t_n_sub_durations && t_wait_return == std::cv_status::timeout && ! is_canceled();
                     ++i_sub_duration )
             {
                 t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
             }
             // the last sub-duration is for a different amount of time (t_duration_remainder) than the standard sub-duration (t_sub_duration)
-            if( t_wait_return == std::cv_status::timeout && ! is_canceled() && get_status() == status::activated )
+            if( t_wait_return == std::cv_status::timeout && ! is_canceled() )
             {
                 t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_duration_remainder ) );
             }
@@ -324,7 +322,7 @@ namespace psyllid
         LDEBUG( plog, "Finishing egg files" );
         butterfly_house::get_instance()->finish_files();
 
-        // if daq_control has been canceled or deactivated, assume that midge has been canceled by other methods, and this function should just exit
+        // if daq_control has been canceled, assume that midge has been canceled by other methods, and this function should just exit
         if( is_canceled() || get_status() != status::activated )
         {
             LDEBUG( plog, "Run was already cancelled or daq_control has been deactivated" );
