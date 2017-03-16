@@ -8,8 +8,8 @@
 #ifndef PSYLLID_TRIGGERED_WRITER_HH_
 #define PSYLLID_TRIGGERED_WRITER_HH_
 
-#include "butterfly_house.hh"
 #include "control_access.hh"
+#include "egg_writer.hh"
 #include "node_builder.hh"
 #include "trigger_flag.hh"
 #include "time_data.hh"

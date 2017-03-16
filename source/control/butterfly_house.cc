@@ -18,6 +18,7 @@ namespace psyllid
 
     butterfly_house::butterfly_house() :
             control_access(),
+            f_max_file_size_mb( 2000 ),
             f_file_infos(),
             f_mw_ptrs(),
             f_writers(),
@@ -68,7 +69,21 @@ namespace psyllid
         for( unsigned t_file_num = 0; t_file_num < f_file_infos.size(); ++t_file_num )
         {
             f_mw_ptrs[ t_file_num ] = declare_file( f_file_infos[ t_file_num ].f_filename );
-            f_mw_ptrs[ t_file_num ]->
+            f_mw_ptrs[ t_file_num ]->set_max_file_size( f_max_file_size_mb );
+
+            header_wrap_ptr t_hwrap_ptr = f_mw_ptrs[ t_file_num ]->get_header();
+            t_hwrap_ptr->header().SetDescription( f_file_infos[ t_file_num ].f_description );
+
+            time_t t_raw_time = t_time_data->get_unix_time();
+            struct tm* t_processed_time = gmtime( &t_raw_time );
+            char t_timestamp[ 512 ];
+            strftime( t_timestamp, 512, scarab::date_time_format, t_processed_time );
+            LWARN( plog, "raw: " << t_raw_time << "   proc'd: " << t_processed_time->tm_hour << " " << t_processed_time->tm_min << " " << t_processed_time->tm_year << "   timestamp: " << t_timestamp );
+            t_hwrap_ptr->header().SetTimestamp( t_timestamp );
+
+            t_hwrap_ptr->header().SetRunDuration( t_run_duration );
+            t_hwrap_ptr->global_setup_done( true );
+
         }
     }
 

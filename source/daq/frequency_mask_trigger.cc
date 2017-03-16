@@ -428,7 +428,8 @@ namespace psyllid
                         {
                             LERROR( plog, "Exiting due to stream error" );
                             throw error() << "Stream error while applying threshold";
-                        }                    }
+                        }
+                    }
                     catch( error& e )
                     {
                         LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );

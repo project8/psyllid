@@ -8,8 +8,8 @@
 #ifndef PSYLLID_STREAMING_WRITER_HH_
 #define PSYLLID_STREAMING_WRITER_HH_
 
-#include "butterfly_house.hh"
 #include "control_access.hh"
+#include "egg_writer.hh"
 #include "node_builder.hh"
 #include "time_data.hh"
 
@@ -62,7 +62,6 @@ namespace psyllid
 
         public:
             mv_accessible( unsigned, file_num );
-            mv_accessible( unsigned, max_file_size_mb );
             mv_referrable( std::string, filename ); /// used if f_daq_control is not set
             mv_referrable( std::string, description ); /// used if f_daq_control is not set
 

@@ -6,6 +6,7 @@ set( headers
     butterfly_house.hh
     control_access.hh
     daq_control.hh
+    egg_writer.hh
     monarch3_wrap.hh
     node_builder.hh
     persistent_store.hh
@@ -20,6 +21,7 @@ set( sources
     butterfly_house.cc
     control_access.cc
     daq_control.cc
+    egg_writer.cc
     monarch3_wrap.cc
     node_builder.cc
     persistent_store.cc

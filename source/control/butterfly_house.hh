@@ -28,24 +28,19 @@
 
 #include "control_access.hh"
 #include "monarch3_wrap.hh"
+
+#include "member_variables.hh"
 #include "singleton.hh"
 
 namespace psyllid
 {
 
-    class egg_writer
-    {
-        public:
-            egg_writer();
-            virtual ~egg_writer();
-
-            virtual void prepare_to_write( monarch_wrap_ptr a_mw_ptr ) = 0;
-
-
-    };
-
     class butterfly_house : public scarab::singleton< butterfly_house >, public control_access
     {
+        public:
+            mv_accessible( unsigned, max_file_size_mb );
+
+
         public:
 
             void register_file( unsigned a_file_num, const std::string& a_filename, const std::string& a_description, unsigned a_duration_ms );
