@@ -312,7 +312,7 @@ namespace psyllid
         }
 
         // if daq_control has been canceled, assume that midge has been canceled by other methods, and this function should just exit
-        if( is_canceled() || get_status() != status::activated )
+        if( is_canceled() )
         {
             LDEBUG( plog, "Run was already cancelled or daq_control has been deactivated" );
             return;
