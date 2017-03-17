@@ -65,33 +65,6 @@ namespace psyllid
             t_ctx.f_first_pkt_in_run = 0;
             t_ctx.f_is_new_event = true;
 
-
-            //midge::enum_t t_trig_command = stream::s_none;
-            //midge::enum_t t_time_command = stream::s_none;
-
-            //trigger_flag* t_trig_data = nullptr;
-            //time_data* t_time_data = nullptr;
-
-            //butterfly_house* t_bf_house = butterfly_house::get_instance();
-            //monarch_wrap_ptr t_monarch_ptr;
-            //stream_wrap_ptr t_swrap_ptr;
-            //monarch3::M3Record* t_record_ptr = nullptr;
-
-            //uint64_t t_bytes_per_record = f_record_size * f_sample_size * f_data_type_size;
-            //scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)f_acq_rate * 1.e3 );
-
-            //scarab::dig_calib_params t_dig_params;
-            //scarab::get_calib_params( f_bit_depth, f_data_type_size, f_v_offset, f_v_range, true, &t_dig_params );
-
-            //unsigned t_stream_no = 0;
-            //monarch_time_point_t t_run_start_time;
-            //uint64_t t_first_pkt_in_run = 0;
-
-            //bool t_is_new_event = true;
-            //bool t_was_triggered = false;
-
-            //bool t_is_running = false;
-
             // outer while loop to switch between the two exe loops until canceled
             while( ! is_canceled() && ! t_ctx.f_should_exit )
             {
