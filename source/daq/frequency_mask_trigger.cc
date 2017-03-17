@@ -123,13 +123,14 @@ namespace psyllid
         }
         t_output_node.add( "mask", t_mask_array );
 
-        scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "json" );
+        //scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "json" );
+        scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "yaml" );
         if( t_json_codec == nullptr )
         {
-            throw error() << "Unable to create output-codec for JSON";
+            throw error() << "Unable to create output-codec for YAML";
         }
 
-        LERROR( plog, "Mask file:\n" << t_output_node );
+        LTRACE( plog, "Mask file:\n" << t_output_node );
         if( ! t_json_codec->write_file( t_output_node, a_filename ) )
         {
             throw error() << "Unable to write mask to file <" << a_filename << ">";
@@ -575,7 +576,7 @@ namespace psyllid
         {
             try
             {
-                a_node->write_mask( a_args.get_value( "filename", "fmt_mask.json" ) );
+                a_node->write_mask( a_args.get_value( "filename", "fmt_mask.yaml" ) );
             }
             catch( error& e )
             {
