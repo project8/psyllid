@@ -7,10 +7,6 @@
 
 #include "triggered_writer.hh"
 
-<<<<<<< HEAD:source/daq/triggered_writer.cc
-#include "butterfly_house.hh"
-=======
->>>>>>> feature/fmtcmd:source/daq/egg_writer.cc
 #include "daq_control.hh"
 #include "psyllid_error.hh"
 
