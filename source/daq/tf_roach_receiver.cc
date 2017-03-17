@@ -175,162 +175,156 @@ namespace psyllid
             //    break;
             //}
 
-            a_ctx.f_in_command = in_stream< 0 >().get();
+            // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+            // and still handle the input command appropriately
+
             if( a_ctx.f_in_command == stream::s_none )
             {
+
                 LTRACE( plog, "tfrr read s_none" );
-                continue;
+
             }
-            if( a_ctx.f_in_command == stream::s_error )
+            else if( a_ctx.f_in_command == stream::s_error )
             {
+
                 LTRACE( plog, "tfrr read s_error" );
                 break;
+
             }
-
-            LTRACE( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
-
-            // check for any commands from upstream
-            if( a_ctx.f_in_command == stream::s_exit )
+            else if( a_ctx.f_in_command == stream::s_exit )
             {
+
                 LDEBUG( plog, "TF ROACH receiver is exiting" );
                 // Output streams are stopped here because even though this is controlled by the pause/unpause commands,
                 // receiving a stop command from upstream overrides that.
                 out_stream< 0 >().set( stream::s_exit );
                 out_stream< 1 >().set( stream::s_exit );
                 return false;
-            }
 
-            if( a_ctx.f_in_command == stream::s_stop )
+            }
+            else if( a_ctx.f_in_command == stream::s_stop )
             {
+
                 LDEBUG( plog, "TF ROACH receiver is stopping" );
                 // Output streams are stopped here because even though this is controlled by the pause/unpause commands,
                 // receiving a stop command from upstream overrides that.
                 if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
                 if( ! out_stream< 1 >().set( stream::s_stop ) ) break;
-                continue;
-            }
 
-            if( a_ctx.f_in_command == stream::s_start )
+            }
+            else if( a_ctx.f_in_command == stream::s_start )
             {
+
                 LDEBUG( plog, "TF ROACH receiver is starting" );
-                // Output streams are not started here because this is controled by the pause/unpause commands
-                continue;
-            }
+                // Output streams are not started here because this is controlled by the pause/unpause commands
 
-            // break out of loop if canceled or if switching exe funcs
-            if( is_canceled() || f_break_exe_func.load() )
-            {
-                break;
-            }
-
-            if( f_paused )
-            {
-                if( have_instruction() && use_instruction() == midge::instruction::resume )
-                {
-                    LDEBUG( plog, "TF ROACH receiver resuming" );
-                    out_stream< 0 >().data()->set_pkt_in_session( 0 );
-                    out_stream< 1 >().data()->set_pkt_in_session( 0 );
-                    if( ! out_stream< 0 >().set( stream::s_start ) ) throw error() << "Stream 0 error while starting";
-                    if( ! out_stream< 1 >().set( stream::s_start ) ) throw error() << "Stream 1 error while starting";
-                    f_time_session_pkt_counter = 0;
-                    f_freq_session_pkt_counter = 0;
-                    f_paused = false;
-                }
             }
             else
             {
-                if( have_instruction() && use_instruction() == midge::instruction::pause )
+                if( have_instruction() )
                 {
-                    LDEBUG( plog, "TF ROACH receiver pausing" );
-                    if( ! out_stream< 0 >().set( stream::s_stop ) ) throw error() << "Stream 0 error while stopping";
-                    if( ! out_stream< 1 >().set( stream::s_stop ) ) throw error() << "Stream 1 error while stopping";
-                    f_paused = true;
-                }
-            }
-
-            // do nothing with input data if paused
-            if( f_paused ) continue;
-
-            if( a_ctx.f_in_command == stream::s_run )
-            {
-                a_ctx.f_memory_block = in_stream< 0 >().data();
-
-                if( is_canceled() || f_break_exe_func.load() )
-                {
-                    break;
-                }
-
-                a_ctx.f_pkt_size = a_ctx.f_memory_block->get_n_bytes_used();
-                LTRACE( plog, "Handling packet at stream index <" << in_stream< 0 >().get_current_index() << ">; size =  " << a_ctx.f_pkt_size << " bytes; block address = " << (void*)a_ctx.f_memory_block->block() );
-                if( a_ctx.f_pkt_size != f_udp_buffer_size )
-                {
-                    LWARN( plog, "Improper packet size; packet may be malformed: received " << a_ctx.f_memory_block->get_n_bytes_used() << " bytes; expected " << f_udp_buffer_size << " bytes" );
-                    if( a_ctx.f_pkt_size == 0 ) continue;
-                }
-
-                byteswap_inplace( reinterpret_cast< raw_roach_packet* >( a_ctx.f_memory_block->block() ) );
-                roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( a_ctx.f_memory_block->block() );
-
-                // debug purposes only
-#ifndef NDEBUG
-                raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( a_ctx.f_memory_block->block() );
-                LTRACE( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
-#endif
-
-                if( t_roach_packet->f_freq_not_time )
-                {
-                    // packet is frequency data
-                    //t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
-
-                    a_ctx.f_freq_data = out_stream< 1 >().data();
-                    a_ctx.f_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
-                    ::memcpy( &a_ctx.f_freq_data->packet(), t_roach_packet, a_ctx.f_pkt_size );
-
-                    LTRACE( plog, "Frequency data received (" << a_ctx.f_pkt_size << " bytes):  chan = " << a_ctx.f_freq_data->get_digital_id() <<
-                           "  time = " << a_ctx.f_freq_data->get_unix_time() <<
-                           "  pkt_session = " << a_ctx.f_freq_data->get_pkt_in_session() <<
-                           "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
-                           "  freqNotTime = " << a_ctx.f_freq_data->get_freq_not_time() <<
-                           "  first 8 bins: " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 0 ]  << ", " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 1 ]);
-                    LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
-                    if( ! out_stream< 1 >().set( stream::s_run ) )
+                    if( f_paused && use_instruction() == midge::instruction::resume )
                     {
-                        LERROR( plog, "Exiting due to stream error" );
-                        break;
+                        LDEBUG( plog, "TF ROACH receiver resuming" );
+                        out_stream< 0 >().data()->set_pkt_in_session( 0 );
+                        out_stream< 1 >().data()->set_pkt_in_session( 0 );
+                        if( ! out_stream< 0 >().set( stream::s_start ) ) throw error() << "Stream 0 error while starting";
+                        if( ! out_stream< 1 >().set( stream::s_start ) ) throw error() << "Stream 1 error while starting";
+                        f_time_session_pkt_counter = 0;
+                        f_freq_session_pkt_counter = 0;
+                        f_paused = false;
                     }
-                }
-                else
-                {
-                    // packet is time data
-                    //t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
-
-                    a_ctx.f_time_data = out_stream< 0 >().data();
-                    a_ctx.f_time_data->set_pkt_in_session( f_time_session_pkt_counter++ );
-                    ::memcpy( &a_ctx.f_time_data->packet(), t_roach_packet, a_ctx.f_pkt_size );
-
-                    LTRACE( plog, "Time data received (" << a_ctx.f_pkt_size << " bytes):  chan = " << a_ctx.f_time_data->get_digital_id() <<
-                           "  time = " << a_ctx.f_time_data->get_unix_time() <<
-                           "  pkt_session = " << a_ctx.f_time_data->get_pkt_in_session() <<
-                           "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
-                           "  freqNotTime = " << a_ctx.f_time_data->get_freq_not_time() <<
-                           "  first 8 bins: " << (int)a_ctx.f_time_data->get_array()[ 0 ][ 0 ]  << ", " << (int)a_ctx.f_time_data->get_array()[ 0 ][ 1 ] << " -- " << (int)a_ctx.f_time_data->get_array()[ 1 ][ 0 ] << ", " << (int)a_ctx.f_time_data->get_array()[ 1 ][ 1 ] << " -- " << (int)a_ctx.f_time_data->get_array()[ 2 ][ 0 ] << ", " << (int)a_ctx.f_time_data->get_array()[ 2 ][ 1 ] << " -- " << (int)a_ctx.f_time_data->get_array()[ 3 ][ 0 ] << ", " << (int)a_ctx.f_time_data->get_array()[ 3 ][ 1 ]);
-                    LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
-                    if( ! out_stream< 0 >().set( stream::s_run ) )
+                    else if( ! f_paused && use_instruction() == midge::instruction::pause )
                     {
-                        LERROR( plog, "Exiting due to stream error" );
-                        break;
+                        LDEBUG( plog, "TF ROACH receiver pausing" );
+                        if( ! out_stream< 0 >().set( stream::s_stop ) ) throw error() << "Stream 0 error while stopping";
+                        if( ! out_stream< 1 >().set( stream::s_stop ) ) throw error() << "Stream 1 error while stopping";
+                        f_paused = true;
                     }
                 }
 
-                //if( t_time_batch_pkt == t_freq_batch_pkt )
-                //{
-                //    LTRACE( plog, "Time and frequency batch IDs match: " << t_time_batch_pkt );
-                //    LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
-                //    out_stream< 1 >().set( stream::s_run );
-                //    LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
-                //    out_stream< 0 >().set( stream::s_run );
-               // }
-            } // if block for run command
+                // do nothing if paused
+                if( ! f_paused && a_ctx.f_in_command == stream::s_run )
+                {
+                    a_ctx.f_memory_block = in_stream< 0 >().data();
+
+                    a_ctx.f_pkt_size = a_ctx.f_memory_block->get_n_bytes_used();
+                    LTRACE( plog, "Handling packet at stream index <" << in_stream< 0 >().get_current_index() << ">; size =  " << a_ctx.f_pkt_size << " bytes; block address = " << (void*)a_ctx.f_memory_block->block() );
+                    if( a_ctx.f_pkt_size != f_udp_buffer_size )
+                    {
+                        LWARN( plog, "Improper packet size; packet may be malformed: received " << a_ctx.f_memory_block->get_n_bytes_used() << " bytes; expected " << f_udp_buffer_size << " bytes" );
+                        if( a_ctx.f_pkt_size == 0 ) continue;
+                    }
+
+                    byteswap_inplace( reinterpret_cast< raw_roach_packet* >( a_ctx.f_memory_block->block() ) );
+                    roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( a_ctx.f_memory_block->block() );
+
+                    // debug purposes only
+    #ifndef NDEBUG
+                    raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( a_ctx.f_memory_block->block() );
+                    LTRACE( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
+    #endif
+
+                    if( t_roach_packet->f_freq_not_time )
+                    {
+                        // packet is frequency data
+                        //t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
+
+                        a_ctx.f_freq_data = out_stream< 1 >().data();
+                        a_ctx.f_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
+                        ::memcpy( &a_ctx.f_freq_data->packet(), t_roach_packet, a_ctx.f_pkt_size );
+
+                        LTRACE( plog, "Frequency data received (" << a_ctx.f_pkt_size << " bytes):  chan = " << a_ctx.f_freq_data->get_digital_id() <<
+                               "  time = " << a_ctx.f_freq_data->get_unix_time() <<
+                               "  pkt_session = " << a_ctx.f_freq_data->get_pkt_in_session() <<
+                               "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
+                               "  freqNotTime = " << a_ctx.f_freq_data->get_freq_not_time() <<
+                               "  first 8 bins: " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 0 ]  << ", " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 1 ]);
+                        LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                        if( ! out_stream< 1 >().set( stream::s_run ) )
+                        {
+                            LERROR( plog, "Exiting due to stream error" );
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        // packet is time data
+                        //t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
+
+                        a_ctx.f_time_data = out_stream< 0 >().data();
+                        a_ctx.f_time_data->set_pkt_in_session( f_time_session_pkt_counter++ );
+                        ::memcpy( &a_ctx.f_time_data->packet(), t_roach_packet, a_ctx.f_pkt_size );
+
+                        LTRACE( plog, "Time data received (" << a_ctx.f_pkt_size << " bytes):  chan = " << a_ctx.f_time_data->get_digital_id() <<
+                               "  time = " << a_ctx.f_time_data->get_unix_time() <<
+                               "  pkt_session = " << a_ctx.f_time_data->get_pkt_in_session() <<
+                               "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
+                               "  freqNotTime = " << a_ctx.f_time_data->get_freq_not_time() <<
+                               "  first 8 bins: " << (int)a_ctx.f_time_data->get_array()[ 0 ][ 0 ]  << ", " << (int)a_ctx.f_time_data->get_array()[ 0 ][ 1 ] << " -- " << (int)a_ctx.f_time_data->get_array()[ 1 ][ 0 ] << ", " << (int)a_ctx.f_time_data->get_array()[ 1 ][ 1 ] << " -- " << (int)a_ctx.f_time_data->get_array()[ 2 ][ 0 ] << ", " << (int)a_ctx.f_time_data->get_array()[ 2 ][ 1 ] << " -- " << (int)a_ctx.f_time_data->get_array()[ 3 ][ 0 ] << ", " << (int)a_ctx.f_time_data->get_array()[ 3 ][ 1 ]);
+                        LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                        if( ! out_stream< 0 >().set( stream::s_run ) )
+                        {
+                            LERROR( plog, "Exiting due to stream error" );
+                            break;
+                        }
+                    }
+
+                    //if( t_time_batch_pkt == t_freq_batch_pkt )
+                    //{
+                    //    LTRACE( plog, "Time and frequency batch IDs match: " << t_time_batch_pkt );
+                    //    LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                    //    out_stream< 1 >().set( stream::s_run );
+                    //    LTRACE( plog, "Time data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                    //    out_stream< 0 >().set( stream::s_run );
+                   // }
+                } // if block for input command == run
+
+            } // if-else for input command
+
+            a_ctx.f_in_command = in_stream< 0 >().get();
+            LTRACE( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
+
         } // main while loop
 
         return true;
@@ -343,7 +337,6 @@ namespace psyllid
         LDEBUG( plog, "Entering frequency-only loop" );
         while( ! is_canceled() && !  f_break_exe_func.load() )
         {
-            LTRACE( plog, "Top of while loop: " << is_canceled() << "  " << f_break_exe_func.load() );
             // check if we've received a pause or unpause instruction
             //try
             //{
@@ -355,121 +348,121 @@ namespace psyllid
             //    break;
             //}
 
-            a_ctx.f_in_command = in_stream< 0 >().get();
-            if( a_ctx.f_in_command == stream::s_none ) continue;
-            if( a_ctx.f_in_command == stream::s_error ) break;
+            // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+            // and still handle the input command appropriately
 
-            LTRACE( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
-
-            // check for any commands from upstream
-            if( a_ctx.f_in_command == stream::s_exit )
+            if( a_ctx.f_in_command == stream::s_none )
             {
+
+                LTRACE( plog, "tfrr read s_none" );
+
+            }
+            else if( a_ctx.f_in_command == stream::s_error )
+            {
+
+                LTRACE( plog, "tfrr read s_error" );
+                break;
+
+            }
+            else if( a_ctx.f_in_command == stream::s_exit )
+            {
+
                 LDEBUG( plog, "TF ROACH receiver is exiting" );
                 // Output streams are stopped here because even though this is controlled by the pause/unpause commands,
                 // receiving a stop command from upstream overrides that.
                 out_stream< 0 >().set( stream::s_exit );
                 out_stream< 1 >().set( stream::s_exit );
                 return false;
-            }
 
-            if( a_ctx.f_in_command == stream::s_stop )
+            }
+            else if( a_ctx.f_in_command == stream::s_stop )
             {
+
                 LDEBUG( plog, "TF ROACH receiver is stopping" );
                 // Output streams are stopped here because even though this is controlled by the pause/unpause commands,
                 // receiving a stop command from upstream overrides that.
                 if( ! out_stream< 1 >().set( stream::s_stop ) ) break;
-                continue;
-            }
 
-            if( a_ctx.f_in_command == stream::s_start )
+            }
+            else if( a_ctx.f_in_command == stream::s_start )
             {
                 LDEBUG( plog, "TF ROACH receiver is starting" );
                 // Output streams are not started here because this is controled by the pause/unpause commands
                 continue;
             }
 
-            // break out of loop if canceled or if switching exe funcs
-            LTRACE( plog, "Mid-loop check: " << is_canceled() << "  " << f_break_exe_func.load() );
-            if( is_canceled() || f_break_exe_func.load() )
-            {
-                break;
-            }
-
-            // check whether an instruction has been received
-            if( f_paused )
-            {
-                if( have_instruction() && use_instruction() == midge::instruction::resume )
-                {
-                    LDEBUG( plog, "TF ROACH receiver resuming" );
-                    out_stream< 1 >().data()->set_pkt_in_session( 0 );
-                    if( ! out_stream< 1 >().set( stream::s_start ) ) throw error() << "Stream 2 error while starting";
-                    f_freq_session_pkt_counter = 0;
-                    f_paused = false;
-                }
-            }
             else
             {
-                if( have_instruction() && use_instruction() == midge::instruction::pause )
+                // check whether an instruction has been received
+                if( have_instruction() )
                 {
-                    LDEBUG( plog, "TF ROACH receiver pausing" );
-                    if( ! out_stream< 1 >().set( stream::s_stop ) ) throw error() << "Stream 2 error while stopping";
-                    f_paused = true;
-                }
-            }
-
-            // do nothing with input data if paused
-            if( f_paused ) continue;
-
-            if( a_ctx.f_in_command == stream::s_run )
-            {
-                a_ctx.f_memory_block = in_stream< 0 >().data();
-
-                if( is_canceled() )
-                {
-                    break;
-                }
-
-                a_ctx.f_pkt_size = a_ctx.f_memory_block->get_n_bytes_used();
-                LTRACE( plog, "Handling packet at stream index <" << in_stream< 0 >().get_current_index() << ">; size =  " << a_ctx.f_pkt_size << " bytes; block address = " << (void*)a_ctx.f_memory_block->block() );
-                if( a_ctx.f_pkt_size != f_udp_buffer_size )
-                {
-                    LWARN( plog, "Improper packet size; packet may be malformed: received " << a_ctx.f_memory_block->get_n_bytes_used() << " bytes; expected " << f_udp_buffer_size << " bytes" );
-                    if( a_ctx.f_pkt_size == 0 ) continue;
-                }
-
-                byteswap_inplace( reinterpret_cast< raw_roach_packet* >( a_ctx.f_memory_block->block() ) );
-                roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( a_ctx.f_memory_block->block() );
-
-                // debug purposes only
-#ifndef NDEBUG
-                raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( a_ctx.f_memory_block->block() );
-                LTRACE( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
-#endif
-
-                if( t_roach_packet->f_freq_not_time )
-                {
-                    // packet is frequency data
-                    //t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
-
-                    a_ctx.f_freq_data = out_stream< 1 >().data();
-                    a_ctx.f_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
-                    ::memcpy( &a_ctx.f_freq_data->packet(), t_roach_packet, a_ctx.f_pkt_size );
-
-                    LTRACE( plog, "Frequency data received (" << a_ctx.f_pkt_size << " bytes):  chan = " << a_ctx.f_freq_data->get_digital_id() <<
-                           "  time = " << a_ctx.f_freq_data->get_unix_time() <<
-                           "  pkt_session = " << a_ctx.f_freq_data->get_pkt_in_session() <<
-                           "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
-                           "  freqNotTime = " << a_ctx.f_freq_data->get_freq_not_time() <<
-                           "  first 8 bins: " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 0 ]  << ", " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 1 ]);
-                    LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
-                    if( ! out_stream< 1 >().set( stream::s_run ) )
+                    if( f_paused && use_instruction() == midge::instruction::resume )
                     {
-                        LERROR( plog, "Exiting due to stream error" );
-                        break;
+                        LDEBUG( plog, "TF ROACH receiver resuming" );
+                        out_stream< 1 >().data()->set_pkt_in_session( 0 );
+                        if( ! out_stream< 1 >().set( stream::s_start ) ) throw error() << "Stream 2 error while starting";
+                        f_freq_session_pkt_counter = 0;
+                        f_paused = false;
+                    }
+                    else if( ! f_paused && use_instruction() == midge::instruction::pause )
+                    {
+                        LDEBUG( plog, "TF ROACH receiver pausing" );
+                        if( ! out_stream< 1 >().set( stream::s_stop ) ) throw error() << "Stream 2 error while stopping";
+                        f_paused = true;
                     }
                 }
 
-            } // if block for run command
+                // do nothing if paused
+                if( ! f_paused && a_ctx.f_in_command == stream::s_run )
+                {
+                    a_ctx.f_memory_block = in_stream< 0 >().data();
+
+                    a_ctx.f_pkt_size = a_ctx.f_memory_block->get_n_bytes_used();
+                    LTRACE( plog, "Handling packet at stream index <" << in_stream< 0 >().get_current_index() << ">; size =  " << a_ctx.f_pkt_size << " bytes; block address = " << (void*)a_ctx.f_memory_block->block() );
+                    if( a_ctx.f_pkt_size != f_udp_buffer_size )
+                    {
+                        LWARN( plog, "Improper packet size; packet may be malformed: received " << a_ctx.f_memory_block->get_n_bytes_used() << " bytes; expected " << f_udp_buffer_size << " bytes" );
+                        if( a_ctx.f_pkt_size == 0 ) continue;
+                    }
+
+                    byteswap_inplace( reinterpret_cast< raw_roach_packet* >( a_ctx.f_memory_block->block() ) );
+                    roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( a_ctx.f_memory_block->block() );
+
+                    // debug purposes only
+    #ifndef NDEBUG
+                    raw_roach_packet* t_raw_packet = reinterpret_cast< raw_roach_packet* >( a_ctx.f_memory_block->block() );
+                    LTRACE( plog, "Raw packet header: " << std::hex << t_raw_packet->f_word_0 << ", " << t_raw_packet->f_word_1 << ", " << t_raw_packet->f_word_2 << ", " << t_raw_packet->f_word_3 );
+    #endif
+
+                    if( t_roach_packet->f_freq_not_time )
+                    {
+                        // packet is frequency data
+                        //t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
+
+                        a_ctx.f_freq_data = out_stream< 1 >().data();
+                        a_ctx.f_freq_data->set_pkt_in_session( f_freq_session_pkt_counter++ );
+                        ::memcpy( &a_ctx.f_freq_data->packet(), t_roach_packet, a_ctx.f_pkt_size );
+
+                        LTRACE( plog, "Frequency data received (" << a_ctx.f_pkt_size << " bytes):  chan = " << a_ctx.f_freq_data->get_digital_id() <<
+                               "  time = " << a_ctx.f_freq_data->get_unix_time() <<
+                               "  pkt_session = " << a_ctx.f_freq_data->get_pkt_in_session() <<
+                               "  pkt_batch = " << t_roach_packet->f_pkt_in_batch <<
+                               "  freqNotTime = " << a_ctx.f_freq_data->get_freq_not_time() <<
+                               "  first 8 bins: " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 0 ]  << ", " << (int)a_ctx.f_freq_data->get_array()[ 0 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 1 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 2 ][ 1 ] << " -- " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 0 ] << ", " << (int)a_ctx.f_freq_data->get_array()[ 3 ][ 1 ]);
+                        LTRACE( plog, "Frequency data written to stream index <" << out_stream< 1 >().get_current_index() << ">" );
+                        if( ! out_stream< 1 >().set( stream::s_run ) )
+                        {
+                            LERROR( plog, "Exiting due to stream error" );
+                            break;
+                        }
+                    }
+                } // if block for input command == run
+
+            } // if-else block for input command
+
+            a_ctx.f_in_command = in_stream< 0 >().get();
+            LTRACE( plog, "TF ROACH receiver reading stream 0 at index " << in_stream< 0 >().get_current_index() );
+
         } // main while loop
 
         return true;

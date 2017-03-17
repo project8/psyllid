@@ -8,6 +8,7 @@
 #ifndef PSYLLID_TRIGGERED_WRITER_HH_
 #define PSYLLID_TRIGGERED_WRITER_HH_
 
+#include "butterfly_house.hh"
 #include "control_access.hh"
 #include "egg_writer.hh"
 #include "node_builder.hh"
@@ -82,6 +83,22 @@ namespace psyllid
             virtual void initialize();
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
+
+        private:
+            struct exe_loop_context
+            {
+                bool f_is_running;
+                bool f_should_exit;
+                monarch_wrap_ptr f_monarch_ptr;
+                stream_wrap_ptr f_swrap_ptr;
+                monarch3::M3Record* f_record_ptr;
+                unsigned f_stream_no;
+                uint64_t f_first_pkt_in_run;
+                bool f_is_new_event;
+            };
+
+            void exe_loop_not_running( exe_loop_context& a_ctx );
+            void exe_loop_is_running( exe_loop_context& a_ctx );
 
     };
 
