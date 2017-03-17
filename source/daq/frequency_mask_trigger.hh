@@ -103,6 +103,7 @@ namespace psyllid
             {
                 midge::diptera* f_midge;
                 bool f_first_packet_after_start;
+                midge::enum_t f_in_command;
             };
 
             void exe_apply_threshold( exe_func_context& a_ctx );

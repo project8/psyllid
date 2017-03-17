@@ -151,6 +151,7 @@ namespace psyllid
         exe_func_context t_ctx;
         t_ctx.f_midge = a_midge;
         t_ctx.f_first_packet_after_start = false;
+        t_ctx.f_in_command = stream::s_none;
 
         try
         {
@@ -167,6 +168,7 @@ namespace psyllid
         {
             throw;
         }
+        LINFO( plog, "FMT has exited" );
         return;
     }
 
@@ -176,7 +178,6 @@ namespace psyllid
 
         try
         {
-            midge::enum_t t_in_command = stream::s_none;
             freq_data* t_freq_data = nullptr;
             //trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0.;
@@ -186,27 +187,38 @@ namespace psyllid
             LDEBUG( plog, "Entering add-to-mask loop" );
             while( ! is_canceled() && ! f_break_exe_func.load() )
             {
-                t_in_command = in_stream< 0 >().get();
-                if( t_in_command == stream::s_none ) continue;
-                if( t_in_command == stream::s_error ) break;
+                // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+                // and still handle the input command appropriately
 
-                LTRACE( plog, "FMT (update-mask) reading stream at index " << in_stream< 0 >().get_current_index() );
-
-                t_freq_data = in_stream< 0 >().data();
-                //t_trigger_flag = out_stream< 0 >().data();
-
-                if( t_in_command == stream::s_start )
+                if( a_ctx.f_in_command == stream::s_none )
                 {
+
+                    LTRACE( plog, "FMT read s_none" );
+
+                }
+                else if( a_ctx.f_in_command == stream::s_error )
+                {
+
+                    LTRACE( plog, "FMT read s_error" );
+                    break;
+
+                }
+                else if( a_ctx.f_in_command == stream::s_start )
+                {
+
                     LDEBUG( plog, "Starting mask update" ) //; output stream index " << out_stream< 0 >().get_current_index() );
                     //if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     a_ctx.f_first_packet_after_start = true;
                     f_n_summed = 0;
                     t_mask_buffer.clear();
-                    continue;
-                }
 
-                if( t_in_command == stream::s_run )
+                }
+                else if( a_ctx.f_in_command == stream::s_run )
                 {
+
+                    t_freq_data = in_stream< 0 >().data();
+                    //t_trigger_flag = out_stream< 0 >().data();
+
                     try
                     {
                         if( f_n_summed >= f_n_packets_for_mask )
@@ -297,22 +309,22 @@ namespace psyllid
                         LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
                         break;
                     }
-                    continue;
-                }
 
-                if( t_in_command == stream::s_stop )
+                }
+                else if( a_ctx.f_in_command == stream::s_stop )
                 {
+
                     LDEBUG( plog, "FMT is stopping" );// at stream index " << out_stream< 0 >().get_current_index() );
                     if( f_n_summed < f_n_packets_for_mask )
                     {
                         LWARN( plog, "FMT is stopping: it did not process enough packets to update the mask" );
                     }
                     //if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
-                    continue;
-                }
 
-                if( t_in_command == stream::s_exit )
+                }
+                else if( a_ctx.f_in_command == stream::s_exit )
                 {
+
                     LDEBUG( plog, "FMT is exiting" );// at stream index " << out_stream< 0 >().get_current_index() );
                     if( f_n_summed < f_n_packets_for_mask )
                     {
@@ -320,10 +332,23 @@ namespace psyllid
                     }
                     //out_stream< 0 >().set( stream::s_exit );
                     break;
-                }
-            }
 
-            LINFO( plog, "FMT is exiting" );
+                }
+
+                a_ctx.f_in_command = in_stream< 0 >().get();
+                LTRACE( plog, "FMT (update-mask) reading stream at index " << in_stream< 0 >().get_current_index() );
+
+            } // end while( ! is_canceled() && ! a_ctx.f_break_exe_loop() )
+
+            LDEBUG( plog, "FMT has exited the add-to-mask while loop; possible reasons: is_canceled() = " << is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
+            if( f_break_exe_func.load() )
+            {
+                LINFO( plog, "FMT is switching exe while loops" );
+            }
+            else
+            {
+                LINFO( plog, "FMT is exiting" );
+            }
 
             LDEBUG( plog, "Stopping output stream" );
             if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
@@ -346,7 +371,6 @@ namespace psyllid
 
         try
         {
-            midge::enum_t t_in_command = stream::s_none;
             freq_data* t_freq_data = nullptr;
             trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0.;
@@ -359,33 +383,36 @@ namespace psyllid
             LDEBUG( plog, "Entering apply-threshold loop" );
             while( ! is_canceled() && ! f_break_exe_func.load() )
             {
-                t_in_command = in_stream< 0 >().get();
-                if( t_in_command == stream::s_none )
+                // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+                // and still handle the input command appropriately
+
+                if( a_ctx.f_in_command == stream::s_none )
                 {
+
                     LTRACE( plog, "FMT read s_none" );
-                    continue;
+
                 }
-                if( t_in_command == stream::s_error )
+                else if( a_ctx.f_in_command == stream::s_error )
                 {
+
                     LTRACE( plog, "FMT read s_error" );
                     break;
+
                 }
-
-                LTRACE( plog, "FMT (apply-threshold) reading stream at index " << in_stream< 0 >().get_current_index() );
-
-                t_freq_data = in_stream< 0 >().data();
-                t_trigger_flag = out_stream< 0 >().data();
-
-                if( t_in_command == stream::s_start )
+                else if( a_ctx.f_in_command == stream::s_start )
                 {
+
                     LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     a_ctx.f_first_packet_after_start = true;
-                    continue;
-                }
 
-                if( t_in_command == stream::s_run )
+                }
+                if( a_ctx.f_in_command == stream::s_run )
                 {
+
+                    t_freq_data = in_stream< 0 >().data();
+                    t_trigger_flag = out_stream< 0 >().data();
+
                     LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
                            "  time = " << t_freq_data->get_unix_time() <<
                            "  id = " << t_freq_data->get_pkt_in_session() <<
@@ -428,31 +455,45 @@ namespace psyllid
                         {
                             LERROR( plog, "Exiting due to stream error" );
                             throw error() << "Stream error while applying threshold";
-                        }                    }
+                        }
+                    }
                     catch( error& e )
                     {
                         LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
                         break;
                     }
-                    continue;
-                }
 
-                if( t_in_command == stream::s_stop )
+                }
+                else if( a_ctx.f_in_command == stream::s_stop )
                 {
+
                     LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
-                    continue;
-                }
 
-                if( t_in_command == stream::s_exit )
+                }
+                else if( a_ctx.f_in_command == stream::s_exit )
                 {
+
                     LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
                     out_stream< 0 >().set( stream::s_exit );
                     break;
-                }
-            }
 
-            LINFO( plog, "FMT is exiting" );
+                }
+
+                a_ctx.f_in_command = in_stream< 0 >().get();
+                LTRACE( plog, "FMT (apply-threshold) reading stream at index " << in_stream< 0 >().get_current_index() );
+
+            } // while( ! is_canceled() && ! f_break_exe_func.load() )
+
+            LDEBUG( plog, "FMT has exited the apply-threshold while loop; possible reasons: is_canceled() = " << is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
+            if( f_break_exe_func.load() )
+            {
+                LINFO( plog, "FMT is switching exe while loops" );
+            }
+            else
+            {
+                LINFO( plog, "FMT is exiting" );
+            }
 
             LDEBUG( plog, "Stopping output stream" );
             if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
