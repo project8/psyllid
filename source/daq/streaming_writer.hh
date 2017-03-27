@@ -8,7 +8,6 @@
 #ifndef PSYLLID_STREAMING_WRITER_HH_
 #define PSYLLID_STREAMING_WRITER_HH_
 
-#include "control_access.hh"
 #include "egg_writer.hh"
 #include "node_builder.hh"
 #include "time_data.hh"
@@ -53,7 +52,6 @@ namespace psyllid
     */
     class streaming_writer :
             public midge::_consumer< streaming_writer, typelist_1( time_data ) >,
-            public control_access,
             public egg_writer
     {
         public:
@@ -62,6 +60,7 @@ namespace psyllid
 
         public:
             mv_accessible( unsigned, file_num );
+            mv_accessible( unsigned, file_size_limit_mb );
             mv_referrable( std::string, filename ); /// used if f_daq_control is not set
             mv_referrable( std::string, description ); /// used if f_daq_control is not set
 
@@ -76,12 +75,17 @@ namespace psyllid
             mv_accessible( double, freq_range ); // Hz
 
         public:
+            virtual void prepare_to_write( monarch_wrap_ptr a_mw_ptr, header_wrap_ptr a_hw_ptr );
+
             virtual void initialize();
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
         private:
             unsigned f_last_pkt_in_batch;
+
+            monarch_wrap_ptr f_monarch_ptr;
+            unsigned f_stream_no;
 
     };
 

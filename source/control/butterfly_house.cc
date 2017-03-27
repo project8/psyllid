@@ -7,7 +7,12 @@
 
 #include "butterfly_house.hh"
 
+#include "daq_control.hh"
+#include "egg_writer.hh"
+
 #include "logger.hh"
+#include "param.hh"
+#include "time.hh"
 
 #include "psyllid_error.hh"
 
@@ -68,13 +73,15 @@ namespace psyllid
         f_mw_ptrs.resize( f_file_infos.size() );
         for( unsigned t_file_num = 0; t_file_num < f_file_infos.size(); ++t_file_num )
         {
+            // global setup
+
             f_mw_ptrs[ t_file_num ] = declare_file( f_file_infos[ t_file_num ].f_filename );
             f_mw_ptrs[ t_file_num ]->set_max_file_size( f_max_file_size_mb );
 
             header_wrap_ptr t_hwrap_ptr = f_mw_ptrs[ t_file_num ]->get_header();
             t_hwrap_ptr->header().SetDescription( f_file_infos[ t_file_num ].f_description );
 
-            time_t t_raw_time = t_time_data->get_unix_time();
+            time_t t_raw_time = time( nullptr );
             struct tm* t_processed_time = gmtime( &t_raw_time );
             char t_timestamp[ 512 ];
             strftime( t_timestamp, 512, scarab::date_time_format, t_processed_time );
@@ -84,6 +91,15 @@ namespace psyllid
             t_hwrap_ptr->header().SetRunDuration( t_run_duration );
             t_hwrap_ptr->global_setup_done( true );
 
+            // writer/stream setup
+
+            for( auto it_writer = f_writers.begin(); it_writer != f_writers.end(); ++it_writer )
+            {
+                if( it_writer->second == t_file_num )
+                {
+                    it_writer->first->prepare_to_write( f_mw_ptrs[ t_file_num ], t_hwrap_ptr );
+                }
+            }
         }
     }
 
@@ -91,7 +107,8 @@ namespace psyllid
     {
         for( auto file_it = f_mw_ptrs.begin(); file_it != f_mw_ptrs.end(); ++file_it )
         {
-
+            (*file_it)->finish_file();
+            file_it->reset();
         }
     }
 

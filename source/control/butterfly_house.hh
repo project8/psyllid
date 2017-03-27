@@ -32,8 +32,14 @@
 #include "member_variables.hh"
 #include "singleton.hh"
 
+namespace scarab
+{
+    class param_node;
+}
+
 namespace psyllid
 {
+    class egg_writer;
 
     class butterfly_house : public scarab::singleton< butterfly_house >, public control_access
     {

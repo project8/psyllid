@@ -7,9 +7,9 @@
 
 #include "egg_writer.hh"
 
-#include "logger.hh"
+//#include "logger.hh"
 
-#include "psyllid_error.hh"
+//#include "psyllid_error.hh"
 
 namespace psyllid
 {

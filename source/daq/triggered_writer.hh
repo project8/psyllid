@@ -8,8 +8,6 @@
 #ifndef PSYLLID_TRIGGERED_WRITER_HH_
 #define PSYLLID_TRIGGERED_WRITER_HH_
 
-#include "butterfly_house.hh"
-#include "control_access.hh"
 #include "egg_writer.hh"
 #include "node_builder.hh"
 #include "trigger_flag.hh"
@@ -56,7 +54,6 @@ namespace psyllid
     */
     class triggered_writer :
             public midge::_consumer< triggered_writer, typelist_2( time_data, trigger_flag ) >,
-            public control_access,
             public egg_writer
     {
         public:
@@ -80,6 +77,8 @@ namespace psyllid
             mv_accessible( double, freq_range ); // Hz
 
         public:
+            virtual void prepare_to_write( monarch_wrap_ptr a_mw_ptr, header_wrap_ptr a_hw_ptr );
+
             virtual void initialize();
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
@@ -93,6 +92,7 @@ namespace psyllid
                 stream_wrap_ptr f_swrap_ptr;
                 monarch3::M3Record* f_record_ptr;
                 unsigned f_stream_no;
+                bool f_start_file_with_next_data;
                 uint64_t f_first_pkt_in_run;
                 bool f_is_new_event;
             };
@@ -100,6 +100,8 @@ namespace psyllid
             void exe_loop_not_running( exe_loop_context& a_ctx );
             void exe_loop_is_running( exe_loop_context& a_ctx );
 
+            monarch_wrap_ptr f_monarch_ptr;
+            unsigned f_stream_no;
     };
 
 

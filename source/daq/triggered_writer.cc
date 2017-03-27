@@ -7,7 +7,7 @@
 
 #include "triggered_writer.hh"
 
-#include "daq_control.hh"
+#include "butterfly_house.hh"
 #include "psyllid_error.hh"
 
 #include "digital.hh"
@@ -28,7 +28,6 @@ namespace psyllid
     LOGGER( plog, "triggered_writer" );
 
     triggered_writer::triggered_writer() :
-            control_access(),
             egg_writer(),
             f_file_num( 0 ),
             f_file_size_limit_mb( 2000 ),
@@ -42,12 +41,39 @@ namespace psyllid
             f_v_offset( 0. ),
             f_v_range( 0.5 ),
             f_center_freq( 50.e6 ),
-            f_freq_range( 100.e6 )
+            f_freq_range( 100.e6 ),
+            f_monarch_ptr(),
+            f_stream_no( 0 )
     {
     }
 
     triggered_writer::~triggered_writer()
     {
+    }
+
+    void triggered_writer::prepare_to_write( monarch_wrap_ptr /*a_mw_ptr*/, header_wrap_ptr a_hw_ptr )
+    {
+        scarab::dig_calib_params t_dig_params;
+        scarab::get_calib_params( f_bit_depth, f_data_type_size, f_v_offset, f_v_range, true, &t_dig_params );
+
+        vector< unsigned > t_chan_vec;
+        f_stream_no = a_hw_ptr->header().AddStream( "Psyllid - ROACH2",
+                f_acq_rate, f_record_size, f_sample_size, f_data_type_size,
+                monarch3::sDigitizedS, f_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
+
+        //unsigned i_chan_psyllid = 0; // this is the channel number in psyllid, as opposed to the channel number in the monarch file
+        for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
+        {
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( t_dig_params.v_offset );
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( t_dig_params.v_range );
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( t_dig_params.dac_gain );
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyMin( f_center_freq - 0.5 * f_freq_range );
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyRange( f_freq_range );
+
+            //++i_chan_psyllid;
+        }
+
+        return;
     }
 
     void triggered_writer::initialize()
@@ -65,6 +91,7 @@ namespace psyllid
             t_ctx.f_should_exit = false;
             t_ctx.f_record_ptr = nullptr;
             t_ctx.f_stream_no = 0;
+            t_ctx.f_start_file_with_next_data = false;
             t_ctx.f_first_pkt_in_run = 0;
             t_ctx.f_is_new_event = true;
 
@@ -90,14 +117,12 @@ namespace psyllid
         }
     }
 
-    void egg_writer::exe_loop_not_running( exe_loop_context& a_ctx )
+    void triggered_writer::exe_loop_not_running( exe_loop_context& a_ctx )
     {
         midge::enum_t t_trig_command = stream::s_none;
         midge::enum_t t_time_command = stream::s_none;
 
-        butterfly_house* t_bf_house = butterfly_house::get_instance();
-
-        time_data* t_time_data = nullptr;
+        //time_data* t_time_data = nullptr;
 
         while( ! is_canceled() )
         {
@@ -147,69 +172,17 @@ namespace psyllid
                     if( t_trig_command == stream::s_start )
                     {
                         LDEBUG( plog, "Time and trig commands match: start" );
-                        LINFO( plog, "Starting a run: preparing egg file" );
+                        LINFO( plog, "Starting a run" );
 
-                        try
-                        {
-                            unsigned t_run_duration = 0;
-                            if( ! f_daq_control.expired() )
-                            {
-                                std::shared_ptr< daq_control > t_daq_control = f_daq_control.lock();
-                                f_filename = t_daq_control->run_filename();
-                                f_description = t_daq_control->run_description();
-                                t_run_duration = t_daq_control->get_run_duration();
-                                LDEBUG( plog, "Updated filename, description, and duration from daq_control" );
-                            }
+                        LDEBUG( plog, "Will start file with next data" );
 
-                            LDEBUG( plog, "Declaring monarch file <" << f_filename << ">" );
-                            a_ctx.f_monarch_ptr = t_bf_house->declare_file( f_filename );
-                            header_wrap_ptr t_hwrap_ptr = a_ctx.f_monarch_ptr->get_header();
+                        if( a_ctx.f_swrap_ptr ) a_ctx.f_swrap_ptr.reset();
 
-                            if( ! t_hwrap_ptr->global_setup_done() )
-                            {
-                                t_time_data = in_stream< 0 >().data();
+                        LDEBUG( plog, "Getting stream <" << a_ctx.f_stream_no << ">" );
+                        a_ctx.f_swrap_ptr = a_ctx.f_monarch_ptr->get_stream( a_ctx.f_stream_no );
+                        a_ctx.f_record_ptr = a_ctx.f_swrap_ptr->get_stream_record();
 
-                                t_hwrap_ptr->header().SetDescription( f_description );
-
-                                time_t t_raw_time = t_time_data->get_unix_time();
-                                struct tm* t_processed_time = gmtime( &t_raw_time );
-                                char t_timestamp[ 512 ];
-                                strftime( t_timestamp, 512, scarab::date_time_format, t_processed_time );
-                                t_hwrap_ptr->header().SetTimestamp( t_timestamp );
-
-                                t_hwrap_ptr->header().SetRunDuration( t_run_duration );
-                                t_hwrap_ptr->global_setup_done( true );
-                            }
-
-                            vector< unsigned > t_chan_vec;
-                            a_ctx.f_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2",
-                                    f_acq_rate, f_record_size, f_sample_size, f_data_type_size,
-                                    monarch3::sDigitizedS, f_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
-
-                            scarab::dig_calib_params t_dig_params;
-                            scarab::get_calib_params( f_bit_depth, f_data_type_size, f_v_offset, f_v_range, true, &t_dig_params );
-
-                            //unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
-                            for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
-                            {
-                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( t_dig_params.v_offset );
-                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( t_dig_params.v_range );
-                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( t_dig_params.dac_gain );
-                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyMin( f_center_freq - 0.5 * f_freq_range );
-                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyRange( f_freq_range );
-                                //++i_chan_psyllid;
-                            }
-
-                            //t_run_start_time = a_ctx.f_monarch_ptr->get_run_start_time();
-                            a_ctx.f_first_pkt_in_run = t_time_data->get_pkt_in_session();
-
-                            a_ctx.f_is_new_event = true;
-                        }
-                        catch( error& e )
-                        {
-                            throw error() << "Unable to prepare the egg file <" << f_filename << ">: " << e.what();
-                        }
-
+                        a_ctx.f_start_file_with_next_data = true;
                         break; // break out of while loop looking for start trig command
                     }
                     else
@@ -230,7 +203,7 @@ namespace psyllid
         return;
     }
 
-    void egg_writer::exe_loop_is_running( exe_loop_context& a_ctx )
+    void triggered_writer::exe_loop_is_running( exe_loop_context& a_ctx )
     {
         midge::enum_t t_trig_command = stream::s_none;
         midge::enum_t t_time_command = stream::s_none;
@@ -335,6 +308,18 @@ namespace psyllid
 
                 t_time_data = in_stream< 0 >().data();
                 t_trig_data = in_stream< 1 >().data();
+
+                if( a_ctx.f_start_file_with_next_data )
+                {
+                    LDEBUG( plog, "Handling first packet in run" );
+
+                    a_ctx.f_first_pkt_in_run = t_time_data->get_pkt_in_session();
+
+                    a_ctx.f_is_new_event = true;
+
+                    a_ctx.f_start_file_with_next_data = false;
+                }
+
 
                 if( ! a_ctx.f_swrap_ptr )
                 {

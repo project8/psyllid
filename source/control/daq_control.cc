@@ -7,6 +7,7 @@
 
 #include "daq_control.hh"
 
+#include "butterfly_house.hh"
 #include "node_builder.hh"
 
 #include "diptera.hh"
