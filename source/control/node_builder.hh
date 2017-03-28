@@ -8,8 +8,6 @@
 #ifndef PSYLLID_NODE_BUILDER_HH_
 #define PSYLLID_NODE_BUILDER_HH_
 
-#include "control_access.hh"
-
 #include "psyllid_error.hh"
 
 #include "member_variables.hh"
@@ -86,7 +84,7 @@ namespace psyllid
     // node_builder
     //****************
 
-    class node_builder : public node_binding, public control_access
+    class node_builder : public node_binding
     {
         public:
             node_builder( node_binding* a_binding );
@@ -331,12 +329,6 @@ namespace psyllid
         f_config.clear();
         dump_config( t_node, f_config );
         f_config.merge( t_temp_config );
-
-        control_access* t_cont_acc = dynamic_cast< control_access* >( t_node );
-        if( t_cont_acc != nullptr )
-        {
-            t_cont_acc->set_daq_control( f_daq_control );
-        }
 
         apply_config( t_node, f_config );
         t_node->set_name( f_name );

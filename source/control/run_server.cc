@@ -79,7 +79,6 @@ namespace psyllid
             f_daq_control->set_daq_control( f_daq_control );
             f_daq_control->initialize();
 
-            f_stream_manager->set_daq_control( f_daq_control );
             if( f_config.has( "streams" ) && f_config.at( "streams" )->is_node() )
             {
                 if( ! f_stream_manager->initialize( *f_config.node_at( "streams" ) ) )

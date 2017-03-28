@@ -31,7 +31,6 @@ namespace psyllid
 
     node_builder::node_builder( node_binding* a_binding ) :
             node_binding(),
-            control_access(),
             f_binding( a_binding ),
             f_config(),
             f_name()
