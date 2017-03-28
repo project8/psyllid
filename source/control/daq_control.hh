@@ -8,12 +8,12 @@
 #ifndef PSYLLID_DAQ_CONTROL_HH_
 #define PSYLLID_DAQ_CONTROL_HH_
 
-#include "member_variables.hh"
-
+#include "control_access.hh"
 #include "stream_manager.hh" // for midge_package
 #include "psyllid_error.hh"
 
 #include "cancelable.hh"
+#include "member_variables.hh"
 
 #include "hub.hh"
 
@@ -26,7 +26,7 @@
 
 namespace psyllid
 {
-    class daq_control : public scarab::cancelable
+    class daq_control : public scarab::cancelable, public control_access
     {
         public:
             class run_error : public error
@@ -45,6 +45,9 @@ namespace psyllid
         public:
             daq_control( const scarab::param_node& a_master_config, std::shared_ptr< stream_manager > a_mgr );
             virtual ~daq_control();
+
+            /// Pre-execution initialization (call after setting the control_access pointer)
+            void initialize();
 
             /// Run the DAQ control thread
             void execute();

@@ -36,6 +36,7 @@ namespace psyllid
 
     daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< stream_manager > a_mgr ) :
             scarab::cancelable(),
+            control_access(),
             f_activation_condition(),
             f_daq_mutex(),
             f_node_manager( a_mgr ),
@@ -51,19 +52,24 @@ namespace psyllid
             f_status( status::deactivated )
     {
         // DAQ config is optional; defaults will work just fine
-        if( a_master_config.has( "daq" ) )
+        const scarab::param_node* t_daq_config = a_master_config.node_at( "daq" );
+
+        if( t_daq_config != nullptr )
         {
-            f_daq_config.reset( new param_node( *a_master_config.node_at( "daq" ) ) );
+            f_daq_config.reset( new param_node( *t_daq_config ) );
         }
 
-        if( a_master_config.has( "files" ) )
-        {
-            butterfly_house::get_instance()->prepare_files( a_master_config.node_at( "files" ) );
-        }
     }
 
     daq_control::~daq_control()
     {
+    }
+
+    void daq_control::initialize()
+    {
+        butterfly_house::get_instance()->set_daq_control( f_daq_control );
+        butterfly_house::get_instance()->prepare_files( f_daq_config.get() );
+        return;
     }
 
     void daq_control::execute()
@@ -87,6 +93,7 @@ namespace psyllid
         while( ! is_canceled() )
         {
             status t_status = get_status();
+            LTRACE( plog, "daq_control execute loop; status is <" << interpret_status( t_status ) << ">" );
             if( t_status == status::deactivated )
             {
                 std::unique_lock< std::mutex > t_lock( f_daq_mutex );
@@ -269,7 +276,18 @@ namespace psyllid
         LINFO( plog, "Run is commencing" );
 
         LDEBUG( plog, "Starting egg files" );
-        butterfly_house::get_instance()->start_files();
+        try
+        {
+            butterfly_house::get_instance()->start_files();
+        }
+        catch( error& e )
+        {
+            LERROR( plog, "Unable to start files: " << e.what() );
+            set_status( status::error );
+            LDEBUG( plog, "Canceling midge" );
+            if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+            return;
+        }
 
         const unsigned t_sub_duration = 100;
         unsigned t_n_sub_durations = 0;
@@ -320,16 +338,6 @@ namespace psyllid
             }
         }
 
-        LDEBUG( plog, "Finishing egg files" );
-        butterfly_house::get_instance()->finish_files();
-
-        // if daq_control has been canceled, assume that midge has been canceled by other methods, and this function should just exit
-        if( is_canceled() )
-        {
-            LDEBUG( plog, "Run was already cancelled or daq_control has been deactivated" );
-            return;
-        }
-
         // if we've reached here, we need to pause midge.
         // reasons for this include the timer has run out in a timed run, or the run has been manually stopped
 
@@ -339,6 +347,17 @@ namespace psyllid
         set_status( status::activated );
 
         LINFO( plog, "Run has stopped" );
+
+        // give midge time to finish the streams before finishing the files
+        std::this_thread::sleep_for( std::chrono::milliseconds(500));
+        LDEBUG( plog, "Finishing egg files" );
+        butterfly_house::get_instance()->finish_files();
+
+        // if daq_control has been canceled, assume that midge has been canceled by other methods, and this function should just exit
+        if( is_canceled() )
+        {
+            LDEBUG( plog, "Run was cancelled" );
+        }
 
         return;
     }
@@ -365,8 +384,22 @@ namespace psyllid
         LDEBUG( plog, "Canceling DAQ control" );
         set_status( status::canceled );
 
+        if( get_status() == status::running )
+        {
+            LDEBUG( plog, "Canceling run" );
+            try
+            {
+                stop_run();
+            }
+            catch( error& e )
+            {
+                LERROR( plog, "Unable to complete stop-run: " << e.what() );
+            }
+        }
+
         LDEBUG( plog, "Canceling midge" );
         if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+
         return;
     }
 

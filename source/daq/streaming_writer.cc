@@ -52,8 +52,10 @@ namespace psyllid
     {
     }
 
-    void streaming_writer::prepare_to_write( monarch_wrap_ptr /*a_mw_ptr*/, header_wrap_ptr a_hw_ptr )
+    void streaming_writer::prepare_to_write( monarch_wrap_ptr a_mw_ptr, header_wrap_ptr a_hw_ptr )
     {
+        f_monarch_ptr = a_mw_ptr;
+
         scarab::dig_calib_params t_dig_params;
         scarab::get_calib_params( f_bit_depth, f_data_type_size, f_v_offset, f_v_range, true, &t_dig_params );
 
@@ -214,6 +216,7 @@ namespace psyllid
     void streaming_writer_binding::do_apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring streaming_writer with:\n" << a_config );
+        a_node->set_file_num( a_config.get_value( "file-num", a_node->get_file_num() ) );
         a_node->set_file_size_limit_mb( a_config.get_value( "max-file-size-mb", a_node->get_file_size_limit_mb() ) );
         const scarab::param_node *t_dev_config = a_config.node_at( "device" );
         if( t_dev_config != nullptr )
@@ -234,6 +237,7 @@ namespace psyllid
     void streaming_writer_binding::do_dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for streaming_writer" );
+        a_config.add( "file-num", new scarab::param_value( a_node->get_file_num() ) );
         a_config.add( "max-file-size-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );
         scarab::param_node* t_dev_node = new scarab::param_node();
         t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );

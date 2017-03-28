@@ -52,14 +52,14 @@ namespace psyllid
         node( "frequency-mask-trigger", "fmt");
         //node( "term-time-data", "termtime" );
         //node( "term-trig-flag", "termtf" );
-        node( "egg-writer", "ew");
+        node( "triggered-writer", "trw");
 
         connection( "prs.out_0:tfrr.in_0" );
-        connection( "tfrr.out_0:ew.in_0" );
+        connection( "tfrr.out_0:trw.in_0" );
         connection( "tfrr.out_1:fmt.in_0" );
         //connection( "tfrr.out_0:termtime.in_0" );
         //connection( "fmt.out_0:termtf.in_0" );
-        connection( "fmt.out_0:ew.in_1" );
+        connection( "fmt.out_0:trw.in_1" );
     }
 
 #ifdef __linux__
@@ -70,12 +70,12 @@ namespace psyllid
         node( "packet-receiver-fpa", "prf" );
         node( "tf-roach-receiver", "tfrr");
         node( "frequency-mask-trigger", "fmt");
-        node( "egg-writer", "ew");
+        node( "triggered-writer", "trw");
 
         connection( "prf.out_0:tfrr.in_0" );
-        connection( "tfrr.out_0:ew.in_0" );
+        connection( "tfrr.out_0:trw.in_0" );
         connection( "tfrr.out_1:fmt.in_0" );
-        connection( "fmt.out_0:ew.in_1" );
+        connection( "fmt.out_0:trw.in_1" );
     }
 #endif
 

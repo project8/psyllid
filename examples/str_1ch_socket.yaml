@@ -8,6 +8,7 @@ amqp:
 
 daq:
     activate-at-startup: true
+    n-files: 1
 
 streams:
     ch0:
@@ -27,4 +28,7 @@ streams:
             length: 10
             port: 23530
             ip: 127.0.0.1
+            
+        strw:
+            file-num: 0
            

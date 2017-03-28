@@ -30,6 +30,7 @@ namespace psyllid
             f_butterflies(),
             f_house_mutex()
     {
+        LDEBUG( plog, "Butterfly house has been built" );
     }
 
     butterfly_house::~butterfly_house()
@@ -37,17 +38,28 @@ namespace psyllid
     }
 
 
-    void butterfly_house::prepare_files( const scarab::param_node* a_files_config )
+    void butterfly_house::prepare_files( const scarab::param_node* a_daq_config )
     {
         // default is 1 file
         f_file_infos.clear();
-        f_file_infos.resize( a_files_config->get_value( "n-files", 1U ) );
+
+        if( a_daq_config == nullptr )
+        {
+            f_file_infos.resize( 1 );
+        }
+        else
+        {
+            f_file_infos.resize( a_daq_config->get_value( "n-files", 1U ) );
+        }
+
         for( file_infos_it fi_it = f_file_infos.begin(); fi_it != f_file_infos.end(); ++fi_it )
         {
             std::stringstream t_filename_sstr;
-            t_filename_sstr << "psyllid_out_" << fi_it - f_file_infos.begin() << ".egg";
+            unsigned t_file_num = fi_it - f_file_infos.begin();
+            t_filename_sstr << "psyllid_out_" << t_file_num << ".egg";
             fi_it->f_filename = t_filename_sstr.str();
             fi_it->f_description = "";
+            LINFO( plog, "Prepared file <" << t_file_num << ">; default filename is <" << fi_it->f_filename << ">" );
         }
         return;
     }
@@ -85,7 +97,7 @@ namespace psyllid
             struct tm* t_processed_time = gmtime( &t_raw_time );
             char t_timestamp[ 512 ];
             strftime( t_timestamp, 512, scarab::date_time_format, t_processed_time );
-            LWARN( plog, "raw: " << t_raw_time << "   proc'd: " << t_processed_time->tm_hour << " " << t_processed_time->tm_min << " " << t_processed_time->tm_year << "   timestamp: " << t_timestamp );
+            //LWARN( plog, "raw: " << t_raw_time << "   proc'd: " << t_processed_time->tm_hour << " " << t_processed_time->tm_min << " " << t_processed_time->tm_year << "   timestamp: " << t_timestamp );
             t_hwrap_ptr->header().SetTimestamp( t_timestamp );
 
             t_hwrap_ptr->header().SetRunDuration( t_run_duration );
