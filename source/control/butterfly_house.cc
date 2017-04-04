@@ -23,7 +23,7 @@ namespace psyllid
 
     butterfly_house::butterfly_house() :
             control_access(),
-            f_max_file_size_mb( 2000 ),
+            f_max_file_size_mb( 500 ),
             f_file_infos(),
             f_mw_ptrs(),
             f_writers(),
@@ -50,10 +50,12 @@ namespace psyllid
         else
         {
             f_file_infos.resize( a_daq_config->get_value( "n-files", 1U ) );
+            set_max_file_size_mb( a_daq_config->get_value( "max-file-size-mb", get_max_file_size_mb() ) );
         }
 
         for( file_infos_it fi_it = f_file_infos.begin(); fi_it != f_file_infos.end(); ++fi_it )
         {
+            // creating default filenames; these can be changed when the run is started
             std::stringstream t_filename_sstr;
             unsigned t_file_num = fi_it - f_file_infos.begin();
             t_filename_sstr << "psyllid_out_" << t_file_num << ".egg";

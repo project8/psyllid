@@ -59,6 +59,7 @@ namespace psyllid
             f_daq_config.reset( new param_node( *t_daq_config ) );
         }
 
+        set_run_duration( f_daq_config->get_value( "duration", get_run_duration() ) );
     }
 
     daq_control::~daq_control()

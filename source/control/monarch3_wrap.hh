@@ -27,6 +27,7 @@
 
 #include "M3Monarch.hh"
 
+#include <future>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -87,8 +88,9 @@ namespace psyllid
             std::string f_filename_ext;
             unsigned f_file_count;
 
-            double f_max_file_size_mb; /// in MB
-            double f_file_size_est_mb;
+            std::atomic< double > f_max_file_size_mb;
+            std::atomic< double > f_file_size_est_mb;
+            std::future< void > f_new_file_switch_return;
 
             std::unique_ptr< monarch3::Monarch3 > f_monarch;
             mutable std::mutex f_monarch_mutex;

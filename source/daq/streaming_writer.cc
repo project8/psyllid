@@ -30,7 +30,6 @@ namespace psyllid
     streaming_writer::streaming_writer() :
             egg_writer(),
             f_file_num( 0 ),
-            f_file_size_limit_mb( 2000 ),
             f_filename( "default_filename_strw.egg" ),
             f_description( "A very nice run" ),
             f_bit_depth( 8 ),
@@ -170,6 +169,7 @@ namespace psyllid
                     }
 
                     uint64_t t_time_id = t_time_data->get_pkt_in_session();
+                    LTRACE( plog, "Writing packet (in session) " << t_time_id );
 
                     uint32_t t_expected_pkt_in_batch = f_last_pkt_in_batch + 1;
                     if( t_expected_pkt_in_batch >= BATCH_COUNTER_SIZE ) t_expected_pkt_in_batch = 0;
@@ -217,7 +217,6 @@ namespace psyllid
     {
         LDEBUG( plog, "Configuring streaming_writer with:\n" << a_config );
         a_node->set_file_num( a_config.get_value( "file-num", a_node->get_file_num() ) );
-        a_node->set_file_size_limit_mb( a_config.get_value( "max-file-size-mb", a_node->get_file_size_limit_mb() ) );
         const scarab::param_node *t_dev_config = a_config.node_at( "device" );
         if( t_dev_config != nullptr )
         {
@@ -238,7 +237,6 @@ namespace psyllid
     {
         LDEBUG( plog, "Dumping configuration for streaming_writer" );
         a_config.add( "file-num", new scarab::param_value( a_node->get_file_num() ) );
-        a_config.add( "max-file-size-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );
         scarab::param_node* t_dev_node = new scarab::param_node();
         t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );
         t_dev_node->add( "data-type-size", new scarab::param_value( a_node->get_data_type_size() ) );

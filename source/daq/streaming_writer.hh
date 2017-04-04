@@ -40,7 +40,6 @@ namespace psyllid
        - "v-range": double -- voltage range for ADC calibration
      - "center-freq": double -- the center frequency of the data being digitized in Hz
      - "freq-range": double -- the frequency window (bandwidth) of the data being digitized in Hz
-     - "max-file-size-mb": uint -- maximum output file size in MB; a new file will be started when the estimated file size reaches this value; should be consistent between all writers writing to the same file
 
      ADC calibration: analog (V) = digital * gain + v-offset
                       gain = v-range / # of digital levels
@@ -60,7 +59,6 @@ namespace psyllid
 
         public:
             mv_accessible( unsigned, file_num );
-            mv_accessible( unsigned, file_size_limit_mb );
             mv_referrable( std::string, filename ); /// used if f_daq_control is not set
             mv_referrable( std::string, description ); /// used if f_daq_control is not set
 

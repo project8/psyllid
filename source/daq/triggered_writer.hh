@@ -31,7 +31,6 @@ namespace psyllid
      Node type: "triggered-writer"
 
      Available configuration values:
-     - "file-size-limit-mb": uint -- Not used currently
      - "device": node -- digitizer parameters
        - "bit-depth": uint -- bit depth of each sample
        - "data-type-size": uint -- number of bytes in each sample (or component of a sample for sample-size > 1)
@@ -62,7 +61,6 @@ namespace psyllid
 
         public:
             mv_accessible( unsigned, file_num );
-            mv_accessible( unsigned, file_size_limit_mb );
             mv_referrable( std::string, filename ); /// used if f_daq_control is not set
             mv_referrable( std::string, description ); /// used if f_daq_control is not set
 

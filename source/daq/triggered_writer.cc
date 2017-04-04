@@ -30,7 +30,6 @@ namespace psyllid
     triggered_writer::triggered_writer() :
             egg_writer(),
             f_file_num( 0 ),
-            f_file_size_limit_mb( 2000 ),
             f_filename( "default_filename_tw.egg" ),
             f_description( "A very nice run" ),
             f_bit_depth( 8 ),
@@ -400,7 +399,6 @@ namespace psyllid
     {
         LDEBUG( plog, "Configuring triggered_writer with:\n" << a_config );
         a_node->set_file_num( a_config.get_value( "file-num", a_node->get_file_num() ) );
-        a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
         const scarab::param_node *t_dev_config = a_config.node_at( "device" );
         if( t_dev_config != nullptr )
         {
@@ -421,7 +419,6 @@ namespace psyllid
     {
         LDEBUG( plog, "Dumping configuration for triggered_writer" );
         a_config.add( "file-num", new scarab::param_value( a_node->get_file_num() ) );
-        a_config.add( "file-size-limit-mb", new scarab::param_value( a_node->get_file_size_limit_mb() ) );
         scarab::param_node* t_dev_node = new scarab::param_node();
         t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );
         t_dev_node->add( "data-type-size", new scarab::param_value( a_node->get_data_type_size() ) );
