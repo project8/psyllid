@@ -32,6 +32,9 @@ namespace psyllid
 
         param_node* t_daq_node = new param_node();
         t_daq_node->add( "activate-at-startup", new param_value( true ) );
+        t_daq_node->add( "n-files", new param_value( 1U ) );
+        t_daq_node->add( "duration", new param_value( 1000U ) );
+        t_daq_node->add( "max-file-size-mb", new param_value( 500.0 ) );
         add( "daq", t_daq_node );
 
         /*

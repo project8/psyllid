@@ -8,8 +8,6 @@
 #ifndef PSYLLID_NODE_BUILDER_HH_
 #define PSYLLID_NODE_BUILDER_HH_
 
-#include "control_access.hh"
-
 #include "psyllid_error.hh"
 
 #include "member_variables.hh"
@@ -45,8 +43,8 @@ namespace psyllid
             virtual void dump_config( const midge::node* a_node, scarab::param_node& a_config ) const = 0;
 
             /// Calls a command on the given node
-            /// Throws psyllid::error if the command is unknown or fails
-            virtual void run_command( midge::node* a_node, const scarab::param_node& a_config ) const = 0;
+            /// Throws psyllid::error if the command fails, and returns false if the command is unrecognized
+            virtual bool run_command( midge::node* a_node, const std::string& a_cmd, const scarab::param_node& a_args ) const = 0;
 
     };
 
@@ -70,14 +68,14 @@ namespace psyllid
             virtual void apply_config( midge::node* a_node, const scarab::param_node& a_config ) const;
             virtual void dump_config( const midge::node* a_node, scarab::param_node& a_config ) const;
 
-            virtual void run_command( midge::node* a_node, const scarab::param_node& a_cmd ) const;
+            virtual bool run_command( midge::node* a_node, const std::string& a_cmd, const scarab::param_node& a_args ) const;
 
         private:
             virtual void do_apply_config( x_node_type* a_node, const scarab::param_node& a_config ) const = 0;
             virtual void do_dump_config( const x_node_type* a_node, scarab::param_node& a_config ) const = 0;
 
             /// in derived classes, should throw a std::exception if the command fails, and return false if the command is unrecognized
-            virtual bool do_run_command( x_node_type* a_node, const scarab::param_node& a_cmd ) const;
+            virtual bool do_run_command( x_node_type* a_node, const std::string& a_cmd, const scarab::param_node& a_args ) const;
 
     };
 
@@ -86,7 +84,7 @@ namespace psyllid
     // node_builder
     //****************
 
-    class node_builder : public node_binding, public control_access
+    class node_builder : public node_binding
     {
         public:
             node_builder( node_binding* a_binding );
@@ -115,7 +113,7 @@ namespace psyllid
             virtual void apply_config( midge::node* a_node, const scarab::param_node& a_config ) const;
             virtual void dump_config( const midge::node* a_node, scarab::param_node& a_config ) const;
 
-            virtual void run_command( midge::node* a_node, const scarab::param_node& a_cmd ) const;
+            virtual bool run_command( midge::node* a_node, const std::string& a_cmd, const scarab::param_node& a_args ) const;
 
     };
 
@@ -217,7 +215,7 @@ namespace psyllid
     }
 
     template< class x_node_type, class x_node_binding >
-    void _node_binding< x_node_type, x_node_binding >::run_command( midge::node* a_node, const scarab::param_node& a_cmd ) const
+    bool _node_binding< x_node_type, x_node_binding >::run_command( midge::node* a_node, const std::string& a_cmd, const scarab::param_node& a_args ) const
     {
         x_node_type* t_derived_node = dynamic_cast< x_node_type* >( a_node );
         if( t_derived_node == nullptr )
@@ -226,17 +224,16 @@ namespace psyllid
         }
         try
         {
-            do_run_command( t_derived_node, a_cmd );
+            return do_run_command( t_derived_node, a_cmd, a_args );
         }
         catch( std::exception& e )
         {
-            throw psyllid::error() << e.what();
+            throw error() << e.what();
         }
-        return;
     }
 
     template< class x_node_type, class x_node_binding >
-    bool _node_binding< x_node_type, x_node_binding >::do_run_command( x_node_type*, const scarab::param_node& ) const
+    bool _node_binding< x_node_type, x_node_binding >::do_run_command( x_node_type*, const std::string&, const scarab::param_node& ) const
     {
         return false;
     }
@@ -283,10 +280,9 @@ namespace psyllid
         return;
     }
 
-    inline void node_builder::run_command( midge::node* a_node, const scarab::param_node& a_cmd ) const
+    inline bool node_builder::run_command( midge::node* a_node, const std::string& a_cmd, const scarab::param_node& a_args ) const
     {
-        f_binding->run_command( a_node, a_cmd );
-        return;
+        return f_binding->run_command( a_node, a_cmd, a_args );
     }
 
 
@@ -333,12 +329,6 @@ namespace psyllid
         f_config.clear();
         dump_config( t_node, f_config );
         f_config.merge( t_temp_config );
-
-        control_access* t_cont_acc = dynamic_cast< control_access* >( t_node );
-        if( t_cont_acc != nullptr )
-        {
-            t_cont_acc->set_daq_control( f_daq_control );
-        }
 
         apply_config( t_node, f_config );
         t_node->set_name( f_name );

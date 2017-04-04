@@ -8,8 +8,6 @@
 #ifndef PSYLLID_STREAM_MANAGER_HH_
 #define PSYLLID_STREAM_MANAGER_HH_
 
-#include "control_access.hh"
-
 #include "locked_resource.hh"
 
 #include "diptera.hh"
@@ -33,7 +31,7 @@ namespace psyllid
 
     class node_builder;
 
-    class stream_manager : public control_access
+    class stream_manager
     {
         public:
             struct stream_template

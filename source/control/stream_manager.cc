@@ -267,7 +267,6 @@ namespace psyllid
             // pass the configuration to the builder
             t_builder->configure_builder( t_node_config );
 
-            t_builder->set_daq_control( f_daq_control.lock() );
             t_stream.f_nodes.insert( stream_template::nodes_t::value_type( t_node_it->first, t_builder ) );
         }
 

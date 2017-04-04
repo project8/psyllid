@@ -44,12 +44,17 @@ namespace psyllid
      - "time-sync-tol": uint -- (currently unused) Tolerance for time synchronization between the ROACH and the server (seconds)
      - "start-paused": bool -- Whether to start execution paused and wait for an unpause command
 
+     Available DAQ commands:
+     - "freq-only" (no args) -- Switch the execution mode to frequency-only
+     - "time-and-freq" (no args) -- Switch the execution mode to time-and-frequency
+
      Input Stream:
      - 0: memory_block
 
      Output Streams:
      - 0: time_data
-     - 1: freq_data
+     - 1: freq_data (for time_and_freq mode)
+     - 2: freq_data (for freq_only mode)
     */
     class tf_roach_receiver : public midge::_transformer< tf_roach_receiver, typelist_1( memory_block ), typelist_2( time_data, freq_data ) >
     {
@@ -63,14 +68,35 @@ namespace psyllid
             mv_accessible( uint64_t, udp_buffer_size );
             mv_accessible( unsigned, time_sync_tol );
             mv_accessible( bool, start_paused );
+            mv_accessible( unsigned, skip_after_stop );
 
         public:
+            void switch_to_freq_only();
+            void switch_to_time_and_freq();
+
             virtual void initialize();
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
         private:
-            void check_instruction();
+            struct exe_func_context
+            {
+                midge::diptera* f_midge;
+                midge::enum_t f_in_command;
+                memory_block* f_memory_block;
+                time_data* f_time_data;
+                freq_data* f_freq_data;
+                std::unique_ptr< char[] > f_buffer_ptr;
+                size_t f_pkt_size;
+            };
+
+            bool exe_time_and_freq( exe_func_context& a_ctx );
+            bool exe_freq_only( exe_func_context& a_ctx );
+
+            bool (tf_roach_receiver::*f_exe_func)( exe_func_context& a_ctx );
+            std::mutex f_exe_func_mutex;
+            std::atomic< bool > f_break_exe_func;
+
             virtual void do_cancellation();
 
             bool f_paused;
@@ -89,6 +115,8 @@ namespace psyllid
         private:
             virtual void do_apply_config( tf_roach_receiver* a_node, const scarab::param_node& a_config ) const;
             virtual void do_dump_config( const tf_roach_receiver* a_node, scarab::param_node& a_config ) const;
+
+            virtual bool do_run_command( tf_roach_receiver* a_node, const std::string& a_cmd, const scarab::param_node& ) const;
     };
 
 } /* namespace psyllid */

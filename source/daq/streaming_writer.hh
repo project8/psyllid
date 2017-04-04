@@ -8,7 +8,7 @@
 #ifndef PSYLLID_STREAMING_WRITER_HH_
 #define PSYLLID_STREAMING_WRITER_HH_
 
-#include "control_access.hh"
+#include "egg_writer.hh"
 #include "node_builder.hh"
 #include "time_data.hh"
 
@@ -30,7 +30,6 @@ namespace psyllid
      Node type: "streaming-writer"
 
      Available configuration values:
-     - "file-size-limit-mb": uint -- Not used currently
      - "device": node -- digitizer parameters
        - "bit-depth": uint -- bit depth of each sample
        - "data-type-size": uint -- number of bytes in each sample (or component of a sample for sample-size > 1)
@@ -39,8 +38,8 @@ namespace psyllid
        - "acq-rate": uint -- acquisition rate in MHz
        - "v-offset": double -- voltage offset for ADC calibration
        - "v-range": double -- voltage range for ADC calibration
-     - "center-freq": double -- the center frequency of the data being digitized
-     - "freq-range": double -- the frequency window (bandwidth) of the data being digitized
+     - "center-freq": double -- the center frequency of the data being digitized in Hz
+     - "freq-range": double -- the frequency window (bandwidth) of the data being digitized in Hz
 
      ADC calibration: analog (V) = digital * gain + v-offset
                       gain = v-range / # of digital levels
@@ -52,14 +51,14 @@ namespace psyllid
     */
     class streaming_writer :
             public midge::_consumer< streaming_writer, typelist_1( time_data ) >,
-            public control_access
+            public egg_writer
     {
         public:
             streaming_writer();
             virtual ~streaming_writer();
 
         public:
-            mv_accessible( unsigned, file_size_limit_mb );
+            mv_accessible( unsigned, file_num );
             mv_referrable( std::string, filename ); /// used if f_daq_control is not set
             mv_referrable( std::string, description ); /// used if f_daq_control is not set
 
@@ -70,16 +69,21 @@ namespace psyllid
             mv_accessible( unsigned, acq_rate ); // MHz
             mv_accessible( double, v_offset ); // V
             mv_accessible( double, v_range ); // V
-            mv_accessible( double, center_freq ); // MHz
-            mv_accessible( double, freq_range ); // MHz
+            mv_accessible( double, center_freq ); // Hz
+            mv_accessible( double, freq_range ); // Hz
 
         public:
+            virtual void prepare_to_write( monarch_wrap_ptr a_mw_ptr, header_wrap_ptr a_hw_ptr );
+
             virtual void initialize();
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
         private:
             unsigned f_last_pkt_in_batch;
+
+            monarch_wrap_ptr f_monarch_ptr;
+            unsigned f_stream_no;
 
     };
 
