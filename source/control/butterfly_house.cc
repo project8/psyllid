@@ -127,24 +127,30 @@ namespace psyllid
 
     void butterfly_house::register_writer( egg_writer* a_writer, unsigned a_file_num )
     {
-        //TODO: what happens if the writer has already been registered for this file number
+        bool t_has_already = false;
+        auto t_range = f_writers.equal_range( a_writer );
+        for( auto t_it = t_range.first; t_it != t_range.second; ++t_it )
+        {
+            if( t_it->second == a_file_num )
+            {
+                t_has_already = true;
+                break;
+            }
+        }
+        if( t_has_already )
+        {
+            throw error() << "Egg writer at <" << a_writer << "> is already registered for file number " << a_file_num;
+        }
         f_writers.insert( std::pair< egg_writer*, unsigned >( a_writer, a_file_num ) );
         return;
     }
 
     void butterfly_house::unregister_writer( egg_writer* a_writer )
     {
-        //TODO: can this be done w/out iterating?
-        //TODO: does erasing one destroy the other iterators?
         auto t_range = f_writers.equal_range( a_writer );
-        for( auto it_writer = t_range.first; it_writer != t_range.second; ++it_writer )
-        {
-            f_writers.erase( it_writer );
-        }
+        f_writers.erase( t_range.first, t_range.second );
         return;
     }
-
-
 
     monarch_wrap_ptr butterfly_house::declare_file( const std::string& a_filename )
     {
