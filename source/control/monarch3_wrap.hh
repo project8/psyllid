@@ -61,20 +61,33 @@ namespace psyllid
             monarch_wrapper( const std::string& a_filename );
             ~monarch_wrapper();
 
+            /// Returns the header wrapped in a header_wrap_ptr to be filled at the beginning of file writing.
             header_wrap_ptr get_header();
 
+            /// Returns the requested stream wrapped in a stream_wrap_ptr to be used to write records to the file.
+            /// If the header had not been written, this writes the header to the file.
             stream_wrap_ptr get_stream( unsigned a_stream_no );
 
+            /// Switch to a new file that continues the first file.
+            /// The filename is automatically determine from the original filename by appending an integer count of the number of continuation files.
+            /// If file contributions are being recorded, this is done automatically when the maximum file size is exceeded.
             void switch_to_new_file();
 
+            /// Finish the given stream.  The stream object will be deleted.
+            /// If the finish-if-streams-done flag is true, the file will also be finished if this was the last stream open.
             void finish_stream( unsigned a_stream_no, bool a_finish_if_streams_done = false );
             void finish_file();
 
             monarch_time_point_t get_run_start_time() const;
 
+            /// Override the stage value
             void set_stage( monarch_stage a_stage );
 
+            /// Set the maximum file size used to determine when a new file is automatically started.
             void set_max_file_size( double a_size );
+
+            /// If keeping track of file sizes for automatically creating new files, use this to inform the monarch_wrapper that a given number of bytes was written to the file.
+            /// This should be called every time a record is written to the file.
             void record_file_contribution( double a_size );
 
         private:
@@ -121,9 +134,6 @@ namespace psyllid
             // Will throw psyllid::error if the header object is not valid.
             monarch3::M3Header& header();
 
-            bool global_setup_done() const;
-            void global_setup_done( bool a_flag );
-
         private:
             header_wrapper( const header_wrapper& ) = delete;
             header_wrapper& operator=( const header_wrapper& ) = delete;
@@ -134,8 +144,6 @@ namespace psyllid
 
             monarch3::M3Header* f_header;
             std::unique_lock< std::mutex > f_lock;
-
-            bool f_global_setup_done;
     };
 
 
@@ -162,7 +170,9 @@ namespace psyllid
             /// Write the record contents to the file
             bool write_record( bool a_is_new_acq );
 
+            /// Manually lock the stream mutex
             void lock() const;
+            /// Manually unlock the stream mutex
             void unlock() const;
 
             /// Complete use of this stream; does not write the file to disk
@@ -193,18 +203,6 @@ namespace psyllid
     inline void monarch_wrapper::set_max_file_size( double a_size )
     {
         f_max_file_size_mb = a_size;
-        return;
-    }
-
-
-    inline bool header_wrapper::global_setup_done() const
-    {
-        return f_global_setup_done;
-    }
-
-    inline void header_wrapper::global_setup_done( bool a_flag )
-    {
-        f_global_setup_done = a_flag;
         return;
     }
 

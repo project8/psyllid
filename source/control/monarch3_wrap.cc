@@ -14,6 +14,7 @@
 #include "logger.hh"
 
 #include <future>
+#include <signal.h>
 
 
 namespace psyllid
@@ -37,8 +38,7 @@ namespace psyllid
 
     header_wrapper::header_wrapper( monarch3::Monarch3& a_monarch, std::mutex& a_mutex ) :
         f_header( a_monarch.GetHeader() ),
-        f_lock( a_mutex ),
-        f_global_setup_done( false )
+        f_lock( a_mutex )
     {
         if( ! f_header )
         {
@@ -48,11 +48,9 @@ namespace psyllid
 
     header_wrapper::header_wrapper( header_wrapper&& a_orig ) :
             f_header( a_orig.f_header ),
-            f_lock( *a_orig.f_lock.release() ),
-            f_global_setup_done( a_orig.f_global_setup_done )
+            f_lock( *a_orig.f_lock.release() )
     {
         a_orig.f_header = nullptr;
-        a_orig.f_global_setup_done = false;
     }
 
     header_wrapper::~header_wrapper()
@@ -66,8 +64,6 @@ namespace psyllid
         a_orig.f_header = nullptr;
         f_lock.release();
         f_lock.swap( a_orig.f_lock );
-        f_global_setup_done = a_orig.f_global_setup_done;
-        a_orig.f_global_setup_done = false;
         return *this;
     }
 
@@ -199,6 +195,7 @@ namespace psyllid
             f_filename_base = f_orig_filename.substr( 0, t_ext_pos );
             f_filename_ext = f_orig_filename.substr( t_ext_pos );
         }
+        LDEBUG( plog, "Monarch wrapper created with filename base <" << f_filename_base << "> and extension <" << f_filename_ext << ">" );
 
         std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
         try
@@ -378,7 +375,7 @@ namespace psyllid
 
             // create the new filename
             std::stringstream t_count_stream;
-            t_count_stream << f_file_count;
+            t_count_stream << f_file_count++;
             std::string t_new_filename = f_filename_base + '_' + t_count_stream.str() + f_filename_ext;
             LDEBUG( plog, "Switching to new file <" << t_new_filename << ">" );
 
@@ -401,7 +398,7 @@ namespace psyllid
             monarch3::M3Header* t_new_header = t_new_monarch->GetHeader();
             t_new_header->CopyBasicInfo( *(f_monarch->GetHeader()) );
             t_new_header->SetFilename( t_new_filename );
-            t_new_header->SetDescription( t_new_header->GetDescription() + "\nContinuation of file " + f_orig_filename );
+            t_new_header->SetDescription( t_new_header->GetDescription() + "\nContinuation of file " + f_monarch->GetHeader()->GetFilename() );
 
             // for each stream, lock stream pointer, create new stream in new file, and remove the reference to the old stream (the stream itself is deleted in Monarch3::FinishWriting())
             std::vector< monarch3::M3StreamHeader >* t_old_stream_headers = &f_monarch->GetHeader()->GetStreamHeaders();
@@ -502,7 +499,7 @@ namespace psyllid
                             catch( std::exception& e )
                             {
                                 LERROR( plog, "Caught exception while switching to new file: " << e.what() );
-                                raise(SIGINT);
+                                raise( SIGINT );
                             }
                         } );
             f_new_file_switch_return = std::move( t_new_file_return );

@@ -93,7 +93,6 @@ namespace psyllid
             time_data* t_time_data = nullptr;
 
             stream_wrap_ptr t_swrap_ptr;
-            monarch3::M3Record* t_record_ptr = nullptr;
 
             uint64_t t_bytes_per_record = f_record_size * f_sample_size * f_data_type_size;
             scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)f_acq_rate * 1.e3 );
@@ -147,7 +146,6 @@ namespace psyllid
 
                     LDEBUG( plog, "Getting stream <" << f_stream_no << ">" );
                     t_swrap_ptr = f_monarch_ptr->get_stream( f_stream_no );
-                    t_record_ptr = t_swrap_ptr->get_stream_record();
 
                     t_start_file_with_next_data = true;
                     continue;
@@ -176,9 +174,9 @@ namespace psyllid
                     if( ! t_is_new_acquisition && t_time_data->get_pkt_in_batch() != t_expected_pkt_in_batch ) t_is_new_acquisition = true;
                     f_last_pkt_in_batch = t_time_data->get_pkt_in_batch();
 
-                    t_record_ptr->SetRecordId( t_time_id );
-                    t_record_ptr->SetTime( t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ) );
-                    ::memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
+                    t_swrap_ptr->get_stream_record()->SetRecordId( t_time_id );
+                    t_swrap_ptr->get_stream_record()->SetTime( t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ) );
+                    ::memcpy( t_swrap_ptr->get_stream_record()->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
                     t_swrap_ptr->write_record( t_is_new_acquisition );
 
                     t_is_new_acquisition = false;

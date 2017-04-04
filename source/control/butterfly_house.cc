@@ -103,7 +103,6 @@ namespace psyllid
             t_hwrap_ptr->header().SetTimestamp( t_timestamp );
 
             t_hwrap_ptr->header().SetRunDuration( t_run_duration );
-            t_hwrap_ptr->global_setup_done( true );
 
             // writer/stream setup
 
