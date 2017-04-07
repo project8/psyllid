@@ -530,13 +530,32 @@ namespace psyllid
     {
         try
         {
-            f_run_filename = a_request->get_payload().get_value( "filename", f_run_filename );
-            f_run_description = a_request->get_payload().get_value( "description", f_run_description );
+            if( a_request->get_payload().has( "filename" ) ) set_filename( a_request->get_payload().get_value( "filename" ), 0 );
+            if( a_request->get_payload().has( "filenames" ) )
+            {
+                const scarab::param_array* t_filenames = a_request->get_payload().array_at( "filenames" );
+                for( unsigned i_fn = 0; i_fn < t_filenames->size(); ++i_fn )
+                {
+                    set_filename( t_filenames->get_value( i_fn ), i_fn );
+                }
+            }
+
+            if( a_request->get_payload().has( "description" ) ) set_description( a_request->get_payload().get_value( "description" ), 0 );
+            if( a_request->get_payload().has( "descriptions" ) )
+            {
+                const scarab::param_array* t_descriptions = a_request->get_payload().array_at( "descriptions" );
+                for( unsigned i_fn = 0; i_fn < t_descriptions->size(); ++i_fn )
+                {
+                    set_description( t_descriptions->get_value( i_fn ), i_fn );
+                }
+            }
+
             f_run_duration = a_request->get_payload().get_value( "duration", f_run_duration );
+
             start_run();
             return a_reply_pkg.send_reply( retcode_t::success, "Run started" );
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to start run: " ) + e.what() );
         }
