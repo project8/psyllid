@@ -61,6 +61,12 @@ namespace psyllid
 
             void unregister_writer( egg_writer* a_writer );
 
+            void set_filename( const std::string& a_filename, unsigned a_file_num = 0 );
+            const std::string& get_filename( unsigned a_file_num );
+
+            void set_description( const std::string& a_desc, unsigned a_file_num = 0 );
+            const std::string& get_description( unsigned a_file_num );
+
         private:
             struct file_info
             {
@@ -75,7 +81,8 @@ namespace psyllid
             std::vector< monarch_wrap_ptr > f_mw_ptrs;
             std::multimap< egg_writer*, unsigned > f_writers;
 
-        public:
+        private:
+            friend class monarch_wrapper;
 
             /// Creates the Monarch3 object for the given filename
             /// Sets the Monarch stage to "initializing"

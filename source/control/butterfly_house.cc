@@ -127,6 +127,11 @@ namespace psyllid
 
     void butterfly_house::register_writer( egg_writer* a_writer, unsigned a_file_num )
     {
+        if( a_file_num >= f_file_infos.size() )
+        {
+            throw error() << "Currently configured number of files is <" << f_file_infos.size() << ">, but file <" << a_file_num << "> was requested by a writer; please reconfigure for the appropriate number of files or assign the writer to the appropriate file number.";
+        }
+
         bool t_has_already = false;
         auto t_range = f_writers.equal_range( a_writer );
         for( auto t_it = t_range.first; t_it != t_range.second; ++t_it )
@@ -150,6 +155,32 @@ namespace psyllid
         auto t_range = f_writers.equal_range( a_writer );
         f_writers.erase( t_range.first, t_range.second );
         return;
+    }
+
+    void butterfly_house::set_filename( const std::string& a_filename, unsigned a_file_num )
+    {
+        if( a_file_num > f_file_infos.size() ) throw error() << "Currently configured number of files is <" << f_file_infos.size() << ">, but filename-set was for file <" << a_file_num << ">.";
+        f_file_infos[ a_file_num ].f_filename = a_filename;
+        return;
+    }
+
+    const std::string& butterfly_house::get_filename( unsigned a_file_num )
+    {
+        if( a_file_num > f_file_infos.size() ) throw error() << "Currently configured number of files is <" << f_file_infos.size() << ">, but filename-get was for file <" << a_file_num << ">.";
+        return f_file_infos[ a_file_num ].f_filename;
+    }
+
+    void butterfly_house::set_description( const std::string& a_desc, unsigned a_file_num )
+    {
+        if( a_file_num > f_file_infos.size() ) throw error() << "Currently configured number of files is <" << f_file_infos.size() << ">, but description-set was for file <" << a_file_num << ">.";
+        f_file_infos[ a_file_num ].f_description = a_desc;
+        return;
+    }
+
+    const std::string& butterfly_house::get_description( unsigned a_file_num )
+    {
+        if( a_file_num > f_file_infos.size() ) throw error() << "Currently configured number of files is <" << f_file_infos.size() << ">, but description-get was for file <" << a_file_num << ">.";
+        return f_file_infos[ a_file_num ].f_description;
     }
 
     monarch_wrap_ptr butterfly_house::declare_file( const std::string& a_filename )
