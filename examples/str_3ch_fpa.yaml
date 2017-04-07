@@ -8,6 +8,8 @@ amqp:
 
 daq:
     activate-at-startup: true
+    n-files: 1
+    max-file-size-mb: 500
 
 streams:
     ch0:
@@ -31,6 +33,9 @@ streams:
             block-size: 4194304
             frame-size: 2048
   
+        strw:
+            file-num: 0
+
     ch1:
         preset: str-1ch-fpa
   
@@ -52,6 +57,9 @@ streams:
             block-size: 4194304
             frame-size: 2048
   
+        strw:
+            file-num: 0
+
     ch2: 
         preset:  # this preset is identical to str-1ch-fpa; it's given like this as a demonstration of how to specify a preset in a configuration file
             type: str-1ch-fpa-alt
@@ -82,4 +90,7 @@ streams:
             n-blocks: 64
             block-size: 4194304
             frame-size: 2048
+
+        strw:
+            file-num: 0
             

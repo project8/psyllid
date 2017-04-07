@@ -8,6 +8,8 @@ amqp:
 
 daq:
     activate-at-startup: true
+    n-files: 1
+    max-file-size-mb: 500
 
 streams:
     ch0:
@@ -31,3 +33,5 @@ streams:
             block-size: 4194304
             frame-size: 2048
             
+        strw:
+            file-num: 0
