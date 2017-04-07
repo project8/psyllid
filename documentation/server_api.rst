@@ -65,9 +65,11 @@ There are no Routing Key Specifiers for *run* requests.
 
 *Payload*
 
-- ``file: [filename (string)]`` -- *(not implemented yet)* *(optional)* Filename for the acquisition.
-- ``description: [description (string)]`` -- *(not implemented yet)* *(optional)* Text description for the acquisition; saved in the file header.
-- ``duration: [ms (unsigned int)]`` -- *(not implemented yet)* *(optional)* Duration of the run in ms.
+- ``filename: [filename (string)]`` -- *(optional)* Filename for ``file_number`` 0.
+- ``filenames: [array of filenames (string)]`` -- *(optional)* Filenames for all files specified. Overrides ``filename``.
+- ``description: [description (string)]`` -- *(optional)* Text description for ``file_number`` 0; saved in the file header.
+- ``descriptions: [array of descriptions (string)]`` -- *(optional)* Text descriptions for all files specified.  Overrides ``description``.
+- ``duration: [ms (unsigned int)]`` -- *(optional)* Duration of the run in ms.
 
 
 OP_GET
@@ -119,17 +121,17 @@ Please note that this action will not necessarily return the value in use (e.g. 
 
 - ``[parameter name]: [value]`` -- Parameter name and value
 
-``filename``
+``filename.[file_number (optional)]``
 ------------
-Returns the filename that will be written to.
+Returns the filename that will be written to by writters registered to ``file_number``.  Default for ``file_number`` is 0.
 
 *Reply Payload*
 
 - ``values: [[filename (string)]]`` -- Filename as the first element of the ``values`` array
 
-``description``
+``description.[file_number (optional)]``
 ---------------
-Returns the description that will be written to the file header.
+Returns the description that will be written to the file header for file corresponding to ``file_number``.  Default for ``file_number`` is 0.
 
 *Reply Payload*
 
@@ -192,17 +194,17 @@ Please note that this action will not necessarily be useful for all node paramet
 
 - ``values: [[value]]`` -- Parameter value to be set as the first element of the ``values`` array.
 
-``filename``
+``filename.[file_number (optional)]``
 ------------
-Sets the filename (relative or absolute) that will be written to. Takes effect for the next run.
+Sets the filename (relative or absolute) that will be written to by the writers register to ``file_number``.  Default for ``file_number`` is 0.  Takes effect for the next run.
 
 *Payload*
 
 - ``values: [[filename (string)]]`` -- Filename
 
-``description``
+``description.[file_number (optional)]``
 ---------------
-Sets the description that will be written to the file header. Takes effect for the next run.
+Sets the description that will be written to the file header for the file corresponding to ``file_number``.  Default for ``file_number`` is 0.  Takes effect for the next run.
 
 *Payload*
 
