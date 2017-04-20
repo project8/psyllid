@@ -116,8 +116,7 @@ namespace psyllid
 
                     if( t_swrap_ptr )
                     {
-                        LDEBUG( plog, "Finishing stream <" << f_stream_no << ">" );
-                        f_monarch_ptr->finish_stream( f_stream_no, true );
+                        f_monarch_ptr->finish_stream( f_stream_no );
                         t_swrap_ptr.reset();
                     }
 
@@ -130,8 +129,7 @@ namespace psyllid
 
                     if( t_swrap_ptr )
                     {
-                        LDEBUG( plog, "Finishing stream <" << f_stream_no << ">" );
-                        f_monarch_ptr->finish_stream( f_stream_no, false );
+                        f_monarch_ptr->finish_stream( f_stream_no );
                         t_swrap_ptr.reset();
                     }
 
@@ -174,10 +172,10 @@ namespace psyllid
                     if( ! t_is_new_acquisition && t_time_data->get_pkt_in_batch() != t_expected_pkt_in_batch ) t_is_new_acquisition = true;
                     f_last_pkt_in_batch = t_time_data->get_pkt_in_batch();
 
-                    t_swrap_ptr->get_stream_record()->SetRecordId( t_time_id );
-                    t_swrap_ptr->get_stream_record()->SetTime( t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ) );
-                    ::memcpy( t_swrap_ptr->get_stream_record()->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
-                    t_swrap_ptr->write_record( t_is_new_acquisition );
+                    if( ! t_swrap_ptr->write_record( t_time_id, t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ), t_time_data->get_raw_array(), t_bytes_per_record, t_is_new_acquisition ) )
+                    {
+                        throw error() << "Unable to write record to file; record ID: " << t_time_id;
+                    }
 
                     t_is_new_acquisition = false;
 

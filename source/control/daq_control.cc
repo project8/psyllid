@@ -279,7 +279,7 @@ namespace psyllid
         {
             butterfly_house::get_instance()->start_files();
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             LERROR( plog, "Unable to start files: " << e.what() );
             set_status( status::error );
@@ -296,9 +296,11 @@ namespace psyllid
             t_n_sub_durations = a_duration / t_sub_duration; // number of complete sub-durations, not including the remainder
             t_duration_remainder = a_duration - t_n_sub_durations * t_sub_duration;
         }
+        LDEBUG( plog, "Run duration will be " << a_duration << " ms; " << t_n_sub_durations << " sub-durations  of " << t_sub_duration << " ms will be used, plus one sub-duration of " << t_duration_remainder << " ms" );
 
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
 
+        LDEBUG( plog, "Unpausing midge" );
         set_status( status::running );
         f_midge_pkg->instruct( midge::instruction::resume );
 
@@ -350,7 +352,18 @@ namespace psyllid
         // give midge time to finish the streams before finishing the files
         std::this_thread::sleep_for( std::chrono::milliseconds(500));
         LDEBUG( plog, "Finishing egg files" );
-        butterfly_house::get_instance()->finish_files();
+        try
+        {
+            butterfly_house::get_instance()->finish_files();
+        }
+        catch( std::exception& e )
+        {
+            LERROR( plog, "Unable to finish files: " << e.what() );
+            set_status( status::error );
+            LDEBUG( plog, "Canceling midge" );
+            if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+            return;
+        }
 
         // if daq_control has been canceled, assume that midge has been canceled by other methods, and this function should just exit
         if( is_canceled() )

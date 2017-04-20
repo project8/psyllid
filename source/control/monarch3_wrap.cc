@@ -36,138 +36,166 @@ namespace psyllid
     }
 
 
-    header_wrapper::header_wrapper( monarch3::Monarch3& a_monarch, std::mutex& a_mutex ) :
-        f_header( a_monarch.GetHeader() ),
-        f_lock( a_mutex )
-    {
-        if( ! f_header )
-        {
-            throw error() << "Unable to get monarch header";
-        }
-    }
+    //***************************
+    // monarch_on_deck_manager
+    //***************************
 
-    header_wrapper::header_wrapper( header_wrapper&& a_orig ) :
-            f_header( a_orig.f_header ),
-            f_lock( *a_orig.f_lock.release() )
-    {
-        a_orig.f_header = nullptr;
-    }
-
-    header_wrapper::~header_wrapper()
-    {
-        // lock is unlocked upon destruction
-    }
-
-    header_wrapper& header_wrapper::operator=( header_wrapper&& a_orig )
-    {
-        f_header = a_orig.f_header;
-        a_orig.f_header = nullptr;
-        f_lock.release();
-        f_lock.swap( a_orig.f_lock );
-        return *this;
-    }
-
-    monarch3::M3Header& header_wrapper::header()
-    {
-        if( ! f_header ) throw error() << "Unable to write to header; the owning Monarch object must have moved beyond the preparation stage";
-        return *f_header;
-    }
-
-/*
-    void header_wrapper::monarch_stage_change( monarch_stage a_new_stage )
-    {
-        if( a_new_stage != monarch_stage::preparing )
-        {
-            f_header = nullptr;
-            f_lock.release();
-        }
-        return;
-    }
-*/
-
-
-
-    stream_wrapper::stream_wrapper( monarch3::Monarch3& a_monarch, unsigned a_stream_no, monarch_wrapper* a_monarch_wrapper ) :
-            f_monarch_wrapper( a_monarch_wrapper ),
-            f_stream( a_monarch.GetStream( a_stream_no ) ),
-            f_is_valid( true ),
-            f_record_size_mb( 1.e-6 * (double)f_stream->GetStreamRecordNBytes() )
-    {
-        if( f_stream == nullptr )
-        {
-            throw error() << "Invalid stream number requested: " << a_stream_no;
-        }
-    }
-
-    stream_wrapper::stream_wrapper( stream_wrapper&& a_orig ) :
-            f_monarch_wrapper( a_orig.f_monarch_wrapper ),
-            f_stream( a_orig.f_stream ),
-            f_is_valid( a_orig.f_is_valid ),
-            f_record_size_mb( a_orig.f_record_size_mb )
-    {
-        a_orig.f_stream = nullptr;
-        a_orig.f_is_valid = false;
-    }
-
-    stream_wrapper::~stream_wrapper()
+    monarch_on_deck_manager::monarch_on_deck_manager( monarch_wrapper* a_monarch_wrap ) :
+            scarab::cancelable(),
+            f_monarch_wrap( a_monarch_wrap ),
+            f_monarch_on_deck(),
+            f_od_condition(),
+            f_od_continue_condition(),
+            f_od_mutex()
     {}
 
-    stream_wrapper& stream_wrapper::operator=( stream_wrapper&& a_orig )
+    monarch_on_deck_manager::~monarch_on_deck_manager()
+    {}
+
+    void monarch_on_deck_manager::execute()
     {
-        f_monarch_wrapper = a_orig.f_monarch_wrapper;
-        f_stream = a_orig.f_stream;
-        a_orig.f_stream = nullptr;
-        a_orig.f_is_valid = false;
-        f_record_size_mb = a_orig.f_record_size_mb;
-        return *this;
+        LINFO( plog, "Monarch-on-deck manager for file <" << f_monarch_wrap->get_header()->header().GetFilename() << "> is starting up" );
+
+        while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
+        {
+            unique_lock t_od_lock( f_od_mutex );
+
+            // wait on the condition variable
+            f_od_condition.wait_for( t_od_lock, std::chrono::milliseconds( 500 ) );
+
+            // this particular setup of the while on t_do_wait and the if-elseif-else structure
+            // is used so that any of the actions can be taken in any order without going through waiting on the condition.
+            bool t_do_wait = false;
+            try
+            {
+                while( ! t_do_wait )
+                {
+                    if( f_monarch_to_finish )
+                    {
+                        // then we need to finish a file
+                        // finish the old file
+                        LDEBUG( plog, "Finishing pre-existing to-finish file" );
+                        finish_to_finish_nolock();
+                    }
+                    else if( ! f_monarch_on_deck )
+                    {
+                        // then we need to make a new on-deck monarch
+                        unique_lock t_header_lock( f_monarch_wrap->get_header()->get_lock() );
+                        create_on_deck_nolock();
+                    }
+                    else
+                    {
+                        t_do_wait = true;
+                    }
+                } // end while( ! to_do_wait )
+            }
+            catch( std::exception& e )
+            {
+                LERROR( plog, "Exception caught in monarch-on-deck manager: " << e.what() );
+                raise(SIGINT);
+            }
+        } // end while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
+
+        LINFO( plog, "Monarch-on-deck manager is stopping" );
+
+        return;
     }
-/*
-    monarch3::M3Stream& stream_wrapper::stream()
+
+    void monarch_on_deck_manager::create_on_deck_nolock()
     {
-        if( ! f_is_valid ) throw error() << "Unable to provide the stream; the owning Monarch object must have moved beyond the writing stage";
-        return *f_stream;
+        try
+        {
+            LDEBUG( plog, "Creating a new on-deck monarch" );
+
+            // create the new filename
+            std::stringstream t_count_stream;
+            t_count_stream << f_monarch_wrap->get_and_increment_file_count();
+            std::string t_new_filename = f_monarch_wrap->f_filename_base + '_' + t_count_stream.str() + f_monarch_wrap->f_filename_ext;
+            LDEBUG( plog, "On-deck filename: <" << t_new_filename << ">" );
+
+            // open the new file
+            std::shared_ptr< monarch3::Monarch3 > t_new_monarch;
+            try
+            {
+                t_new_monarch.reset( monarch3::Monarch3::OpenForWriting( t_new_filename ) );
+                LTRACE( plog, "New file is open" );
+            }
+            catch( monarch3::M3Exception& e )
+            {
+                throw error() << "Unable to open the file <" << t_new_filename << "\n" <<
+                        "Reason: " << e.what();
+            }
+
+            // copy info into the new header
+            const header_wrap_ptr t_old_header_ptr = f_monarch_wrap->get_header();
+            monarch3::M3Header* t_new_header = t_new_monarch->GetHeader();
+            t_new_header->CopyBasicInfo( t_old_header_ptr->header() );
+            t_new_header->SetFilename( t_new_filename );
+            t_new_header->SetDescription( t_old_header_ptr->ptr()->GetDescription() + "\nContinuation of file " + t_old_header_ptr->ptr()->GetFilename() );
+
+            // for each stream, create new stream in new file
+            std::vector< monarch3::M3StreamHeader >* t_old_stream_headers = &t_old_header_ptr->ptr()->GetStreamHeaders();
+            for( unsigned i_stream = 0; i_stream != t_old_stream_headers->size(); ++i_stream )
+            {
+                //t_stream_it->second->lock();
+                monarch3::M3StreamHeader* t_old_stream_header = &t_old_stream_headers->operator[]( i_stream );
+                if( t_old_stream_header->GetNChannels() > 1 )
+                {
+                    t_new_header->AddStream( t_old_stream_header->GetSource(), t_old_stream_header->GetNChannels(), t_old_stream_header->GetChannelFormat(),
+                            t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
+                            t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
+                            t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment() );
+                }
+                else
+                {
+                    t_new_header->AddStream( t_old_stream_header->GetSource(),
+                            t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
+                            t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
+                            t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment() );
+                }
+            }
+
+            // write the new header
+            LTRACE( plog, "Writing new header" );
+            t_new_monarch->WriteHeader();
+
+            // switch out the monarch pointers, f_monarch_on_deck <--> t_new_monarch
+            f_monarch_on_deck.swap( t_new_monarch );
+        }
+        catch(...)
+        {
+            throw;
+        }
+        return;
     }
-*/
-    /// Write the record contents to the file
-    bool stream_wrapper::write_record( bool a_is_new_acq )
+
+    void monarch_on_deck_manager::clear_on_deck()
     {
-        f_stream_mutex.lock();
-        bool t_return = f_stream->WriteRecord( a_is_new_acq );
-        f_monarch_wrapper->record_file_contribution( f_record_size_mb );
-        f_stream_mutex.unlock();
-        return t_return;
-        //return f_stream->WriteRecord( a_is_new_acq );
+        f_od_mutex.lock();
+        std::string t_filename( f_monarch_on_deck->GetHeader()->GetFilename() );
+        f_monarch_on_deck.reset();
+        LDEBUG( plog, "On-deck file was written out to <" << t_filename << ">; now removing the file" );
+        boost::filesystem::remove( t_filename );
+        f_od_mutex.unlock();
+        return;
+    }
+
+    void monarch_on_deck_manager::finish_to_finish()
+    {
+        f_od_mutex.lock();
+        if( f_monarch_to_finish )
+        {
+            LDEBUG( plog, "Finishing to-finish file" );
+            finish_to_finish_nolock();
+        }
+        f_od_mutex.unlock();
+        return;
     }
 
 
-/*
-    void stream_wrapper::lock()
-    {
-        f_lock.lock();
-        return;
-    }
-    void stream_wrapper::unlock()
-    {
-        f_lock.unlock();
-        return;
-    }
-*/
-/*
-    void stream_wrapper::finish()
-    {
-        f_stream = nullptr;
-        f_is_valid = false;
-        return;
-    }
-*//*
-    void stream_wrapper::monarch_stage_change( monarch_stage a_new_stage )
-    {
-        if( a_new_stage != monarch_stage::writing ) finish();
-        return;
-    }
-*/
-
-
+    //*******************
+    // monarch_wrapper
+    //*******************
 
     monarch_wrapper::monarch_wrapper( const std::string& a_filename ) :
             f_orig_filename( a_filename ),
@@ -177,13 +205,17 @@ namespace psyllid
             f_max_file_size_mb( 0. ),
             f_file_size_est_mb( 0. ),
             f_new_file_switch_return(),
+            f_file_switch_started( false ),
+            f_wait_to_write(),
             f_monarch(),
             f_monarch_mutex(),
             f_header_wrap(),
-            f_header_mutex(),
             f_stream_wraps(),
             f_run_start_time( std::chrono::steady_clock::now() ),
-            f_stage( monarch_stage::initialized )
+            f_stage( monarch_stage::initialized ),
+            f_od_thread( nullptr ),
+            f_monarch_od_manager( this )//,
+            //f_od_continue_mutex()
     {
         std::string::size_type t_ext_pos = a_filename.find_last_of( '.' );
         if( t_ext_pos == std::string::npos )
@@ -197,7 +229,7 @@ namespace psyllid
         }
         LDEBUG( plog, "Monarch wrapper created with filename base <" << f_filename_base << "> and extension <" << f_filename_ext << ">" );
 
-        std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
+        unique_lock t_monarch_lock( f_monarch_mutex );
         try
         {
             f_monarch.reset( monarch3::Monarch3::OpenForWriting( f_orig_filename ) );
@@ -212,26 +244,47 @@ namespace psyllid
     monarch_wrapper::~monarch_wrapper()
     {
         f_monarch_mutex.lock();
+
+        if( f_od_thread != nullptr )
+        {
+            if( f_od_thread->joinable() )
+            {
+                LWARN( plog, "Trying to destroy monarch_wrapper; waiting for on-deck thread to join" );
+                f_od_thread->join();
+            }
+            delete f_od_thread;
+        }
+
         try
         {
-            if( f_monarch ) f_monarch->FinishWriting();
+            if( f_monarch )
+            {
+                f_monarch->FinishWriting();
+                f_monarch.reset();
+            }
+
         }
         catch( monarch3::M3Exception& e )
         {
             LERROR( plog, "Unable to write file on monarch_wrapper deletion: " << e.what() );
         }
+
+        f_file_switch_started = false;
+        f_wait_to_write.notify_all();
+
         f_monarch_mutex.unlock();
+
     }
 
     header_wrap_ptr monarch_wrapper::get_header()
     {
-        std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
+        unique_lock t_monarch_lock( f_monarch_mutex );
         if( f_stage == monarch_stage::initialized )
         {
             try
             {
                 set_stage( monarch_stage::preparing );
-                header_wrap_ptr t_header_ptr( new header_wrapper( *f_monarch.get(), f_header_mutex ) );
+                header_wrap_ptr t_header_ptr( new header_wrapper( *f_monarch.get() ) );
                 f_header_wrap = t_header_ptr;
             }
             catch( error& e )
@@ -239,28 +292,17 @@ namespace psyllid
                 throw;
             }
         }
-        if( f_stage != monarch_stage::preparing ) throw error() << "Invalid monarch stage for getting the header: " << f_stage;
+        if( f_stage != monarch_stage::preparing ) throw error() << "Invalid monarch stage for getting the (writeable) header: " << f_stage << "; use the const get_header() instead";
 
         return f_header_wrap;
     }
 
     stream_wrap_ptr monarch_wrapper::get_stream( unsigned a_stream_no )
     {
-        std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
-        if( f_stage == monarch_stage::preparing )
-        {
-            f_header_wrap.reset();
-            try
-            {
-                f_monarch->WriteHeader();
-                LDEBUG( plog, "Header written for file <" << f_monarch->GetHeader()->GetFilename() << ">" );
-            }
-            catch( monarch3::M3Exception& e )
-            {
-                throw error() << e.what();
-            }
-            set_stage( monarch_stage::writing );
-        }
+        LDEBUG( plog, "Stream <" << a_stream_no << "> is being retrieved from the Monarch object" );
+
+        unique_lock t_monarch_lock( f_monarch_mutex );
+
         if( f_stage != monarch_stage::writing ) throw error() << "Invalid monarch stage for getting a stream: " << f_stage;
 
         if( f_stream_wraps.find( a_stream_no ) == f_stream_wraps.end() )
@@ -278,9 +320,74 @@ namespace psyllid
         return f_stream_wraps[ a_stream_no ];
     }
 
-    void monarch_wrapper::finish_stream( unsigned a_stream_no, bool a_finish_if_streams_done )
+    void monarch_wrapper::start_using()
     {
-        std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
+        if( f_stage != monarch_stage::preparing ) throw error() << "Invalid monarch stage for start-using: " << f_stage;
+
+        if( ! f_monarch_od_manager.pointers_empty() )
+        {
+            throw error() << "One or more of the Monarch pointers is not empty";
+        }
+
+        if( f_od_thread != nullptr )
+        {
+            throw error() << "On-deck thread already exists";
+        }
+
+        unique_lock t_monarch_lock( f_monarch_mutex );
+        unique_lock t_header_lock( f_header_wrap->get_lock() );
+
+        LDEBUG( plog, "Writing the header for file <" << f_header_wrap->header().GetFilename() );
+        try
+        {
+            f_monarch->WriteHeader();
+            LDEBUG( plog, "Header written for file <" << f_header_wrap->header().GetFilename() << ">" );
+        }
+        catch( monarch3::M3Exception& e )
+        {
+            throw error() << e.what();
+        }
+        set_stage( monarch_stage::writing );
+
+        t_header_lock.unlock();
+
+        LDEBUG( plog, "Starting the on-deck thread for file <" << f_header_wrap->header().GetFilename() << ">" );
+
+        // start the on-deck thread and assign it to the member variable for safe keeping
+        f_od_thread = new std::thread( &monarch_on_deck_manager::execute, &f_monarch_od_manager );
+
+        // let the thread start up
+        std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+
+        // release it to create the on-deck file
+        f_monarch_od_manager.notify();
+
+        return;
+    }
+
+    void monarch_wrapper::stop_using()
+    {
+        if( f_od_thread == nullptr )
+        {
+            LWARN( plog, "Monarch wrapper was not in use" );
+            return;
+        }
+
+        // cancel the on-deck thread
+        f_monarch_od_manager.cancel();
+        f_monarch_od_manager.notify();
+
+        // let the thread finish
+        std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+
+        f_monarch_od_manager.clear_on_deck();
+
+        return;
+    }
+
+    void monarch_wrapper::finish_stream( unsigned a_stream_no )
+    {
+        unique_lock t_monarch_lock( f_monarch_mutex );
         if( f_stage != monarch_stage::writing )
         {
             throw error() << "Monarch must be in the writing stage to finish a stream";
@@ -294,25 +401,12 @@ namespace psyllid
         LDEBUG( plog, "Finishing stream <" << a_stream_no << ">" );
         f_stream_wraps.erase( t_stream_it );
 
-        if( a_finish_if_streams_done && f_stream_wraps.empty() )
-        {
-            try
-            {
-                LDEBUG( plog, "All streams complete; automatically finishing file <" << f_monarch->GetHeader()->GetFilename() << ">" );
-                finish_file_nolock();
-            }
-            catch( error& e )
-            {
-                throw;
-            }
-        }
-
         return;
     }
 
     void monarch_wrapper::finish_file()
     {
-        std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
+        unique_lock t_monarch_lock( f_monarch_mutex );
         try
         {
             finish_file_nolock();
@@ -327,6 +421,10 @@ namespace psyllid
     void monarch_wrapper::finish_file_nolock()
     {
         std::string t_filename( f_monarch->GetHeader()->GetFilename() );
+        set_stage( monarch_stage::finished );
+
+        f_monarch_od_manager.finish_to_finish();
+
         if( f_stage == monarch_stage::preparing )
         {
             f_header_wrap.reset();
@@ -349,9 +447,7 @@ namespace psyllid
         }
         LINFO( plog, "Finished writing file <" << t_filename << ">" );
         f_monarch->FinishWriting();
-        set_stage( monarch_stage::finished );
         f_monarch.reset();
-        butterfly_house::get_instance()->remove_file( f_orig_filename );
         f_file_size_est_mb = 0.;
         return;
     }
@@ -369,77 +465,27 @@ namespace psyllid
             {
                 t_stream_it->second->lock();
             }
-            std::unique_lock< std::mutex > t_monarch_lock( f_monarch_mutex );
+            unique_lock t_monarch_lock( f_monarch_mutex );
 
-            set_stage( monarch_stage::initialized );
+            // if the to-finish monarch is full for some reason, empty it
+            f_monarch_od_manager.finish_to_finish();
 
-            // create the new filename
-            std::stringstream t_count_stream;
-            t_count_stream << f_file_count++;
-            std::string t_new_filename = f_filename_base + '_' + t_count_stream.str() + f_filename_ext;
-            LDEBUG( plog, "Switching to new file <" << t_new_filename << ">" );
+            // if the on-deck monarch doesn't exist, create it
+            f_monarch_od_manager.create_on_deck();
 
-            // open the new file
-            std::unique_ptr< monarch3::Monarch3 > t_new_monarch;
-            try
-            {
-                t_new_monarch.reset( monarch3::Monarch3::OpenForWriting( t_new_filename ) );
-                LTRACE( plog, "New file is open" );
-            }
-            catch( monarch3::M3Exception& e )
-            {
-                throw error() << "Unable to open the file <" << t_new_filename << "\n" <<
-                        "Reason: " << e.what();
-            }
+            LDEBUG( plog, "Switching file pointers" );
 
-            set_stage( monarch_stage::preparing );
+            // move the old file to the to_finish pointer
+            f_monarch_od_manager.set_as_to_finish( f_monarch );
 
-            // copy info into the new header
-            monarch3::M3Header* t_new_header = t_new_monarch->GetHeader();
-            t_new_header->CopyBasicInfo( *(f_monarch->GetHeader()) );
-            t_new_header->SetFilename( t_new_filename );
-            t_new_header->SetDescription( t_new_header->GetDescription() + "\nContinuation of file " + f_monarch->GetHeader()->GetFilename() );
+            // move the on_deck pointer to the current pointer
+            f_monarch_od_manager.get_on_deck( f_monarch );
 
-            // for each stream, lock stream pointer, create new stream in new file, and remove the reference to the old stream (the stream itself is deleted in Monarch3::FinishWriting())
-            std::vector< monarch3::M3StreamHeader >* t_old_stream_headers = &f_monarch->GetHeader()->GetStreamHeaders();
-            for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
-            {
-                //t_stream_it->second->lock();
-                monarch3::M3StreamHeader* t_old_stream_header = &t_old_stream_headers->operator[]( t_stream_it->first );
-                if( t_old_stream_header->GetNChannels() > 1 )
-                {
-                    t_new_header->AddStream( t_old_stream_header->GetSource(), t_old_stream_header->GetNChannels(), t_old_stream_header->GetChannelFormat(),
-                            t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
-                            t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
-                            t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment() );
-                }
-                else
-                {
-                    t_new_header->AddStream( t_old_stream_header->GetSource(),
-                            t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
-                            t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
-                            t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment() );
-                }
-                t_stream_it->second->f_stream = nullptr;
-            }
-
-            // finish the old file
-            LTRACE( plog, "Finishing old file" );
-            f_monarch->FinishWriting();
-            f_monarch.reset();
-
-            // write the new header
-            LTRACE( plog, "Writing new header" );
-            t_new_monarch->WriteHeader();
-
-            // switch out the monarch pointers, f_monarch <--> t_new_monarch
-            f_monarch.swap( t_new_monarch );
-            set_stage( monarch_stage::writing );
+            LDEBUG( plog, "Switched to new file <" << f_monarch->GetHeader()->GetFilename() << ">" );
 
             f_file_size_est_mb = 0.;
 
-            // put references to new streams in each stream pointer, and then unlock the streams
-            LTRACE( plog, "Swapping streams" );
+            // swap out the stream pointers
             for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
             {
                 t_stream_it->second->f_stream = f_monarch->GetStream( t_stream_it->first );
@@ -450,9 +496,16 @@ namespace psyllid
                 t_stream_it->second->unlock();
             }
 
-            LTRACE( plog, "New file is ready" );
+            LDEBUG( plog, "New file is ready" );
+            f_file_switch_started = false;
 
-            // f_monarch_mutex is unlocked when the unique_lock wrapping it is destroyed
+            // notify threads waiting to write to proceed
+            f_wait_to_write.notify_all();
+
+            // notify the on-deck thread to process the to-finish and on-deck monarchs
+            f_monarch_od_manager.notify();
+
+            // f_monarch_mutex are unlocked when the unique_locks wrapping them are destroyed
         }
         catch( std::exception& e )
         {
@@ -486,26 +539,133 @@ namespace psyllid
         if( t_file_size_est_mb >= f_max_file_size_mb.load() )
         {
             LDEBUG( plog, "Max file size exceeded (" << t_file_size_est_mb << " MB >= " << f_max_file_size_mb.load() << " MB)" );
+            f_file_switch_started = true;
             // launch asynchronous function to start a new egg file
             auto t_new_file_return = std::async( std::launch::async,
-                        [this]()
+                    [this]()
+                    {
+                        //std::this_thread::sleep_for( std::chrono::milliseconds(250));
+                        LDEBUG( plog, "Starting a new egg file" );
+                        try
                         {
-                            //std::this_thread::sleep_for( std::chrono::milliseconds(250));
-                            LDEBUG( plog, "Starting a new egg file" );
-                            try
-                            {
-                                switch_to_new_file();
-                            }
-                            catch( std::exception& e )
-                            {
-                                LERROR( plog, "Caught exception while switching to new file: " << e.what() );
-                                raise( SIGINT );
-                            }
-                        } );
+                            switch_to_new_file();
+                        }
+                        catch( std::exception& e )
+                        {
+                            LERROR( plog, "Caught exception while switching to new file: " << e.what() );
+                            raise( SIGINT );
+                        }
+                    } );
             f_new_file_switch_return = std::move( t_new_file_return );
         }
         return;
     }
 
+
+    //******************
+    // header_wrapper
+    //******************
+
+    header_wrapper::header_wrapper( monarch3::Monarch3& a_monarch ) :
+        f_header( a_monarch.GetHeader() ),
+        f_mutex()
+    {
+        if( ! f_header )
+        {
+            throw error() << "Unable to get monarch header";
+        }
+    }
+
+    header_wrapper::header_wrapper( header_wrapper&& a_orig ) :
+            f_header( a_orig.f_header ),
+            f_mutex()//,
+            //f_lock( f_mutex )
+    {
+        a_orig.f_header = nullptr;
+    }
+
+    header_wrapper::~header_wrapper()
+    {
+    }
+
+    header_wrapper& header_wrapper::operator=( header_wrapper&& a_orig )
+    {
+        f_header = a_orig.f_header;
+        a_orig.f_header = nullptr;
+        return *this;
+    }
+
+    monarch3::M3Header& header_wrapper::header()
+    {
+        if( f_header == nullptr ) throw error() << "Unable to write to header; the owning Monarch object must have moved beyond the preparation stage";
+        return *f_header;
+    }
+
+
+    //******************
+    // stream_wrapper
+    //******************
+
+    stream_wrapper::stream_wrapper( monarch3::Monarch3& a_monarch, unsigned a_stream_no, monarch_wrapper* a_monarch_wrapper ) :
+            f_monarch_wrapper( a_monarch_wrapper ),
+            f_stream( a_monarch.GetStream( a_stream_no ) ),
+            f_is_valid( true ),
+            f_mutex(),
+            f_lock( f_mutex ),
+            f_record_size_mb( 1.e-6 * (double)f_stream->GetStreamRecordNBytes() )
+    {
+        f_lock.unlock();
+        if( f_stream == nullptr )
+        {
+            throw error() << "Invalid stream number requested: " << a_stream_no;
+        }
+    }
+
+    stream_wrapper::stream_wrapper( stream_wrapper&& a_orig ) :
+            f_monarch_wrapper( a_orig.f_monarch_wrapper ),
+            f_stream( a_orig.f_stream ),
+            f_is_valid( a_orig.f_is_valid ),
+            f_mutex(),
+            f_lock( f_mutex ),
+            f_record_size_mb( a_orig.f_record_size_mb )
+    {
+        f_lock.unlock();
+        a_orig.f_stream = nullptr;
+        a_orig.f_is_valid = false;
+    }
+
+    stream_wrapper::~stream_wrapper()
+    {}
+
+    stream_wrapper& stream_wrapper::operator=( stream_wrapper&& a_orig )
+    {
+        f_monarch_wrapper = a_orig.f_monarch_wrapper;
+        f_stream = a_orig.f_stream;
+        a_orig.f_stream = nullptr;
+        a_orig.f_is_valid = false;
+        f_record_size_mb = a_orig.f_record_size_mb;
+        return *this;
+    }
+
+    /// Write the record contents to the file
+    bool stream_wrapper::write_record( monarch3::RecordIdType a_rec_id, monarch3::TimeType a_rec_time, const void* a_rec_block, uint64_t a_bytes, bool a_is_new_acq )
+    {
+        LTRACE( plog, "Writing record <" << a_rec_id << ">" );
+        f_lock.lock();
+        //LWARN( plog, "Locked stream to write record" );
+        if( ! f_monarch_wrapper->okay_to_write( f_lock ) )
+        {
+            LERROR( plog, "Unable to write to monarch file" );
+            f_lock.unlock();
+            return false;
+        }
+        get_stream_record()->SetRecordId( a_rec_id );
+        get_stream_record()->SetTime( a_rec_time );
+        ::memcpy( get_stream_record()->GetData(), a_rec_block, a_bytes );
+        bool t_return = f_stream->WriteRecord( a_is_new_acq );
+        f_monarch_wrapper->record_file_contribution( f_record_size_mb );
+        f_lock.unlock();
+        return t_return;
+    }
 
 } /* namespace psyllid */
