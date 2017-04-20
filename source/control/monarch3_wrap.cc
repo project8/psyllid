@@ -13,6 +13,8 @@
 
 #include "logger.hh"
 
+#include <boost/filesystem.hpp>
+
 #include <future>
 #include <signal.h>
 
@@ -458,22 +460,25 @@ namespace psyllid
 
         try
         {
-            LDEBUG( plog, "Switching to new file; locking stream mutexes and monarch mutex" );
+            LDEBUG( plog, "Switching to new file; locking stream mutexes, header mutex, and monarch mutex" );
             // stream mutexes have to be locked before the monarch mutex, because the act of writing to a stream
             // (which obviously locks the stream) also locks the monarch mutex when the file contribution is recorded.
             for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
             {
                 t_stream_it->second->lock();
             }
+            unique_lock t_header_lock( f_header_wrap->get_lock() );
             unique_lock t_monarch_lock( f_monarch_mutex );
 
             // if the to-finish monarch is full for some reason, empty it
+            LTRACE( plog, "Synchronous call to finish to-finish" );
             f_monarch_od_manager.finish_to_finish();
 
             // if the on-deck monarch doesn't exist, create it
+            LTRACE( plog, "Synchronous call to create on-deck" );
             f_monarch_od_manager.create_on_deck();
 
-            LDEBUG( plog, "Switching file pointers" );
+            LTRACE( plog, "Switching file pointers" );
 
             // move the old file to the to_finish pointer
             f_monarch_od_manager.set_as_to_finish( f_monarch );
@@ -481,9 +486,14 @@ namespace psyllid
             // move the on_deck pointer to the current pointer
             f_monarch_od_manager.get_on_deck( f_monarch );
 
-            LDEBUG( plog, "Switched to new file <" << f_monarch->GetHeader()->GetFilename() << ">" );
-
             f_file_size_est_mb = 0.;
+
+            LTRACE( plog, "Switching header pointer" );
+
+            // swap out the header pointer
+            f_header_wrap->f_header = f_monarch->GetHeader();
+
+            LTRACE( plog, "Switching stream pointers" );
 
             // swap out the stream pointers
             for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
@@ -496,7 +506,8 @@ namespace psyllid
                 t_stream_it->second->unlock();
             }
 
-            LDEBUG( plog, "New file is ready" );
+            LDEBUG( plog, "Switch to new file is complete: <" << f_header_wrap->ptr()->GetFilename() << ">" );
+
             f_file_switch_started = false;
 
             // notify threads waiting to write to proceed

@@ -90,6 +90,9 @@ namespace psyllid
             monarch_on_deck_manager( monarch_wrapper* a_monarch_wrap );
             ~monarch_on_deck_manager();
 
+            const monarch3::Monarch3* od_ptr() const {return f_monarch_on_deck.get();}
+            const monarch3::Monarch3* tf_ptr() const {return f_monarch_to_finish.get();}
+
             /// Return true if both f_monarch_on_deck and f_monarch_to_finish are empty
             bool pointers_empty() const;
             /// Return true if f_monarch_on_deck exists
@@ -111,9 +114,9 @@ namespace psyllid
             void notify();
 
             /// Give a monarch object to the on-deck manager with the intent that it be finished asynchronously
-            void set_as_to_finish( std::shared_ptr< monarch3::Monarch3 > a_monarch );
+            void set_as_to_finish( std::shared_ptr< monarch3::Monarch3 >& a_monarch );
             /// Get the on-deck monarch object that has been created asynchronously
-            void get_on_deck( std::shared_ptr< monarch3::Monarch3 > a_monarch );
+            void get_on_deck( std::shared_ptr< monarch3::Monarch3 >& a_monarch );
 
         private:
             void create_on_deck_nolock();
@@ -275,6 +278,8 @@ namespace psyllid
             header_wrapper( const header_wrapper& ) = delete;
             header_wrapper& operator=( const header_wrapper& ) = delete;
 
+            friend class monarch_wrapper;
+
             monarch3::M3Header* f_header;
             mutable std::mutex f_mutex;
     };
@@ -329,6 +334,7 @@ namespace psyllid
             stream_wrapper& operator=( const stream_wrapper& ) = delete;
 
             friend class monarch_wrapper;
+
             monarch_wrapper* f_monarch_wrapper;
 
             monarch3::M3Stream* f_stream;
@@ -365,14 +371,14 @@ namespace psyllid
         return;
     }
 
-    inline void monarch_on_deck_manager::set_as_to_finish( std::shared_ptr< monarch3::Monarch3 > a_monarch )
+    inline void monarch_on_deck_manager::set_as_to_finish( std::shared_ptr< monarch3::Monarch3 >& a_monarch )
     {
         f_od_mutex.lock();
         f_monarch_to_finish.swap( a_monarch );
         f_od_mutex.unlock();
         return;
     }
-    inline void monarch_on_deck_manager::get_on_deck( std::shared_ptr< monarch3::Monarch3 > a_monarch )
+    inline void monarch_on_deck_manager::get_on_deck( std::shared_ptr< monarch3::Monarch3 >& a_monarch )
     {
         f_od_mutex.lock();
         a_monarch.swap( f_monarch_on_deck );
@@ -383,7 +389,7 @@ namespace psyllid
     inline void monarch_on_deck_manager::create_on_deck()
     {
         f_od_mutex.lock();
-        create_on_deck_nolock();
+        if( ! f_monarch_on_deck ) create_on_deck_nolock();
         f_od_mutex.unlock();
         return;
     }

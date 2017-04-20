@@ -44,7 +44,7 @@ namespace psyllid
     class butterfly_house : public scarab::singleton< butterfly_house >, public control_access
     {
         public:
-            mv_accessible( unsigned, max_file_size_mb );
+            mv_accessible( double, max_file_size_mb );
 
         public:
             void register_file( unsigned a_file_num, const std::string& a_filename, const std::string& a_description, unsigned a_duration_ms );
