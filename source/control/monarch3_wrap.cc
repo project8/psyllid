@@ -379,8 +379,9 @@ namespace psyllid
         f_monarch_od_manager.cancel();
         f_monarch_od_manager.notify();
 
-        // let the thread finish
-        std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+        f_od_thread->join();
+        delete f_od_thread;
+        f_od_thread = nullptr;
 
         f_monarch_od_manager.clear_on_deck();
 
