@@ -171,7 +171,7 @@ namespace psyllid
             void start_using();
 
             /// Ensure that the file is available to write to (via a stream)
-            bool okay_to_write( std::unique_lock< std::mutex >& a_lock );
+            bool okay_to_write();
 
             /// Switch to a new file that continues the first file.
             /// The filename is automatically determine from the original filename by appending an integer count of the number of continuation files.
@@ -300,10 +300,10 @@ namespace psyllid
      Provides the ability to write records in a thread-safe synchronized way.
 
      Thread synchronization strategy:
-       - Owns a mutex and unique_lock associated with that mutex to control use of the stream.
-       - Provides lock() and unlock() functions to manually lock and unlock the mutex via the unique_lock.
-       - The unique_lock is used to allow it to be used to wait for the Monarch object to be ready (e.g. in the event of a file-change).
-       - While this is less safe (e.g. if the lock is not manually unlocked, deadlock can occur), it's faster since it doesn't require initializing locks on every call to write_record().
+       - Owns a mutex to control use of the stream.
+       - Provides lock() and unlock() functions to manually lock and unlock the mutex.
+       - Provides access to a reference to the mutex to allow its use in a lock.
+       - Use of lock() and unlock() should be used for more speed-critical applications, with the understanding that the risks for unintentionally leaving the mutex locked is greater.
     */
     class stream_wrapper
     {
@@ -328,6 +328,8 @@ namespace psyllid
             void lock() const;
             /// Manually unlock the stream mutex
             void unlock() const;
+            /// Return a reference to the stream mutex
+            std::mutex& mutex() const;
 
         private:
             stream_wrapper( const stream_wrapper& ) = delete;
@@ -340,7 +342,6 @@ namespace psyllid
             monarch3::M3Stream* f_stream;
             bool f_is_valid;
             mutable std::mutex f_mutex;
-            mutable unique_lock f_lock;
 
             double f_record_size_mb;
     };
@@ -426,10 +427,12 @@ namespace psyllid
         return;
     }
 
-    inline bool monarch_wrapper::okay_to_write( std::unique_lock< std::mutex >& a_lock )
+    inline bool monarch_wrapper::okay_to_write()
     {
         if( ! f_file_switch_started.load() && f_monarch ) return true;
-        f_wait_to_write.wait_for( a_lock, std::chrono::milliseconds( 100 ), [this]{return ! f_file_switch_started.load();});
+        std::mutex t_wait_mutex;
+        unique_lock t_wait_lock( t_wait_mutex );
+        f_wait_to_write.wait_for( t_wait_lock, std::chrono::milliseconds( 100 ), [this]{return ! f_file_switch_started.load();});
         return f_monarch.operator bool();
     }
 
@@ -475,14 +478,19 @@ namespace psyllid
 
     inline void stream_wrapper::lock() const
     {
-        f_lock.lock();
+        f_mutex.lock();
         return;
     }
 
     inline void stream_wrapper::unlock() const
     {
-        f_lock.unlock();
+        f_mutex.unlock();
         return;
+    }
+
+    inline std::mutex& stream_wrapper::mutex() const
+    {
+        return f_mutex;
     }
 
 
