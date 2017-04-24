@@ -140,6 +140,7 @@ namespace psyllid
         {
             for( auto file_it = f_mw_ptrs.begin(); file_it != f_mw_ptrs.end(); ++file_it )
             {
+                (*file_it)->cancel();
                 (*file_it)->stop_using();
                 (*file_it)->finish_file();
                 file_it->reset();

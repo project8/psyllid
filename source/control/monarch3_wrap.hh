@@ -149,7 +149,7 @@ namespace psyllid
 
      Also owns a monarch_on_deck_manager object to handle asynchronous creation of on-deck files and finishing of completed files.
     */
-    class monarch_wrapper
+    class monarch_wrapper : public scarab::cancelable
     {
         public:
             monarch_wrapper( const std::string& a_filename );
@@ -169,6 +169,10 @@ namespace psyllid
 
             /// Make the wrapper available for use; starts parallel on-deck thread
             void start_using();
+
+            void execute_switch_loop();
+
+            void trigger_switch();
 
             /// Ensure that the file is available to write to (via a stream)
             bool okay_to_write();
@@ -204,6 +208,8 @@ namespace psyllid
 
             void finish_file_nolock();
 
+            void do_cancellation();
+
             monarch_wrapper( const monarch_wrapper& ) = delete;
             monarch_wrapper& operator=( const monarch_wrapper& ) = delete;
 
@@ -212,11 +218,16 @@ namespace psyllid
             std::string f_filename_ext;
             mutable unsigned f_file_count;
 
-            std::atomic< double > f_max_file_size_mb;
+            // TODO: if using f_monarch_mutex in record_file_contribution, we don't need f_file_size_est_mb to be atomic; currently it's still an atomic and the mutex is not used
+            double f_max_file_size_mb;
             std::atomic< double > f_file_size_est_mb;
-            std::future< void > f_new_file_switch_return;
-            std::atomic< bool > f_file_switch_started;
+            //std::future< void > f_new_file_switch_return;
+            //std::atomic< bool > f_file_switch_started;
             std::condition_variable f_wait_to_write;
+            std::thread* f_switch_thread;
+            std::atomic< bool > f_ok_to_write;
+            std::atomic< bool > f_do_switch_flag;
+            std::condition_variable f_do_switch_trig;
 
             std::shared_ptr< monarch3::Monarch3 > f_monarch;
             mutable std::mutex f_monarch_mutex;
@@ -427,13 +438,10 @@ namespace psyllid
         return;
     }
 
-    inline bool monarch_wrapper::okay_to_write()
+    inline void monarch_wrapper::do_cancellation()
     {
-        if( ! f_file_switch_started.load() && f_monarch ) return true;
-        std::mutex t_wait_mutex;
-        unique_lock t_wait_lock( t_wait_mutex );
-        f_wait_to_write.wait_for( t_wait_lock, std::chrono::milliseconds( 100 ), [this]{return ! f_file_switch_started.load();});
-        return f_monarch.operator bool();
+        f_monarch_od_manager.cancel();
+        return;
     }
 
 

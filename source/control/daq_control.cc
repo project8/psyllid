@@ -349,8 +349,6 @@ namespace psyllid
 
         LINFO( plog, "Run has stopped" );
 
-        // give midge time to finish the streams before finishing the files
-        std::this_thread::sleep_for( std::chrono::milliseconds(500));
         LDEBUG( plog, "Finishing egg files" );
         try
         {
