@@ -177,6 +177,8 @@ namespace psyllid
                         throw error() << "Unable to write record to file; record ID: " << t_time_id;
                     }
 
+                    LTRACE( plog, "Packet written (" << t_time_id << ")" );
+
                     t_is_new_acquisition = false;
 
                     continue;

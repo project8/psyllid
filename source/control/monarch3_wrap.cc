@@ -213,8 +213,8 @@ namespace psyllid
             //f_file_switch_started( false ),
             f_wait_to_write(),
             f_switch_thread( nullptr ),
-            f_ok_to_write( false ),
-            f_do_switch_flag( true ),
+            f_ok_to_write( true ),
+            f_do_switch_flag( false ),
             f_do_switch_trig(),
             f_monarch(),
             f_monarch_mutex(),
@@ -395,14 +395,19 @@ namespace psyllid
     {
         LINFO( plog, "Monarch's execute-switch-loop for file <" << f_header_wrap->header().GetFilename() << "> is starting up" );
 
-        //TODO: using monarch_od_manager's canceled status is a stupid hack
-        while( ! f_monarch_od_manager.is_canceled() && f_stage != monarch_stage::finished )
+        while( ! is_canceled() && f_stage != monarch_stage::finished )
         {
             unique_lock t_lock( f_monarch_mutex );
 
             // wait on the condition variable
-            f_do_switch_trig.wait_for( t_lock, std::chrono::milliseconds( 500 ), [this]{return f_do_switch_flag.load() || (f_stage == monarch_stage::finished);} );
-            if( f_stage == monarch_stage::finished) break;
+            //f_do_switch_trig.wait_for( t_lock, std::chrono::milliseconds( 500 ), [this]{return f_do_switch_flag.load() || is_canceled();} ); //(f_stage == monarch_stage::finished);} );
+            while( ! f_do_switch_flag.load() && ! is_canceled() )
+            {
+                f_do_switch_trig.wait_for( t_lock, std::chrono::milliseconds( 500 ) );
+            }
+            //LWARN( plog, "do switch trig wait was broken; " << f_do_switch_flag.load() << "  " << is_canceled() );
+            if( is_canceled() ) break;
+            //if( f_stage == monarch_stage::finished) break;
 
             // f_monarch_mutex is locked at this point
 
@@ -646,11 +651,15 @@ namespace psyllid
 
     inline bool monarch_wrapper::okay_to_write()
     {
+        LTRACE( plog, "Checking ok to write" );
         if( f_ok_to_write.load() ) return f_monarch.operator bool();
         std::mutex t_wait_mutex;
         unique_lock t_wait_lock( t_wait_mutex );
-        f_wait_to_write.wait_for( t_wait_lock, std::chrono::milliseconds( 100 ), [this]{return f_ok_to_write.load() || (f_stage == monarch_stage::finished);});
-        return f_monarch.operator bool() && f_stage != monarch_stage::finished;
+        while( ! f_ok_to_write.load() && f_monarch )
+        {
+            f_wait_to_write.wait_for( t_wait_lock, std::chrono::milliseconds( 100 ) );
+        }
+        return f_monarch.operator bool();
     }
 
 
