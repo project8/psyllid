@@ -336,11 +336,11 @@ namespace psyllid
             bool write_record( monarch3::RecordIdType a_rec_id, monarch3::TimeType a_rec_time, const void* a_rec_block, uint64_t a_bytes, bool a_is_new_acq );
 
             /// Manually lock the stream mutex
-            void lock() const;
+            //void lock() const;
             /// Manually unlock the stream mutex
-            void unlock() const;
+            //void unlock() const;
             /// Return a reference to the stream mutex
-            std::mutex& mutex() const;
+            //std::mutex& mutex() const;
 
         private:
             stream_wrapper( const stream_wrapper& ) = delete;
@@ -352,7 +352,7 @@ namespace psyllid
 
             monarch3::M3Stream* f_stream;
             bool f_is_valid;
-            mutable std::mutex f_mutex;
+            //mutable std::mutex f_mutex;
 
             double f_record_size_mb;
     };
@@ -483,7 +483,7 @@ namespace psyllid
     {
         return f_stream->GetChannelRecord( a_chan_no );
     }
-
+/*
     inline void stream_wrapper::lock() const
     {
         f_mutex.lock();
@@ -500,7 +500,7 @@ namespace psyllid
     {
         return f_mutex;
     }
-
+*/
 
 } /* namespace psyllid */
 

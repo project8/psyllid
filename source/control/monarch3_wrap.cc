@@ -549,11 +549,11 @@ namespace psyllid
             LDEBUG( plog, "Switching to new file; locking stream mutexes, header mutex, and monarch mutex" );
             // stream mutexes have to be locked before the monarch mutex, because the act of writing to a stream
             // (which obviously locks the stream) also locks the monarch mutex when the file contribution is recorded.
-            std::map< unsigned, unique_lock > t_stream_locks;
-            for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
-            {
-                t_stream_locks.insert( std::make_pair( t_stream_it->first, unique_lock( t_stream_it->second->mutex() ) ) );
-            }
+            //std::map< unsigned, unique_lock > t_stream_locks;
+            //for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
+            //{
+            //    t_stream_locks.insert( std::make_pair( t_stream_it->first, unique_lock( t_stream_it->second->mutex() ) ) );
+            //}
             unique_lock t_header_lock( f_header_wrap->get_lock() );
             //unique_lock t_monarch_lock( f_monarch_mutex ); // monarch mutex is already locked in the loop in execute_switch_loop
 
@@ -591,7 +591,7 @@ namespace psyllid
                 {
                     throw error() << "Stream <" << t_stream_it->first << "> was invalid";
                 }
-                t_stream_locks[ t_stream_it->first ].unlock();
+                //t_stream_locks[ t_stream_it->first ].unlock();
             }
 
             LDEBUG( plog, "Switch to new file is complete: <" << f_header_wrap->ptr()->GetFilename() << ">" );
@@ -711,7 +711,7 @@ namespace psyllid
             f_monarch_wrapper( a_monarch_wrapper ),
             f_stream( a_monarch.GetStream( a_stream_no ) ),
             f_is_valid( true ),
-            f_mutex(),
+            //f_mutex(),
             f_record_size_mb( 1.e-6 * (double)f_stream->GetStreamRecordNBytes() )
     {
         if( f_stream == nullptr )
@@ -724,7 +724,7 @@ namespace psyllid
             f_monarch_wrapper( a_orig.f_monarch_wrapper ),
             f_stream( a_orig.f_stream ),
             f_is_valid( a_orig.f_is_valid ),
-            f_mutex(),
+            //f_mutex(),
             f_record_size_mb( a_orig.f_record_size_mb )
     {
         a_orig.f_stream = nullptr;
@@ -748,12 +748,12 @@ namespace psyllid
     bool stream_wrapper::write_record( monarch3::RecordIdType a_rec_id, monarch3::TimeType a_rec_time, const void* a_rec_block, uint64_t a_bytes, bool a_is_new_acq )
     {
         LTRACE( plog, "Writing record <" << a_rec_id << ">" );
-        f_mutex.lock();
+        //f_mutex.lock();
         //LWARN( plog, "Locked stream to write record" );
         if( ! f_monarch_wrapper->okay_to_write() )
         {
             LERROR( plog, "Unable to write to monarch file" );
-            f_mutex.unlock();
+            //f_mutex.unlock();
             return false;
         }
         get_stream_record()->SetRecordId( a_rec_id );
@@ -761,7 +761,7 @@ namespace psyllid
         ::memcpy( get_stream_record()->GetData(), a_rec_block, a_bytes );
         bool t_return = f_stream->WriteRecord( a_is_new_acq );
         f_monarch_wrapper->record_file_contribution( f_record_size_mb );
-        f_mutex.unlock();
+        //f_mutex.unlock();
         return t_return;
     }
 
