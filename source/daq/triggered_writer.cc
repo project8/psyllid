@@ -360,6 +360,7 @@ namespace psyllid
                         throw error() << "Unable to write record to file; record ID: " << t_time_id;
                     }
                     a_ctx.f_is_new_event = false;
+                    LTRACE( plog, "Packet written (" << t_time_id << ")" );
                 }
                 else
                 {

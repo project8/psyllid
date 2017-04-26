@@ -218,11 +218,8 @@ namespace psyllid
             std::string f_filename_ext;
             mutable unsigned f_file_count;
 
-            // TODO: if using f_monarch_mutex in record_file_contribution, we don't need f_file_size_est_mb to be atomic; currently it's still an atomic and the mutex is not used
             double f_max_file_size_mb;
             std::atomic< double > f_file_size_est_mb;
-            //std::future< void > f_new_file_switch_return;
-            //std::atomic< bool > f_file_switch_started;
             std::condition_variable f_wait_to_write;
             std::thread* f_switch_thread;
             std::atomic< bool > f_ok_to_write;
@@ -335,13 +332,6 @@ namespace psyllid
             /// Write the record contents to the file
             bool write_record( monarch3::RecordIdType a_rec_id, monarch3::TimeType a_rec_time, const void* a_rec_block, uint64_t a_bytes, bool a_is_new_acq );
 
-            /// Manually lock the stream mutex
-            //void lock() const;
-            /// Manually unlock the stream mutex
-            //void unlock() const;
-            /// Return a reference to the stream mutex
-            //std::mutex& mutex() const;
-
         private:
             stream_wrapper( const stream_wrapper& ) = delete;
             stream_wrapper& operator=( const stream_wrapper& ) = delete;
@@ -352,7 +342,6 @@ namespace psyllid
 
             monarch3::M3Stream* f_stream;
             bool f_is_valid;
-            //mutable std::mutex f_mutex;
 
             double f_record_size_mb;
     };
@@ -483,24 +472,6 @@ namespace psyllid
     {
         return f_stream->GetChannelRecord( a_chan_no );
     }
-/*
-    inline void stream_wrapper::lock() const
-    {
-        f_mutex.lock();
-        return;
-    }
-
-    inline void stream_wrapper::unlock() const
-    {
-        f_mutex.unlock();
-        return;
-    }
-
-    inline std::mutex& stream_wrapper::mutex() const
-    {
-        return f_mutex;
-    }
-*/
 
 } /* namespace psyllid */
 

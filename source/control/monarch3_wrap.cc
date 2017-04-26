@@ -209,8 +209,6 @@ namespace psyllid
             f_file_count( 1 ),
             f_max_file_size_mb( 0. ),
             f_file_size_est_mb( 0. ),
-            //f_new_file_switch_return(),
-            //f_file_switch_started( false ),
             f_wait_to_write(),
             f_switch_thread( nullptr ),
             f_ok_to_write( true ),
@@ -223,8 +221,7 @@ namespace psyllid
             f_run_start_time( std::chrono::steady_clock::now() ),
             f_stage( monarch_stage::initialized ),
             f_od_thread( nullptr ),
-            f_monarch_od_manager( this )//,
-            //f_od_continue_mutex()
+            f_monarch_od_manager( this )
     {
         std::string::size_type t_ext_pos = a_filename.find_last_of( '.' );
         if( t_ext_pos == std::string::npos )
@@ -400,12 +397,10 @@ namespace psyllid
             unique_lock t_lock( f_monarch_mutex );
 
             // wait on the condition variable
-            //f_do_switch_trig.wait_for( t_lock, std::chrono::milliseconds( 500 ), [this]{return f_do_switch_flag.load() || is_canceled();} ); //(f_stage == monarch_stage::finished);} );
             while( ! f_do_switch_flag.load() && ! is_canceled() )
             {
                 f_do_switch_trig.wait_for( t_lock, std::chrono::milliseconds( 500 ) );
             }
-            //LWARN( plog, "do switch trig wait was broken; " << f_do_switch_flag.load() << "  " << is_canceled() );
             if( is_canceled() ) break;
             //if( f_stage == monarch_stage::finished) break;
 
@@ -451,8 +446,6 @@ namespace psyllid
             return;
         }
 
-        // cancel the on-deck thread
-        //f_monarch_od_manager.cancel();
         f_monarch_od_manager.notify();
 
         f_od_thread->join();
@@ -546,14 +539,7 @@ namespace psyllid
 
         try
         {
-            LDEBUG( plog, "Switching to new file; locking stream mutexes, header mutex, and monarch mutex" );
-            // stream mutexes have to be locked before the monarch mutex, because the act of writing to a stream
-            // (which obviously locks the stream) also locks the monarch mutex when the file contribution is recorded.
-            //std::map< unsigned, unique_lock > t_stream_locks;
-            //for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
-            //{
-            //    t_stream_locks.insert( std::make_pair( t_stream_it->first, unique_lock( t_stream_it->second->mutex() ) ) );
-            //}
+            LDEBUG( plog, "Switching to new file; locking header mutex, and monarch mutex" );
             unique_lock t_header_lock( f_header_wrap->get_lock() );
             //unique_lock t_monarch_lock( f_monarch_mutex ); // monarch mutex is already locked in the loop in execute_switch_loop
 
@@ -591,7 +577,6 @@ namespace psyllid
                 {
                     throw error() << "Stream <" << t_stream_it->first << "> was invalid";
                 }
-                //t_stream_locks[ t_stream_it->first ].unlock();
             }
 
             LDEBUG( plog, "Switch to new file is complete: <" << f_header_wrap->ptr()->GetFilename() << ">" );
@@ -625,26 +610,6 @@ namespace psyllid
         {
             LDEBUG( plog, "Max file size exceeded (" << t_file_size_est_mb << " MB >= " << f_max_file_size_mb << " MB)" );
             trigger_switch();
-            /*
-            f_file_switch_started = true;
-            // launch asynchronous function to start a new egg file
-            auto t_new_file_return = std::async( std::launch::async,
-                    [this]()
-                    {
-                        //std::this_thread::sleep_for( std::chrono::milliseconds(250));
-                        LDEBUG( plog, "Starting a new egg file" );
-                        try
-                        {
-                            switch_to_new_file();
-                        }
-                        catch( std::exception& e )
-                        {
-                            LERROR( plog, "Caught exception while switching to new file: " << e.what() );
-                            raise( SIGINT );
-                        }
-                    } );
-            f_new_file_switch_return = std::move( t_new_file_return );
-            */
         }
         return;
     }
@@ -711,7 +676,6 @@ namespace psyllid
             f_monarch_wrapper( a_monarch_wrapper ),
             f_stream( a_monarch.GetStream( a_stream_no ) ),
             f_is_valid( true ),
-            //f_mutex(),
             f_record_size_mb( 1.e-6 * (double)f_stream->GetStreamRecordNBytes() )
     {
         if( f_stream == nullptr )
@@ -724,7 +688,6 @@ namespace psyllid
             f_monarch_wrapper( a_orig.f_monarch_wrapper ),
             f_stream( a_orig.f_stream ),
             f_is_valid( a_orig.f_is_valid ),
-            //f_mutex(),
             f_record_size_mb( a_orig.f_record_size_mb )
     {
         a_orig.f_stream = nullptr;
@@ -748,8 +711,6 @@ namespace psyllid
     bool stream_wrapper::write_record( monarch3::RecordIdType a_rec_id, monarch3::TimeType a_rec_time, const void* a_rec_block, uint64_t a_bytes, bool a_is_new_acq )
     {
         LTRACE( plog, "Writing record <" << a_rec_id << ">" );
-        //f_mutex.lock();
-        //LWARN( plog, "Locked stream to write record" );
         if( ! f_monarch_wrapper->okay_to_write() )
         {
             LERROR( plog, "Unable to write to monarch file" );
@@ -761,7 +722,6 @@ namespace psyllid
         ::memcpy( get_stream_record()->GetData(), a_rec_block, a_bytes );
         bool t_return = f_stream->WriteRecord( a_is_new_acq );
         f_monarch_wrapper->record_file_contribution( f_record_size_mb );
-        //f_mutex.unlock();
         return t_return;
     }
 
