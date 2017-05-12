@@ -104,17 +104,17 @@ Returns the configuration value requested from the node requested.
 
 - ``[parameter name]: [value]`` -- Parameter name and value
 
-``active-config.[stream_node]``
+``active-config.[stream].[node]``
 -------------------------------
-Returns the configuration of the active DAQ node requested.  The ``stream_node`` name should include the stream-name prefixing the node name, separated by an underscore.
+Returns the configuration of the active DAQ node requested.
 
 *Reply Payload*
 
 - ``[Full node configuration]``
 
-``active-config.[stream_node].[parameter]``
+``active-config.[stream].[node].[parameter]``
 -------------------------------------------
-Returns the configuration value requested from the active DAQ node requested.  The ``stream_node`` name should include the stream-name prefixing the node name, separated by an underscore.  
+Returns the configuration value requested from the active DAQ node requested.  
 Please note that this action will not necessarily return the value in use (e.g. if a parameter that is only used once during initialization has been changed since then), and is not necessarily thread-safe.
 
 *Reply Payload*
@@ -173,9 +173,9 @@ Configure a single parameter in a node.  Takes effect next time the DAQ is activ
 
 - ``values: [[value]]`` -- Parameter value to be set as the first element of the ``values`` array.
 
-``active-config.[stream_node]``
+``active-config.[stream].[node]``
 -------------------------------
-Configures one or more parameters within an active DAQ node.  Takes effect immediately.  The ``stream_node`` name should include the stream-name prefixing the node name, separated by an underscore.
+Configures one or more parameters within an active DAQ node.  Takes effect immediately.  
 
 *Payload*
 
@@ -185,9 +185,9 @@ Configures one or more parameters within an active DAQ node.  Takes effect immed
 
 - ``[the parameters that were set (dictionary)]`` -- Parameter name:value pairs that were set
 
-``active-config.[stream_node].[parameter]``
+``active-config.[stream].[node].[parameter]``
 -------------------------------------------
-Configure a single parameter in an active DAQ node.  Takes effect immediately.  The ``stream_node`` name should include the stream-name prefixing the node name, separated by an underscore.  
+Configure a single parameter in an active DAQ node.  Takes effect immediately.  
 Please note that this action will not necessarily be useful for all node parameters (e.g. if a parameter is used once during initialization), and is not necessarily thread-safe.
 
 *Payload*
