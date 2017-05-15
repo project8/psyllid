@@ -244,6 +244,8 @@ namespace psyllid
         t_dev_node->add( "v-offset", new scarab::param_value( a_node->get_v_offset() ) );
         t_dev_node->add( "v-range", new scarab::param_value( a_node->get_v_range() ) );
         a_config.add( "device", t_dev_node );
+        a_config.add( "center-freq", new scarab::param_value( a_node->get_center_freq() ) );
+        a_config.add( "freq-range", new scarab::param_value( a_node->get_freq_range() ) );
         return;
     }
 
