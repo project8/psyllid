@@ -215,16 +215,16 @@ namespace psyllid
     {
         LDEBUG( plog, "Configuring streaming_writer with:\n" << a_config );
         a_node->set_file_num( a_config.get_value( "file-num", a_node->get_file_num() ) );
-        const scarab::param_node *t_dev_config = a_config.node_at( "device" );
-        if( t_dev_config != nullptr )
+        if( a_config.has( "device" ) )
         {
-            a_node->set_bit_depth( t_dev_config->get_value( "bit-depth", a_node->get_bit_depth() ) );
-            a_node->set_data_type_size( t_dev_config->get_value( "data-type-size", a_node->get_data_type_size() ) );
-            a_node->set_sample_size( t_dev_config->get_value( "sample-size", a_node->get_sample_size() ) );
-            a_node->set_record_size( t_dev_config->get_value( "record-size", a_node->get_record_size() ) );
-            a_node->set_acq_rate( t_dev_config->get_value( "acq-rate", a_node->get_acq_rate() ) );
-            a_node->set_v_offset( t_dev_config->get_value( "v-offset", a_node->get_v_offset() ) );
-            a_node->set_v_range( t_dev_config->get_value( "v-range", a_node->get_v_range() ) );
+            const scarab::param_node& t_dev_config = a_config.node_at( "device" );
+            a_node->set_bit_depth( t_dev_config.get_value( "bit-depth", a_node->get_bit_depth() ) );
+            a_node->set_data_type_size( t_dev_config.get_value( "data-type-size", a_node->get_data_type_size() ) );
+            a_node->set_sample_size( t_dev_config.get_value( "sample-size", a_node->get_sample_size() ) );
+            a_node->set_record_size( t_dev_config.get_value( "record-size", a_node->get_record_size() ) );
+            a_node->set_acq_rate( t_dev_config.get_value( "acq-rate", a_node->get_acq_rate() ) );
+            a_node->set_v_offset( t_dev_config.get_value( "v-offset", a_node->get_v_offset() ) );
+            a_node->set_v_range( t_dev_config.get_value( "v-range", a_node->get_v_range() ) );
         }
         a_node->set_center_freq( a_config.get_value( "center-freq", a_node->get_center_freq() ) );
         a_node->set_freq_range( a_config.get_value( "freq-range", a_node->get_freq_range() ) );

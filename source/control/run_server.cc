@@ -57,13 +57,6 @@ namespace psyllid
         // configuration manager
         //config_manager t_config_mgr( f_config, &t_dev_mgr );
 
-        const param_node* t_daq_node = f_config.node_at( "daq" );
-        if( t_daq_node == nullptr )
-        {
-            LERROR( plog, "No DAQ node present in the master config" );
-            return;
-        }
-
         std::unique_lock< std::mutex > t_lock( f_component_mutex );
 
         try
@@ -79,9 +72,9 @@ namespace psyllid
             f_daq_control->set_daq_control( f_daq_control );
             f_daq_control->initialize();
 
-            if( f_config.has( "streams" ) && f_config.at( "streams" )->is_node() )
+            if( f_config.has( "streams" ) && f_config.at( "streams" ).is_node() )
             {
-                if( ! f_stream_manager->initialize( *f_config.node_at( "streams" ) ) )
+                if( ! f_stream_manager->initialize( f_config.node_at( "streams" ) ) )
                 {
                     throw error() << "Unable to initialize the stream manager";
                 }

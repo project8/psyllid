@@ -39,7 +39,7 @@ namespace psyllid
         {
             throw error() << "No AMQP configuration present";
         }
-        f_amqp_config.reset( new param_node( *a_master_config.node_at( "amqp" ) ) );
+        f_amqp_config.reset( new param_node( a_master_config.node_at( "amqp" ) ) );
     }
 
     request_receiver::~request_receiver()

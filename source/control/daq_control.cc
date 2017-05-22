@@ -52,11 +52,9 @@ namespace psyllid
             f_status( status::deactivated )
     {
         // DAQ config is optional; defaults will work just fine
-        const scarab::param_node* t_daq_config = a_master_config.node_at( "daq" );
-
-        if( t_daq_config != nullptr )
+        if( a_master_config.has( "daq" ) )
         {
-            f_daq_config.reset( new param_node( *t_daq_config ) );
+            f_daq_config.reset( new param_node( a_master_config.node_at( "daq" ) ) );
         }
 
         set_run_duration( f_daq_config->get_value( "duration", get_run_duration() ) );
@@ -601,7 +599,7 @@ namespace psyllid
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): values array is missing" );
             }
-            const scarab::param_array* t_values_array = a_request->get_payload().array_at( "values" );
+            const scarab::param_array* t_values_array = &a_request->get_payload().array_at( "values" );
             if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
@@ -669,7 +667,7 @@ namespace psyllid
                 {
                     return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get active-node parameter: cannot find parameter <" + t_param_to_get + ">" );
                 }
-                a_reply_pkg.f_payload.add( t_param_to_get, new scarab::param_value( *t_param_dump.value_at( t_param_to_get ) ) );
+                a_reply_pkg.f_payload.add( t_param_to_get, new scarab::param_value( t_param_dump.value_at( t_param_to_get ) ) );
             }
             catch( std::exception& e )
             {
@@ -730,7 +728,7 @@ namespace psyllid
     {
         try
         {
-            f_run_filename =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            f_run_filename =  a_request->get_payload().array_at( "values" ).get_value( 0 );
             LDEBUG( plog, "Run filename set to <" << f_run_filename << ">" );
             return a_reply_pkg.send_reply( retcode_t::success, "Filename set" );
         }
@@ -744,7 +742,7 @@ namespace psyllid
     {
         try
         {
-            f_run_description =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            f_run_description =  a_request->get_payload().array_at( "values" ).get_value( 0 );
             LDEBUG( plog, "Run description set to:\n" << f_run_description );
             return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
         }
@@ -758,7 +756,7 @@ namespace psyllid
     {
         try
         {
-            f_run_duration =  a_request->get_payload().array_at( "values" )->get_value< unsigned >( 0 );
+            f_run_duration =  a_request->get_payload().array_at( "values" ).get_value< unsigned >( 0 );
             LDEBUG( plog, "Duration set to <" << f_run_duration << "> ms" );
             return a_reply_pkg.send_reply( retcode_t::success, "Duration set" );
         }
