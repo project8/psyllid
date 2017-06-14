@@ -27,7 +27,7 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( packet_receiver_socket, "packet-receiver-socket" );
+    REGISTER_NODE_AND_BUILDER( packet_receiver_socket, "packet-receiver-socket", packet_receiver_socket_binding );
 
     LOGGER( plog, "packet_receiver_socket" );
 
@@ -223,29 +223,33 @@ namespace psyllid
         return;
     }
 
-    void packet_receiver_socket::do_cancellation()
-    {
-        return;
-    }
 
-
-
-    packet_receiver_socket_builder::packet_receiver_socket_builder() :
-            _node_builder< packet_receiver_socket >()
+    packet_receiver_socket_binding::packet_receiver_socket_binding() :
+            _node_binding< packet_receiver_socket, packet_receiver_socket_binding >()
     {
     }
 
-    packet_receiver_socket_builder::~packet_receiver_socket_builder()
+    packet_receiver_socket_binding::~packet_receiver_socket_binding()
     {
     }
 
-    void packet_receiver_socket_builder::apply_config( packet_receiver_socket* a_node, const scarab::param_node& a_config )
+    void packet_receiver_socket_binding::do_apply_config( packet_receiver_socket* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring packet_receiver_socket with:\n" << a_config );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
         a_node->set_port( a_config.get_value( "port", a_node->get_port() ) );
         a_node->ip() = a_config.get_value( "ip", a_node->ip() );
         a_node->set_timeout_sec( a_config.get_value( "timeout-sec", a_node->get_timeout_sec() ) );
+        return;
+    }
+
+    void packet_receiver_socket_binding::do_dump_config( const packet_receiver_socket* a_node, scarab::param_node& a_config ) const
+    {
+        LDEBUG( plog, "Dumping configuration for packet_receiver_socket" );
+        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
+        a_config.add( "port", new scarab::param_value( a_node->get_port() ) );
+        a_config.add( "ip", new scarab::param_value( a_node->ip() ) );
+        a_config.add( "timeout-sec", new scarab::param_value( a_node->get_timeout_sec() ) );
         return;
     }
 

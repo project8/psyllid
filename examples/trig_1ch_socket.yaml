@@ -13,7 +13,7 @@ daq:
 
 streams:
     ch0:
-        preset: str-1ch-fpa
+        preset: fmask-1ch
   
         device:
             n-channels: 1
@@ -25,13 +25,11 @@ streams:
             v-offset: 0.0
             v-range: 0.5
   
-        prf:
+        prs:
             length: 10
             port: 23530
-            interface: eth1
-            n-blocks: 64
-            block-size: 4194304
-            frame-size: 2048
-            
-        strw:
+            ip: 127.0.0.1
+
+        trw:
             file-num: 0
+            

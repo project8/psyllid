@@ -8,12 +8,12 @@
 #ifndef PSYLLID_DAQ_CONTROL_HH_
 #define PSYLLID_DAQ_CONTROL_HH_
 
-#include "member_variables.hh"
-
-#include "node_manager.hh" // for midge_package
+#include "control_access.hh"
+#include "stream_manager.hh" // for midge_package
 #include "psyllid_error.hh"
 
 #include "cancelable.hh"
+#include "member_variables.hh"
 
 #include "hub.hh"
 
@@ -26,7 +26,7 @@
 
 namespace psyllid
 {
-    class daq_control : public scarab::cancelable
+    class daq_control : public scarab::cancelable, public control_access
     {
         public:
             class run_error : public error
@@ -43,18 +43,24 @@ namespace psyllid
             };
 
         public:
-            daq_control( const scarab::param_node& a_master_config, std::shared_ptr< node_manager > a_mgr );
+            daq_control( const scarab::param_node& a_master_config, std::shared_ptr< stream_manager > a_mgr );
             virtual ~daq_control();
+
+            /// Pre-execution initialization (call after setting the control_access pointer)
+            void initialize();
 
             /// Run the DAQ control thread
             void execute();
 
-            /// Start the DAQ into the idle state
-            /// Deactivated with deactivate()
+            /// Start the DAQ into the activated state
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void activate();
-            /// Returns the DAQ to the initialized state
+            /// Restarts the DAQ into the activated state
+            /// Can throw daq_control::status_error; daq_control will still be usable
+            /// Can throw psyllid::error; daq_control will NOT be usable
+            void reactivate();
+            /// Returns the DAQ to the deactivated state
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void deactivate();
@@ -71,13 +77,25 @@ namespace psyllid
             void stop_run();
 
         public:
-            bool handle_activate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            void apply_config( const std::string& a_node_name, const scarab::param_node& a_config );
+            void dump_config( const std::string& a_node_name, scarab::param_node& a_config );
 
+            /// Instruct a node to run a command
+            /// Throws psyllid::error if the command fails; returns false if the command is not recognized
+            bool run_command( const std::string& a_node_name, const std::string& a_cmd, const scarab::param_node& a_args );
+
+        public:
+            bool handle_activate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            bool handle_reactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_deactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
             bool handle_start_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
             bool handle_stop_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+
+            bool handle_apply_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            bool handle_dump_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            bool handle_run_command_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
             bool handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
             bool handle_set_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
@@ -96,11 +114,12 @@ namespace psyllid
             std::condition_variable f_activation_condition;
             std::mutex f_daq_mutex;
 
-            std::shared_ptr< node_manager > f_node_manager;
+            std::shared_ptr< stream_manager > f_node_manager;
 
             std::unique_ptr< scarab::param_node > f_daq_config;
 
             midge_package f_midge_pkg;
+            active_node_bindings* f_node_bindings;
 
             std::condition_variable f_run_stopper; // ends the run after a given amount of time
             std::mutex f_run_stop_mutex; // mutex used by the run_stopper
@@ -108,16 +127,20 @@ namespace psyllid
             std::future< void > f_run_return;
 
         public:
-            mv_referrable( std::string, run_filename );
-            mv_referrable( std::string, run_description );
+            void set_filename( const std::string& a_filename, unsigned a_file_num = 0 );
+            const std::string& get_filename( unsigned a_file_num = 0 );
+
+            void set_description( const std::string& a_desc, unsigned a_file_num = 0 );
+            const std::string& get_description( unsigned a_file_num = 0 );
+
             mv_accessible( unsigned, run_duration );
 
         public:
             enum class status:uint32_t
             {
-                initialized = 0,
+                deactivated = 0,
                 activating = 2,
-                idle = 4,
+                activated = 4,
                 running = 5,
                 deactivating = 6,
                 canceled = 8,

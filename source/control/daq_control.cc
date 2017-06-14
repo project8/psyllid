@@ -7,7 +7,8 @@
 
 #include "daq_control.hh"
 
-#include "node_manager.hh"
+#include "butterfly_house.hh"
+#include "node_builder.hh"
 
 #include "diptera.hh"
 #include "midge_error.hh"
@@ -33,30 +34,41 @@ namespace psyllid
 {
     LOGGER( plog, "daq_control" );
 
-    daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< node_manager > a_mgr ) :
+    daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< stream_manager > a_mgr ) :
             scarab::cancelable(),
+            control_access(),
             f_activation_condition(),
             f_daq_mutex(),
             f_node_manager( a_mgr ),
             f_daq_config( new param_node() ),
             f_midge_pkg(),
+            f_node_bindings( nullptr ),
             f_run_stopper(),
             f_run_stop_mutex(),
             f_run_return(),
-            f_run_filename( "default_filename_dc.egg" ),
-            f_run_description( "default_description" ),
             f_run_duration( 1000 ),
-            f_status( status::initialized )
+            f_status( status::deactivated )
     {
         // DAQ config is optional; defaults will work just fine
-        if( a_master_config.has( "daq" ) )
+        const scarab::param_node* t_daq_config = a_master_config.node_at( "daq" );
+
+        if( t_daq_config != nullptr )
         {
-            f_daq_config.reset( new param_node( *a_master_config.node_at( "daq" ) ) );
+            f_daq_config.reset( new param_node( *t_daq_config ) );
         }
+
+        set_run_duration( f_daq_config->get_value( "duration", get_run_duration() ) );
     }
 
     daq_control::~daq_control()
     {
+    }
+
+    void daq_control::initialize()
+    {
+        butterfly_house::get_instance()->set_daq_control( f_daq_control );
+        butterfly_house::get_instance()->prepare_files( f_daq_config.get() );
+        return;
     }
 
     void daq_control::execute()
@@ -80,10 +92,11 @@ namespace psyllid
         while( ! is_canceled() )
         {
             status t_status = get_status();
-            if( t_status == status::initialized )
+            LTRACE( plog, "daq_control execute loop; status is <" << interpret_status( t_status ) << ">" );
+            if( t_status == status::deactivated )
             {
                 std::unique_lock< std::mutex > t_lock( f_daq_mutex );
-                //LDEBUG( plog, "DAQ control initialized and waiting for activation signal" );
+                //LDEBUG( plog, "DAQ control deactivated and waiting for activation signal" );
                 f_activation_condition.wait_for( t_lock, std::chrono::seconds(1) );
             }
             else if( t_status == status::activating )
@@ -100,8 +113,9 @@ namespace psyllid
                 }
                 catch( error& e )
                 {
-                    LERROR( plog, "Exception caught while resetting midge: " << e.what() );
-                    set_status( status::error );
+                    LWARN( plog, "Exception caught while resetting midge: " << e.what() );
+                    LWARN( plog, "Returning to the \"deactivated\" state and awaiting further instructions" );
+                    set_status( status::deactivated );
                     continue;
                 }
 
@@ -115,11 +129,13 @@ namespace psyllid
                     continue;
                 }
 
+                f_node_bindings = f_node_manager->get_node_bindings();
+
                 try
                 {
                     std::string t_run_string( f_node_manager->get_node_run_str() );
                     LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
-                    set_status( status::idle );
+                    set_status( status::activated );
                     f_midge_pkg->run( t_run_string );
                     LINFO( plog, "DAQ control is shutting down after midge exited" );
                 }
@@ -132,6 +148,7 @@ namespace psyllid
                 }
 
                 f_node_manager->return_midge( std::move( f_midge_pkg ) );
+                f_node_bindings = nullptr;
 
                 if( get_status() == status::running )
                 {
@@ -141,25 +158,27 @@ namespace psyllid
                     continue;
                 }
             }
-            else if( t_status == status::idle )
+            else if( t_status == status::activated )
             {
-                LERROR( plog, "DAQ control status is idle in the outer execution loop!" );
+                LERROR( plog, "DAQ control status is activated in the outer execution loop!" );
                 set_status( status::error );
                 continue;
             }
             else if( t_status == status::deactivating )
             {
-                LDEBUG( plog, "DAQ control deactivating; status now set to \"initialized\"" );
-                set_status( status::initialized );
+                LDEBUG( plog, "DAQ control deactivating; status now set to \"deactivated\"" );
+                set_status( status::deactivated );
             }
             else if( t_status == status::done )
             {
                 LINFO( plog, "Exiting DAQ control" );
+                f_node_bindings = nullptr;
                 break;
             }
             else if( t_status == status::error )
             {
                 LERROR( plog, "DAQ control is in an error state" );
+                f_node_bindings = nullptr;
                 raise( SIGINT );
                 break;
             }
@@ -176,14 +195,28 @@ namespace psyllid
             throw error() << "DAQ control has been canceled";
         }
 
-        if( get_status() != status::initialized )
+        if( get_status() != status::deactivated )
         {
-            throw status_error() << "DAQ control is not in the initialized state";
+            throw status_error() << "DAQ control is not in the deactivated state";
         }
 
         set_status( status::activating );
         f_activation_condition.notify_one();
 
+        return;
+    }
+
+    void daq_control::reactivate()
+    {
+        try
+        {
+            deactivate();
+            activate();
+        }
+        catch( error& e )
+        {
+            throw e;
+        }
         return;
     }
 
@@ -196,9 +229,9 @@ namespace psyllid
             throw error() << "DAQ control has been canceled";
         }
 
-        if( get_status() != status::idle )
+        if( get_status() != status::activated )
         {
-            throw status_error() << "Invalid state for deactivating: <" + daq_control::interpret_status( get_status() ) + ">; DAQ control must be in idle state";
+            throw status_error() << "Invalid state for deactivating: <" + daq_control::interpret_status( get_status() ) + ">; DAQ control must be in activated state";
         }
 
         set_status( status::deactivating );
@@ -220,9 +253,9 @@ namespace psyllid
             throw error() << "daq_control has been canceled";
         }
 
-        if( get_status() != status::idle )
+        if( get_status() != status::activated )
         {
-            throw status_error() << "DAQ control must be in the idle state to start a run; activate the DAQ and try again";
+            throw status_error() << "DAQ control must be in the activated state to start a run; activate the DAQ and try again";
         }
 
         if( ! f_midge_pkg.have_lock() )
@@ -241,27 +274,100 @@ namespace psyllid
     {
         LINFO( plog, "Run is commencing" );
 
+        LDEBUG( plog, "Starting egg files" );
+        try
+        {
+            butterfly_house::get_instance()->start_files();
+        }
+        catch( std::exception& e )
+        {
+            LERROR( plog, "Unable to start files: " << e.what() );
+            set_status( status::error );
+            LDEBUG( plog, "Canceling midge" );
+            if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+            return;
+        }
+
+        const unsigned t_sub_duration = 100;
+        unsigned t_n_sub_durations = 0;
+        unsigned t_duration_remainder = 0;
+        if( a_duration != 0 )
+        {
+            t_n_sub_durations = a_duration / t_sub_duration; // number of complete sub-durations, not including the remainder
+            t_duration_remainder = a_duration - t_n_sub_durations * t_sub_duration;
+        }
+        LDEBUG( plog, "Run duration will be " << a_duration << " ms; " << t_n_sub_durations << " sub-durations  of " << t_sub_duration << " ms will be used, plus one sub-duration of " << t_duration_remainder << " ms" );
+
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
 
+        LDEBUG( plog, "Unpausing midge" );
         set_status( status::running );
         f_midge_pkg->instruct( midge::instruction::resume );
+
+        std::cv_status t_wait_return = std::cv_status::timeout;
 
         if( a_duration == 0 )
         {
             LDEBUG( plog, "Untimed run stopper in use" );
             f_run_stopper.wait( t_run_stop_lock );
+            // conditions that will break the loop:
+            //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
+            //   - daq_control has been canceled
+            while( t_wait_return == std::cv_status::timeout && ! is_canceled() )
+            {
+                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
+            }
         }
         else
         {
             LDEBUG( plog, "Timed run stopper in use; limit is " << a_duration << " ms" );
-            f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( a_duration ) );
+            // all but the last sub-duration last for t_sub_duration ms
+            // conditions that will break the loop:
+            //   - all sub-durations have been completed
+            //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
+            //   - daq_control has been canceled
+            for( unsigned i_sub_duration = 0;
+                    i_sub_duration < t_n_sub_durations && t_wait_return == std::cv_status::timeout && ! is_canceled();
+                    ++i_sub_duration )
+            {
+                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
+            }
+            // the last sub-duration is for a different amount of time (t_duration_remainder) than the standard sub-duration (t_sub_duration)
+            if( t_wait_return == std::cv_status::timeout && ! is_canceled() )
+            {
+                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_duration_remainder ) );
+            }
         }
+
+        // if we've reached here, we need to pause midge.
+        // reasons for this include the timer has run out in a timed run, or the run has been manually stopped
+
         LDEBUG( plog, "Run stopper has been released" );
 
         f_midge_pkg->instruct( midge::instruction::pause );
-        set_status( status::idle );
+        set_status( status::activated );
 
         LINFO( plog, "Run has stopped" );
+
+        LDEBUG( plog, "Finishing egg files" );
+        try
+        {
+            butterfly_house::get_instance()->finish_files();
+        }
+        catch( std::exception& e )
+        {
+            LERROR( plog, "Unable to finish files: " << e.what() );
+            set_status( status::error );
+            LDEBUG( plog, "Canceling midge" );
+            if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+            return;
+        }
+
+        // if daq_control has been canceled, assume that midge has been canceled by other methods, and this function should just exit
+        if( is_canceled() )
+        {
+            LDEBUG( plog, "Run was cancelled" );
+        }
 
         return;
     }
@@ -288,14 +394,109 @@ namespace psyllid
         LDEBUG( plog, "Canceling DAQ control" );
         set_status( status::canceled );
 
+        if( get_status() == status::running )
+        {
+            LDEBUG( plog, "Canceling run" );
+            try
+            {
+                stop_run();
+            }
+            catch( error& e )
+            {
+                LERROR( plog, "Unable to complete stop-run: " << e.what() );
+            }
+        }
+
         LDEBUG( plog, "Canceling midge" );
         if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
-        return;
-
-
 
         return;
     }
+
+    void daq_control::apply_config( const std::string& a_node_name, const scarab::param_node& a_config )
+    {
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't apply config to node <" << a_node_name << ">: node bindings aren't available";
+        }
+
+        active_node_bindings::iterator t_binding_it = f_node_bindings->find( a_node_name );
+        if( t_binding_it == f_node_bindings->end() )
+        {
+            throw error() << "Can't apply config to node <" << a_node_name << ">: did not find node";
+        }
+
+        try
+        {
+            LDEBUG( plog, "Applying config to active node <" << a_node_name << ">: " << a_config );
+            t_binding_it->second.first->apply_config( t_binding_it->second.second, a_config );
+        }
+        catch( std::exception& e )
+        {
+            throw error() << "Can't apply config to node <" << a_node_name << ">: " << e.what();
+        }
+        return;
+    }
+
+    void daq_control::dump_config( const std::string& a_node_name, scarab::param_node& a_config )
+    {
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't dump config from node <" << a_node_name << ">: node bindings aren't available";
+        }
+
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't dump config from node <" << a_node_name << ">: node bindings aren't available";
+        }
+
+        active_node_bindings::iterator t_binding_it = f_node_bindings->find( a_node_name );
+        if( t_binding_it == f_node_bindings->end() )
+        {
+            throw error() << "Can't dump config from node <" << a_node_name << ">: did not find node";
+        }
+
+        try
+        {
+            LDEBUG( plog, "Dumping config from active node <" << a_node_name << ">" );
+            t_binding_it->second.first->dump_config( t_binding_it->second.second, a_config );
+        }
+        catch( std::exception& e )
+        {
+            throw error() << "Can't dump config from node <" << a_node_name << ">: " << e.what();
+        }
+        return;
+    }
+
+    bool daq_control::run_command( const std::string& a_node_name, const std::string& a_cmd, const scarab::param_node& a_args )
+    {
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: node bindings aren't available";
+        }
+
+        if( f_node_bindings == nullptr )
+        {
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: node bindings aren't available";
+        }
+
+        active_node_bindings::iterator t_binding_it = f_node_bindings->find( a_node_name );
+        if( t_binding_it == f_node_bindings->end() )
+        {
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: did not find node";
+        }
+
+        try
+        {
+            LDEBUG( plog, "Running command <" << a_cmd << "> on active node <" << a_node_name << ">" );
+            return t_binding_it->second.first->run_command( t_binding_it->second.second, a_cmd, a_args );
+        }
+        catch( std::exception& e )
+        {
+            throw error() << "Can't run command <" << a_cmd << "> on node <" << a_node_name << ">: " << e.what();
+        }
+    }
+
 
     bool daq_control::handle_activate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
@@ -307,6 +508,19 @@ namespace psyllid
         catch( error& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to activate DAQ control: " ) + e.what() );
+        }
+    }
+
+    bool daq_control::handle_reactivate_daq_control( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    {
+        try
+        {
+            reactivate();
+            return a_reply_pkg.send_reply( retcode_t::success, "DAQ control reactivated" );
+        }
+        catch( error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to reactivate DAQ control: " ) + e.what() );
         }
     }
 
@@ -323,14 +537,36 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_start_run_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    bool daq_control::handle_start_run_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
+            if( a_request->get_payload().has( "filename" ) ) set_filename( a_request->get_payload().get_value( "filename" ), 0 );
+            if( a_request->get_payload().has( "filenames" ) )
+            {
+                const scarab::param_array* t_filenames = a_request->get_payload().array_at( "filenames" );
+                for( unsigned i_fn = 0; i_fn < t_filenames->size(); ++i_fn )
+                {
+                    set_filename( t_filenames->get_value( i_fn ), i_fn );
+                }
+            }
+
+            if( a_request->get_payload().has( "description" ) ) set_description( a_request->get_payload().get_value( "description" ), 0 );
+            if( a_request->get_payload().has( "descriptions" ) )
+            {
+                const scarab::param_array* t_descriptions = a_request->get_payload().array_at( "descriptions" );
+                for( unsigned i_fn = 0; i_fn < t_descriptions->size(); ++i_fn )
+                {
+                    set_description( t_descriptions->get_value( i_fn ), i_fn );
+                }
+            }
+
+            f_run_duration = a_request->get_payload().get_value( "duration", f_run_duration );
+
             start_run();
             return a_reply_pkg.send_reply( retcode_t::success, "Run started" );
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to start run: " ) + e.what() );
         }
@@ -349,15 +585,191 @@ namespace psyllid
         }
     }
 
+    bool daq_control::handle_apply_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        if( a_request->parsed_rks().size() < 2 )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].active-config.[stream].[node] or [queue].node-config.[stream].[node].[parameter]" );
+        }
+
+        //size_t t_rks_size = a_request->parsed_rks().size();
+
+        std::string t_target_stream = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        if( a_request->parsed_rks().empty() )
+        {
+            // payload should be a map of all parameters to be set
+            LDEBUG( plog, "Performing config for multiple values in active node <" << t_target_node << ">" );
+
+            if( a_request->get_payload().empty() )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config request: payload is empty" );
+            }
+
+            try
+            {
+                apply_config( t_target_node, a_request->get_payload() );
+                a_reply_pkg.f_payload.merge( a_request->get_payload() );
+            }
+            catch( std::exception& e )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform node-config request: ") + e.what() );
+            }
+        }
+        else
+        {
+            // payload should be values array with a single entry for the particular parameter to be set
+            LDEBUG( plog, "Performing node config for a single value in active node <" << t_target_node << ">" );
+
+            if( ! a_request->get_payload().has( "values" ) )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): values array is missing" );
+            }
+            const scarab::param_array* t_values_array = a_request->get_payload().array_at( "values" );
+            if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
+            }
+
+            scarab::param_node t_param_to_set;
+            t_param_to_set.add( a_request->parsed_rks().front(), new scarab::param_value( (*t_values_array)[0].as_value() ) );
+
+            try
+            {
+                apply_config( t_target_node, t_param_to_set );
+                a_reply_pkg.f_payload.merge( t_param_to_set );
+            }
+            catch( std::exception& e )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform active-config request (single value): ") + e.what() );
+            }
+        }
+
+        LDEBUG( plog, "Node-config was successful" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed node-config" );
+    }
+
+    bool daq_control::handle_dump_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        if( a_request->parsed_rks().size() < 2 )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].active-config.[stream].[node] or [queue].active-config.[stream].[node].[parameter]" );
+        }
+
+        //size_t t_rks_size = a_request->parsed_rks().size();
+
+        std::string t_target_stream = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        if( a_request->parsed_rks().empty() )
+        {
+            // getting full node configuration
+            LDEBUG( plog, "Getting node config for active node <" << t_target_node << ">" );
+
+            try
+            {
+                dump_config( t_target_node, a_reply_pkg.f_payload );
+            }
+            catch( std::exception& e )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform get-active-config request: ") + e.what() );
+            }
+        }
+        else
+        {
+            // getting value for a single parameter
+            LDEBUG( plog, "Getting value for a single parameter in active node <" << t_target_node << ">" );
+
+            std::string t_param_to_get = a_request->parsed_rks().front();
+
+            try
+            {
+                scarab::param_node t_param_dump;
+                dump_config( t_target_node, t_param_dump );
+                if( ! t_param_dump.has( t_param_to_get ) )
+                {
+                    return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get active-node parameter: cannot find parameter <" + t_param_to_get + ">" );
+                }
+                a_reply_pkg.f_payload.add( t_param_to_get, new scarab::param_value( *t_param_dump.value_at( t_param_to_get ) ) );
+            }
+            catch( std::exception& e )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to get active-node parameter (single value): ") + e.what() );
+            }
+        }
+
+        LDEBUG( plog, "Get-active-node-config was successful" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-active-node-config" );
+    }
+
+    bool daq_control::handle_run_command_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        if( a_request->parsed_rks().size() < 2 )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].run-command.[stream].[node].[command]" );
+        }
+
+        //size_t t_rks_size = a_request->parsed_rks().size();
+
+        std::string t_target_stream = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        scarab::param_node t_args_node( a_request->get_payload() );
+        std::string t_command( a_request->parsed_rks().front() );
+        a_request->parsed_rks().pop_front();
+
+        LDEBUG( plog, "Performing run-command <" << t_command << "> for active node <" << t_target_node << ">; args:\n" << t_args_node );
+
+        bool t_return = false;
+        try
+        {
+            t_return = run_command( t_target_node, t_command, t_args_node );
+            a_reply_pkg.f_payload.merge( t_args_node );
+            a_reply_pkg.f_payload.add( "command", new scarab::param_value( t_command ) );
+        }
+        catch( std::exception& e )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform run-command request: ") + e.what() );
+        }
+
+        if( t_return )
+        {
+            LDEBUG( plog, "Active run-command execution was successful" );
+            return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed active run-command execution" );
+        }
+        else
+        {
+            LWARN( plog, "Active run-command execution failed" );
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_method, "Command was not recognized" );
+        }
+    }
+
     bool daq_control::handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
-            f_run_filename =  a_request->get_payload().array_at( "values" )->get_value( 0 );
-            LDEBUG( plog, "Run filename set to <" << f_run_filename << ">" );
+            unsigned t_file_num = 0;
+            if( a_request->parsed_rks().size() > 0)
+            {
+                t_file_num = std::stoi( a_request->parsed_rks().front() );
+            }
+
+            std::string t_filename =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            LDEBUG( plog, "Setting filename for file <" << t_file_num << "> to <" << t_filename << ">" );
+            set_filename( t_filename, t_file_num );
             return a_reply_pkg.send_reply( retcode_t::success, "Filename set" );
         }
-        catch( scarab::error& e )
+        catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set filename: " ) + e.what() );
         }
@@ -367,8 +779,15 @@ namespace psyllid
     {
         try
         {
-            f_run_description =  a_request->get_payload().array_at( "values" )->get_value( 0 );
-            LDEBUG( plog, "Run description set to:\n" << f_run_description );
+            unsigned t_file_num = 0;
+            if( a_request->parsed_rks().size() > 0)
+            {
+                t_file_num = std::stoi( a_request->parsed_rks().front() );
+            }
+
+            std::string t_description =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            LDEBUG( plog, "Setting description for file <" << t_file_num << "> to <" << t_description << ">" );
+            set_filename( t_description, t_file_num );
             return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
         }
         catch( scarab::error& e )
@@ -405,22 +824,48 @@ namespace psyllid
 
     }
 
-    bool daq_control::handle_get_filename_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    bool daq_control::handle_get_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
-        param_array* t_values_array = new param_array();
-        t_values_array->push_back( new param_value( f_run_filename ) );
+        try
+        {
+            unsigned t_file_num = 0;
+            if( a_request->parsed_rks().size() > 0)
+            {
+                t_file_num = std::stoi( a_request->parsed_rks().front() );
+            }
 
-        a_reply_pkg.f_payload.add( "values", t_values_array );
+            param_array* t_values_array = new param_array();
+            t_values_array->push_back( new param_value( get_filename( t_file_num ) ) );
+            a_reply_pkg.f_payload.add( "values", t_values_array );
+            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+        }
+        catch( scarab::error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+        }
 
         return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
     }
 
-    bool daq_control::handle_get_description_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    bool daq_control::handle_get_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
-        param_array* t_values_array = new param_array();
-        t_values_array->push_back( new param_value( f_run_description ) );
+        try
+        {
+            unsigned t_file_num = 0;
+            if( a_request->parsed_rks().size() > 0)
+            {
+                t_file_num = std::stoi( a_request->parsed_rks().front() );
+            }
 
-        a_reply_pkg.f_payload.add( "values", t_values_array );
+            param_array* t_values_array = new param_array();
+            t_values_array->push_back( new param_value( get_description( t_file_num ) ) );
+            a_reply_pkg.f_payload.add( "values", t_values_array );
+            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+        }
+        catch( scarab::error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+        }
 
         return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
     }
@@ -436,6 +881,56 @@ namespace psyllid
     }
 
 
+    void daq_control::set_filename( const std::string& a_filename, unsigned a_file_num )
+    {
+        try
+        {
+            butterfly_house::get_instance()->set_filename( a_filename, a_file_num );
+            return;
+        }
+        catch( error& )
+        {
+            throw;
+        }
+    }
+
+    const std::string& daq_control::get_filename( unsigned a_file_num )
+    {
+        try
+        {
+            return butterfly_house::get_instance()->get_filename( a_file_num );
+        }
+        catch( error& )
+        {
+            throw;
+        }
+    }
+
+    void daq_control::set_description( const std::string& a_desc, unsigned a_file_num )
+    {
+        try
+        {
+            butterfly_house::get_instance()->set_description( a_desc, a_file_num );
+            return;
+        }
+        catch( error& )
+        {
+            throw;
+        }
+    }
+
+    const std::string& daq_control::get_description( unsigned a_file_num )
+    {
+        try
+        {
+            return butterfly_house::get_instance()->get_description( a_file_num );
+        }
+        catch( error& )
+        {
+            throw;
+        }
+    }
+
     uint32_t daq_control::status_to_uint( status a_status )
     {
         return static_cast< uint32_t >( a_status );
@@ -448,14 +943,14 @@ namespace psyllid
     {
         switch( a_status )
         {
-            case status::initialized:
-                return std::string( "Initialized" );
+            case status::deactivated:
+                return std::string( "Deactivated" );
                 break;
             case status::activating:
                 return std::string( "Activating" );
                 break;
-            case status::idle:
-                return std::string( "Idle" );
+            case status::activated:
+                return std::string( "Activated" );
                 break;
             case status::running:
                 return std::string( "Running" );

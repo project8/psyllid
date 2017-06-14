@@ -10,17 +10,10 @@
 namespace psyllid
 {
 
-    REGISTER_PRESET( roach_config, "roach" );
-
-    roach_config::roach_config()
-    {
-        node( "tf-roach-receiver", "tfrr" );
-    }
-
-
     REGISTER_PRESET( streaming_1ch, "str-1ch" );
 
-    streaming_1ch::streaming_1ch()
+    streaming_1ch::streaming_1ch( const std::string& a_name ) :
+            stream_preset( a_name )
     {
         node( "packet-receiver-socket", "prs" );
         node( "tf-roach-receiver", "tfrr" );
@@ -35,7 +28,8 @@ namespace psyllid
 #ifdef __linux__
     REGISTER_PRESET( streaming_1ch_fpa, "str-1ch-fpa" );
 
-    streaming_1ch_fpa::streaming_1ch_fpa()
+    streaming_1ch_fpa::streaming_1ch_fpa( const std::string& a_name ) :
+            stream_preset( a_name )
     {
         node( "packet-receiver-fpa", "prf" );
         node( "tf-roach-receiver", "tfrr" );
@@ -50,18 +44,40 @@ namespace psyllid
 
     REGISTER_PRESET( fmask_trigger_1ch,"fmask-1ch");
 
-    fmask_trigger_1ch::fmask_trigger_1ch()
+    fmask_trigger_1ch::fmask_trigger_1ch( const std::string& a_name ) :
+            stream_preset( a_name )
     {
         node( "packet-receiver-socket", "prs" );
         node( "tf-roach-receiver", "tfrr");
         node( "frequency-mask-trigger", "fmt");
-        node( "egg-writer", "ew");
+        //node( "term-time-data", "termtime" );
+        //node( "term-trig-flag", "termtf" );
+        node( "triggered-writer", "trw");
 
         connection( "prs.out_0:tfrr.in_0" );
-        connection( "tfrr.out_0:ew.in_0");
-        connection( "tfrr.out_1:fmt.in_0");
-        connection( "fmt.out_0:ew.in_1");
+        connection( "tfrr.out_0:trw.in_0" );
+        connection( "tfrr.out_1:fmt.in_0" );
+        //connection( "tfrr.out_0:termtime.in_0" );
+        //connection( "fmt.out_0:termtf.in_0" );
+        connection( "fmt.out_0:trw.in_1" );
     }
+
+#ifdef __linux__
+    REGISTER_PRESET( fmask_trigger_1ch_fpa,"fmask-1ch-fpa");
+    fmask_trigger_1ch_fpa::fmask_trigger_1ch_fpa( const std::string& a_name ) :
+            stream_preset( a_name )
+    {
+        node( "packet-receiver-fpa", "prf" );
+        node( "tf-roach-receiver", "tfrr");
+        node( "frequency-mask-trigger", "fmt");
+        node( "triggered-writer", "trw");
+
+        connection( "prf.out_0:tfrr.in_0" );
+        connection( "tfrr.out_0:trw.in_0" );
+        connection( "tfrr.out_1:fmt.in_0" );
+        connection( "fmt.out_0:trw.in_1" );
+    }
+#endif
 
 } /* namespace psyllid */
 

@@ -18,8 +18,8 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( roach_time_monitor, "roach-time-monitor" );
-    REGISTER_NODE_AND_BUILDER( roach_freq_monitor, "roach-freq-monitor" );
+    REGISTER_NODE_AND_BUILDER( roach_time_monitor, "roach-time-monitor", roach_time_monitor_binding );
+    REGISTER_NODE_AND_BUILDER( roach_freq_monitor, "roach-freq-monitor", roach_freq_monitor_binding );
 
     LOGGER( plog, "tf_roach_monitor" );
 
@@ -122,16 +122,21 @@ namespace psyllid
     }
 
 
-    roach_time_monitor_builder::roach_time_monitor_builder() :
-            _node_builder< roach_time_monitor >()
+    roach_time_monitor_binding::roach_time_monitor_binding() :
+            _node_binding< roach_time_monitor, roach_time_monitor_binding >()
     {
     }
 
-    roach_time_monitor_builder::~roach_time_monitor_builder()
+    roach_time_monitor_binding::~roach_time_monitor_binding()
     {
     }
 
-    void roach_time_monitor_builder::apply_config( roach_time_monitor*, const scarab::param_node& )
+    void roach_time_monitor_binding::do_apply_config( roach_time_monitor*, const scarab::param_node& ) const
+    {
+        return;
+    }
+
+    void roach_time_monitor_binding::do_dump_config( const roach_time_monitor*, scarab::param_node& ) const
     {
         return;
     }
@@ -236,16 +241,21 @@ namespace psyllid
     }
 
 
-    roach_freq_monitor_builder::roach_freq_monitor_builder() :
-            _node_builder< roach_freq_monitor >()
+    roach_freq_monitor_binding::roach_freq_monitor_binding() :
+            _node_binding< roach_freq_monitor, roach_freq_monitor_binding >()
     {
     }
 
-    roach_freq_monitor_builder::~roach_freq_monitor_builder()
+    roach_freq_monitor_binding::~roach_freq_monitor_binding()
     {
     }
 
-    void roach_freq_monitor_builder::apply_config( roach_freq_monitor*, const scarab::param_node& )
+    void roach_freq_monitor_binding::do_apply_config( roach_freq_monitor*, const scarab::param_node& ) const
+    {
+        return;
+    }
+
+    void roach_freq_monitor_binding::do_dump_config( const roach_freq_monitor*, scarab::param_node& ) const
     {
         return;
     }

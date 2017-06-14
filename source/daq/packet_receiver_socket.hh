@@ -54,8 +54,8 @@ namespace psyllid
 
         public:
             mv_accessible( uint64_t, length );
-            mv_accessible( size_t, max_packet_size );
-            mv_accessible( size_t, port );
+            mv_accessible( uint32_t, max_packet_size );
+            mv_accessible( uint32_t, port );
             mv_referrable( std::string, ip );
             mv_accessible( unsigned, timeout_sec );  /// Timeout in seconds for waiting on socket recv function
 
@@ -66,7 +66,6 @@ namespace psyllid
 
         private:
             void cleanup_socket();
-            virtual void do_cancellation();
 
             int f_socket;
             sockaddr_in* f_address;
@@ -76,14 +75,15 @@ namespace psyllid
 
     };
 
-    class packet_receiver_socket_builder : public _node_builder< packet_receiver_socket >
+    class packet_receiver_socket_binding : public _node_binding< packet_receiver_socket, packet_receiver_socket_binding >
     {
         public:
-            packet_receiver_socket_builder();
-            virtual ~packet_receiver_socket_builder();
+            packet_receiver_socket_binding();
+            virtual ~packet_receiver_socket_binding();
 
         private:
-            virtual void apply_config( packet_receiver_socket* a_node, const scarab::param_node& a_config );
+            virtual void do_apply_config( packet_receiver_socket* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const packet_receiver_socket* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */

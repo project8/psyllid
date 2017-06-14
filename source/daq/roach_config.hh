@@ -8,19 +8,20 @@
 #ifndef PSYLLID_ROACH_CONFIG_HH_
 #define PSYLLID_ROACH_CONFIG_HH_
 
-#include "node_config_preset.hh"
+#include "stream_preset.hh"
 
 namespace psyllid
 {
 
-    DECLARE_PRESET( roach_config );
-
-	DECLARE_PRESET( streaming_1ch );
+    DECLARE_PRESET( streaming_1ch );
 #ifdef __linux__
-	DECLARE_PRESET( streaming_1ch_fpa );
+    DECLARE_PRESET( streaming_1ch_fpa );
 #endif
 
-	DECLARE_PRESET( fmask_trigger_1ch);
+    DECLARE_PRESET( fmask_trigger_1ch );
+#ifdef __linux__
+    DECLARE_PRESET( fmask_trigger_1ch_fpa );
+#endif
 } /* namespace psyllid */
 
 #endif /* PSYLLID_ROACH_CONFIG_HH_ */

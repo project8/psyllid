@@ -7,7 +7,6 @@
 
 #include "streaming_writer.hh"
 
-#include "daq_control.hh"
 #include "butterfly_house.hh"
 #include "psyllid_error.hh"
 
@@ -24,16 +23,27 @@ using std::vector;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( streaming_writer, "streaming-writer" );
+    REGISTER_NODE_AND_BUILDER( streaming_writer, "streaming-writer", streaming_writer_binding );
 
     LOGGER( plog, "streaming_writer" );
 
     streaming_writer::streaming_writer() :
-            control_access(),
-            f_file_size_limit_mb(),
+            egg_writer(),
+            f_file_num( 0 ),
             f_filename( "default_filename_strw.egg" ),
             f_description( "A very nice run" ),
-            f_last_pkt_in_batch( 0 )
+            f_bit_depth( 8 ),
+            f_data_type_size( 1 ),
+            f_sample_size( 2 ),
+            f_record_size( 4096 ),
+            f_acq_rate( 100 ),
+            f_v_offset( 0. ),
+            f_v_range( 0.5 ),
+            f_center_freq( 50.e6 ),
+            f_freq_range( 100.e6 ),
+            f_last_pkt_in_batch( 0 ),
+            f_monarch_ptr(),
+            f_stream_no( 0 )
     {
     }
 
@@ -41,8 +51,36 @@ namespace psyllid
     {
     }
 
+    void streaming_writer::prepare_to_write( monarch_wrap_ptr a_mw_ptr, header_wrap_ptr a_hw_ptr )
+    {
+        f_monarch_ptr = a_mw_ptr;
+
+        scarab::dig_calib_params t_dig_params;
+        scarab::get_calib_params( f_bit_depth, f_data_type_size, f_v_offset, f_v_range, true, &t_dig_params );
+
+        vector< unsigned > t_chan_vec;
+        f_stream_no = a_hw_ptr->header().AddStream( "Psyllid - ROACH2",
+                f_acq_rate, f_record_size, f_sample_size, f_data_type_size,
+                monarch3::sDigitizedS, f_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
+
+        //unsigned i_chan_psyllid = 0; // this is the channel number in psyllid, as opposed to the channel number in the monarch file
+        for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
+        {
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( t_dig_params.v_offset );
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( t_dig_params.v_range );
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( t_dig_params.dac_gain );
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyMin( f_center_freq - 0.5 * f_freq_range );
+            a_hw_ptr->header().GetChannelHeaders()[ *it ].SetFrequencyRange( f_freq_range );
+
+            //++i_chan_psyllid;
+        }
+
+        return;
+    }
+
     void streaming_writer::initialize()
     {
+        butterfly_house::get_instance()->register_writer( this, f_file_num );
         return;
     }
 
@@ -54,27 +92,11 @@ namespace psyllid
 
             time_data* t_time_data = nullptr;
 
-            butterfly_house* t_bf_house = butterfly_house::get_instance();
-            monarch_wrap_ptr t_monarch_ptr;
             stream_wrap_ptr t_swrap_ptr;
-            monarch3::M3Record* t_record_ptr = nullptr;
 
-            // TODO: make these parameters configurable
-            uint64_t t_bit_depth = 8;
-            uint64_t t_data_type_size = 1;
-            uint64_t t_sample_size = 2;
-            uint64_t t_rec_length = PAYLOAD_SIZE / t_sample_size;
-            uint64_t t_bytes_per_record = t_rec_length * t_sample_size * t_data_type_size;
-            uint64_t t_acq_rate = 100; // MHz
-            scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)t_acq_rate * 1.e3 );
-            double t_v_offset = 0.;
-            double t_v_range = 0.5;
+            uint64_t t_bytes_per_record = f_record_size * f_sample_size * f_data_type_size;
+            scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)f_acq_rate * 1.e3 );
 
-            scarab::dig_calib_params t_dig_params;
-            scarab::get_calib_params( t_bit_depth, t_data_type_size, t_v_offset, t_v_range, true, &t_dig_params );
-
-            unsigned t_stream_no = 0;
-            monarch_time_point_t t_run_start_time;
             uint64_t t_first_pkt_in_run = 0;
 
             bool t_is_new_acquisition = true;
@@ -94,8 +116,7 @@ namespace psyllid
 
                     if( t_swrap_ptr )
                     {
-                        LDEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
-                        t_monarch_ptr->finish_stream( t_stream_no, true );
+                        f_monarch_ptr->finish_stream( f_stream_no );
                         t_swrap_ptr.reset();
                     }
 
@@ -108,8 +129,7 @@ namespace psyllid
 
                     if( t_swrap_ptr )
                     {
-                        LDEBUG( plog, "Finishing stream <" << t_stream_no << ">" );
-                        t_monarch_ptr->finish_stream( t_stream_no, true );
+                        f_monarch_ptr->finish_stream( f_stream_no );
                         t_swrap_ptr.reset();
                     }
 
@@ -119,6 +139,12 @@ namespace psyllid
                 if( t_time_command == stream::s_start )
                 {
                     LDEBUG( plog, "Will start file with next data" );
+
+                    if( t_swrap_ptr ) t_swrap_ptr.reset();
+
+                    LDEBUG( plog, "Getting stream <" << f_stream_no << ">" );
+                    t_swrap_ptr = f_monarch_ptr->get_stream( f_stream_no );
+
                     t_start_file_with_next_data = true;
                     continue;
                 }
@@ -129,85 +155,29 @@ namespace psyllid
 
                     if( t_start_file_with_next_data )
                     {
-                        LDEBUG( plog, "Preparing egg file" );
+                        LDEBUG( plog, "Handling first packet in run" );
 
-                        try
-                        {
-                            unsigned t_run_duration = 0;
-                            if( ! f_daq_control.expired() )
-                            {
-                                std::shared_ptr< daq_control > t_daq_control = f_daq_control.lock();
-                                f_filename = t_daq_control->run_filename();
-                                f_description = t_daq_control->run_description();
-                                t_run_duration = t_daq_control->get_run_duration();
-                                LDEBUG( plog, "Updated filename, description, and duration from daq_control" );
-                            }
+                        t_first_pkt_in_run = t_time_data->get_pkt_in_session();
 
-                            LDEBUG( plog, "Declaring monarch file <" << f_filename << ">" );
-                            t_monarch_ptr = t_bf_house->declare_file( f_filename );
-                            header_wrap_ptr t_hwrap_ptr = t_monarch_ptr->get_header();
-
-                            if( ! t_hwrap_ptr->global_setup_done() )
-                            {
-                                t_hwrap_ptr->header().SetDescription( f_description );
-
-                                time_t t_raw_time = t_time_data->get_unix_time();
-                                struct tm* t_processed_time = gmtime( &t_raw_time );
-                                char t_timestamp[ 512 ];
-                                strftime( t_timestamp, 512, scarab::date_time_format, t_processed_time );
-                                LWARN( plog, "raw: " << t_raw_time << "   proc'd: " << t_processed_time->tm_hour << " " << t_processed_time->tm_min << " " << t_processed_time->tm_year << "   timestamp: " << t_timestamp );
-                                t_hwrap_ptr->header().SetTimestamp( t_timestamp );
-
-                                t_hwrap_ptr->header().SetRunDuration( t_run_duration );
-                                t_hwrap_ptr->global_setup_done( true );
-                            }
-
-                            vector< unsigned > t_chan_vec;
-                            t_stream_no = t_hwrap_ptr->header().AddStream( "Psyllid - ROACH2",
-                                    t_acq_rate, t_rec_length, t_sample_size, t_data_type_size,
-                                    monarch3::sDigitizedS, t_bit_depth, monarch3::sBitsAlignedLeft, &t_chan_vec );
-
-                            //unsigned i_chan_psyllid = 0; // this is the channel number in mantis, as opposed to the channel number in the monarch file
-                            for( std::vector< unsigned >::const_iterator it = t_chan_vec.begin(); it != t_chan_vec.end(); ++it )
-                            {
-                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageOffset( t_dig_params.v_offset );
-                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetVoltageRange( t_dig_params.v_range );
-                                t_hwrap_ptr->header().GetChannelHeaders()[ *it ].SetDACGain( t_dig_params.dac_gain );
-                                //++i_chan_psyllid;
-                            }
-
-                            t_run_start_time = t_monarch_ptr->get_run_start_time();
-                            t_first_pkt_in_run = t_time_data->get_pkt_in_session();
-
-                            t_is_new_acquisition = true;
-
-                        }
-                        catch( error& e )
-                        {
-                            throw midge::error() << "Unable to prepare the egg file <" << f_filename << ">: " << e.what();
-                        }
+                        t_is_new_acquisition = true;
 
                         t_start_file_with_next_data = false;
                     }
 
-                    if( ! t_swrap_ptr )
-                    {
-                        LDEBUG( plog, "Getting stream <" << t_stream_no << ">" );
-                        t_swrap_ptr = t_monarch_ptr->get_stream( t_stream_no );
-                        t_record_ptr = t_swrap_ptr->get_stream_record();
-                    }
-
                     uint64_t t_time_id = t_time_data->get_pkt_in_session();
+                    LTRACE( plog, "Writing packet (in session) " << t_time_id );
 
                     uint32_t t_expected_pkt_in_batch = f_last_pkt_in_batch + 1;
                     if( t_expected_pkt_in_batch >= BATCH_COUNTER_SIZE ) t_expected_pkt_in_batch = 0;
                     if( ! t_is_new_acquisition && t_time_data->get_pkt_in_batch() != t_expected_pkt_in_batch ) t_is_new_acquisition = true;
                     f_last_pkt_in_batch = t_time_data->get_pkt_in_batch();
 
-                    t_record_ptr->SetRecordId( t_time_id );
-                    t_record_ptr->SetTime( t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ) );
-                    ::memcpy( t_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
-                    t_swrap_ptr->write_record( t_is_new_acquisition );
+                    if( ! t_swrap_ptr->write_record( t_time_id, t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ), t_time_data->get_raw_array(), t_bytes_per_record, t_is_new_acquisition ) )
+                    {
+                        throw error() << "Unable to write record to file; record ID: " << t_time_id;
+                    }
+
+                    LTRACE( plog, "Packet written (" << t_time_id << ")" );
 
                     t_is_new_acquisition = false;
 
@@ -227,22 +197,55 @@ namespace psyllid
 
     void streaming_writer::finalize()
     {
+        butterfly_house::get_instance()->unregister_writer( this );
         return;
     }
 
 
-    streaming_writer_builder::streaming_writer_builder() :
-            _node_builder< streaming_writer >()
+    streaming_writer_binding::streaming_writer_binding() :
+            _node_binding< streaming_writer, streaming_writer_binding >()
     {
     }
 
-    streaming_writer_builder::~streaming_writer_builder()
+    streaming_writer_binding::~streaming_writer_binding()
     {
     }
 
-    void streaming_writer_builder::apply_config( streaming_writer* a_node, const scarab::param_node& a_config )
+    void streaming_writer_binding::do_apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const
     {
-        a_node->set_file_size_limit_mb( a_config.get_value( "file-size-limit-mb", a_node->get_file_size_limit_mb() ) );
+        LDEBUG( plog, "Configuring streaming_writer with:\n" << a_config );
+        a_node->set_file_num( a_config.get_value( "file-num", a_node->get_file_num() ) );
+        const scarab::param_node *t_dev_config = a_config.node_at( "device" );
+        if( t_dev_config != nullptr )
+        {
+            a_node->set_bit_depth( t_dev_config->get_value( "bit-depth", a_node->get_bit_depth() ) );
+            a_node->set_data_type_size( t_dev_config->get_value( "data-type-size", a_node->get_data_type_size() ) );
+            a_node->set_sample_size( t_dev_config->get_value( "sample-size", a_node->get_sample_size() ) );
+            a_node->set_record_size( t_dev_config->get_value( "record-size", a_node->get_record_size() ) );
+            a_node->set_acq_rate( t_dev_config->get_value( "acq-rate", a_node->get_acq_rate() ) );
+            a_node->set_v_offset( t_dev_config->get_value( "v-offset", a_node->get_v_offset() ) );
+            a_node->set_v_range( t_dev_config->get_value( "v-range", a_node->get_v_range() ) );
+        }
+        a_node->set_center_freq( a_config.get_value( "center-freq", a_node->get_center_freq() ) );
+        a_node->set_freq_range( a_config.get_value( "freq-range", a_node->get_freq_range() ) );
+        return;
+    }
+
+    void streaming_writer_binding::do_dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const
+    {
+        LDEBUG( plog, "Dumping configuration for streaming_writer" );
+        a_config.add( "file-num", new scarab::param_value( a_node->get_file_num() ) );
+        scarab::param_node* t_dev_node = new scarab::param_node();
+        t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );
+        t_dev_node->add( "data-type-size", new scarab::param_value( a_node->get_data_type_size() ) );
+        t_dev_node->add( "sample-size", new scarab::param_value( a_node->get_sample_size() ) );
+        t_dev_node->add( "record-size", new scarab::param_value( a_node->get_record_size() ) );
+        t_dev_node->add( "acq-rate", new scarab::param_value( a_node->get_acq_rate() ) );
+        t_dev_node->add( "v-offset", new scarab::param_value( a_node->get_v_offset() ) );
+        t_dev_node->add( "v-range", new scarab::param_value( a_node->get_v_range() ) );
+        a_config.add( "device", t_dev_node );
+        a_config.add( "center-freq", new scarab::param_value( a_node->get_center_freq() ) );
+        a_config.add( "freq-range", new scarab::param_value( a_node->get_freq_range() ) );
         return;
     }
 

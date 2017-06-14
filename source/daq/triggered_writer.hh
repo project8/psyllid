@@ -1,15 +1,16 @@
 /*
- * streaming_writer.hh
+ * triggered_writer.hh
  *
- *  Created on: May 31, 2016
+ *  Created on: Dec 30, 2015
  *      Author: nsoblath
  */
 
-#ifndef PSYLLID_STREAMING_WRITER_HH_
-#define PSYLLID_STREAMING_WRITER_HH_
+#ifndef PSYLLID_TRIGGERED_WRITER_HH_
+#define PSYLLID_TRIGGERED_WRITER_HH_
 
 #include "egg_writer.hh"
 #include "node_builder.hh"
+#include "trigger_flag.hh"
 #include "time_data.hh"
 
 #include "consumer.hh"
@@ -18,16 +19,16 @@ namespace psyllid
 {
 
     /*!
-     @class streaming_writer
+     @class triggered_writer
      @author N. S. Oblath
 
-     @brief A consumer to that writes all time ROACH packets to an egg file.
+     @brief A consumer to that writes triggered time ROACH packets to an egg file.
 
      @details
 
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
-     Node type: "streaming-writer"
+     Node type: "triggered-writer"
 
      Available configuration values:
      - "device": node -- digitizer parameters
@@ -46,16 +47,17 @@ namespace psyllid
 
      Input Stream:
      - 0: time_data
+     - 1: trigger_flag
 
      Output Streams: (none)
     */
-    class streaming_writer :
-            public midge::_consumer< streaming_writer, typelist_1( time_data ) >,
+    class triggered_writer :
+            public midge::_consumer< triggered_writer, typelist_2( time_data, trigger_flag ) >,
             public egg_writer
     {
         public:
-            streaming_writer();
-            virtual ~streaming_writer();
+            triggered_writer();
+            virtual ~triggered_writer();
 
         public:
             mv_accessible( unsigned, file_num );
@@ -80,25 +82,38 @@ namespace psyllid
             virtual void finalize();
 
         private:
-            unsigned f_last_pkt_in_batch;
+            struct exe_loop_context
+            {
+                bool f_is_running;
+                bool f_should_exit;
+                monarch_wrap_ptr f_monarch_ptr;
+                stream_wrap_ptr f_swrap_ptr;
+                monarch3::M3Record* f_record_ptr;
+                unsigned f_stream_no;
+                bool f_start_file_with_next_data;
+                uint64_t f_first_pkt_in_run;
+                bool f_is_new_event;
+            };
+
+            void exe_loop_not_running( exe_loop_context& a_ctx );
+            void exe_loop_is_running( exe_loop_context& a_ctx );
 
             monarch_wrap_ptr f_monarch_ptr;
             unsigned f_stream_no;
-
     };
 
 
-    class streaming_writer_binding : public _node_binding< streaming_writer, streaming_writer_binding >
+    class triggered_writer_binding : public _node_binding< triggered_writer, triggered_writer_binding >
     {
         public:
-            streaming_writer_binding();
-            virtual ~streaming_writer_binding();
+            triggered_writer_binding();
+            virtual ~triggered_writer_binding();
 
         private:
-            virtual void do_apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const;
-            virtual void do_dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( triggered_writer* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const triggered_writer* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */
 
-#endif /* PSYLLID_STREAMING_WRITER_HH_ */
+#endif /* PSYLLID_TRIGGERED_WRITER_HH_ */

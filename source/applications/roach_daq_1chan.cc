@@ -5,10 +5,10 @@
  *      Author: nsoblath
  */
 
-#include "egg_writer.hh"
 #include "event_builder.hh"
 #include "frequency_mask_trigger.hh"
 #include "tf_roach_receiver.hh"
+#include "triggered_writer.hh"
 
 #include "diptera.hh"
 
@@ -55,7 +55,7 @@ int main()
         t_eb->set_skip_tolerance( 0 );
         t_root->add( t_eb );
 
-        egg_writer* t_ew = new egg_writer();
+        triggered_writer* t_ew = new triggered_writer();
         t_ew->set_name( "ew" );
         // set parameters
         t_root->add( t_ew );

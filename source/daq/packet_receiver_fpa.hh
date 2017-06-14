@@ -119,8 +119,8 @@ namespace psyllid
 
         public:
             mv_accessible( uint64_t, length );
-            mv_accessible( size_t, max_packet_size );
-            mv_accessible( size_t, port );
+            mv_accessible( uint32_t, max_packet_size );
+            mv_accessible( uint32_t, port );
             mv_referrable( std::string, interface );
             mv_accessible( unsigned, timeout_sec );  /// Timeout in seconds for waiting on the network interface
             mv_accessible( unsigned, n_blocks );     /// Number of blocks in the mmap ring buffer
@@ -133,8 +133,6 @@ namespace psyllid
             virtual void finalize();
 
         private:
-            virtual void do_cancellation();
-
             bool process_packet( tpacket3_hdr* a_packet );
             void cleanup_fpa();
 
@@ -148,14 +146,15 @@ namespace psyllid
             uint64_t f_bytes_total;
     };
 
-    class packet_receiver_fpa_builder : public _node_builder< packet_receiver_fpa >
+    class packet_receiver_fpa_binding : public _node_binding< packet_receiver_fpa, packet_receiver_fpa_binding >
     {
         public:
-            packet_receiver_fpa_builder();
-            virtual ~packet_receiver_fpa_builder();
+            packet_receiver_fpa_binding();
+            virtual ~packet_receiver_fpa_binding();
 
         private:
-            virtual void apply_config( packet_receiver_fpa* a_node, const scarab::param_node& a_config );
+            virtual void do_apply_config( packet_receiver_fpa* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const packet_receiver_fpa* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */

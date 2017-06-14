@@ -13,7 +13,17 @@ daq:
 
 streams:
     ch0:
-        preset: str-1ch
+        preset:  # this preset is identical to str-1ch; it's given like this as a demonstration of how to specify a preset in a configuration file
+            type: str-1ch-alt
+            nodes:
+              - { type: packet-receiver-socket, name: prs }
+              - { type: tf-roach-receiver,      name: tfrr }
+              - { type: streaming-writer,       name: strw }
+              - { type: term-freq-data,         name: term }
+            connections:
+              - "prs.out_0:tfrr.in_0"
+              - "tfrr.out_0:strw.in_0"
+              - "tfrr.out_1:term.in_0"
   
         device:
             n-channels: 1
@@ -29,7 +39,7 @@ streams:
             length: 10
             port: 23530
             ip: 127.0.0.1
-            
+
         strw:
             file-num: 0
            

@@ -1,0 +1,96 @@
+amqp:
+    broker: localhost
+    broker-port: 5672
+    request-exchange: requests
+    alert-exchange: alerts
+    queue: psyllid
+    listen-timeout-ms: 100
+
+daq:
+    activate-at-startup: true
+    n-files: 1
+    max-file-size-mb: 500
+
+streams:
+    ch0:
+        preset: str-1ch-fpa
+  
+        device:
+            n-channels: 1
+            bit-depth: 8
+            data-type-size: 1
+            sample-size: 2
+            record-size: 4096
+            acq-rate: 100 # MHz
+            v-offset: 0.0
+            v-range: 0.5
+  
+        prs:
+            length: 10
+            port: 23530
+            interface: eth1
+            n-blocks: 64
+            block-size: 4194304
+            frame-size: 2048
+  
+        strw:
+            file-num: 0
+
+    ch1:
+        preset: str-1ch-fpa
+  
+        device:
+            n-channels: 1
+            bit-depth: 8
+            data-type-size: 1
+            sample-size: 2
+            record-size: 4096
+            acq-rate: 100 # MHz
+            v-offset: 0.0
+            v-range: 0.5
+  
+        prs:
+            length: 10
+            port: 23530
+            interface: eth2
+            n-blocks: 64
+            block-size: 4194304
+            frame-size: 2048
+  
+        strw:
+            file-num: 0
+
+    ch2: 
+        preset:  # this preset is identical to str-1ch-fpa; it's given like this as a demonstration of how to specify a preset in a configuration file
+            type: str-1ch-fpa-alt
+            nodes:
+              - { type: packet-receiver-fpa,   name: prf }
+              - { type: tf-roach-receiver,     name: tfrr }
+              - { type: streaming-writer,      name: strw }
+              - { type: term-freq-data,        name: term }
+            connections:
+              - "prf.out_0:tfrr.in_0"
+              - "tfrr.out_0:strw.in_0"
+              - "tfrr.out_1:term.in_0"
+  
+        device:
+            n-channels: 1
+            bit-depth: 8
+            data-type-size: 1
+            sample-size: 2
+            record-size: 4096
+            acq-rate: 100 # MHz
+            v-offset: 0.0
+            v-range: 0.5
+  
+        prf:
+            length: 10
+            port: 23530
+            interface: eth3
+            n-blocks: 64
+            block-size: 4194304
+            frame-size: 2048
+
+        strw:
+            file-num: 0
+            

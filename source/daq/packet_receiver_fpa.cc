@@ -37,7 +37,7 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( packet_receiver_fpa, "packet-receiver-fpa" );
+    REGISTER_NODE_AND_BUILDER( packet_receiver_fpa, "packet-receiver-fpa", packet_receiver_fpa_binding );
 
     LOGGER( plog, "packet_receiver_fpa" );
 
@@ -107,14 +107,14 @@ namespace psyllid
 
         //LWARN( plog, "f_ring = " << f_ring );
         bool test = f_ring.f_rd == nullptr;
-        LWARN( plog, "f_ring.f_rd == nullptr: " << test );
+        LTRACE( plog, "f_ring.f_rd == nullptr: " << test );
         test = f_ring.f_map == nullptr;
-        LWARN( plog, "f_ring.f_map == nullptr: " << test );
-        LWARN( plog, "f_ring.f_req.tp_block_size = " << f_ring.f_req.tp_block_size );
+        LTRACE( plog, "f_ring.f_map == nullptr: " << test );
+        LTRACE( plog, "f_ring.f_req.tp_block_size = " << f_ring.f_req.tp_block_size );
 
         LDEBUG( plog, "Opening packet_eater for network interface <" << f_interface << ">" );
 
-        LWARN( plog, "f_socket = " << f_socket << ";  SOL_PACKET = " << SOL_PACKET << ";  PACKET_RX_RING = " << PACKET_RX_RING << ";  &f_ring.f_req = " << &f_ring.f_req << ";  sizeof(f_ring.f_req) = " << sizeof(f_ring.f_req) );
+        LTRACE( plog, "f_socket = " << f_socket << ";  SOL_PACKET = " << SOL_PACKET << ";  PACKET_RX_RING = " << PACKET_RX_RING << ";  &f_ring.f_req = " << &f_ring.f_req << ";  sizeof(f_ring.f_req) = " << sizeof(f_ring.f_req) );
         if( ::setsockopt( f_socket, SOL_PACKET, PACKET_RX_RING, &f_ring.f_req, sizeof(f_ring.f_req) ) < 0 )
         {
             throw error() << "Could not set receive ring:\n\t" << strerror( errno );
@@ -403,11 +403,6 @@ namespace psyllid
         return;
     }
 
-    void packet_receiver_fpa::do_cancellation()
-    {
-        return;
-    }
-
     void packet_receiver_fpa::cleanup_fpa()
     {
         if( f_ring.f_map != nullptr )
@@ -435,16 +430,16 @@ namespace psyllid
 
 
 
-    packet_receiver_fpa_builder::packet_receiver_fpa_builder() :
-            _node_builder< packet_receiver_fpa >()
+    packet_receiver_fpa_binding::packet_receiver_fpa_binding() :
+            _node_binding< packet_receiver_fpa, packet_receiver_fpa_binding >()
     {
     }
 
-    packet_receiver_fpa_builder::~packet_receiver_fpa_builder()
+    packet_receiver_fpa_binding::~packet_receiver_fpa_binding()
     {
     }
 
-    void packet_receiver_fpa_builder::apply_config( packet_receiver_fpa* a_node, const scarab::param_node& a_config )
+    void packet_receiver_fpa_binding::do_apply_config( packet_receiver_fpa* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring packet_receiver_fpa with:\n" << a_config );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
@@ -454,6 +449,19 @@ namespace psyllid
         a_node->set_n_blocks( a_config.get_value( "n-blocks", a_node->get_n_blocks() ) );
         a_node->set_block_size( a_config.get_value( "block-size", a_node->get_block_size() ) );
         a_node->set_frame_size( a_config.get_value( "frame-size", a_node->get_frame_size() ) );
+        return;
+    }
+
+    void packet_receiver_fpa_binding::do_dump_config( const packet_receiver_fpa* a_node, scarab::param_node& a_config ) const
+    {
+        LDEBUG( plog, "Dumping configuration for packet_receiver_fpa" );
+        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
+        a_config.add( "port", new scarab::param_value( a_node->get_port() ) );
+        a_config.add( "interface", new scarab::param_value( a_node->interface() ) );
+        a_config.add( "timeout-sec", new scarab::param_value( a_node->get_timeout_sec() ) );
+        a_config.add( "n-blocks", new scarab::param_value( a_node->get_n_blocks() ) );
+        a_config.add( "block-size", new scarab::param_value( a_node->get_block_size() ) );
+        a_config.add( "frame-size", new scarab::param_value( a_node->get_frame_size() ) );
         return;
     }
 

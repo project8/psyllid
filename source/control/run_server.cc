@@ -9,9 +9,9 @@
 
 #include "psyllid_constants.hh"
 #include "daq_control.hh"
-#include "node_manager.hh"
 #include "request_receiver.hh"
 #include "signal_handler.hh"
+#include "stream_manager.hh"
 
 #include "logger.hh"
 
@@ -35,7 +35,7 @@ namespace psyllid
             f_return( RETURN_ERROR ),
             f_request_receiver(),
             f_daq_control(),
-            f_node_manager(),
+            f_stream_manager(),
             f_component_mutex(),
             f_status( k_initialized )
     {
@@ -69,22 +69,30 @@ namespace psyllid
         try
         {
             // node manager
-            LDEBUG( plog, "Creating node manager" );
-            f_node_manager.reset( new node_manager( f_config ) );
+            LDEBUG( plog, "Creating steam manager" );
+            f_stream_manager.reset( new stream_manager() );
 
             // daq control
             LDEBUG( plog, "Creating DAQ control" );
-            f_daq_control.reset( new daq_control( f_config, f_node_manager ) );
+            f_daq_control.reset( new daq_control( f_config, f_stream_manager ) );
+            // give daq_control a weak pointer to itself
+            f_daq_control->set_daq_control( f_daq_control );
+            f_daq_control->initialize();
 
-            f_node_manager->set_daq_control( f_daq_control );
-            f_node_manager->initialize();
+            if( f_config.has( "streams" ) && f_config.at( "streams" )->is_node() )
+            {
+                if( ! f_stream_manager->initialize( *f_config.node_at( "streams" ) ) )
+                {
+                    throw error() << "Unable to initialize the stream manager";
+                }
+            }
 
             // request receiver
             LDEBUG( plog, "Creating request receiver" );
             f_request_receiver.reset( new request_receiver( f_config ) );
 
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             LERROR( plog, "Exception caught while creating server objects: " << e.what() );
             return;
@@ -98,26 +106,30 @@ namespace psyllid
         f_request_receiver->set_run_handler( std::bind( &daq_control::handle_start_run_request, f_daq_control, _1, _2 ) );
 
         // add get request handlers
-        f_request_receiver->register_get_handler( "node", std::bind( &node_manager::handle_get_node_request, f_node_manager, _1, _2 ) );
         //f_request_receiver->register_get_handler( "server-status", std::bind( &run_server::handle_get_server_status_request, this, _1, _2 ) );
+        f_request_receiver->register_get_handler( "node-config", std::bind( &stream_manager::handle_dump_config_node_request, f_stream_manager, _1, _2 ) );
+        f_request_receiver->register_get_handler( "active-config", std::bind( &daq_control::handle_dump_config_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_get_handler( "daq-status", std::bind( &daq_control::handle_get_status_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_get_handler( "filename", std::bind( &daq_control::handle_get_filename_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_get_handler( "description", std::bind( &daq_control::handle_get_description_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_get_handler( "duration", std::bind( &daq_control::handle_get_duration_request, f_daq_control, _1, _2 ) );
 
         // add set request handlers
-        f_request_receiver->register_set_handler( "daq-preset", std::bind( &node_manager::handle_apply_preset_request, f_node_manager, _1, _2 ) );
-        f_request_receiver->register_set_handler( "node", std::bind( &node_manager::handle_set_node_request, f_node_manager, _1, _2 ) );
+        f_request_receiver->register_set_handler( "node-config", std::bind( &stream_manager::handle_configure_node_request, f_stream_manager, _1, _2 ) );
+        f_request_receiver->register_set_handler( "active-config", std::bind( &daq_control::handle_apply_config_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_set_handler( "filename", std::bind( &daq_control::handle_set_filename_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_set_handler( "description", std::bind( &daq_control::handle_set_description_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_set_handler( "duration", std::bind( &daq_control::handle_set_duration_request, f_daq_control, _1, _2 ) );
 
         // add cmd request handlers
+        f_request_receiver->register_cmd_handler( "add-stream", std::bind( &stream_manager::handle_add_stream_request, f_stream_manager, _1, _2 ) );
+        f_request_receiver->register_cmd_handler( "remove-stream", std::bind( &stream_manager::handle_remove_stream_request, f_stream_manager, _1, _2 ) );
+        f_request_receiver->register_cmd_handler( "run-daq-cmd", std::bind( &daq_control::handle_run_command_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "stop-run", std::bind( &daq_control::handle_stop_run_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "start-run", std::bind( &daq_control::handle_start_run_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "activate-daq", std::bind( &daq_control::handle_activate_daq_control, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_cmd_handler( "reactivate-daq", std::bind( &daq_control::handle_reactivate_daq_control, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "deactivate-daq", std::bind( &daq_control::handle_deactivate_daq_control, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "stop-all", std::bind( &run_server::handle_stop_all_request, this, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1, _2 ) );
 
         // start threads
@@ -200,43 +212,6 @@ namespace psyllid
         return a_reply_pkg.send_reply( retcode_t::success, "Server status request succeeded" );
         */
         return a_reply_pkg.send_reply( retcode_t::message_error_invalid_method, "Server status request not yet supported" );
-    }
-
-    bool run_server::handle_stop_all_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
-    {
-        /*
-        param_node* t_server_node = new param_node();
-        t_server_node->add( "status", new param_value( run_server::interpret_status( get_status() ) ) );
-
-        f_component_mutex.lock();
-        if( f_request_receiver != NULL )
-        {
-            param_node* t_rr_node = new param_node();
-            t_rr_node->add( "status", new param_value( request_receiver::interpret_status( f_request_receiver->get_status() ) ) );
-            t_server_node->add( "request-receiver", t_rr_node );
-        }
-        if( f_acq_request_db != NULL )
-        {
-            param_node* t_queue_node = new param_node();
-            t_queue_node->add( "size", new param_value( (uint32_t)f_acq_request_db->queue_size() ) );
-            t_queue_node->add( "is-active", new param_value( f_acq_request_db->queue_is_active() ) );
-            t_server_node->add( "queue", t_queue_node );
-        }
-        if( f_server_worker != NULL )
-        {
-            param_node* t_sw_node = new param_node();
-            t_sw_node->add( "status", new param_value( server_worker::interpret_status( f_server_worker->get_status() ) ) );
-            t_sw_node->add( "digitizer-state", new param_value( server_worker::interpret_thread_state( f_server_worker->get_digitizer_state() ) ) );
-            t_sw_node->add( "writer-state", new param_value( server_worker::interpret_thread_state( f_server_worker->get_writer_state() ) ) );
-            t_server_node->add( "server-worker", t_sw_node );
-        }
-        f_component_mutex.unlock();
-
-        a_reply_pkg.f_payload.add( "server", t_server_node );
-
-        return a_reply_pkg.send_reply( retcode_t::success, "Server status request succeeded" );
-        */
-        return a_reply_pkg.send_reply( retcode_t::message_error_invalid_method, "Stop-all request not yet supported" );
     }
 
     bool run_server::handle_quit_server_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
