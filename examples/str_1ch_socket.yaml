@@ -9,6 +9,7 @@ amqp:
 daq:
     activate-at-startup: true
     n-files: 1
+    max-file-size-mb: 500
 
 streams:
     ch0:

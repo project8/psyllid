@@ -46,8 +46,6 @@ namespace psyllid
             f_run_stopper(),
             f_run_stop_mutex(),
             f_run_return(),
-            f_run_filename( "default_filename_dc.egg" ),
-            f_run_description( "default_description" ),
             f_run_duration( 1000 ),
             f_status( status::deactivated )
     {
@@ -281,7 +279,7 @@ namespace psyllid
         {
             butterfly_house::get_instance()->start_files();
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             LERROR( plog, "Unable to start files: " << e.what() );
             set_status( status::error );
@@ -298,9 +296,11 @@ namespace psyllid
             t_n_sub_durations = a_duration / t_sub_duration; // number of complete sub-durations, not including the remainder
             t_duration_remainder = a_duration - t_n_sub_durations * t_sub_duration;
         }
+        LDEBUG( plog, "Run duration will be " << a_duration << " ms; " << t_n_sub_durations << " sub-durations  of " << t_sub_duration << " ms will be used, plus one sub-duration of " << t_duration_remainder << " ms" );
 
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
 
+        LDEBUG( plog, "Unpausing midge" );
         set_status( status::running );
         f_midge_pkg->instruct( midge::instruction::resume );
 
@@ -349,10 +349,19 @@ namespace psyllid
 
         LINFO( plog, "Run has stopped" );
 
-        // give midge time to finish the streams before finishing the files
-        std::this_thread::sleep_for( std::chrono::milliseconds(500));
         LDEBUG( plog, "Finishing egg files" );
-        butterfly_house::get_instance()->finish_files();
+        try
+        {
+            butterfly_house::get_instance()->finish_files();
+        }
+        catch( std::exception& e )
+        {
+            LERROR( plog, "Unable to finish files: " << e.what() );
+            set_status( status::error );
+            LDEBUG( plog, "Canceling midge" );
+            if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+            return;
+        }
 
         // if daq_control has been canceled, assume that midge has been canceled by other methods, and this function should just exit
         if( is_canceled() )
@@ -532,13 +541,32 @@ namespace psyllid
     {
         try
         {
-            f_run_filename = a_request->get_payload().get_value( "filename", f_run_filename );
-            f_run_description = a_request->get_payload().get_value( "description", f_run_description );
+            if( a_request->get_payload().has( "filename" ) ) set_filename( a_request->get_payload().get_value( "filename" ), 0 );
+            if( a_request->get_payload().has( "filenames" ) )
+            {
+                const scarab::param_array* t_filenames = a_request->get_payload().array_at( "filenames" );
+                for( unsigned i_fn = 0; i_fn < t_filenames->size(); ++i_fn )
+                {
+                    set_filename( t_filenames->get_value( i_fn ), i_fn );
+                }
+            }
+
+            if( a_request->get_payload().has( "description" ) ) set_description( a_request->get_payload().get_value( "description" ), 0 );
+            if( a_request->get_payload().has( "descriptions" ) )
+            {
+                const scarab::param_array* t_descriptions = a_request->get_payload().array_at( "descriptions" );
+                for( unsigned i_fn = 0; i_fn < t_descriptions->size(); ++i_fn )
+                {
+                    set_description( t_descriptions->get_value( i_fn ), i_fn );
+                }
+            }
+
             f_run_duration = a_request->get_payload().get_value( "duration", f_run_duration );
+
             start_run();
             return a_reply_pkg.send_reply( retcode_t::success, "Run started" );
         }
-        catch( error& e )
+        catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to start run: " ) + e.what() );
         }
@@ -730,11 +758,18 @@ namespace psyllid
     {
         try
         {
-            f_run_filename =  a_request->get_payload().array_at( "values" )->get_value( 0 );
-            LDEBUG( plog, "Run filename set to <" << f_run_filename << ">" );
+            unsigned t_file_num = 0;
+            if( a_request->parsed_rks().size() > 0)
+            {
+                t_file_num = std::stoi( a_request->parsed_rks().front() );
+            }
+
+            std::string t_filename =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            LDEBUG( plog, "Setting filename for file <" << t_file_num << "> to <" << t_filename << ">" );
+            set_filename( t_filename, t_file_num );
             return a_reply_pkg.send_reply( retcode_t::success, "Filename set" );
         }
-        catch( scarab::error& e )
+        catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set filename: " ) + e.what() );
         }
@@ -744,8 +779,15 @@ namespace psyllid
     {
         try
         {
-            f_run_description =  a_request->get_payload().array_at( "values" )->get_value( 0 );
-            LDEBUG( plog, "Run description set to:\n" << f_run_description );
+            unsigned t_file_num = 0;
+            if( a_request->parsed_rks().size() > 0)
+            {
+                t_file_num = std::stoi( a_request->parsed_rks().front() );
+            }
+
+            std::string t_description =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            LDEBUG( plog, "Setting description for file <" << t_file_num << "> to <" << t_description << ">" );
+            set_filename( t_description, t_file_num );
             return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
         }
         catch( scarab::error& e )
@@ -782,22 +824,48 @@ namespace psyllid
 
     }
 
-    bool daq_control::handle_get_filename_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    bool daq_control::handle_get_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
-        param_array* t_values_array = new param_array();
-        t_values_array->push_back( new param_value( f_run_filename ) );
+        try
+        {
+            unsigned t_file_num = 0;
+            if( a_request->parsed_rks().size() > 0)
+            {
+                t_file_num = std::stoi( a_request->parsed_rks().front() );
+            }
 
-        a_reply_pkg.f_payload.add( "values", t_values_array );
+            param_array* t_values_array = new param_array();
+            t_values_array->push_back( new param_value( get_filename( t_file_num ) ) );
+            a_reply_pkg.f_payload.add( "values", t_values_array );
+            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+        }
+        catch( scarab::error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+        }
 
         return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
     }
 
-    bool daq_control::handle_get_description_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    bool daq_control::handle_get_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
-        param_array* t_values_array = new param_array();
-        t_values_array->push_back( new param_value( f_run_description ) );
+        try
+        {
+            unsigned t_file_num = 0;
+            if( a_request->parsed_rks().size() > 0)
+            {
+                t_file_num = std::stoi( a_request->parsed_rks().front() );
+            }
 
-        a_reply_pkg.f_payload.add( "values", t_values_array );
+            param_array* t_values_array = new param_array();
+            t_values_array->push_back( new param_value( get_description( t_file_num ) ) );
+            a_reply_pkg.f_payload.add( "values", t_values_array );
+            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+        }
+        catch( scarab::error& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+        }
 
         return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
     }
@@ -812,6 +880,56 @@ namespace psyllid
         return a_reply_pkg.send_reply( retcode_t::success, "Duration request completed" );
     }
 
+
+    void daq_control::set_filename( const std::string& a_filename, unsigned a_file_num )
+    {
+        try
+        {
+            butterfly_house::get_instance()->set_filename( a_filename, a_file_num );
+            return;
+        }
+        catch( error& )
+        {
+            throw;
+        }
+    }
+
+    const std::string& daq_control::get_filename( unsigned a_file_num )
+    {
+        try
+        {
+            return butterfly_house::get_instance()->get_filename( a_file_num );
+        }
+        catch( error& )
+        {
+            throw;
+        }
+    }
+
+    void daq_control::set_description( const std::string& a_desc, unsigned a_file_num )
+    {
+        try
+        {
+            butterfly_house::get_instance()->set_description( a_desc, a_file_num );
+            return;
+        }
+        catch( error& )
+        {
+            throw;
+        }
+    }
+
+    const std::string& daq_control::get_description( unsigned a_file_num )
+    {
+        try
+        {
+            return butterfly_house::get_instance()->get_description( a_file_num );
+        }
+        catch( error& )
+        {
+            throw;
+        }
+    }
 
     uint32_t daq_control::status_to_uint( status a_status )
     {

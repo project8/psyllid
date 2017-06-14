@@ -229,7 +229,7 @@ namespace psyllid
                     if( a_ctx.f_swrap_ptr )
                     {
                         LDEBUG( plog, "Finishing stream <" << a_ctx.f_stream_no << ">" );
-                        a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no, true );
+                        a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                         a_ctx.f_swrap_ptr.reset();
                     }
                     throw error() << "Trig command doesn't match time command: time command = " << t_time_command << "; trig command = " << t_trig_command;
@@ -247,8 +247,7 @@ namespace psyllid
                 LDEBUG( plog, "Egg writer is exiting due to trig-stream command; run is in progress" );
                 if( a_ctx.f_swrap_ptr )
                 {
-                    LDEBUG( plog, "Finishing stream <" << a_ctx.f_stream_no << ">" );
-                    a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no, true );
+                    a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                     a_ctx.f_swrap_ptr.reset();
                 }
                 a_ctx.f_should_exit = true;
@@ -260,8 +259,7 @@ namespace psyllid
                 LDEBUG( plog, "Egg writer received stop command on the trig stream while run is in progress" );
                 if( a_ctx.f_swrap_ptr )
                 {
-                    LDEBUG( plog, "Finishing stream <" << a_ctx.f_stream_no << ">" );
-                    a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no, true );
+                    a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                     a_ctx.f_swrap_ptr.reset();
                 }
                 t_time_command = in_stream< 0 >().get();
@@ -277,8 +275,7 @@ namespace psyllid
                 LERROR( plog, "Egg writer received unexpected start command on the trig stream while running")
                 if( a_ctx.f_swrap_ptr )
                 {
-                    LDEBUG( plog, "Finishing stream <" << a_ctx.f_stream_no << ">" );
-                    a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no, true );
+                    a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                     a_ctx.f_swrap_ptr.reset();
                 }
                 t_time_command = in_stream< 0 >().get();
@@ -296,8 +293,7 @@ namespace psyllid
                 {
                     if( a_ctx.f_swrap_ptr )
                     {
-                        LDEBUG( plog, "Finishing stream <" << a_ctx.f_stream_no << ">" );
-                        a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no, true );
+                        a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                         a_ctx.f_swrap_ptr.reset();
                     }
                     throw error() << "Trig command doesn't match time command: time command = " << t_time_command << "; trig command = " << t_trig_command;
@@ -359,11 +355,12 @@ namespace psyllid
                     LTRACE( plog, "Triggered packet, id <" << t_trig_data->get_id() << ">" );
 
                     if( a_ctx.f_is_new_event ) LDEBUG( plog, "New event" );
-                    a_ctx.f_record_ptr->SetRecordId( t_time_id );
-                    a_ctx.f_record_ptr->SetTime( t_record_length_nsec * ( t_time_id - a_ctx.f_first_pkt_in_run ) );
-                    memcpy( a_ctx.f_record_ptr->GetData(), t_time_data->get_raw_array(), t_bytes_per_record );
-                    a_ctx.f_swrap_ptr->write_record( a_ctx.f_is_new_event );
+                    if( ! a_ctx.f_swrap_ptr->write_record( t_time_id, t_record_length_nsec * ( t_time_id - a_ctx.f_first_pkt_in_run ), t_time_data->get_raw_array(), t_bytes_per_record, a_ctx.f_is_new_event ) )
+                    {
+                        throw error() << "Unable to write record to file; record ID: " << t_time_id;
+                    }
                     a_ctx.f_is_new_event = false;
+                    LTRACE( plog, "Packet written (" << t_time_id << ")" );
                 }
                 else
                 {

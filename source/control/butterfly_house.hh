@@ -44,11 +44,9 @@ namespace psyllid
     class butterfly_house : public scarab::singleton< butterfly_house >, public control_access
     {
         public:
-            mv_accessible( unsigned, max_file_size_mb );
-
+            mv_accessible( double, max_file_size_mb );
 
         public:
-
             void register_file( unsigned a_file_num, const std::string& a_filename, const std::string& a_description, unsigned a_duration_ms );
 
             void prepare_files( const scarab::param_node* a_files_config );
@@ -60,6 +58,12 @@ namespace psyllid
             void register_writer( egg_writer* a_writer, unsigned a_file_num );
 
             void unregister_writer( egg_writer* a_writer );
+
+            void set_filename( const std::string& a_filename, unsigned a_file_num = 0 );
+            const std::string& get_filename( unsigned a_file_num );
+
+            void set_description( const std::string& a_desc, unsigned a_file_num = 0 );
+            const std::string& get_description( unsigned a_file_num );
 
         private:
             struct file_info
@@ -75,38 +79,7 @@ namespace psyllid
             std::vector< monarch_wrap_ptr > f_mw_ptrs;
             std::multimap< egg_writer*, unsigned > f_writers;
 
-        public:
-
-            /// Creates the Monarch3 object for the given filename
-            /// Sets the Monarch stage to "initializing"
-            monarch_wrap_ptr declare_file( const std::string& a_filename );
-/*
-            /// Requires that the Monarch stage be "initializing" or "preparing"
-            /// If it's in the former, sets the stage to "preparing"
-            /// Throws psyllid::error if anything fails
-            header_wrap_ptr get_header( const std::string& a_filename ) const;
-
-            /// Requires that the Monarch stage be "preparing" or "writing"
-            /// If it's the former, sets the stage to "writing" and writes the Monarch header to the file
-            /// Throws psyllid::error if anything fails
-            stream_wrap_ptr get_stream( const std::string& a_filename, unsigned a_stream ) const;
-
-            /// Closes the file
-            /// Sets the Monarch stage to "finished"
-            void write_file( const std::string& a_filename );
-*/
-            /// Removes the Monarch3 object for the given filename
-            void remove_file( const std::string& a_filename );
-
-        private:
-            typedef std::map< std::string, monarch_wrap_ptr > bf_map;
-            typedef bf_map::const_iterator bf_cit_t;
-            typedef bf_map::iterator bf_it_t;
-            typedef bf_map::value_type bf_value_t;
-
-            bf_map f_butterflies;
             mutable std::mutex f_house_mutex;
-
 
         private:
             friend class scarab::singleton< butterfly_house >;

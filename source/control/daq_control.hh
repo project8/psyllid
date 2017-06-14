@@ -127,8 +127,12 @@ namespace psyllid
             std::future< void > f_run_return;
 
         public:
-            mv_referrable( std::string, run_filename );
-            mv_referrable( std::string, run_description );
+            void set_filename( const std::string& a_filename, unsigned a_file_num = 0 );
+            const std::string& get_filename( unsigned a_file_num = 0 );
+
+            void set_description( const std::string& a_desc, unsigned a_file_num = 0 );
+            const std::string& get_description( unsigned a_file_num = 0 );
+
             mv_accessible( unsigned, run_duration );
 
         public:

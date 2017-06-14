@@ -107,14 +107,14 @@ namespace psyllid
 
         //LWARN( plog, "f_ring = " << f_ring );
         bool test = f_ring.f_rd == nullptr;
-        LWARN( plog, "f_ring.f_rd == nullptr: " << test );
+        LTRACE( plog, "f_ring.f_rd == nullptr: " << test );
         test = f_ring.f_map == nullptr;
-        LWARN( plog, "f_ring.f_map == nullptr: " << test );
-        LWARN( plog, "f_ring.f_req.tp_block_size = " << f_ring.f_req.tp_block_size );
+        LTRACE( plog, "f_ring.f_map == nullptr: " << test );
+        LTRACE( plog, "f_ring.f_req.tp_block_size = " << f_ring.f_req.tp_block_size );
 
         LDEBUG( plog, "Opening packet_eater for network interface <" << f_interface << ">" );
 
-        LWARN( plog, "f_socket = " << f_socket << ";  SOL_PACKET = " << SOL_PACKET << ";  PACKET_RX_RING = " << PACKET_RX_RING << ";  &f_ring.f_req = " << &f_ring.f_req << ";  sizeof(f_ring.f_req) = " << sizeof(f_ring.f_req) );
+        LTRACE( plog, "f_socket = " << f_socket << ";  SOL_PACKET = " << SOL_PACKET << ";  PACKET_RX_RING = " << PACKET_RX_RING << ";  &f_ring.f_req = " << &f_ring.f_req << ";  sizeof(f_ring.f_req) = " << sizeof(f_ring.f_req) );
         if( ::setsockopt( f_socket, SOL_PACKET, PACKET_RX_RING, &f_ring.f_req, sizeof(f_ring.f_req) ) < 0 )
         {
             throw error() << "Could not set receive ring:\n\t" << strerror( errno );
