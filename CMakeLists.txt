@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.1)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.1.0)
+project( Psyllid VERSION 1.1.2 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
 include( PackageBuilder )
@@ -50,6 +50,8 @@ pbuilder_add_submodule( Dripline dripline-cpp )
 
 # Monarch
 pbuilder_add_submodule( Monarch monarch )
+# we need the definitions for HAS_ATTR_IFC and HAS_GRP_IFC from Monarch to use the proper class interfaces in M3Header and M3Stream
+set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} APPEND PROPERTY COMPILE_DEFINITIONS ${Monarch_COMPILE_DEFINITIONS} )
 
 # tk_spline
 include_directories( BEFORE ${PROJECT_SOURCE_DIR}/external/tk_spline )
