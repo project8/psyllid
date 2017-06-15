@@ -62,7 +62,7 @@ namespace psyllid
             t_filename_sstr << "psyllid_out_" << t_file_num << ".egg";
             fi_it->f_filename = t_filename_sstr.str();
             fi_it->f_description = "";
-            LINFO( plog, "Prepared file <" << t_file_num << ">; default filename is <" << fi_it->f_filename << ">" );
+            LPROG( plog, "Prepared file <" << t_file_num << ">; default filename is <" << fi_it->f_filename << ">" );
         }
         return;
     }
