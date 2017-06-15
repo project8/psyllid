@@ -12,7 +12,7 @@ if( Psyllid_ENABLE_TESTING )
     
     set( programs
         #test_event_builder
-        test_monarch3_write
+        #test_monarch3_write
         #test_server
         test_tf_roach_monitor
         test_tf_roach_receiver
