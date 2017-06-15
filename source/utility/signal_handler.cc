@@ -120,7 +120,7 @@ namespace psyllid
 
     void signal_handler::print_message()
     {
-        LINFO( plog, "\n\nHello!  Your signal is being handled by signal_handler.\n"
+        LPROG( plog, "\n\nHello!  Your signal is being handled by signal_handler.\n"
              << "Have a nice day!\n" );
         return;
     }

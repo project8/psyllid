@@ -47,7 +47,7 @@ namespace psyllid
 
     void run_server::execute()
     {
-        LINFO( plog, "Creating server objects" );
+        LPROG( plog, "Creating server objects" );
 
         set_status( k_starting );
 
@@ -133,7 +133,7 @@ namespace psyllid
         f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1, _2 ) );
 
         // start threads
-        LINFO( plog, "Starting threads" );
+        LPROG( plog, "Starting threads" );
         std::exception_ptr t_dc_ex_ptr;
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
@@ -141,7 +141,7 @@ namespace psyllid
         t_lock.unlock();
 
         set_status( k_running );
-        LINFO( plog, "Running..." );
+        LPROG( plog, "Running..." );
 
         t_daq_control_thread.join();
         LDEBUG( plog, "DAQ control thread has ended" );
@@ -153,7 +153,7 @@ namespace psyllid
 
         set_status( k_done );
 
-        LINFO( plog, "Threads stopped" );
+        LPROG( plog, "Threads stopped" );
 
         f_return = RETURN_SUCCESS;
 

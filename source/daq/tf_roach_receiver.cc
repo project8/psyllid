@@ -121,7 +121,7 @@ namespace psyllid
 
             try
             {
-                LINFO( plog, "Starting main loop; waiting for packets" );
+                LPROG( plog, "Starting main loop; waiting for packets" );
                 f_break_exe_func.store( true );
                 while( f_break_exe_func.load() )
                 {
