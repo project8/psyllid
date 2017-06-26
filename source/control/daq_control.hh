@@ -123,6 +123,7 @@ namespace psyllid
 
             std::condition_variable f_run_stopper; // ends the run after a given amount of time
             std::mutex f_run_stop_mutex; // mutex used by the run_stopper
+            bool f_do_break_run; // bool to confirm that the run should stop; protected by f_run_stop_mutex
 
             std::future< void > f_run_return;
 

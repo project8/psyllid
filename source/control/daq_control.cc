@@ -45,6 +45,7 @@ namespace psyllid
             f_node_bindings( nullptr ),
             f_run_stopper(),
             f_run_stop_mutex(),
+            f_do_break_run( false ),
             f_run_return(),
             f_run_duration( 1000 ),
             f_status( status::deactivated )
@@ -272,6 +273,8 @@ namespace psyllid
 
     void daq_control::do_run( unsigned a_duration )
     {
+        // a_duration is in ms
+
         LINFO( plog, "Run is commencing" );
 
         LDEBUG( plog, "Starting egg files" );
@@ -288,34 +291,30 @@ namespace psyllid
             return;
         }
 
-        const unsigned t_sub_duration = 100;
-        unsigned t_n_sub_durations = 0;
-        unsigned t_duration_remainder = 0;
-        if( a_duration != 0 )
-        {
-            t_n_sub_durations = a_duration / t_sub_duration; // number of complete sub-durations, not including the remainder
-            t_duration_remainder = a_duration - t_n_sub_durations * t_sub_duration;
-        }
-        LDEBUG( plog, "Run duration will be " << a_duration << " ms; " << t_n_sub_durations << " sub-durations  of " << t_sub_duration << " ms will be used, plus one sub-duration of " << t_duration_remainder << " ms" );
+        typedef std::chrono::steady_clock::duration duration_t;
+        typedef std::chrono::steady_clock::time_point time_point_t;
+
+        duration_t t_run_duration = std::chrono::duration_cast< duration_t >( std::chrono::milliseconds(a_duration) ); // a_duration converted from ms to duration_t
+        duration_t t_sub_duration = std::chrono::duration_cast< duration_t >( std::chrono::milliseconds(500) ); // 500 ms sub-duration converted to duration_t
+        LINFO( plog, "Run duration will be " << a_duration << " ms;  sub-durations of 500 ms will be used" );
+        LDEBUG( plog, "In units of steady_clock::duration: run duration is " << t_run_duration.count() << " and sub_duration is " << t_sub_duration.count() );
 
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
+        f_do_break_run = false;
 
         LDEBUG( plog, "Unpausing midge" );
         set_status( status::running );
         f_midge_pkg->instruct( midge::instruction::resume );
 
-        std::cv_status t_wait_return = std::cv_status::timeout;
-
         if( a_duration == 0 )
         {
             LDEBUG( plog, "Untimed run stopper in use" );
-            f_run_stopper.wait( t_run_stop_lock );
             // conditions that will break the loop:
             //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
             //   - daq_control has been canceled
-            while( t_wait_return == std::cv_status::timeout && ! is_canceled() )
+            while( ! f_do_break_run && ! is_canceled() )
             {
-                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
+                f_run_stopper.wait_for( t_run_stop_lock, t_sub_duration );
             }
         }
         else
@@ -326,17 +325,16 @@ namespace psyllid
             //   - all sub-durations have been completed
             //   - last sub-duration was not stopped for a timeout (the other possibility is that f_run_stopper was notified by e.g. stop_run())
             //   - daq_control has been canceled
-            for( unsigned i_sub_duration = 0;
-                    i_sub_duration < t_n_sub_durations && t_wait_return == std::cv_status::timeout && ! is_canceled();
-                    ++i_sub_duration )
+
+            time_point_t t_run_start = std::chrono::steady_clock::now();
+            time_point_t t_run_end = t_run_start + t_run_duration;
+
+            while( std::chrono::steady_clock::now() < t_run_end && ! f_do_break_run && ! is_canceled() )
             {
-                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_sub_duration ) );
+                // we use wait_until so that we can break the run up with subdurations and not worry about whether a subduration was interrupted by a spurious wakeup
+                f_run_stopper.wait_until( t_run_stop_lock, std::min( std::chrono::steady_clock::now() + t_sub_duration, t_run_end ) );
             }
-            // the last sub-duration is for a different amount of time (t_duration_remainder) than the standard sub-duration (t_sub_duration)
-            if( t_wait_return == std::cv_status::timeout && ! is_canceled() )
-            {
-                t_wait_return = f_run_stopper.wait_for( t_run_stop_lock, std::chrono::milliseconds( t_duration_remainder ) );
-            }
+
         }
 
         // if we've reached here, we need to pause midge.
@@ -348,6 +346,8 @@ namespace psyllid
         set_status( status::activated );
 
         LINFO( plog, "Run has stopped" );
+        if( f_do_break_run ) LINFO( plog, "Run was stopped manually" );
+        if( is_canceled() ) LINFO( plog, "Run was cancelled" );
 
         LDEBUG( plog, "Finishing egg files" );
         try
@@ -361,12 +361,6 @@ namespace psyllid
             LDEBUG( plog, "Canceling midge" );
             if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
             return;
-        }
-
-        // if daq_control has been canceled, assume that midge has been canceled by other methods, and this function should just exit
-        if( is_canceled() )
-        {
-            LDEBUG( plog, "Run was cancelled" );
         }
 
         return;
@@ -384,6 +378,7 @@ namespace psyllid
         }
 
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
+        f_do_break_run = true;
         f_run_stopper.notify_all();
 
         return;
