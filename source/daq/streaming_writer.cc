@@ -10,6 +10,8 @@
 #include "butterfly_house.hh"
 #include "psyllid_error.hh"
 
+#include "midge_error.hh"
+
 #include "digital.hh"
 #include "logger.hh"
 #include "time.hh"
@@ -174,7 +176,7 @@ namespace psyllid
 
                     if( ! t_swrap_ptr->write_record( t_time_id, t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ), t_time_data->get_raw_array(), t_bytes_per_record, t_is_new_acquisition ) )
                     {
-                        throw error() << "Unable to write record to file; record ID: " << t_time_id;
+                        throw midge::node_nonfatal_error() << "Unable to write record to file; record ID: " << t_time_id;
                     }
 
                     LTRACE( plog, "Packet written (" << t_time_id << ")" );

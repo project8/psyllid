@@ -455,7 +455,7 @@ namespace psyllid
                         if( ! out_stream< 0 >().set( stream::s_run ) )
                         {
                             LERROR( plog, "Exiting due to stream error" );
-                            throw error() << "Stream error while applying threshold";
+                            throw midge::node_nonfatal_error() << "Stream error while applying threshold";
                         }
                     }
                     catch( error& e )

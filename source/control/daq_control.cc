@@ -82,7 +82,7 @@ namespace psyllid
             t_activation_return = std::async( std::launch::async,
                         [this]()
                         {
-                            std::this_thread::sleep_for( std::chrono::milliseconds(250));
+                            std::this_thread::sleep_for( std::chrono::milliseconds(250) );
                             LDEBUG( plog, "Activating DAQ control at startup" );
                             activate();
                         } );
@@ -93,16 +93,20 @@ namespace psyllid
         while( ! is_canceled() )
         {
             status t_status = get_status();
-            LTRACE( plog, "daq_control execute loop; status is <" << interpret_status( t_status ) << ">" );
-            if( t_status == status::deactivated )
+            LDEBUG( plog, "daq_control execute loop; status is <" << interpret_status( t_status ) << ">" );
+            if( ( t_status == status::deactivated ) && ! is_canceled() )
             {
-                std::unique_lock< std::mutex > t_lock( f_daq_mutex );
-                //LDEBUG( plog, "DAQ control deactivated and waiting for activation signal" );
-                f_activation_condition.wait_for( t_lock, std::chrono::seconds(1) );
+                while( t_status == status::deactivated )
+                {
+                    std::unique_lock< std::mutex > t_lock( f_daq_mutex );
+                    LDEBUG( plog, "DAQ control waiting for activation signal; status is " << interpret_status( t_status ) );
+                    f_activation_condition.wait_for( t_lock, std::chrono::seconds(1) );
+                    t_status = get_status();
+                }
             }
             else if( t_status == status::activating )
             {
-                LINFO( plog, "DAQ control activating" );
+                LPROG( plog, "DAQ control activating" );
 
                 try
                 {
@@ -132,20 +136,52 @@ namespace psyllid
 
                 f_node_bindings = f_node_manager->get_node_bindings();
 
+                std::exception_ptr t_e_ptr;
+
                 try
                 {
                     std::string t_run_string( f_node_manager->get_node_run_str() );
                     LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
                     set_status( status::activated );
-                    f_midge_pkg->run( t_run_string );
+                    t_e_ptr = f_midge_pkg->run( t_run_string );
                     LINFO( plog, "DAQ control is shutting down after midge exited" );
                 }
                 catch( std::exception& e )
                 {
                     LERROR( plog, "An exception was thrown while running midge: " << e.what() );
                     set_status( status::error );
-                    f_run_stopper.notify_all();
-                    continue;
+                }
+
+                LDEBUG( plog, "Midge has finished running" );
+                if( t_e_ptr )
+                {
+                    LDEBUG( plog, "An exception from midge is present; rethrowing" );
+                    try
+                    {
+                        std::rethrow_exception( t_e_ptr );
+                    }
+                    catch( midge::error& e )
+                    {
+                        LERROR( plog, "A Midge error has been caught: " << e.what() );
+                        set_status( status::error );
+                    }
+                    catch( midge::node_fatal_error& e )
+                    {
+                        LERROR( plog, "A fatal node error was thrown from midge: " << e.what() );
+                        set_status( status::error );
+                    }
+                    catch( midge::node_nonfatal_error& e )
+                    {
+                        LWARN( plog, "A non-fatal node error was thrown from midge: " << e.what() );
+                        set_status( status::do_restart );
+                    }
+                    catch( std::exception& e )
+                    {
+                        LERROR( plog, "An unknown exception was thrown from midge: " << e.what() );
+                        set_status( status::error );
+                    }
+                    LDEBUG( plog, "Calling stop_run" );
+                    stop_run();
                 }
 
                 f_node_manager->return_midge( std::move( f_midge_pkg ) );
@@ -153,9 +189,30 @@ namespace psyllid
 
                 if( get_status() == status::running )
                 {
-                    LERROR( plog, "Midge exited abnormally" );
-                    set_status( status::error );
-                    f_run_stopper.notify_all();
+                    LERROR( plog, "Midge exited abnormally; error condition is unknown; canceling" );
+                    raise(SIGINT);
+                    continue;
+                }
+                else if( get_status() == status::error )
+                {
+                    LERROR( plog, "Canceling due to midge error" );
+                    raise(SIGINT);
+                    continue;
+                }
+                else if( get_status() == status::do_restart )
+                {
+                    LDEBUG( plog, "Setting status to deactivated" );
+                    set_status( status::deactivated );
+                    LINFO( plog, "Commencing restart of the DAQ" );
+                    std::this_thread::sleep_for( std::chrono::milliseconds(250) );
+                    LDEBUG( plog, "Will activate DAQ control asynchronously" );
+                    t_activation_return = std::async( std::launch::async,
+                                [this]()
+                                {
+                                    std::this_thread::sleep_for( std::chrono::milliseconds(250) );
+                                    LDEBUG( plog, "Restarting DAQ control" );
+                                    activate();
+                                } );
                     continue;
                 }
             }
@@ -201,6 +258,7 @@ namespace psyllid
             throw status_error() << "DAQ control is not in the deactivated state";
         }
 
+        LDEBUG( plog, "Setting status to activating" );
         set_status( status::activating );
         f_activation_condition.notify_one();
 
@@ -209,15 +267,8 @@ namespace psyllid
 
     void daq_control::reactivate()
     {
-        try
-        {
-            deactivate();
-            activate();
-        }
-        catch( error& e )
-        {
-            throw e;
-        }
+        deactivate();
+        activate();
         return;
     }
 
@@ -304,7 +355,12 @@ namespace psyllid
 
         LDEBUG( plog, "Unpausing midge" );
         set_status( status::running );
-        f_midge_pkg->instruct( midge::instruction::resume );
+        if( f_midge_pkg.have_lock() ) f_midge_pkg->instruct( midge::instruction::resume );
+        else
+        {
+            LERROR( plog, "Midge resource is not available" );
+            return;
+        }
 
         if( a_duration == 0 )
         {
@@ -342,7 +398,7 @@ namespace psyllid
 
         LDEBUG( plog, "Run stopper has been released" );
 
-        f_midge_pkg->instruct( midge::instruction::pause );
+        if( f_midge_pkg.have_lock() ) f_midge_pkg->instruct( midge::instruction::pause );
         set_status( status::activated );
 
         LINFO( plog, "Run has stopped" );
@@ -372,10 +428,7 @@ namespace psyllid
 
         if( get_status() != status::running ) return;
 
-        if( ! f_midge_pkg.have_lock() )
-        {
-            throw error() << "Do not have midge resource; worker is not currently running";
-        }
+        if( ! f_midge_pkg.have_lock() ) LWARN( plog, "Do not have midge resource" );
 
         std::unique_lock< std::mutex > t_run_stop_lock( f_run_stop_mutex );
         f_do_break_run = true;
@@ -958,6 +1011,9 @@ namespace psyllid
                 break;
             case status::done:
                 return std::string( "Done" );
+                break;
+            case status::do_restart:
+                return std::string( "Do Restart" );
                 break;
             case status::error:
                 return std::string( "Error" );

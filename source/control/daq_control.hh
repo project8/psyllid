@@ -145,6 +145,7 @@ namespace psyllid
                 running = 5,
                 deactivating = 6,
                 canceled = 8,
+                do_restart = 9,
                 done = 10,
                 error = 200
             };
