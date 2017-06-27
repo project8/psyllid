@@ -25,21 +25,14 @@ namespace psyllid
     LOGGER( plog, "request_receiver" );
 
     request_receiver::request_receiver( const param_node& a_master_config ) :
-            hub(),
+            hub( a_master_config.node_at( "amqp" ) ),
             scarab::cancelable(),
             f_run_handler(),
             f_get_handlers(),
             f_set_handlers(),
             f_cmd_handlers(),
-            f_listen_timeout_ms( 100 ),
-            f_amqp_config(),
             f_status( k_initialized )
     {
-        if( ! a_master_config.has( "amqp" ) )
-        {
-            throw error() << "No AMQP configuration present";
-        }
-        f_amqp_config.reset( new param_node( *a_master_config.node_at( "amqp" ) ) );
     }
 
     request_receiver::~request_receiver()
@@ -117,28 +110,6 @@ namespace psyllid
     {
         set_status( k_starting );
 
-        try
-        {
-            if( ! dripline_setup( f_amqp_config->get_value( "broker" ),
-                                  f_amqp_config->get_value< unsigned >( "broker-port" ),
-                                  f_amqp_config->get_value( "request-exchange" ),
-                                  f_amqp_config->get_value( "queue" ),
-                                  ".project8_authentications.json" ) )
-            {
-                LERROR( plog, "Unable to complete dripline setup" );
-                raise( SIGINT );
-                return;
-            }
-        }
-        catch( scarab::error& e )
-        {
-            LERROR( plog, "Invalid AMQP configuration" );
-            raise( SIGINT );
-            return;
-        }
-
-        f_listen_timeout_ms = f_amqp_config->get_value< int >( "listen-timeout-ms", f_listen_timeout_ms );
-
         // start the service
         if( ! start() )
         {
@@ -154,7 +125,7 @@ namespace psyllid
         while( ! cancelable::is_canceled() )
         {
             // blocking call to wait for incoming message
-            listen( f_listen_timeout_ms );
+            listen();
         }
 
         LINFO( plog, "No longer waiting for messages" );

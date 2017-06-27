@@ -59,6 +59,13 @@ namespace psyllid
         }
 
         set_run_duration( f_daq_config->get_value( "duration", get_run_duration() ) );
+
+        // dripline relayer configuration
+        if( ! a_master_config.has( "amqp" ) )
+        {
+            throw error() << "No AMQP configuration present";
+        }
+
     }
 
     daq_control::~daq_control()

@@ -1,10 +1,6 @@
 amqp:
     broker: localhost
-    broker-port: 5672
-    request-exchange: requests
-    alert-exchange: alerts
     queue: psyllid
-    listen-timeout-ms: 100
 
 daq:
     activate-at-startup: true
