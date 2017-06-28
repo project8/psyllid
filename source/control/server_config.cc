@@ -25,6 +25,7 @@ namespace psyllid
         t_amqp_node->add( "broker", new param_value( "localhost" ) );
         t_amqp_node->add( "queue", new param_value( "psyllid" ) );
         t_amqp_node->add( "auth-file", new param_value( ".project8_authentications.json" ) );
+        t_amqp_node->add( "slack-queue", new param_value( "slack_interface" ) );
         // other available values
         // - requests-exchange
         // - alerts-exchange
