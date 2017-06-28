@@ -16,6 +16,7 @@
 #include "member_variables.hh"
 
 #include "hub.hh"
+#include "relayer.hh"
 
 #include <atomic>
 #include <condition_variable>
@@ -126,6 +127,9 @@ namespace psyllid
             bool f_do_break_run; // bool to confirm that the run should stop; protected by f_run_stop_mutex
 
             std::future< void > f_run_return;
+
+            dripline::relayer f_dl_relay;
+            std::string f_slack_queue;
 
         public:
             void set_filename( const std::string& a_filename, unsigned a_file_num = 0 );
