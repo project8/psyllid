@@ -620,7 +620,7 @@ namespace psyllid
         if( f_ok_to_write.load() ) return f_monarch.operator bool();
         std::mutex t_wait_mutex;
         unique_lock t_wait_lock( t_wait_mutex );
-        while( ! f_ok_to_write.load() && f_monarch )
+        while( ! f_ok_to_write.load() )
         {
             f_wait_to_write.wait_for( t_wait_lock, std::chrono::milliseconds( 100 ) );
         }

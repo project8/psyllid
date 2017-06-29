@@ -120,7 +120,9 @@ int main( int argc, char** argv )
 
         LINFO( plog, "Executing" );
 
-        t_root->run( "pck_rec:tfr_rec:strw:term_f" );
+        std::exception_ptr t_e_ptr = t_root->run( "pck_rec:tfr_rec:strw:term_f" );
+
+        if( t_e_ptr ) std::rethrow_exception( t_e_ptr );
 
         LINFO( plog, "Execution complete" );
 
