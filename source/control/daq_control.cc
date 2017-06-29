@@ -330,7 +330,7 @@ namespace psyllid
         // a_duration is in ms
 
         LINFO( plog, "Run is commencing" );
-        f_msg_relay->slack_info( "Run is commencing" );
+        f_msg_relay->slack_notice( "Run is commencing" );
 
         LDEBUG( plog, "Starting egg files" );
         try
@@ -406,7 +406,7 @@ namespace psyllid
         set_status( status::activated );
 
         LINFO( plog, "Run has stopped" );
-        f_msg_relay->slack_info( "Run has stopped" );
+        f_msg_relay->slack_notice( "Run has stopped" );
 
         if( f_do_break_run ) LINFO( plog, "Run was stopped manually" );
         if( is_canceled() ) LINFO( plog, "Run was cancelled" );
