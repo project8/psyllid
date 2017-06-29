@@ -8,12 +8,11 @@
 #include "daq_control.hh"
 
 #include "butterfly_house.hh"
+#include "message_relayer.hh"
 #include "node_builder.hh"
 
 #include "diptera.hh"
 #include "midge_error.hh"
-
-#include "relayer.hh"
 
 #include "logger.hh"
 
@@ -49,8 +48,6 @@ namespace psyllid
             f_run_stop_mutex(),
             f_do_break_run( false ),
             f_run_return(),
-            f_dl_relay( a_master_config.node_at( "amqp" ) ),
-            f_slack_queue(),
             f_run_duration( 1000 ),
             f_status( status::deactivated )
     {
@@ -63,13 +60,6 @@ namespace psyllid
         }
 
         set_run_duration( f_daq_config->get_value( "duration", get_run_duration() ) );
-
-        try
-        {
-            f_slack_queue = a_master_config["amqp"]["slack-queue"].as_value().as_string();
-            LDEBUG( plog, "Slack queue: <" << f_slack_queue << ">" );
-        }
-        catch(...) {}
     }
 
     daq_control::~daq_control()
@@ -85,8 +75,7 @@ namespace psyllid
 
     void daq_control::execute()
     {
-        // start relayer thread
-        std::thread t_relayer_thread( &dripline::relayer::execute_relayer, &f_dl_relay );
+        message_relayer* t_msg_relay = message_relayer::get_instance();
 
         // if we're supposed to activate on startup, we'll call activate asynchronously
         std::future< void > t_activation_return;
@@ -121,9 +110,7 @@ namespace psyllid
             else if( t_status == status::activating )
             {
                 LPROG( plog, "DAQ control activating" );
-                scarab::param_node* t_msg = new param_node();
-                t_msg->add( "message", new scarab::param_value( "DAQ control is activating" ) );
-                f_dl_relay.send_async( dripline::msg_alert::create( t_msg, "status_message.warning.psyllid" ) );
+                t_msg_relay->slack_info( "DAQ control is activating" );
 
                 try
                 {
@@ -207,18 +194,12 @@ namespace psyllid
                 if( get_status() == status::running )
                 {
                     LERROR( plog, "Midge exited abnormally; error condition is unknown; canceling" );
-                    f_dl_relay.cancel();
-                    LDEBUG( plog, "Waiting for relayer thread to finish" );
-                    t_relayer_thread.join();
                     raise(SIGINT);
                     continue;
                 }
                 else if( get_status() == status::error )
                 {
                     LERROR( plog, "Canceling due to midge error" );
-                    f_dl_relay.cancel();
-                    LDEBUG( plog, "Waiting for relayer thread to finish" );
-                    t_relayer_thread.join();
                     raise(SIGINT);
                     continue;
                 }
@@ -260,17 +241,10 @@ namespace psyllid
             {
                 LERROR( plog, "DAQ control is in an error state" );
                 f_node_bindings = nullptr;
-                f_dl_relay.cancel();
-                LDEBUG( plog, "Waiting for relayer thread to finish" );
-                t_relayer_thread.join();
                 raise( SIGINT );
                 break;
             }
         }
-
-        f_dl_relay.cancel();
-        LDEBUG( plog, "Waiting for relayer thread to finish" );
-        t_relayer_thread.join();
 
         return;
     }

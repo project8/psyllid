@@ -7,6 +7,7 @@ set( headers
     control_access.hh
     daq_control.hh
     egg_writer.hh
+    message_relayer.hh
     monarch3_wrap.hh
     node_builder.hh
     persistent_store.hh
@@ -22,6 +23,7 @@ set( sources
     control_access.cc
     daq_control.cc
     egg_writer.cc
+    message_relayer.cc
     monarch3_wrap.cc
     node_builder.cc
     persistent_store.cc
