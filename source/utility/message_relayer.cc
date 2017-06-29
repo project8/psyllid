@@ -21,11 +21,11 @@ namespace psyllid
     {
     }
 
-    void message_relayer::slack_info( const std::string& a_msg_text ) const
+    void message_relayer::slack_notice( const std::string& a_msg_text ) const
     {
         scarab::param_node* t_msg = new scarab::param_node();
         t_msg->add( "message", new scarab::param_value( a_msg_text ) );
-        dripline::relayer::send_async( dripline::msg_alert::create( t_msg, "status_message.info.psyllid" ) );
+        dripline::relayer::send_async( dripline::msg_alert::create( t_msg, "status_message.notice.psyllid" ) );
         return;
     }
 
