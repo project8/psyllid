@@ -15,8 +15,6 @@
 #include "cancelable.hh"
 #include "member_variables.hh"
 
-#include "hub.hh"
-
 #include <atomic>
 #include <condition_variable>
 #include <future>
@@ -26,6 +24,8 @@
 
 namespace psyllid
 {
+    class message_relayer;
+
     class daq_control : public scarab::cancelable, public control_access
     {
         public:
@@ -126,6 +126,8 @@ namespace psyllid
             bool f_do_break_run; // bool to confirm that the run should stop; protected by f_run_stop_mutex
 
             std::future< void > f_run_return;
+
+            message_relayer* f_msg_relay;
 
         public:
             void set_filename( const std::string& a_filename, unsigned a_file_num = 0 );

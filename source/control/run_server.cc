@@ -76,6 +76,7 @@ namespace psyllid
                 message_relayer* t_msg_relay = message_relayer::create_instance( f_config.node_at( "amqp" ) );
                 LDEBUG( plog, "Starting message relayer thread" );
                 t_msg_relay_thread = std::thread( &message_relayer::execute_relayer, t_msg_relay );
+                t_msg_relay->slack_info( "Psyllid is starting up" );
             }
             catch(...)
             {
@@ -180,6 +181,7 @@ namespace psyllid
     void run_server::do_cancellation()
     {
         LDEBUG( plog, "Canceling run server" );
+        message_relayer::get_instance()->slack_info( "Psyllid is shutting down" );
         f_request_receiver->cancel();
         f_daq_control->cancel();
         message_relayer::get_instance()->cancel();
