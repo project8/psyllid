@@ -74,9 +74,12 @@ namespace psyllid
             try
             {
                 message_relayer* t_msg_relay = message_relayer::create_instance( f_config.node_at( "amqp" ) );
-                LDEBUG( plog, "Starting message relayer thread" );
-                t_msg_relay_thread = std::thread( &message_relayer::execute_relayer, t_msg_relay );
-                t_msg_relay->slack_info( "Psyllid is starting up" );
+                if( f_config.get_value< bool >( "post-to-slack" ) )
+                {
+                    LDEBUG( plog, "Starting message relayer thread" );
+                    t_msg_relay_thread = std::thread( &message_relayer::execute_relayer, t_msg_relay );
+                    t_msg_relay->slack_info( "Psyllid is starting up" );
+                }
             }
             catch(...)
             {

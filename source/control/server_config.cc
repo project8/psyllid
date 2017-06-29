@@ -33,6 +33,8 @@ namespace psyllid
         // - broker-port
         add( "amqp", t_amqp_node );
 
+        add( "post-to-slack", new param_value( false ) );
+
         param_node* t_daq_node = new param_node();
         t_daq_node->add( "activate-at-startup", new param_value( true ) );
         t_daq_node->add( "n-files", new param_value( 1U ) );
