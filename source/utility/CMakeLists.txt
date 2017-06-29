@@ -5,12 +5,14 @@
 set( headers
     byte_swap.hh
     locked_resource.hh
+    message_relayer.hh
     psyllid_constants.hh
     psyllid_error.hh
     psyllid_version.hh
     signal_handler.hh
 )
 set( sources
+    message_relayer.cc
     psyllid_error.cc
     signal_handler.cc
 )

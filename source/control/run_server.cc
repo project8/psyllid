@@ -9,6 +9,7 @@
 
 #include "psyllid_constants.hh"
 #include "daq_control.hh"
+#include "message_relayer.hh"
 #include "request_receiver.hh"
 #include "signal_handler.hh"
 #include "stream_manager.hh"
@@ -66,8 +67,25 @@ namespace psyllid
 
         std::unique_lock< std::mutex > t_lock( f_component_mutex );
 
+        std::thread t_msg_relay_thread;
         try
         {
+            // dripline relayer
+            try
+            {
+                message_relayer* t_msg_relay = message_relayer::create_instance( f_config.node_at( "amqp" ) );
+                if( f_config.get_value< bool >( "post-to-slack" ) )
+                {
+                    LDEBUG( plog, "Starting message relayer thread" );
+                    t_msg_relay_thread = std::thread( &message_relayer::execute_relayer, t_msg_relay );
+                    t_msg_relay->slack_info( "Psyllid is starting up" );
+                }
+            }
+            catch(...)
+            {
+                LWARN( plog, "Message relayer already exists, and you're trying to create it again" );
+            }
+
             // node manager
             LDEBUG( plog, "Creating steam manager" );
             f_stream_manager.reset( new stream_manager() );
@@ -151,6 +169,9 @@ namespace psyllid
 
         t_sig_hand.remove_cancelable( this );
 
+        if( t_msg_relay_thread.joinable() ) t_msg_relay_thread.join();
+        LDEBUG( plog, "Message relay thread has ended" );
+
         set_status( k_done );
 
         LPROG( plog, "Threads stopped" );
@@ -163,8 +184,10 @@ namespace psyllid
     void run_server::do_cancellation()
     {
         LDEBUG( plog, "Canceling run server" );
+        message_relayer::get_instance()->slack_info( "Psyllid is shutting down" );
         f_request_receiver->cancel();
         f_daq_control->cancel();
+        message_relayer::get_instance()->cancel();
         //f_node_manager->cancel();
         return;
     }

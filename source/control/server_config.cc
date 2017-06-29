@@ -22,13 +22,18 @@ namespace psyllid
         // default server configuration
 
         param_node* t_amqp_node = new param_node();
-        t_amqp_node->add( "broker-port", new param_value( 5672 ) );
         t_amqp_node->add( "broker", new param_value( "localhost" ) );
-        t_amqp_node->add( "request-exchange", new param_value( "requests" ) );
-        t_amqp_node->add( "alert-exchange", new param_value( "alerts" ) );
         t_amqp_node->add( "queue", new param_value( "psyllid" ) );
-        t_amqp_node->add( "listen-timeout-ms", new param_value( 100 ) );
+        t_amqp_node->add( "auth-file", new param_value( ".project8_authentications.json" ) );
+        t_amqp_node->add( "slack-queue", new param_value( "slack_interface" ) );
+        // other available values
+        // - requests-exchange
+        // - alerts-exchange
+        // - listen-timeout-ms
+        // - broker-port
         add( "amqp", t_amqp_node );
+
+        add( "post-to-slack", new param_value( false ) );
 
         param_node* t_daq_node = new param_node();
         t_daq_node->add( "activate-at-startup", new param_value( true ) );

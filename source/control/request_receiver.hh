@@ -51,10 +51,6 @@ namespace psyllid
             handler_funcs_t f_set_handlers;
             handler_funcs_t f_cmd_handlers;
 
-            int f_listen_timeout_ms;
-
-            std::unique_ptr< scarab::param_node > f_amqp_config;
-
         public:
             enum status
             {

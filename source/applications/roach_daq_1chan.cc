@@ -69,7 +69,9 @@ int main()
         f_cancelable = t_udpr;
         signal( SIGINT, cancel );
 
-        t_root->run( "udpr:fmt:eb:ew" );
+        std::exception_ptr t_e_ptr = t_root->run( "udpr:fmt:eb:ew" );
+
+        if( t_e_ptr ) std::rethrow_exception( t_e_ptr );
 
         // un-setup signal handling
         f_cancelable = nullptr;

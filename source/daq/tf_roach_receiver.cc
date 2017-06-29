@@ -228,8 +228,8 @@ namespace psyllid
                         LDEBUG( plog, "TF ROACH receiver resuming" );
                         out_stream< 0 >().data()->set_pkt_in_session( 0 );
                         out_stream< 1 >().data()->set_pkt_in_session( 0 );
-                        if( ! out_stream< 0 >().set( stream::s_start ) ) throw error() << "Stream 0 error while starting";
-                        if( ! out_stream< 1 >().set( stream::s_start ) ) throw error() << "Stream 1 error while starting";
+                        if( ! out_stream< 0 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 0 error while starting";
+                        if( ! out_stream< 1 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 1 error while starting";
                         f_time_session_pkt_counter = 0;
                         f_freq_session_pkt_counter = 0;
                         f_paused = false;
@@ -237,8 +237,8 @@ namespace psyllid
                     else if( ! f_paused && use_instruction() == midge::instruction::pause )
                     {
                         LDEBUG( plog, "TF ROACH receiver pausing" );
-                        if( ! out_stream< 0 >().set( stream::s_stop ) ) throw error() << "Stream 0 error while stopping";
-                        if( ! out_stream< 1 >().set( stream::s_stop ) ) throw error() << "Stream 1 error while stopping";
+                        if( ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
+                        if( ! out_stream< 1 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 1 error while stopping";
                         f_paused = true;
                     }
                 }
@@ -400,14 +400,14 @@ namespace psyllid
                     {
                         LDEBUG( plog, "TF ROACH receiver resuming" );
                         out_stream< 1 >().data()->set_pkt_in_session( 0 );
-                        if( ! out_stream< 1 >().set( stream::s_start ) ) throw error() << "Stream 2 error while starting";
+                        if( ! out_stream< 1 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 2 error while starting";
                         f_freq_session_pkt_counter = 0;
                         f_paused = false;
                     }
                     else if( ! f_paused && use_instruction() == midge::instruction::pause )
                     {
                         LDEBUG( plog, "TF ROACH receiver pausing" );
-                        if( ! out_stream< 1 >().set( stream::s_stop ) ) throw error() << "Stream 2 error while stopping";
+                        if( ! out_stream< 1 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 2 error while stopping";
                         f_paused = true;
                     }
                 }

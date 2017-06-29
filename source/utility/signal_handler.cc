@@ -7,11 +7,12 @@
 
 #include "signal_handler.hh"
 
-#include "logger.hh"
-
 #include "psyllid_error.hh"
 
+#include "message_relayer.hh"
+
 #include "cancelable.hh"
+#include "logger.hh"
 
 #include <signal.h>
 #ifndef _WIN32
@@ -97,6 +98,7 @@ namespace psyllid
     void signal_handler::handler_cancel_threads( int )
     {
         print_message();
+        message_relayer::get_instance()->slack_error( "Psyllid has been cancelled" );
 
         f_mutex.lock();
         f_got_exit_signal = true;
