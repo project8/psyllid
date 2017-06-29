@@ -27,7 +27,7 @@ namespace psyllid
             virtual ~message_relayer();
 
         public:
-            void slack_info( const std::string& a_msg_text ) const;
+            void slack_notice( const std::string& a_msg_text ) const;
             void slack_warn( const std::string& a_msg_text ) const;
             void slack_error( const std::string& a_msg_text ) const;
             void slack_critical( const std::string& a_msg_text ) const;

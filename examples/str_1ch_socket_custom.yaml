@@ -2,6 +2,8 @@ amqp:
     broker: localhost
     queue: psyllid
 
+post-to-slack: false
+
 daq:
     activate-at-startup: true
     n-files: 1
