@@ -354,7 +354,10 @@ namespace psyllid
                 {
                     LTRACE( plog, "Triggered packet, id <" << t_trig_data->get_id() << ">" );
 
-                    if( a_ctx.f_is_new_event ) LDEBUG( plog, "New event" );
+                    if( a_ctx.f_is_new_event )
+                    {
+                        LDEBUG( plog, "New event" );
+                    }
                     if( ! a_ctx.f_swrap_ptr->write_record( t_time_id, t_record_length_nsec * ( t_time_id - a_ctx.f_first_pkt_in_run ), t_time_data->get_raw_array(), t_bytes_per_record, a_ctx.f_is_new_event ) )
                     {
                         throw midge::node_nonfatal_error() << "Unable to write record to file; record ID: " << t_time_id;

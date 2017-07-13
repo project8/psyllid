@@ -51,7 +51,9 @@ namespace psyllid
             trigger_flag* t_write_flag = nullptr;
 
             bool t_current_trig_flag = false;
+#ifndef NDEBUG
             uint64_t t_current_id = 0;
+#endif
 
             while( ! is_canceled() )
             {
@@ -74,7 +76,9 @@ namespace psyllid
                 if( t_in_command == stream::s_run )
                 {
                     t_current_trig_flag = t_trigger_flag->get_flag();
+#ifndef NDEBUG
                     t_current_id = t_trigger_flag->get_id();
+#endif
                     LDEBUG( plog, "Event builder received id <" << t_current_id << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
 
                     if( f_state == state_t::filling_pretrigger )

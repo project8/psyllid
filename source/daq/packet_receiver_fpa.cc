@@ -106,10 +106,12 @@ namespace psyllid
         f_ring.f_req.tp_feature_req_word = TP_FT_REQ_FILL_RXHASH;
 
         //LWARN( plog, "f_ring = " << f_ring );
+#ifndef NDEBUG
         bool test = f_ring.f_rd == nullptr;
         LTRACE( plog, "f_ring.f_rd == nullptr: " << test );
         test = f_ring.f_map == nullptr;
         LTRACE( plog, "f_ring.f_map == nullptr: " << test );
+#endif
         LTRACE( plog, "f_ring.f_req.tp_block_size = " << f_ring.f_req.tp_block_size );
 
         LDEBUG( plog, "Opening packet_eater for network interface <" << f_interface << ">" );
