@@ -137,23 +137,38 @@ namespace psyllid
 
             // for each stream, create new stream in new file
             std::vector< monarch3::M3StreamHeader >* t_old_stream_headers = &t_old_header_ptr->ptr()->GetStreamHeaders();
+            std::vector< unsigned > t_chan_vec;
             for( unsigned i_stream = 0; i_stream != t_old_stream_headers->size(); ++i_stream )
             {
                 //t_stream_it->second->lock();
+                t_chan_vec.clear();
                 monarch3::M3StreamHeader* t_old_stream_header = &t_old_stream_headers->operator[]( i_stream );
-                if( t_old_stream_header->GetNChannels() > 1 )
+                unsigned n_channels = t_old_stream_header->GetNChannels();
+                if( n_channels > 1 )
                 {
-                    t_new_header->AddStream( t_old_stream_header->GetSource(), t_old_stream_header->GetNChannels(), t_old_stream_header->GetChannelFormat(),
+                    t_new_header->AddStream( t_old_stream_header->GetSource(), n_channels, t_old_stream_header->GetChannelFormat(),
                             t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
                             t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
-                            t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment() );
+                            t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment(),
+                            &t_chan_vec );
                 }
                 else
                 {
                     t_new_header->AddStream( t_old_stream_header->GetSource(),
                             t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
                             t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
-                            t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment() );
+                            t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment(),
+                            &t_chan_vec );
+                }
+                std::vector< monarch3::M3ChannelHeader >& t_old_chan_headers = t_old_header_ptr->ptr()->GetChannelHeaders();
+                std::vector< monarch3::M3ChannelHeader >& t_new_chan_headers = t_new_header->GetChannelHeaders();
+                for( unsigned i_chan = 0; i_chan < n_channels; ++i_chan )
+                {
+                    t_new_chan_headers[ i_chan ].SetVoltageOffset( t_old_chan_headers[ i_chan ].GetVoltageOffset() );
+                    t_new_chan_headers[ i_chan ].SetVoltageRange( t_old_chan_headers[ i_chan ].GetVoltageRange() );
+                    t_new_chan_headers[ i_chan ].SetDACGain( t_old_chan_headers[ i_chan ].GetDACGain() );
+                    t_new_chan_headers[ i_chan ].SetFrequencyMin( t_old_chan_headers[ i_chan ].GetFrequencyMin() );
+                    t_new_chan_headers[ i_chan ].SetFrequencyRange( t_old_chan_headers[ i_chan ].GetFrequencyRange() );
                 }
             }
 
