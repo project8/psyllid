@@ -41,11 +41,9 @@
 
 #### New Features:
 
-* ROOT Spectrogram Writer: sequential writing mode
-    * A new mode of writing was added to the writer that writes sequential spectrograms of a given time size.
-    * Documentation is included in the KTROOTSpectrogramWriter header documentation.
-    * The new writing mode was tested on a concatenated file from an RSA run. Sequential spectrograms split at the right times according to the setting and acquisition breaks.
-    * The old writing mode ("single") continued to function in the same way.
+* Validation log
+    * This file, documentation/validation_log.md, was added to record changes to Psyllid as they're made.
+    * No validation is needed as this is not a functional change.
   
 #### Fixes:
 
