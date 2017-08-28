@@ -844,7 +844,7 @@ namespace psyllid
             set_filename( t_description, t_file_num );
             return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
         }
-        catch( scarab::error& e )
+        catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
         }
@@ -854,11 +854,16 @@ namespace psyllid
     {
         try
         {
-            f_run_duration =  a_request->get_payload().array_at( "values" )->get_value< unsigned >( 0 );
+            unsigned t_new_duration = a_request->get_payload().array_at( "values" )->get_value< unsigned >( 0 );
+            if( t_new_duration == 0 )
+            {
+                throw error() << "Invalid duration: " << t_new_duration;
+            }
+            f_run_duration =  t_new_duration;
             LDEBUG( plog, "Duration set to <" << f_run_duration << "> ms" );
             return a_reply_pkg.send_reply( retcode_t::success, "Duration set" );
         }
-        catch( scarab::error& e )
+        catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set duration: " ) + e.what() );
         }
