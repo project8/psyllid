@@ -5,7 +5,7 @@
 * All new features incorporated into a tagged release should have their validation documented.
   * Document the new feature.
   * Perform tests to validate the new feature.
-  * If the feature is slated for incorporation into an official analysis, perform tests to show that the overall analysis works and benefits from this feature.
+  * If the feature is slated for incorporation into official DAQ processing, perform tests to show that the official configuration works and benefits from this feature.
   * Indicate in this log where to find documentation of the new feature.
   * Indicate in this log what tests were performed, and where to find a writeup of the results.
 * Fixes to existing features should also be validated.
@@ -38,6 +38,19 @@
 ### Version: *Upcoming Releases*
 
 #### Release Date: TBD
+
+#### New Features:
+
+* . . .
+  
+#### Fixes:
+
+* . . .
+  
+
+### Version: 1.2.3
+
+#### Release Date: August 28, 2017
 
 #### New Features:
 
