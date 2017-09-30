@@ -50,8 +50,10 @@ namespace psyllid
     {
     }
 
-    void triggered_writer::prepare_to_write( monarch_wrap_ptr /*a_mw_ptr*/, header_wrap_ptr a_hw_ptr )
+    void triggered_writer::prepare_to_write( monarch_wrap_ptr a_mw_ptr, header_wrap_ptr a_hw_ptr )
     {
+        f_monarch_ptr = a_mw_ptr;
+
         scarab::dig_calib_params t_dig_params;
         scarab::get_calib_params( f_bit_depth, f_data_type_size, f_v_offset, f_v_range, true, &t_dig_params );
 
@@ -93,6 +95,7 @@ namespace psyllid
             t_ctx.f_start_file_with_next_data = false;
             t_ctx.f_first_pkt_in_run = 0;
             t_ctx.f_is_new_event = true;
+            t_ctx.f_monarch_ptr = f_monarch_ptr;
 
             // outer while loop to switch between the two exe loops until canceled
             while( ! is_canceled() && ! t_ctx.f_should_exit )
