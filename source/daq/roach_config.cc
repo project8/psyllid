@@ -79,5 +79,25 @@ namespace psyllid
     }
 #endif
 
+#ifdef __linux__
+    REGISTER_PRESET( event_builder_1ch_fpa,"events-1ch-fpa");
+    event_builder_1ch_fpa::event_builder_1ch_fpa( const std::string& a_name ) :
+            stream_preset( a_name )
+    {
+        node( "packet-receiver-fpa", "prf" );
+        node( "tf-roach-receiver", "tfrr");
+        node( "frequency-mask-trigger", "fmt");
+        node( "event-builder", "eb");
+        node( "triggered-writer", "trw");
+
+        connection( "prf.out_0:tfrr.in_0" );
+        connection( "tfrr.out_0:trw.in_0" );
+        connection( "tfrr.out_1:fmt.in_0" );
+        connection( "fmt.out_0:eb.in_0");
+        connection( "eb.out_0:trw.in_1" );
+    }
+#endif
+
+
 } /* namespace psyllid */
 
