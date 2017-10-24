@@ -23,6 +23,7 @@ namespace psyllid
     DECLARE_PRESET( fmask_trigger_1ch_fpa );
 #endif
 
+    DECLARE_PRESET( event_builder_1ch );
 #ifdef __linux__
     DECLARE_PRESET( event_builder_1ch_fpa );
 #endif
