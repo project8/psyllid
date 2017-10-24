@@ -450,7 +450,7 @@ namespace psyllid
                             if( t_real*t_real + t_imag*t_imag >= t_mask_buffer[ i_bin ] )
                             {
                                 t_trigger_flag->set_flag( true );
-                                LTRACE( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                        "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ] );
                                 break;
                             }
@@ -458,7 +458,7 @@ namespace psyllid
 #ifndef NDEBUG
                         if( ! t_trigger_flag->get_flag() )
                         {
-                            LTRACE( plog, "Data " << t_trigger_flag->get_id() << " resulted in flag <" << t_trigger_flag->get_flag() << ">");
+                            LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> resulted in flag <" << t_trigger_flag->get_flag() << ">");
                         }
 #endif
 
