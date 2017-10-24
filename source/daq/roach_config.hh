@@ -22,6 +22,10 @@ namespace psyllid
 #ifdef __linux__
     DECLARE_PRESET( fmask_trigger_1ch_fpa );
 #endif
+
+#ifdef __linux__
+    DECLARE_PRESET( event_builder_1ch_fpa );
+#endif
 } /* namespace psyllid */
 
 #endif /* PSYLLID_ROACH_CONFIG_HH_ */

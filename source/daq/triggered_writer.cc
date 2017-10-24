@@ -298,7 +298,19 @@ namespace psyllid
                         f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                         a_ctx.f_swrap_ptr.reset();
                     }
-                    throw midge::node_nonfatal_error() << "Trig command doesn't match time command: time command = " << t_time_command << "; trig command = " << t_trig_command;
+                    if (t_time_command == stream::s_stop)
+                    {
+                        t_trig_command = in_stream< 1 >().get();
+                        LDEBUG( plog, "Egg writer received stop command on the time stream while run in progress.");
+                        LDEBUG( plog, "Advancing trig stream; time command matched trig command? trig command = " << t_trig_command << "; time command = " << t_time_command );
+                        LDEBUG( plog, "Breaking out of is-running exe loop" );
+                        a_ctx.f_is_running = false;
+                        break; // out of is-running exe loop
+                    }
+                    else
+                    {
+                        throw midge::node_nonfatal_error() << "Trig command doesn't match time command: time command = " << t_time_command << "; trig command = " << t_trig_command;
+                    }
                 }
 
                 // everything agrees that we're running

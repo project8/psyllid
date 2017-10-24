@@ -345,6 +345,7 @@ namespace psyllid
             if( f_break_exe_func.load() )
             {
                 LINFO( plog, "FMT is switching exe while loops" );
+                return;
             }
             else
             {
@@ -490,6 +491,7 @@ namespace psyllid
             if( f_break_exe_func.load() )
             {
                 LINFO( plog, "FMT is switching exe while loops" );
+                return;
             }
             else
             {
