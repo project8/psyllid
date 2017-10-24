@@ -95,7 +95,7 @@ namespace psyllid
                                 if( ! out_stream< 0 >().set( midge::stream::s_run ) )
                                 {
                                     LERROR( plog, "Exiting due to stream error" );
-                                    break;
+                                    goto exit_outer_loop;
                                 }
                                 f_pretrigger_buffer.pop_front();
                             }
@@ -143,7 +143,7 @@ namespace psyllid
                                 if( ! out_stream< 0 >().set( midge::stream::s_run ) )
                                 {
                                     LERROR( plog, "Exiting due to stream error" );
-                                    break;
+                                    goto exit_outer_loop;
 
                                 }
                                 f_pretrigger_buffer.pop_front();
@@ -300,7 +300,7 @@ namespace psyllid
                                 while( ! out_stream< 0 >().set( midge::stream::s_run ) )
                                 {
                                     LERROR( plog, "Exiting due to stream error" );
-                                    break;
+                                    goto exit_outer_loop;
                                 }
 
                                 f_state = state_t::untriggered_nopt;
@@ -342,13 +342,17 @@ namespace psyllid
                         if( ! out_stream< 0 >().set( midge::stream::s_run ) )
                         {
                             LERROR( plog, "Exiting due to stream error" );
-                            break;
+                            goto exit_outer_loop;
                         }
                         f_pretrigger_buffer.pop_front();
                     }
                     f_state = state_t::filling_pretrigger;
 
-                    if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
+                    if( ! out_stream< 0 >().set( stream::s_stop ) )
+                    {
+                        LERROR( plog, "Exiting due to stream error" );
+                        break;
+                    }
                     continue;
                 }
 
@@ -364,7 +368,7 @@ namespace psyllid
                         if( ! out_stream< 0 >().set( midge::stream::s_run ) )
                         {
                             LERROR( plog, "Exiting due to stream error" );
-                            break;
+                            goto exit_outer_loop;
                         }
                         f_pretrigger_buffer.pop_front();
                     }
@@ -374,7 +378,14 @@ namespace psyllid
                     break;
                 }
 
-            } // end while( true )
+            } // end while( ! is_canceled() )
+
+exit_outer_loop:
+            LDEBUG( plog, "Stopping output stream" );
+            if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+
+            LDEBUG( plog, "Exiting output stream" );
+            out_stream< 0 >().set( stream::s_exit );
 
         }
         catch(...)
