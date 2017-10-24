@@ -425,13 +425,18 @@ namespace psyllid
                         t_array_size = t_freq_data->get_array_size();
                         if( a_ctx.f_first_packet_after_start )
                         {
-                            LDEBUG( plog, "Resizing mask to " << t_array_size << " bins" );
-                            if( t_mask_buffer.size() != t_array_size ) t_mask_buffer.resize( t_array_size, 0. );
+                            if( t_mask_buffer.size() != t_array_size )
+                            {
+                                LWARN( plog, "Mask was not the right size; Resizing mask to " << t_array_size << " bins and filling it with zeros" );
+                                t_mask_buffer.resize( t_array_size, 0. );
+                            }
                             a_ctx.f_first_packet_after_start = false;
                         }
                         t_trigger_flag->set_flag( false );
+                        t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
-                        for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                        //for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                        for( unsigned i_bin = 0; i_bin < 20; ++i_bin )
                         {
                             t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
@@ -442,7 +447,6 @@ namespace psyllid
                                         ";  mask = " << f_mask[ i_bin ] );
                             }
                 #endif*/
-                            t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
                             if( t_real*t_real + t_imag*t_imag >= t_mask_buffer[ i_bin ] )
                             {
                                 t_trigger_flag->set_flag( true );
@@ -451,6 +455,12 @@ namespace psyllid
                                 break;
                             }
                         }
+#ifndef NDEBUG
+                        if( ! t_trigger_flag->get_flag() )
+                        {
+                            LTRACE( plog, "Data " << t_trigger_flag->get_id() << " resulted in flag <" << t_trigger_flag->get_flag() << ">");
+                        }
+#endif
 
                         LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
                         if( ! out_stream< 0 >().set( stream::s_run ) )
