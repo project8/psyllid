@@ -89,7 +89,7 @@ namespace psyllid
         node( "event-builder", "eb");
         node( "triggered-writer", "trw");
 
-        connection( "prf.out_0:tfrr.in_0" );
+        connection( "prs.out_0:tfrr.in_0" );
         connection( "tfrr.out_0:trw.in_0" );
         connection( "tfrr.out_1:fmt.in_0" );
         connection( "fmt.out_0:eb.in_0");
