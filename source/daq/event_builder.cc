@@ -98,6 +98,8 @@ namespace psyllid
                                     goto exit_outer_loop;
                                 }
                                 f_pretrigger_buffer.pop_front();
+                                // advance our output data pointer to the next in the stream
+                                t_write_flag = out_stream< 0 >().data();
                             }
 
                             t_write_flag->set_id( t_trigger_flag->get_id() );
@@ -135,10 +137,12 @@ namespace psyllid
                         {
                             LDEBUG( plog, "Was: untriggered; Now: new trigger" );
 
+                            LDEBUG( plog, "Writing pretrigger packets to output stream" );
                             while( ! f_pretrigger_buffer.empty() )
                             {
                                 t_write_flag->set_id( f_pretrigger_buffer.front() );
                                 t_write_flag->set_flag( true );
+                                LDEBUG( plog, "Pretrigger: id <" << t_write_flag->get_id() << "> has flag <" << t_write_flag->get_flag() << ">" );
                                 LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
                                 if( ! out_stream< 0 >().set( midge::stream::s_run ) )
                                 {
@@ -147,6 +151,8 @@ namespace psyllid
 
                                 }
                                 f_pretrigger_buffer.pop_front();
+                                // advance our output data pointer to the next in the stream
+                                t_write_flag = out_stream< 0 >().data();
                             }
 
                             t_write_flag->set_id( t_trigger_flag->get_id() );
@@ -297,10 +303,10 @@ namespace psyllid
                                 t_write_flag->set_id( t_trigger_flag->get_id() );
                                 t_write_flag->set_flag( false );
                                 LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                                while( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                                if( ! out_stream< 0 >().set( midge::stream::s_run ) )
                                 {
                                     LERROR( plog, "Exiting due to stream error" );
-                                    goto exit_outer_loop;
+                                    break;
                                 }
 
                                 f_state = state_t::untriggered_nopt;
@@ -334,10 +340,11 @@ namespace psyllid
                 {
                     LDEBUG( plog, "Event builder is stopping at stream index " << out_stream< 0 >().get_current_index() );
 
+                    LDEBUG( plog, "Flushing pretrigger buffer as untriggered" );
                     while( ! f_pretrigger_buffer.empty() )
                     {
                         t_write_flag->set_id( f_pretrigger_buffer.front() );
-                        t_write_flag->set_flag( true );
+                        t_write_flag->set_flag( false );
                         LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
                         if( ! out_stream< 0 >().set( midge::stream::s_run ) )
                         {
@@ -345,6 +352,8 @@ namespace psyllid
                             goto exit_outer_loop;
                         }
                         f_pretrigger_buffer.pop_front();
+                        // advance our output data pointer to the next in the stream
+                        t_write_flag = out_stream< 0 >().data();
                     }
                     f_state = state_t::filling_pretrigger;
 
@@ -360,10 +369,11 @@ namespace psyllid
                 {
                     LDEBUG( plog, "Event builder is exiting at stream index " << out_stream< 0 >().get_current_index() );
 
+                    LDEBUG( plog, "Flushing pretrigger buffer as untriggered" );
                     while( ! f_pretrigger_buffer.empty() )
                     {
                         t_write_flag->set_id( f_pretrigger_buffer.front() );
-                        t_write_flag->set_flag( true );
+                        t_write_flag->set_flag( false );
                         LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
                         if( ! out_stream< 0 >().set( midge::stream::s_run ) )
                         {
@@ -371,6 +381,8 @@ namespace psyllid
                             goto exit_outer_loop;
                         }
                         f_pretrigger_buffer.pop_front();
+                        // advance our output data pointer to the next in the stream
+                        t_write_flag = out_stream< 0 >().data();
                     }
                     f_state = state_t::filling_pretrigger;
 
