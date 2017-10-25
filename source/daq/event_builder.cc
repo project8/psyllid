@@ -21,7 +21,7 @@ namespace psyllid
             f_length( 10 ),
             f_pretrigger( 0 ),
             f_skip_tolerance( 0 ),
-            f_state( state_t::filling_pretrigger ),
+            f_state( state_t::untriggered ),
             f_pretrigger_buffer()
     {
     }
@@ -42,8 +42,7 @@ namespace psyllid
         try
         {
             f_pretrigger_buffer.clear();
-            if( f_pretrigger == 0 ) f_state = state_t::untriggered_nopt;
-            else f_state = state_t::filling_pretrigger;
+            f_state = state_t::untriggered;
 
             midge::enum_t t_in_command = stream::s_none;
             trigger_flag* t_trigger_flag = nullptr;
