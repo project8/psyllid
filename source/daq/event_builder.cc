@@ -7,8 +7,6 @@
 
 #include "event_builder.hh"
 
-#include "logger.hh"
-
 #include <limits>
 
 using midge::stream;
@@ -34,6 +32,7 @@ namespace psyllid
 
     void event_builder::initialize()
     {
+        f_pretrigger_buffer.resize( f_pretrigger + 1 );
         out_buffer< 0 >().initialize( f_length );
         return;
     }
@@ -51,9 +50,6 @@ namespace psyllid
             trigger_flag* t_write_flag = nullptr;
 
             bool t_current_trig_flag = false;
-#ifndef NDEBUG
-            uint64_t t_current_id = 0;
-#endif
 
             while( ! is_canceled() )
             {
@@ -61,7 +57,7 @@ namespace psyllid
                 if( t_in_command == stream::s_none ) continue;
                 if( t_in_command == stream::s_error ) break;
 
-                LDEBUG( plog, "Event builder reading stream at index " << in_stream< 0 >().get_current_index() );
+                LTRACE( plog, "Event builder reading stream at index " << in_stream< 0 >().get_current_index() );
 
                 t_trigger_flag = in_stream< 0 >().data();
                 t_write_flag = out_stream< 0 >().data();
@@ -76,263 +72,83 @@ namespace psyllid
                 if( t_in_command == stream::s_run )
                 {
                     t_current_trig_flag = t_trigger_flag->get_flag();
-#ifndef NDEBUG
-                    t_current_id = t_trigger_flag->get_id();
-#endif
-                    LDEBUG( plog, "Event builder received id <" << t_current_id << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
 
-                    if( f_state == state_t::filling_pretrigger )
-                    {
-                        if( t_current_trig_flag )
-                        {
-                            LDEBUG( plog, "Was: filling pt; Now: new trigger" );
+                    LTRACE( plog, "Event builder received id <" << t_trigger_flag->get_id() << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
 
-                            while( ! f_pretrigger_buffer.empty() )
-                            {
-                                t_write_flag->set_id( f_pretrigger_buffer.front() );
-                                t_write_flag->set_flag( true );
-                                LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                                if( ! out_stream< 0 >().set( midge::stream::s_run ) )
-                                {
-                                    LERROR( plog, "Exiting due to stream error" );
-                                    goto exit_outer_loop;
-                                }
-                                f_pretrigger_buffer.pop_front();
-                                // advance our output data pointer to the next in the stream
-                                t_write_flag = out_stream< 0 >().data();
-                            }
+                    // put the new data in the pretrigger buffer
+                    f_pretrigger_buffer.push_back( t_trigger_flag->get_id() );
 
-                            t_write_flag->set_id( t_trigger_flag->get_id() );
-                            t_write_flag->set_flag( true );
-                            LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
-                            {
-                                LERROR( plog, "Exiting due to stream error" );
-                                break;
-                            }
-
-                            f_state = state_t::new_trigger;
-                            continue;
-                        }
-                        else
-                        {
-                            f_pretrigger_buffer.push_back( t_trigger_flag->get_id() );
-                            if( f_pretrigger_buffer.size() == f_pretrigger )
-                            {
-                                LDEBUG( plog, "Was: filling pt; Now: untriggered" );
-
-                                f_state = state_t::untriggered;
-                                continue;
-                            }
-                            else
-                            {
-                                LDEBUG( plog, "Was: filling pt; Now: filling pt" );
-                                continue;
-                            }
-                        }
-                    }
                     if( f_state == state_t::untriggered )
                     {
+                        LTRACE( plog, "Currently in untriggered state" );
                         if( t_current_trig_flag )
                         {
-                            LDEBUG( plog, "Was: untriggered; Now: new trigger" );
-
-                            LDEBUG( plog, "Writing pretrigger packets to output stream" );
+                            LTRACE( plog, "New trigger; flushing pretrigger buffer" );
+                            // flush the pretrigger buffer as true, which includes the current trig id
                             while( ! f_pretrigger_buffer.empty() )
                             {
-                                t_write_flag->set_id( f_pretrigger_buffer.front() );
-                                t_write_flag->set_flag( true );
-                                LDEBUG( plog, "Pretrigger: id <" << t_write_flag->get_id() << "> has flag <" << t_write_flag->get_flag() << ">" );
-                                LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                                if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                                LTRACE( plog, "Pretrigger id <" << f_pretrigger_buffer.front() );
+                                if( ! write_output_from_ptbuff_front( true, t_write_flag ) )
                                 {
-                                    LERROR( plog, "Exiting due to stream error" );
                                     goto exit_outer_loop;
-
                                 }
-                                f_pretrigger_buffer.pop_front();
                                 // advance our output data pointer to the next in the stream
                                 t_write_flag = out_stream< 0 >().data();
                             }
 
-                            t_write_flag->set_id( t_trigger_flag->get_id() );
-                            t_write_flag->set_flag( true );
-                            LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
-                            {
-                                LERROR( plog, "Exiting due to stream error" );
-                                break;
-                            }
-
-                            f_state = state_t::new_trigger;
-                            continue;
-                        }
-                        else
-                        {
-                            LDEBUG( plog, "Was: untriggered; Now: untriggered" );
-
-                            f_pretrigger_buffer.push_back( t_trigger_flag->get_id() );
-
-                            t_write_flag->set_id( f_pretrigger_buffer.front() );
-                            t_write_flag->set_flag( false );
-                            LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
-                            {
-                                LERROR( plog, "Exiting due to stream error" );
-                                break;
-                            }
-
-                            f_pretrigger_buffer.pop_front();
-
-                            continue;
-                        }
-                    }
-                    if( f_state == state_t::untriggered_nopt )
-                    {
-                        if( t_current_trig_flag )
-                        {
-                            LDEBUG( plog, "Was: untriggered - no pt; Now: new trigger" );
-
-                            t_write_flag->set_id( t_trigger_flag->get_id() );
-                            t_write_flag->set_flag( true );
-                            LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
-                            {
-                                LERROR( plog, "Exiting due to stream error" );
-                                break;
-                            }
-
-                            f_state = state_t::new_trigger;
-                            continue;
-                        }
-                        else
-                        {
-                            LDEBUG( plog, "Was: untriggered - no pt; Now: untriggered - no pt" );
-
-                            t_write_flag->set_id( t_trigger_flag->get_id() );
-                            t_write_flag->set_flag( false );
-                            LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
-                            {
-                                LERROR( plog, "Exiting due to stream error" );
-                                break;
-                            }
-
-                            continue;
-                        }
-                    }
-                    else if( f_state == state_t::new_trigger )
-                    {
-                        if( t_current_trig_flag )
-                        {
-                            LDEBUG( plog, "Was: new trigger; Now: triggered" );
-
-                            t_write_flag->set_id( t_trigger_flag->get_id() );
-                            t_write_flag->set_flag( true );
-                            LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
-                            {
-                                LERROR( plog, "Exiting due to stream error" );
-                                break;
-                            }
-
+                            // set state to triggered
                             f_state = state_t::triggered;
-                            continue;
+
+                            // pretrigger buffer should be empty
                         }
                         else
                         {
-                            if( f_pretrigger == 0 )
+                            LTRACE( plog, "No new trigger; Writing to from pretrig buffer only if buffer is full: " << f_pretrigger_buffer.full() );
+                            // contents of the buffer are the existing pretrigger plus the current trig id
+                            // only write out from the front of the buffer if the buffer is full; otherwise we're filling the buffer
+                            if( f_pretrigger_buffer.full() )
                             {
-                                LDEBUG( plog, "Was: new trigger; Now: untriggered - no pt" );
-
-                                t_write_flag->set_id( t_trigger_flag->get_id() );
-                                t_write_flag->set_flag( false );
-                                LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                                if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                                // write the one thing in the pt buffer as false, which is the current trig id
+                                if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
                                 {
-                                    LERROR( plog, "Exiting due to stream error" );
                                     break;
                                 }
-
-                                f_state = state_t::untriggered_nopt;
-                                continue;
-                            }
-                            else
-                            {
-                                f_pretrigger_buffer.push_back( t_trigger_flag->get_id() );
-                                if( f_pretrigger > 1 )
-                                {
-                                    LDEBUG( plog, "Was: untriggered; Now: filling pt" );
-
-                                    f_state = state_t::filling_pretrigger;
-                                    continue;
-                                }
-                                else
-                                {
-                                    LDEBUG( plog, "Was: new trigger; Now: untriggered" );
-
-                                    f_state = state_t::untriggered;
-                                    continue;
-                                }
+                                // pretrigger buffer is full - 1
                             }
                         }
                     }
-                    else if( f_state == state_t::triggered )
+                    else // if( f_state == state_t::triggered )
                     {
+                        LTRACE( plog, "Currently in triggered state" );
                         if( t_current_trig_flag )
                         {
-                            LDEBUG( plog, "Was: triggered; Now: triggered" );
-
-                            t_write_flag->set_id( t_trigger_flag->get_id() );
-                            t_write_flag->set_flag( true );
-                            LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                            if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                            LTRACE( plog, "Continuing as triggered" );
+                            // contents of the buffer (the current trig id) need to be written out
+                            // write the one thing in the pt buffer as false, which is the current trig id
+                            if( ! write_output_from_ptbuff_front( true, t_write_flag ) )
                             {
-                                LERROR( plog, "Exiting due to stream error" );
                                 break;
                             }
-
-                            continue;
+                            // pretrigger buffer is empty
                         }
                         else
                         {
-                            if( f_pretrigger == 0 )
+                            LTRACE( plog, "No new trigger; Writing to from pretrig buffer only if buffer is full: " << f_pretrigger_buffer.full() );
+                            // contents of the buffer (the current trig id) are the first contribution to the pretrigger
+                            // only write out if the buffer is full (in this case, equivalent to f_pretrigger == 0)
+                            if( f_pretrigger_buffer.full() )
                             {
-                                LDEBUG( plog, "Was: triggered; Now: untriggered - no pt" );
-
-                                t_write_flag->set_id( t_trigger_flag->get_id() );
-                                t_write_flag->set_flag( false );
-                                LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                                if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                                // write the one thing in the pt buffer as false, which is the current trig id
+                                if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
                                 {
-                                    LERROR( plog, "Exiting due to stream error" );
                                     break;
                                 }
-
-                                f_state = state_t::untriggered_nopt;
-                                continue;
+                                // pretrigger buffer is empty
                             }
-                            else
-                            {
-                                f_pretrigger_buffer.push_back( t_trigger_flag->get_id() );
-                                if( f_pretrigger > 1 )
-                                {
-                                    LDEBUG( plog, "Was: triggered; Now: filling pt" );
-
-                                    f_state = state_t::filling_pretrigger;
-                                    continue;
-                                }
-                                else
-                                {
-                                    LDEBUG( plog, "Was: triggered; Now: untriggered" );
-
-                                    f_state = state_t::untriggered;
-                                    continue;
-                                }
-                            }
+                            // set state to untriggered
+                            f_state = state_t::untriggered;
                         }
                     }
-
                 } // end if( t_in_command == stream::s_run )
 
 
@@ -343,19 +159,15 @@ namespace psyllid
                     LDEBUG( plog, "Flushing pretrigger buffer as untriggered" );
                     while( ! f_pretrigger_buffer.empty() )
                     {
-                        t_write_flag->set_id( f_pretrigger_buffer.front() );
-                        t_write_flag->set_flag( false );
-                        LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                        if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                        LTRACE( plog, "Pretrigger id <" << f_pretrigger_buffer.front() );
+                        if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
                         {
-                            LERROR( plog, "Exiting due to stream error" );
                             goto exit_outer_loop;
                         }
-                        f_pretrigger_buffer.pop_front();
                         // advance our output data pointer to the next in the stream
                         t_write_flag = out_stream< 0 >().data();
                     }
-                    f_state = state_t::filling_pretrigger;
+                    f_state = state_t::untriggered;
 
                     if( ! out_stream< 0 >().set( stream::s_stop ) )
                     {
@@ -372,19 +184,15 @@ namespace psyllid
                     LDEBUG( plog, "Flushing pretrigger buffer as untriggered" );
                     while( ! f_pretrigger_buffer.empty() )
                     {
-                        t_write_flag->set_id( f_pretrigger_buffer.front() );
-                        t_write_flag->set_flag( false );
-                        LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
-                        if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+                        LTRACE( plog, "Pretrigger id <" << f_pretrigger_buffer.front() );
+                        if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
                         {
-                            LERROR( plog, "Exiting due to stream error" );
                             goto exit_outer_loop;
                         }
-                        f_pretrigger_buffer.pop_front();
                         // advance our output data pointer to the next in the stream
                         t_write_flag = out_stream< 0 >().data();
                     }
-                    f_state = state_t::filling_pretrigger;
+                    f_state = state_t::untriggered;
 
                     out_stream< 0 >().set( stream::s_exit );
                     break;
