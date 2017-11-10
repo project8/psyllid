@@ -42,11 +42,14 @@ namespace psyllid
 
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
+     The cofigurable value "time-length" in the tf_roach_receiver must be set to at least the same value as "pretrigger". 
+     Otherwise the time domain buffer gets filled and blocks further packet processing.
+
      Node type: "packet-receiver-socket"
 
      Available configuration values:
      - "length": uint -- The size of the output buffer
-     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet
+     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet. "time-length" in tf_roach_receiver must be >= pretrigger.
      - "skip-tolerance": uint -- Number of untriggered packets to include in the event between two triggered
 
      Input Streams:
