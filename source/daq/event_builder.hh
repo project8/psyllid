@@ -42,14 +42,14 @@ namespace psyllid
 
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
-     The cofigurable value "time-length" in the tf_roach_receiver must be set to at least the same value as "pretrigger". 
+     The cofigurable value "time-length" in the tf_roach_receiver must be set to a value greater than "pretrigger".
      Otherwise the time domain buffer gets filled and blocks further packet processing.
 
      Node type: "packet-receiver-socket"
 
      Available configuration values:
      - "length": uint -- The size of the output buffer
-     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet. "time-length" in tf_roach_receiver must be >= pretrigger.
+     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet. "time-length" in tf_roach_receiver must be > "pretrigger" (+5).
      - "skip-tolerance": uint -- Number of untriggered packets to include in the event between two triggered
 
      Input Streams:
@@ -82,15 +82,18 @@ namespace psyllid
             bool is_triggered() const;
 
             const pretrigger_buffer_t& pretrigger_buffer() const;
+            const pretrigger_buffer_t& skip_buffer() const;
 
         private:
             bool write_output_from_ptbuff_front( bool a_flag, trigger_flag* a_data );
+            bool write output_from_skipbuff_front( bool a_flag, trigger_flag* a_data );
             void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
 
-            enum class state_t { untriggered, triggered };
+            enum class state_t { untriggered, triggered, skipping };
             state_t f_state;
 
             pretrigger_buffer_t f_pretrigger_buffer;
+            pretrigger_buffer_t f_skip_buffer;
 
     };
 
@@ -116,6 +119,20 @@ namespace psyllid
             return false;
         }
         f_pretrigger_buffer.pop_front();
+        return true;
+    }
+
+    inline bool event_builder::write_output_from_skipbuff_front( bool a_flag, trigger_flag* a_data )
+    {
+        a_data->set_id( f_skip_buffer.front() );
+        a_data->set_flag( a_flag );
+        LTRACE( eblog_hdr, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
+        if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+        {
+            LERROR( eblog_hdr, "Exiting due to stream error" );
+            return false;
+        }
+        f_skip_buffer.pop_front();
         return true;
     }
 
