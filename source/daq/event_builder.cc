@@ -44,6 +44,7 @@ namespace psyllid
         try
         {
             f_pretrigger_buffer.clear();
+            f_skip_buffer.clear();
             f_state = state_t::untriggered;
 
             midge::enum_t t_in_command = stream::s_none;
@@ -74,7 +75,7 @@ namespace psyllid
                 {
                     t_current_trig_flag = t_trigger_flag->get_flag();
 
-                    LTRACE( plog, "Event builder received id <" << t_trigger_flag->get_id() << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
+                    LDEBUG( plog, "Event builder received id <" << t_trigger_flag->get_id() << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
 
                     // if currently untriggered, fill pretrigger buffer
                     if (f_state == state_t::untriggered)
@@ -89,14 +90,14 @@ namespace psyllid
                     }
                     if( f_state == state_t::untriggered )
                     {
-                        LTRACE( plog, "Currently in untriggered state" );
+                        LDEBUG( plog, "Currently in untriggered state" );
                         if( t_current_trig_flag )
                         {
-                            LTRACE( plog, "New trigger; flushing pretrigger buffer" );
+                            LINFO( plog, "New trigger; flushing pretrigger buffer" );
                             // flush the pretrigger buffer as true, which includes the current trig id
                             while( ! f_pretrigger_buffer.empty() )
                             {
-                                LTRACE( plog, "Pretrigger id <" << f_pretrigger_buffer.front() );
+                                LDEBUG( plog, "Pretrigger id <" << f_pretrigger_buffer.front() );
                                 if( ! write_output_from_ptbuff_front( true, t_write_flag ) )
                                 {
                                     goto exit_outer_loop;
@@ -128,10 +129,10 @@ namespace psyllid
                     }
                     else if( f_state == state_t::triggered )
                     {
-                        LTRACE( plog, "Currently in triggered state" );
+                        LDEBUG( plog, "Currently in triggered state" );
                         if( t_current_trig_flag )
                         {
-                            LTRACE( plog, "Continuing as triggered" );
+                            LDEBUG( plog, "Continuing as triggered" );
                             // contents of the buffer (the current trig id) need to be written out
                             // write the one thing in the pt buffer as true, which is the current trig id
                             if( ! write_output_from_skipbuff_front( true, t_write_flag ) )
@@ -151,13 +152,13 @@ namespace psyllid
                                 {
                                     break;
                                 }
-                                LTRACE( plog, "Next state is untriggered");
+                                LDEBUG( plog, "Next state is untriggered");
                                 // in this case, next state is untriggered
                                 f_state = state_t::untriggered;
                             }
                             else
                             {
-                                LTRACE( plog, "Next state is skipping");
+                                LDEBUG( plog, "Next state is skipping");
                                 // set state to untriggered
                                 f_state = state_t::skipping;
                             }
@@ -172,7 +173,7 @@ namespace psyllid
                             LTRACE( plog, "New trigger; flushing skip buffer" );
                             while( ! f_skip_buffer.empty() )
                             {
-                                LTRACE( plog, "skip id <" << f_skip_buffer.front() );
+                                LDEBUG( plog, "true skip id <" << f_skip_buffer.front() );
                                 if( ! write_output_from_skipbuff_front( true, t_write_flag ) )
                                 {
                                     goto exit_outer_loop;
@@ -188,10 +189,10 @@ namespace psyllid
                         {
                             if(f_skip_buffer.full())
                             {
-                                LTRACE( plog, "Skip_tolerance reached. Continuing as untriggered");
+                                LDEBUG( plog, "Skip_tolerance reached. Continuing as untriggered");
                                 while( ! f_skip_buffer.empty() )
                                 {
-                                    LTRACE( plog, "skip id <" << f_skip_buffer.front() );
+                                    LDEBUG( plog, "false skip id <" << f_skip_buffer.front() );
                                     if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
                                     {
                                         goto exit_outer_loop;

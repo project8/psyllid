@@ -86,7 +86,7 @@ namespace psyllid
 
         private:
             bool write_output_from_ptbuff_front( bool a_flag, trigger_flag* a_data );
-            bool write output_from_skipbuff_front( bool a_flag, trigger_flag* a_data );
+            bool write_output_from_skipbuff_front( bool a_flag, trigger_flag* a_data );
             void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
 
             enum class state_t { untriggered, triggered, skipping };
@@ -106,6 +106,10 @@ namespace psyllid
     inline const event_builder::pretrigger_buffer_t& event_builder::pretrigger_buffer() const
     {
         return f_pretrigger_buffer;
+    }
+    inline const event_builder::pretrigger_buffer_t& event_builder::skip_buffer() const
+    {
+        return f_skip_buffer;
     }
 
     inline bool event_builder::write_output_from_ptbuff_front( bool a_flag, trigger_flag* a_data )
