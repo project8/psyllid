@@ -82,12 +82,19 @@ namespace psyllid
                     {
                         f_pretrigger_buffer.push_back(t_trigger_flag->get_id());
                     }
-                    // else fill skip buffer
-                    else
+                    /*// if state is triggered fill skip buffer
+                    else if (f_state == state_t::triggered)
                     {
                         // put the new data in the pretrigger buffer
                         f_skip_buffer.push_back( t_trigger_flag->get_id() );
+                    }*/
+                    // if state is skipping or triggered fill both buffers
+                    else
+                    {
+                        f_skip_buffer.push_back( t_trigger_flag->get_id());
+                        f_pretrigger_buffer.push_back( t_trigger_flag->get_id());
                     }
+
                     if( f_state == state_t::untriggered )
                     {
                         LDEBUG( plog, "Currently in untriggered state" );
@@ -118,7 +125,6 @@ namespace psyllid
                             // only write out from the front of the buffer if the buffer is full; otherwise we're filling the buffer
                             if( f_pretrigger_buffer.full() )
                             {
-                                // write the one thing in the pt buffer as false, which is the current trig id
                                 if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
                                 {
                                     break;
@@ -139,19 +145,18 @@ namespace psyllid
                             {
                                 break;
                             }
+                            // current front of pretrigger has already been written
+                            f_pretrigger_buffer.pop_front();
                         }
                         else
                         {
-                            LTRACE( plog, "No new trigger; Switching state" );
+                            LDEBUG( plog, "No new trigger; Switching state" );
                             // contents of the skip buffer (the current trig id) are the first ids to be skipped
                             // only write out if the buffer is full (in this case, equivalent to f_skip_tolerance == 0)
                             if( f_skip_buffer.full() )
                             {
-                                // write the one thing in the pt buffer as false, which is the current trig id
-                                if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
-                                {
-                                    break;
-                                }
+                                // no need to write, id is also stored in pretrigger buffer
+                                f_skip_buffer.clear();
                                 LDEBUG( plog, "Next state is untriggered");
                                 // in this case, next state is untriggered
                                 f_state = state_t::untriggered;
@@ -162,11 +167,20 @@ namespace psyllid
                                 // set state to untriggered
                                 f_state = state_t::skipping;
                             }
+                            // if pretrigger is 0
+                            if (f_pretrigger_buffer.full())
+                            {
+                                // write the one thing in the pt buffer as false, which is the current trig id
+                                if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
+                                {
+                                    break;
+                                }
+                            }
                         }
                     }
                     else if( f_state == state_t::skipping)
                     {
-                        LTRACE( plog, "Currently in skipping state" );
+                        LDEBUG( plog, "Currently in skipping state" );
 
                         if( t_current_trig_flag )
                         {
@@ -181,6 +195,9 @@ namespace psyllid
                                 // advance our output data pointer to the next in the stream
                                 t_write_flag = out_stream< 0 >().data();
                             }
+                            // also remove all entries from pretrigger buffer
+                            // ids were already written
+                            f_pretrigger_buffer.clear();
 
                             // set state to triggered
                             f_state = state_t::triggered;
@@ -190,7 +207,8 @@ namespace psyllid
                             if(f_skip_buffer.full())
                             {
                                 LDEBUG( plog, "Skip_tolerance reached. Continuing as untriggered");
-                                while( ! f_skip_buffer.empty() )
+                                // write out ids as false that are only in the skip buffer
+                                while( f_skip_buffer.size() > f_pretrigger_buffer.size() )
                                 {
                                     LDEBUG( plog, "false skip id <" << f_skip_buffer.front() );
                                     if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
@@ -200,13 +218,30 @@ namespace psyllid
                                     // advance our output data pointer to the next in the stream
                                     t_write_flag = out_stream< 0 >().data();
                                 }
+                                // then delete the remaining content of the skip buffer
+                                f_skip_buffer.clear();
 
+                                // contents of the buffer are the existing pretrigger plus the current trig id
+                                // only write out from the front of the buffer if the buffer is full; otherwise we're filling the buffer
+                                if( f_pretrigger_buffer.full() )
+                                {
+                                    if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
+                                    {
+                                        break;
+                                    }
+                                }
                                 // set state to untriggered
                                 f_state = state_t::untriggered;
                             }
+
                             else
                             {
-                                LTRACE(plog, "No new trigger. Continue to fill skip buffer.")
+                                // if pretrigger is full remove first item, no need to write, ids are also in skip buffer and will be written from there
+                                if(f_pretrigger_buffer.full())
+                                {
+                                    f_pretrigger_buffer.pop_front();
+                                }
+                                LTRACE(plog, "No new trigger. Continue to fill skip and pretrigger buffer buffer.")
                             }
                         }
                     }
@@ -230,7 +265,7 @@ namespace psyllid
                     }
 
                     LDEBUG( plog, "Flushing skip buffer as untriggered" );
-                    while( ! f_pretrigger_buffer.empty() )
+                    while( ! f_skip_buffer.empty() )
                     {
                         LTRACE( plog, "Skip id <" << f_skip_buffer.front() );
                         if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
@@ -268,7 +303,7 @@ namespace psyllid
                     }
 
                     LDEBUG( plog, "Flushing skip buffer as untriggered" );
-                    while( ! f_pretrigger_buffer.empty() )
+                    while( ! f_skip_buffer.empty() )
                     {
                         LTRACE( plog, "Skip id <" << f_skip_buffer.front() );
                         if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
