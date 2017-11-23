@@ -435,11 +435,17 @@ namespace psyllid
                         t_trigger_flag->set_flag( false );
                         t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
-                        //for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
-                        for( unsigned i_bin = 0; i_bin < 20; ++i_bin )
+                        for( unsigned i_bin = 1; i_bin < t_array_size -1; ++i_bin )
                         {
                             t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
+                            t_real_minus = t_freq_data->get_array()[ i_bin-1 ][ 0 ];
+                            t_imag_minus = t_freq_data->get_array()[ i_bin-1 ][ 1 ];
+                            t_real_plus = t_freq_data->get_array()[ i_bin+1 ][ 0 ];
+                            t_imag_plus = t_freq_data->get_array()[ i_bin+1 ][ 1 ];
+
+                            t_sum = t_real*t_real + t_imag*t_imag + t_real_minus*t_real_minus + t_imag_minus*t_imag_minus + t_real_plus*t_real_plus + t_imag_plus*t_imag_plus;
+
                 /*#ifndef NDEBUG
                             if( i_bin < 5 )
                             {
@@ -447,11 +453,11 @@ namespace psyllid
                                         ";  mask = " << f_mask[ i_bin ] );
                             }
                 #endif*/
-                            if( t_real*t_real + t_imag*t_imag >= t_mask_buffer[ i_bin ] )
+                            if( t_sum >= t_mask_buffer[ i_bin ] )
                             {
                                 t_trigger_flag->set_flag( true );
                                 LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                       "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ] );
+                                       "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ]<<"; t_sum: "<<t_sum );
                                 break;
                             }
                         }
