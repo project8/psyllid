@@ -375,7 +375,7 @@ namespace psyllid
         {
             freq_data* t_freq_data = nullptr;
             trigger_flag* t_trigger_flag = nullptr;
-            double t_real = 0., t_imag = 0.;
+            double t_real = 0., t_imag = 0., t_real_minus = 0., t_imag_minus = 0., t_real_plus = 0., t_imag_plus = 0., t_sum = 0.;
             unsigned t_array_size = 0;
 
             f_mask_mutex.lock();
