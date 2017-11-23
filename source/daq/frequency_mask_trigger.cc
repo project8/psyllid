@@ -423,6 +423,7 @@ namespace psyllid
                     try
                     {
                         t_array_size = t_freq_data->get_array_size();
+
                         if( a_ctx.f_first_packet_after_start )
                         {
                             if( t_mask_buffer.size() != t_array_size )
@@ -435,8 +436,7 @@ namespace psyllid
                         t_trigger_flag->set_flag( false );
                         t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
-                        //for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
-                        for( unsigned i_bin = 0; i_bin < 20; ++i_bin )
+                        for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                         {
                             t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
