@@ -209,9 +209,9 @@ namespace psyllid
                                 // write out ids as false that are only in the skip buffer
                                 while( f_skip_buffer.size() > f_pretrigger_buffer.size() )
                                 {
-                                    LDEBUG( plog, "Current state skipping. Writing id "<<f_skip_buffer.front()<<" as false");
+                                    LDEBUG( plog, "Current state skipping. Writing id "<<f_skip_buffer.front()<<" as true");
                                     
-                                    if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
+                                    if( ! write_output_from_skipbuff_front( true, t_write_flag ) )
                                     {
                                         goto exit_outer_loop;
                                     }
