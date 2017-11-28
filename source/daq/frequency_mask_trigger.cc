@@ -29,7 +29,7 @@ namespace psyllid
             f_length( 10 ),
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 3. ),
-            f_threshold2_snr( 1. ),
+            f_threshold_snr_2( 3. ),
             f_n_spline_points( 20 ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
@@ -64,6 +64,12 @@ namespace psyllid
     {
         f_threshold_snr = a_power_snr;
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr );
+        return;
+    }
+    void frequency_mask_trigger::set_threshold_power_snr_2( double a_power_snr )
+    {
+        f_threshold_snr_2 = a_power_snr;
+        LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr_2 );
         return;
     }
 
@@ -561,6 +567,10 @@ namespace psyllid
         {
             a_node->set_threshold_power_snr( a_config.get_value< double >( "threshold-power-snr" ) );
         }
+        if( a_config.has( "threshold-power-snr" ) )
+        {
+            a_node->set_threshold_power_snr_2( a_config.get_value< double >( "threshold-power-snr-2" ) );
+        }
         if( a_config.has( "threshold-db" ) )
         {
             a_node->set_threshold_dB( a_config.get_value< double >( "threshold-db" ) );
@@ -576,6 +586,7 @@ namespace psyllid
         a_config.add( "n-packets-for-mask", new scarab::param_value( a_node->get_n_packets_for_mask() ) );
         a_config.add( "n-spline-points", new scarab::param_value( a_node->get_n_spline_points() ) );
         a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
+        a_config.add( "threshold-power-snr_2", new scarab::param_value( a_node->get_threshold_snr_2() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         return;
     }
