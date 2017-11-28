@@ -97,7 +97,7 @@ func main() {
 	flag.DurationVar(&packetDelay, "pkt-delay", time.Millisecond*500, "Delay time between packets (approximately the period of the packet cycle)")
 	flag.DurationVar(&tfDelay, "tf-delay", time.Millisecond, "Delay between the time and frequency packets")
 	flag.BoolVar(&doTrigger, "do-trig", true, "Flag for whether to do the trigger in the frequency packets")
-	flag.BoolVar(&includePktNum, "incl-pkt-num", true, "Flag for whether to include the packet number in the first bin of the time and frequency packets")
+	flag.BoolVar(&includePktNum, "incl-pkt-num", false, "Flag for whether to include the packet number in the first bin of the time and frequency packets")
 
 	flag.Parse()
 
@@ -143,7 +143,7 @@ func main() {
             binary.Write(timePayloadBuf, binary.LittleEndian, value)
             value = uint8(5)
             binary.Write(timePayloadBuf, binary.LittleEndian, value)
-            value = uint8(200. * truePayloadIndex / int(PayloadSize))
+            value = uint8(100. * truePayloadIndex / int(PayloadSize))
             binary.Write(freqPayloadBuf, binary.LittleEndian, value)
             value = uint8(1)
             binary.Write(freqPayloadBuf, binary.LittleEndian, value)
@@ -151,7 +151,7 @@ func main() {
                 //fmt.Printf( "%v ", timePayload64Bit[iWord])
                 timePayloadFirst8[iByte] = int8(128.0 * math.Sin( float64(truePayloadIndex/2) * math.Pi / 16.0 ))
                 timePayloadFirst8[iByte+1] = 5
-                freqPayloadFirst8[iByte] = int8(200. * truePayloadIndex / int(PayloadSize))
+                freqPayloadFirst8[iByte] = int8(100. * truePayloadIndex / int(PayloadSize))
                 freqPayloadFirst8[iByte+1] = 1
             }
 	    }
@@ -200,12 +200,12 @@ func main() {
 				freqPkt.unixTime = uint32(time.Now().Unix())
 				freqPkt.pktInBatch = packetCounter
 				if doTrigger {
-    				if signalCounter == signalTrigger {
-    					freqPkt.payload[3] = 100
-    					fmt.Printf( "Trigger!\n" )
-    				} else {
-    					freqPkt.payload[3] = 1
-    				}
+        				if signalCounter == signalTrigger {
+        					freqPkt.payload[3] = 100
+        					fmt.Printf( "Trigger!\n" )
+        				} else {
+        					freqPkt.payload[3] = 1
+        				}
 				}
 				(&freqPkt).PackInto( &rawPkt )
 				fmt.Printf( "Sending (%v bytes): time = %v,  id = %v,  freqNotTime = %v\n", buffer.Len(), freqPkt.unixTime, freqPkt.pktInBatch, freqPkt.freqNotTime )

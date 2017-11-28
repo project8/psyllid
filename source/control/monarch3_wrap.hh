@@ -206,8 +206,6 @@ namespace psyllid
         private:
             friend class monarch_on_deck_manager;
 
-            void finish_file_nolock();
-
             void do_cancellation();
 
             monarch_wrapper( const monarch_wrapper& ) = delete;

@@ -14,10 +14,14 @@
 #include "node_builder.hh"
 #include "trigger_flag.hh"
 
-#include <deque>
+#include "logger.hh"
+
+#include <boost/circular_buffer.hpp>
 
 namespace psyllid
 {
+
+    LOGGER( eblog_hdr, "event_builder_h" );
 
     /*!
      @class event_builder
@@ -38,11 +42,14 @@ namespace psyllid
 
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
+     The cofigurable value "time-length" in the tf_roach_receiver must be set to a value greater than "pretrigger" and "skip-tolerance" (+5 is advised).
+     Otherwise the time domain buffer gets filled and blocks further packet processing.
+
      Node type: "packet-receiver-socket"
 
      Available configuration values:
      - "length": uint -- The size of the output buffer
-     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet
+     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet.
      - "skip-tolerance": uint -- Number of untriggered packets to include in the event between two triggered
 
      Input Streams:
@@ -54,6 +61,9 @@ namespace psyllid
     class event_builder :
             public midge::_transformer< event_builder, typelist_1( trigger_flag ), typelist_1( trigger_flag ) >
     {
+        public:
+            typedef boost::circular_buffer< uint64_t > pretrigger_buffer_t;
+
         public:
             event_builder();
             virtual ~event_builder();
@@ -68,19 +78,22 @@ namespace psyllid
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
-        private:
-            void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
-
-            enum class state_t { filling_pretrigger, untriggered, untriggered_nopt, new_trigger, triggered };
-            state_t f_state;
-
-            std::deque< uint64_t > f_pretrigger_buffer;
-
         public:
             bool is_triggered() const;
 
-            typedef std::deque< uint64_t > pretrigger_buffer_t;
             const pretrigger_buffer_t& pretrigger_buffer() const;
+            const pretrigger_buffer_t& skip_buffer() const;
+
+        private:
+            bool write_output_from_ptbuff_front( bool a_flag, trigger_flag* a_data );
+            bool write_output_from_skipbuff_front( bool a_flag, trigger_flag* a_data );
+            void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
+
+            enum class state_t { untriggered, triggered, skipping };
+            state_t f_state;
+
+            pretrigger_buffer_t f_pretrigger_buffer;
+            pretrigger_buffer_t f_skip_buffer;
 
     };
 
@@ -90,11 +103,42 @@ namespace psyllid
         return f_state == state_t::triggered;
     }
 
-    inline const std::deque< uint64_t >& event_builder::pretrigger_buffer() const
+    inline const event_builder::pretrigger_buffer_t& event_builder::pretrigger_buffer() const
     {
         return f_pretrigger_buffer;
     }
+    inline const event_builder::pretrigger_buffer_t& event_builder::skip_buffer() const
+    {
+        return f_skip_buffer;
+    }
 
+    inline bool event_builder::write_output_from_ptbuff_front( bool a_flag, trigger_flag* a_data )
+    {
+        a_data->set_id( f_pretrigger_buffer.front() );
+        a_data->set_flag( a_flag );
+        LTRACE( eblog_hdr, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
+        if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+        {
+            LERROR( eblog_hdr, "Exiting due to stream error" );
+            return false;
+        }
+        f_pretrigger_buffer.pop_front();
+        return true;
+    }
+
+    inline bool event_builder::write_output_from_skipbuff_front( bool a_flag, trigger_flag* a_data )
+    {
+        a_data->set_id( f_skip_buffer.front() );
+        a_data->set_flag( a_flag );
+        LTRACE( eblog_hdr, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
+        if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+        {
+            LERROR( eblog_hdr, "Exiting due to stream error" );
+            return false;
+        }
+        f_skip_buffer.pop_front();
+        return true;
+    }
 
     class event_builder_binding : public _node_binding< event_builder, event_builder_binding >
     {

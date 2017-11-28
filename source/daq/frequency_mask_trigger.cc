@@ -346,6 +346,7 @@ namespace psyllid
             if( f_break_exe_func.load() )
             {
                 LINFO( plog, "FMT is switching exe while loops" );
+                return;
             }
             else
             {
@@ -424,15 +425,20 @@ namespace psyllid
                     try
                     {
                         t_array_size = t_freq_data->get_array_size();
+
                         if( a_ctx.f_first_packet_after_start )
                         {
-                            LDEBUG( plog, "Resizing mask to " << t_array_size << " bins" );
-                            if( t_mask_buffer.size() != t_array_size ) t_mask_buffer.resize( t_array_size, 0. );
+                            if( t_mask_buffer.size() != t_array_size )
+                            {
+                                LWARN( plog, "Mask was not the right size; Resizing mask to " << t_array_size << " bins and filling it with zeros" );
+                                t_mask_buffer.resize( t_array_size, 0. );
+                            }
                             a_ctx.f_first_packet_after_start = false;
                         }
 
                         t_trigger_flag->set_flag( false );
                         t_trigger_flag->set_threshold( 1 );
+                        t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
                         for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                         {
@@ -446,17 +452,23 @@ namespace psyllid
                             {
                                 t_trigger_flag->set_flag( true );
                                 t_trigger_flag->set_threshold(2);
-                                LTRACE( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                LINFO( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                        "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ]*threshold_two_factor );
                                 break;
                             }
                             else if( t_power_amp >= t_mask_buffer[ i_bin ] )
                             {
                                 t_trigger_flag->set_flag( true );
-                                LTRACE( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                        "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ] );
                             }
                         }
+#ifndef NDEBUG
+                        if( ! t_trigger_flag->get_flag() )
+                        {
+                            LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> resulted in flag <" << t_trigger_flag->get_flag() << ">");
+                        }
+#endif
 
                         LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
                         if( ! out_stream< 0 >().set( stream::s_run ) )
@@ -497,6 +509,7 @@ namespace psyllid
             if( f_break_exe_func.load() )
             {
                 LINFO( plog, "FMT is switching exe while loops" );
+                return;
             }
             else
             {
