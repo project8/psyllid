@@ -52,6 +52,7 @@ namespace psyllid
             trigger_flag* t_write_flag = nullptr;
 
             bool t_current_trig_flag = false;
+            unsigned t_current_trig_thr = 1;
 
             while( ! is_canceled() )
             {
@@ -74,6 +75,7 @@ namespace psyllid
                 if( t_in_command == stream::s_run )
                 {
                     t_current_trig_flag = t_trigger_flag->get_flag();
+                    t_current_trig_thr = t_trigger_flag->get_threshold_level();
 
                     LTRACE( plog, "Event builder received id <" << t_trigger_flag->get_id() << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
 
@@ -92,7 +94,7 @@ namespace psyllid
                     if( f_state == state_t::untriggered )
                     {
                         LTRACE( plog, "Currently in untriggered state" );
-                        if( t_current_trig_flag )
+                        if( t_current_trig_flag and t_current_trig_thr == 2)
                         {
                             LINFO( plog, "New trigger; flushing pretrigger buffer" );
                             // flush the pretrigger buffer as true, which includes the current trig id
