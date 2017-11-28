@@ -29,6 +29,7 @@ namespace psyllid
             f_length( 10 ),
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 3. ),
+            f_threshold2_snr( 1. ),
             f_n_spline_points( 20 ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
@@ -374,8 +375,9 @@ namespace psyllid
         {
             freq_data* t_freq_data = nullptr;
             trigger_flag* t_trigger_flag = nullptr;
-            double t_real = 0., t_imag = 0.;
+            double t_real = 0., t_imag = 0., t_power_amp = 0.;
             unsigned t_array_size = 0;
+            double threshold_two_factor = f_threshold2_snr/f_threshold_snr;
 
             f_mask_mutex.lock();
             std::vector< double > t_mask_buffer( f_mask );
@@ -428,26 +430,31 @@ namespace psyllid
                             if( t_mask_buffer.size() != t_array_size ) t_mask_buffer.resize( t_array_size, 0. );
                             a_ctx.f_first_packet_after_start = false;
                         }
+
                         t_trigger_flag->set_flag( false );
+                        t_trigger_flag->set_threshold( 1 );
 
                         for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                         {
                             t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
-                /*#ifndef NDEBUG
-                            if( i_bin < 5 )
-                            {
-                                LWARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
-                                        ";  mask = " << f_mask[ i_bin ] );
-                            }
-                #endif*/
+                            t_power_amp = t_real*t_real + t_imag*t_imag;
+
                             t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
-                            if( t_real*t_real + t_imag*t_imag >= t_mask_buffer[ i_bin ] )
+
+                            if(  t_power_amp >= t_mask_buffer[ i_bin ]*threshold_two_factor )
+                            {
+                                t_trigger_flag->set_flag( true );
+                                t_trigger_flag->set_threshold(2);
+                                LTRACE( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                       "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ]*threshold_two_factor );
+                                break;
+                            }
+                            else if( t_power_amp >= t_mask_buffer[ i_bin ] )
                             {
                                 t_trigger_flag->set_flag( true );
                                 LTRACE( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                        "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ] );
-                                break;
                             }
                         }
 

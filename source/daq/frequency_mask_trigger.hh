@@ -86,6 +86,7 @@ namespace psyllid
             accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
             mv_accessible_noset( double, threshold_snr );
+            mv_accessible_noset( double, threshold2_snr);
             mv_accessible( unsigned, n_spline_points );
 
         public:

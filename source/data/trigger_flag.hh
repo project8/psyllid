@@ -24,6 +24,7 @@ namespace psyllid
         public:
             mv_accessible( bool, flag );
             mv_accessible( uint64_t, id );
+            mv_accessible( unsigned, threshold);
     };
 
 } /* namespace psyllid */
