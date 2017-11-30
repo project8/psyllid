@@ -465,7 +465,7 @@ namespace psyllid
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_threshold_level( 2);
                                     LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                            "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask1: " << t_mask_buffer[ i_bin ] );
+                                            "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
                                     break;
                                 }
                             }
@@ -476,7 +476,7 @@ namespace psyllid
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_threshold_level(2);
                                     LINFO( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                           "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask2: " << t_mask_buffer[ i_bin ]*threshold_two_factor );
+                                           "\tdata: " << t_power_amp << ";  mask2: " << t_mask_buffer[ i_bin ]*threshold_two_factor );
                                     break;
                                 }
                                 else if( t_power_amp >= t_mask_buffer[ i_bin ] )
@@ -484,7 +484,7 @@ namespace psyllid
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_threshold_level( 1 );
                                     LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                           "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask1: " << t_mask_buffer[ i_bin ] );
+                                           "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
                                 }
                             }
                         }
