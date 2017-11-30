@@ -29,7 +29,7 @@ namespace psyllid
             f_length( 10 ),
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 3. ),
-            f_threshold_snr_2( 3. ),
+            f_threshold_snr_2( 0. ),
             f_n_spline_points( 20 ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
@@ -384,7 +384,11 @@ namespace psyllid
             trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0., t_power_amp = 0.;
             unsigned t_array_size = 0;
-            double threshold_two_factor = f_threshold2_snr/f_threshold_snr;
+            double threshold_two_factor = 1.;
+            if (f_threshold_snr_2 > 0.)
+            {
+                threshold_two_factor = f_threshold_snr_2/f_threshold_snr;
+            }
 
             f_mask_mutex.lock();
             std::vector< double > t_mask_buffer( f_mask );
@@ -454,19 +458,34 @@ namespace psyllid
 
                             t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
-                            if(  t_power_amp >= t_mask_buffer[ i_bin ]*threshold_two_factor )
+                            if (threshold_two_factor == 1)
                             {
-                                t_trigger_flag->set_flag( true );
-                                t_trigger_flag->set_threshold_level(2);
-                                LINFO( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                       "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ]*threshold_two_factor );
-                                break;
+                                if( t_power_amp >= t_mask_buffer[ i_bin ] )
+                                {
+                                    t_trigger_flag->set_flag( true );
+                                    t_trigger_flag->set_threshold_level( 2);
+                                    LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                            "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask1: " << t_mask_buffer[ i_bin ] );
+                                    break;
+                                }
                             }
-                            else if( t_power_amp >= t_mask_buffer[ i_bin ] )
+                            else
                             {
-                                t_trigger_flag->set_flag( true );
-                                LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                       "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask: " << t_mask_buffer[ i_bin ] );
+                                if(  t_power_amp >= t_mask_buffer[ i_bin ]*threshold_two_factor )
+                                {
+                                    t_trigger_flag->set_flag( true );
+                                    t_trigger_flag->set_threshold_level(2);
+                                    LINFO( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                           "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask2: " << t_mask_buffer[ i_bin ]*threshold_two_factor );
+                                    break;
+                                }
+                                else if( t_power_amp >= t_mask_buffer[ i_bin ] )
+                                {
+                                    t_trigger_flag->set_flag( true );
+                                    t_trigger_flag->set_threshold_level( 1 );
+                                    LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                           "\tdata: " << t_real*t_real + t_imag*t_imag << ";  mask1: " << t_mask_buffer[ i_bin ] );
+                                }
                             }
                         }
 #ifndef NDEBUG
@@ -586,7 +605,7 @@ namespace psyllid
         a_config.add( "n-packets-for-mask", new scarab::param_value( a_node->get_n_packets_for_mask() ) );
         a_config.add( "n-spline-points", new scarab::param_value( a_node->get_n_spline_points() ) );
         a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
-        a_config.add( "threshold-power-snr_2", new scarab::param_value( a_node->get_threshold_snr_2() ) );
+        a_config.add( "threshold-power-snr-2", new scarab::param_value( a_node->get_threshold_snr_2() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         return;
     }
