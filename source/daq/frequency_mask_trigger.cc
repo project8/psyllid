@@ -29,7 +29,7 @@ namespace psyllid
             f_length( 10 ),
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 3. ),
-            f_threshold_snr_2( 0. ),
+            f_threshold_snr_high( 0. ),
             f_n_spline_points( 20 ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
@@ -384,10 +384,10 @@ namespace psyllid
             trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0., t_power_amp = 0.;
             unsigned t_array_size = 0;
-            double threshold_two_factor = 1.;
-            if (f_threshold_snr_2 > 0.)
+            double high_threshold_factor = 1.;
+            if (f_threshold_snr_high > 0.)
             {
-                threshold_two_factor = f_threshold_snr_2/f_threshold_snr;
+                high_threshold_factor = f_threshold_snr_high/f_threshold_snr;
             }
 
             f_mask_mutex.lock();
@@ -458,7 +458,7 @@ namespace psyllid
 
                             t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
-                            if (threshold_two_factor == 1)
+                            if (high_threshold_factor == 1)
                             {
                                 if( t_power_amp >= t_mask_buffer[ i_bin ] )
                                 {
@@ -471,7 +471,7 @@ namespace psyllid
                             }
                             else
                             {
-                                if(  t_power_amp >= t_mask_buffer[ i_bin ]*threshold_two_factor )
+                                if(  t_power_amp >= t_mask_buffer[ i_bin ]*high_threshold_factor )
                                 {
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_threshold_level(2);
@@ -586,9 +586,9 @@ namespace psyllid
         {
             a_node->set_threshold_power_snr( a_config.get_value< double >( "threshold-power-snr" ) );
         }
-        if( a_config.has( "threshold-power-snr" ) )
+        if( a_config.has( "threshold-power-snr-high" ) )
         {
-            a_node->set_threshold_power_snr_2( a_config.get_value< double >( "threshold-power-snr-2" ) );
+            a_node->set_threshold_power_snr_high( a_config.get_value< double >( "threshold-power-snr-high" ) );
         }
         if( a_config.has( "threshold-db" ) )
         {
@@ -605,7 +605,7 @@ namespace psyllid
         a_config.add( "n-packets-for-mask", new scarab::param_value( a_node->get_n_packets_for_mask() ) );
         a_config.add( "n-spline-points", new scarab::param_value( a_node->get_n_spline_points() ) );
         a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
-        a_config.add( "threshold-power-snr-2", new scarab::param_value( a_node->get_threshold_snr_2() ) );
+        a_config.add( "threshold-power-snr-high", new scarab::param_value( a_node->get_threshold_snr_high() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         return;
     }

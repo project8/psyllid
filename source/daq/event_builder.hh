@@ -90,7 +90,7 @@ namespace psyllid
             bool write_output_from_skipbuff_front( bool a_flag, trigger_flag* a_data );
             void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
 
-            enum class state_t { untriggered, triggered, skipping, waiting_for_more_triggers };
+            enum class state_t { untriggered, triggered, skipping, collecting_triggers };
             state_t f_state;
 
             pretrigger_buffer_t f_pretrigger_buffer;

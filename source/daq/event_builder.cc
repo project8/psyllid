@@ -129,7 +129,7 @@ namespace psyllid
                             {
                                 // set state to waiting
                                 LDEBUG( plog, "Next state is waiting");
-                                f_state = state_t::waiting_for_more_triggers;
+                                f_state = state_t::collecting_triggers;
                             }
                         }
                         else
@@ -148,7 +148,7 @@ namespace psyllid
                             }
                         }
                     }
-                    else if (f_state == state_t::waiting_for_more_triggers)
+                    else if (f_state == state_t::collecting_triggers)
                     {
                         LTRACE( plog, "Currently in waiting state" );
                         if (t_current_trig_flag)

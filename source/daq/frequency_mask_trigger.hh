@@ -81,13 +81,13 @@ namespace psyllid
 
             void set_threshold_ampl_snr( double a_ampl_snr );
             void set_threshold_power_snr( double a_power_snr );
-            void set_threshold_power_snr_2( double a_power_snr);
+            void set_threshold_power_snr_high( double a_power_snr);
             void set_threshold_dB( double a_dB );
 
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
             mv_accessible_noset( double, threshold_snr );
-            mv_accessible_noset( double, threshold_snr_2);
+            mv_accessible_noset( double, threshold_snr_high);
             mv_accessible( unsigned, n_spline_points );
 
         public:
