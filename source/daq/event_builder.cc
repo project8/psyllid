@@ -88,7 +88,7 @@ namespace psyllid
                         LTRACE( plog, "new id in pt buffer: "<<f_pretrigger_buffer.back());
 
                     }
-                    else if (f_state == state_t::waiting_for_more_triggers)
+                    else if (f_state == state_t::collecting_triggers)
                     {
                         f_skip_buffer.push_back( t_trigger_flag->get_id());
                         LTRACE( plog, "new id in skip buffer: "<<f_skip_buffer.back());

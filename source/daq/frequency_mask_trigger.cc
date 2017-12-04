@@ -66,10 +66,10 @@ namespace psyllid
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr );
         return;
     }
-    void frequency_mask_trigger::set_threshold_power_snr_2( double a_power_snr )
+    void frequency_mask_trigger::set_threshold_power_snr_high( double a_power_snr )
     {
-        f_threshold_snr_2 = a_power_snr;
-        LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr_2 );
+        f_threshold_snr_high = a_power_snr;
+        LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr_high );
         return;
     }
 
@@ -476,7 +476,7 @@ namespace psyllid
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_threshold_level(2);
                                     LINFO( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                           "\tdata: " << t_power_amp << ";  mask2: " << t_mask_buffer[ i_bin ]*threshold_two_factor );
+                                           "\tdata: " << t_power_amp << ";  mask2: " << t_mask_buffer[ i_bin ]*high_threshold_factor );
                                     break;
                                 }
                                 else if( t_power_amp >= t_mask_buffer[ i_bin ] )
