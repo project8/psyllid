@@ -122,6 +122,7 @@ namespace psyllid
                 {
                     LWARN( plog, "Exception caught while resetting midge: " << e.what() );
                     LWARN( plog, "Returning to the \"deactivated\" state and awaiting further instructions" );
+                    f_msg_relay->slack_error( std::string("Psyllid could not be activated.\nDetails: ") + e.what() );
                     set_status( status::deactivated );
                     continue;
                 }
@@ -151,6 +152,7 @@ namespace psyllid
                 catch( std::exception& e )
                 {
                     LERROR( plog, "An exception was thrown while running midge: " << e.what() );
+                    f_msg_relay->slack_error( std::string("An exception was thrown while running midge: ") + e.what() );
                     set_status( status::error );
                 }
 
@@ -165,21 +167,27 @@ namespace psyllid
                     catch( midge::error& e )
                     {
                         LERROR( plog, "A Midge error has been caught: " << e.what() );
+                        f_msg_relay->slack_error( std::string("A Midge error has been caught: ") + e.what() );
                         set_status( status::error );
                     }
                     catch( midge::node_fatal_error& e )
                     {
                         LERROR( plog, "A fatal node error was thrown from midge: " << e.what() );
+                        f_msg_relay->slack_error( std::string("A fatal node error was thrown from midge: ") + e.what() );
                         set_status( status::error );
                     }
                     catch( midge::node_nonfatal_error& e )
                     {
                         LWARN( plog, "A non-fatal node error was thrown from midge: " << e.what() );
+                        f_msg_relay->slack_error( std::string("A non-fatal node error was thrown from midge.  ") +
+                                "Psyllid is still running (hopefully) but its state has been reset.\n" +
+                                "Error details: " + e.what() );
                         set_status( status::do_restart );
                     }
                     catch( std::exception& e )
                     {
                         LERROR( plog, "An unknown exception was thrown from midge: " << e.what() );
+                        f_msg_relay->slack_error( std::string("An unknown exception was thrown from midge: ") + e.what() );
                         set_status( status::error );
                     }
                     LDEBUG( plog, "Calling stop_run" );
@@ -198,6 +206,7 @@ namespace psyllid
                 else if( get_status() == status::error )
                 {
                     LERROR( plog, "Canceling due to midge error" );
+                    f_msg_relay->slack_error( "Psyllid has crashed due to an error while running.  Hopefully the details have already been reported." );
                     raise(SIGINT);
                     continue;
                 }
@@ -206,6 +215,7 @@ namespace psyllid
                     LDEBUG( plog, "Setting status to deactivated" );
                     set_status( status::deactivated );
                     LINFO( plog, "Commencing restart of the DAQ" );
+                    f_msg_relay->slack_warn( "Commencing restart of the Psyllid DAQ nodes" );
                     std::this_thread::sleep_for( std::chrono::milliseconds(250) );
                     LDEBUG( plog, "Will activate DAQ control asynchronously" );
                     t_activation_return = std::async( std::launch::async,
