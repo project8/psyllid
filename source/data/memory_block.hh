@@ -11,6 +11,7 @@
 #include "member_variables.hh"
 
 #include <cstdint>
+#include <cstddef> // for size_t
 
 namespace psyllid
 {

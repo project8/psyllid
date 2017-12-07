@@ -394,6 +394,15 @@ namespace psyllid
 
         } // end while ! is_canceled()
 
+        // final attempt to finish the stream if the outer while loop is broken without the stream having been stopped or exited
+        // e.g. if cancelled first, before anything else happens
+        if( a_ctx.f_swrap_ptr )
+        {
+            LDEBUG( plog, "Finishing stream <" << a_ctx.f_stream_no << ">" );
+            a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
+            a_ctx.f_swrap_ptr.reset();
+        }
+
         return;
     }
 
