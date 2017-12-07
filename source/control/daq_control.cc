@@ -271,6 +271,7 @@ namespace psyllid
     void daq_control::reactivate()
     {
         deactivate();
+        std::this_thread::sleep_for( std::chrono::seconds(1) );
         activate();
         return;
     }
