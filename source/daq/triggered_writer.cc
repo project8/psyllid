@@ -399,7 +399,7 @@ namespace psyllid
         if( a_ctx.f_swrap_ptr )
         {
             LDEBUG( plog, "Finishing stream <" << a_ctx.f_stream_no << ">" );
-            a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
+            f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
             a_ctx.f_swrap_ptr.reset();
         }
 

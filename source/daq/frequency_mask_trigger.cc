@@ -464,7 +464,7 @@ namespace psyllid
                                 {
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_high_threshold( true );
-                                    LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                    LDEBUG( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                             "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
                                     break;
                                 }
@@ -475,7 +475,7 @@ namespace psyllid
                                 {
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_high_threshold( true );
-                                    LINFO( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                    LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                            "\tdata: " << t_power_amp << ";  mask2: " << t_mask_buffer[ i_bin ]*high_threshold_factor );
                                     break;
                                 }
@@ -483,7 +483,7 @@ namespace psyllid
                                 {
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_high_threshold( false );
-                                    LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                    LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                            "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
                                 }
                             }
