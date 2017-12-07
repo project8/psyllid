@@ -28,7 +28,7 @@ namespace psyllid
     frequency_mask_trigger::frequency_mask_trigger() :
             f_length( 10 ),
             f_n_packets_for_mask( 10 ),
-            f_threshold_snr( 3. ),
+            f_threshold_snr( 30. ),
             f_threshold_snr_high( 0. ),
             f_n_spline_points( 20 ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
@@ -447,7 +447,7 @@ namespace psyllid
                         }
 
                         t_trigger_flag->set_flag( false );
-                        t_trigger_flag->set_threshold_level( 1 );
+                        t_trigger_flag->set_high_threshold( false );
                         t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
                         for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
@@ -463,7 +463,7 @@ namespace psyllid
                                 if( t_power_amp >= t_mask_buffer[ i_bin ] )
                                 {
                                     t_trigger_flag->set_flag( true );
-                                    t_trigger_flag->set_threshold_level( 2);
+                                    t_trigger_flag->set_high_threshold( true );
                                     LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                             "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
                                     break;
@@ -474,7 +474,7 @@ namespace psyllid
                                 if(  t_power_amp >= t_mask_buffer[ i_bin ]*high_threshold_factor )
                                 {
                                     t_trigger_flag->set_flag( true );
-                                    t_trigger_flag->set_threshold_level(2);
+                                    t_trigger_flag->set_high_threshold( true );
                                     LINFO( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                            "\tdata: " << t_power_amp << ";  mask2: " << t_mask_buffer[ i_bin ]*high_threshold_factor );
                                     break;
@@ -482,7 +482,7 @@ namespace psyllid
                                 else if( t_power_amp >= t_mask_buffer[ i_bin ] )
                                 {
                                     t_trigger_flag->set_flag( true );
-                                    t_trigger_flag->set_threshold_level( 1 );
+                                    t_trigger_flag->set_high_threshold( false );
                                     LINFO( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
                                            "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
                                 }

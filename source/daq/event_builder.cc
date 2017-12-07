@@ -54,7 +54,7 @@ namespace psyllid
             unsigned t_trigger_count = 0;
 
             bool t_current_trig_flag = false;
-            unsigned t_current_trig_thr = 1;
+            bool t_current_trig_high_thr = false;
 
             while( ! is_canceled() )
             {
@@ -77,7 +77,7 @@ namespace psyllid
                 if( t_in_command == stream::s_run )
                 {
                     t_current_trig_flag = t_trigger_flag->get_flag();
-                    t_current_trig_thr = t_trigger_flag->get_threshold_level();
+                    t_current_trig_high_thr = t_trigger_flag->get_high_threshold();
 
                     LTRACE( plog, "Event builder received id <" << t_trigger_flag->get_id() << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
 
@@ -103,7 +103,7 @@ namespace psyllid
                     if( f_state == state_t::untriggered )
                     {
                         LTRACE( plog, "Currently in untriggered state" );
-                        if( t_current_trig_flag and t_current_trig_thr == 2)
+                        if( t_current_trig_flag and t_current_trig_high_thr == true)
                         {
                             LINFO( plog, "New trigger");
                             t_trigger_count++;
