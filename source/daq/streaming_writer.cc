@@ -186,6 +186,14 @@ namespace psyllid
                     continue;
                 }
 
+            } // end while( ! is_cancelled() )
+
+            // final attempt to finish the stream if the outer while loop is broken without the stream having been stopped or exited
+            // e.g. if cancelled first, before anything else happens
+            if( t_swrap_ptr )
+            {
+                f_monarch_ptr->finish_stream( f_stream_no );
+                t_swrap_ptr.reset();
             }
 
             return;
