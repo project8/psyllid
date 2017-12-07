@@ -59,9 +59,9 @@ namespace psyllid
             virtual ~event_builder();
 
         public:
-            accessible( uint64_t, length );
-            accessible( uint64_t, pretrigger );
-            accessible( uint64_t, skip_tolerance );
+            mv_accessible( uint64_t, length );
+            mv_accessible( uint64_t, pretrigger );
+            mv_accessible( uint64_t, skip_tolerance );
 
         public:
             virtual void initialize();
