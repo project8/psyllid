@@ -106,7 +106,7 @@ namespace psyllid
                         if( t_current_trig_flag and t_current_trig_high_thr == true)
                         {
                             LINFO( plog, "New trigger" );
-                            t_trigger_count++;
+                            ++t_trigger_count;
                             if (t_trigger_count == f_n_triggers)
                             {
                                 t_trigger_count = 0;
@@ -153,7 +153,7 @@ namespace psyllid
                         LTRACE( plog, "Currently in waiting state" );
                         if (t_current_trig_flag)
                         {
-                            t_trigger_count++;
+                            ++t_trigger_count;
                             LINFO (plog, "Got another trigger: "<<t_trigger_count<<" need N triggers: "<<f_n_triggers);
                             if (t_trigger_count == f_n_triggers)
                             {
