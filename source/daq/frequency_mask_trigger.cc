@@ -384,10 +384,10 @@ namespace psyllid
             trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0., t_power_amp = 0.;
             unsigned t_array_size = 0;
-            double high_threshold_factor = 1.;
-            if (f_threshold_snr_high > 0.)
+            double t_high_threshold_factor = 1.;
+            if( f_threshold_snr_high > 0. )
             {
-                high_threshold_factor = f_threshold_snr_high/f_threshold_snr;
+                high_threshold_factor = f_threshold_snr_high / f_threshold_snr;
             }
 
             f_mask_mutex.lock();
@@ -458,7 +458,7 @@ namespace psyllid
 
                             t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
-                            if (high_threshold_factor == 1)
+                            if( high_threshold_factor == 1 )
                             {
                                 if( t_power_amp >= t_mask_buffer[ i_bin ] )
                                 {
@@ -471,7 +471,7 @@ namespace psyllid
                             }
                             else
                             {
-                                if(  t_power_amp >= t_mask_buffer[ i_bin ]*high_threshold_factor )
+                                if(  t_power_amp >= t_mask_buffer[ i_bin ] * high_threshold_factor )
                                 {
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_high_threshold( true );
