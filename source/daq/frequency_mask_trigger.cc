@@ -29,8 +29,9 @@ namespace psyllid
             f_length( 10 ),
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 30. ),
-            f_threshold_snr_high( 0. ),
+            f_threshold_snr_high( 30. ),
             f_n_spline_points( 20 ),
+            f_trigger_mode( mode_t::single_level_trigger),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_n_summed( 0 ),
@@ -52,14 +53,12 @@ namespace psyllid
         f_n_packets_for_mask = a_n_pkts;
         return;
     }
-
     void frequency_mask_trigger::set_threshold_ampl_snr( double a_ampl_snr )
     {
         f_threshold_snr = a_ampl_snr * a_ampl_snr;
         LDEBUG( plog, "Setting threshold (power via ampl) to " << f_threshold_snr );
         return;
     }
-
     void frequency_mask_trigger::set_threshold_power_snr( double a_power_snr )
     {
         f_threshold_snr = a_power_snr;
@@ -72,13 +71,27 @@ namespace psyllid
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr_high );
         return;
     }
-
     void frequency_mask_trigger::set_threshold_dB( double a_dB )
     {
         f_threshold_snr = pow( 10, a_dB / 10. );
         LDEBUG( plog, "Setting threshold (power via dB) to " << f_threshold_snr );
         return;
     }
+    void frequency_mask_trigger::set_trigger_mode( unsigned modeId )
+        {
+            if ( modeId == 1 )
+            {
+                f_trigger_mode = mode_t::single_level_trigger;
+            }
+            else if ( modeId == 2 )
+            {
+                f_trigger_mode = mode_t::two_level_trigger;
+            }
+            else
+            {
+                throw error() << "Unknown modeID";
+            }
+        }
 
 
     void frequency_mask_trigger::switch_to_update_mask()
@@ -103,7 +116,15 @@ namespace psyllid
         {
             f_break_exe_func.store( true );
             f_status = status::triggering;
-            f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
+
+            if ( f_trigger_mode == mode_t::single_level_trigger )
+            {
+                f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
+            }
+            else // if ( f_trigger_mode == mode_t::two_level_trigger )
+            {
+                f_exe_func = &frequency_mask_trigger::exe_apply_two_thresholds;
+            }
         }
         f_exe_func_mutex.unlock();
         return;
@@ -384,11 +405,6 @@ namespace psyllid
             trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0., t_power_amp = 0.;
             unsigned t_array_size = 0;
-            double t_high_threshold_factor = 1.;
-            if( f_threshold_snr_high > 0. )
-            {
-                high_threshold_factor = f_threshold_snr_high / f_threshold_snr;
-            }
 
             f_mask_mutex.lock();
             std::vector< double > t_mask_buffer( f_mask );
@@ -458,34 +474,13 @@ namespace psyllid
 
                             t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
-                            if( high_threshold_factor == 1 )
+                            if( t_power_amp >= t_mask_buffer[ i_bin ] )
                             {
-                                if( t_power_amp >= t_mask_buffer[ i_bin ] )
-                                {
-                                    t_trigger_flag->set_flag( true );
-                                    t_trigger_flag->set_high_threshold( true );
-                                    LDEBUG( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                            "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                if(  t_power_amp >= t_mask_buffer[ i_bin ] * high_threshold_factor )
-                                {
-                                    t_trigger_flag->set_flag( true );
-                                    t_trigger_flag->set_high_threshold( true );
-                                    LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                           "\tdata: " << t_power_amp << ";  mask2: " << t_mask_buffer[ i_bin ]*high_threshold_factor );
-                                    break;
-                                }
-                                else if( t_power_amp >= t_mask_buffer[ i_bin ] )
-                                {
-                                    t_trigger_flag->set_flag( true );
-                                    t_trigger_flag->set_high_threshold( false );
-                                    LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                           "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
-                                }
+                                t_trigger_flag->set_flag( true );
+                                t_trigger_flag->set_high_threshold( true );
+                                LDEBUG( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                        "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
+                                break;
                             }
                         }
 #ifndef NDEBUG
@@ -556,6 +551,179 @@ namespace psyllid
         }
     }
 
+
+    void frequency_mask_trigger::exe_apply_two_thresholds( exe_func_context& a_ctx )
+        {
+            f_exe_func_mutex.unlock();
+
+            try
+            {
+                freq_data* t_freq_data = nullptr;
+                trigger_flag* t_trigger_flag = nullptr;
+                double t_real = 0., t_imag = 0., t_power_amp = 0.;
+                unsigned t_array_size = 0;
+                double t_high_threshold_factor = f_threshold_snr_high / f_threshold_snr;
+
+
+                f_mask_mutex.lock();
+                std::vector< double > t_mask_buffer( f_mask );
+                std::vector< double > t_mask2_buffer ( f_mask );
+                f_mask_mutex.unlock();
+
+                for ( int i = 0; i < t_mask2_buffer.size(); i++)
+                {
+                    t_mask2_buffer *= t_high_threshold_factor;
+                }
+
+                LDEBUG( plog, "Entering apply-threshold loop" );
+                while( ! is_canceled() && ! f_break_exe_func.load() )
+                {
+                    // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+                    // and still handle the input command appropriately
+
+                    if( a_ctx.f_in_command == stream::s_none )
+                    {
+
+                        LTRACE( plog, "FMT read s_none" );
+
+                    }
+                    else if( a_ctx.f_in_command == stream::s_error )
+                    {
+
+                        LTRACE( plog, "FMT read s_error" );
+                        break;
+
+                    }
+                    else if( a_ctx.f_in_command == stream::s_start )
+                    {
+
+                        LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
+                        if( ! out_stream< 0 >().set( stream::s_start ) ) break;
+                        a_ctx.f_first_packet_after_start = true;
+
+                    }
+                    if( a_ctx.f_in_command == stream::s_run )
+                    {
+
+                        t_freq_data = in_stream< 0 >().data();
+                        t_trigger_flag = out_stream< 0 >().data();
+
+                        LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
+                               "  time = " << t_freq_data->get_unix_time() <<
+                               "  id = " << t_freq_data->get_pkt_in_session() <<
+                               "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
+                               "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
+                        try
+                        {
+                            t_array_size = t_freq_data->get_array_size();
+
+                            if( a_ctx.f_first_packet_after_start )
+                            {
+                                if( t_mask_buffer.size() != t_array_size )
+                                {
+                                    LWARN( plog, "Mask was not the right size; Resizing mask to " << t_array_size << " bins and filling it with zeros" );
+                                    t_mask_buffer.resize( t_array_size, 0. );
+                                }
+                                a_ctx.f_first_packet_after_start = false;
+                            }
+
+                            t_trigger_flag->set_flag( false );
+                            t_trigger_flag->set_high_threshold( false );
+                            t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
+
+                            for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                            {
+                                t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
+                                t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
+                                t_power_amp = t_real*t_real + t_imag*t_imag;
+
+                                t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
+
+                                if(  t_power_amp >= t_mask2_buffer[ i_bin ] )
+                                {
+                                    t_trigger_flag->set_flag( true );
+                                    t_trigger_flag->set_high_threshold( true );
+                                    LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                            "\tdata: " << t_power_amp << ";  mask2: " << t_mask_buffer[ i_bin ]*high_threshold_factor );
+                                    break;
+                                }
+                                else if( t_power_amp >= t_mask_buffer[ i_bin ] )
+                                {
+                                    t_trigger_flag->set_flag( true );
+                                    t_trigger_flag->set_high_threshold( false );
+                                    LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                            "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
+                                }
+                            }
+
+    #ifndef NDEBUG
+                            if( ! t_trigger_flag->get_flag() )
+                            {
+                                LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> resulted in flag <" << t_trigger_flag->get_flag() << ">");
+                            }
+    #endif
+
+                            LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
+                            if( ! out_stream< 0 >().set( stream::s_run ) )
+                            {
+                                LERROR( plog, "Exiting due to stream error" );
+                                throw midge::node_nonfatal_error() << "Stream error while applying threshold";
+                            }
+                        }
+                        catch( error& e )
+                        {
+                            LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
+                            break;
+                        }
+
+                    }
+                    else if( a_ctx.f_in_command == stream::s_stop )
+                    {
+
+                        LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
+                        if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
+
+                    }
+                    else if( a_ctx.f_in_command == stream::s_exit )
+                    {
+
+                        LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
+                        out_stream< 0 >().set( stream::s_exit );
+                        break;
+
+                    }
+
+                    a_ctx.f_in_command = in_stream< 0 >().get();
+                    LTRACE( plog, "FMT (apply-threshold) reading stream at index " << in_stream< 0 >().get_current_index() );
+
+                } // while( ! is_canceled() && ! f_break_exe_func.load() )
+
+                LDEBUG( plog, "FMT has exited the apply-threshold while loop; possible reasons: is_canceled() = " << is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
+                if( f_break_exe_func.load() )
+                {
+                    LINFO( plog, "FMT is switching exe while loops" );
+                    return;
+                }
+                else
+                {
+                    LINFO( plog, "FMT is exiting" );
+                }
+
+                LDEBUG( plog, "Stopping output stream" );
+                if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+
+                LDEBUG( plog, "Exiting output stream" );
+                out_stream< 0 >().set( stream::s_exit );
+
+                return;
+            }
+            catch(...)
+            {
+                if( a_ctx.f_midge ) a_ctx.f_midge->throw_ex( std::current_exception() );
+                else throw;
+            }
+        }
+
     void frequency_mask_trigger::finalize()
     {
         out_buffer< 0 >().finalize();
@@ -594,6 +762,10 @@ namespace psyllid
         {
             a_node->set_threshold_dB( a_config.get_value< double >( "threshold-db" ) );
         }
+        if( a_config.has( "trigger-mode" ) )
+        {
+            a_node->set_trigger_mode( a_config.get_value< mode_t >( "trigger-mode" ) );
+        }
 
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
         return;
@@ -607,6 +779,7 @@ namespace psyllid
         a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
         a_config.add( "threshold-power-snr-high", new scarab::param_value( a_node->get_threshold_snr_high() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
+        a_config.add( "trigger-mode", new scarab::param_value( a_node->get_trigger_mode() ) );
         return;
     }
 
