@@ -39,6 +39,10 @@ namespace psyllid
      In triggering mode, each arriving spectrum is compared to the mask bin-by-bin.  If a bin crosses the threshold, the spectrum passes
      the trigger and the bin-by-bin comparison is stopped.
 
+     It is possible to set a second threshold (threshold-power-snr-high).
+     A second mask is calculated for this threshold and the incoming spectra are compared to both masks.
+     The output trigger flag contains the information which threshold led to a trigger.
+
      The mask can be written to a JSON file via the write_mask() function.  The format for the file is:
      {
          "timestamp": "[timestamp]",
@@ -55,6 +59,7 @@ namespace psyllid
      - "n-packets-for-mask": uint -- The number of spectra used to calculate the trigger mask
      - "threshold-ampl-snr": float -- The threshold SNR, given as an amplitude SNR
      - "threshold-power-snr": float -- The threshold SNR, given as a power SNR
+     - "threshold-power-snr-high": float -- A second SNR threshold, given as power SNR
      - "threshold-dB": float -- The threshold SNR, given as a dB factor
      - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
 

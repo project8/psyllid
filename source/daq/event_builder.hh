@@ -37,6 +37,12 @@ namespace psyllid
 
      Includes a skip tolerance for untriggered packets between two triggered packets.
 
+     In untriggered state, the flag and the high_threshold variables of the trigger flags are checked.
+     Only if both are true the event builder switches state.
+     If f_n_triggers > 1 the next state is collecting_triggers, otherwise triggered.
+     In collecting_triggers state the event builder counts the incomming trigger flags with flag =  true.
+     Only if this count == f_n_triggers the state is switched to triggered.
+
      Events are built by switching some untriggered packets to triggered packets according to the pretrigger and skip-tolerance parameters.
      Contiguous sequences of triggered packets constitute events.
 
@@ -49,8 +55,9 @@ namespace psyllid
 
      Available configuration values:
      - "length": uint -- The size of the output buffer
-     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet.
+     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet
      - "skip-tolerance": uint -- Number of untriggered packets to include in the event between two triggered
+     - "n-triggers": uint -- Number of trigger flags with flag == true required before switching to triggered state
 
      Input Streams:
      - 1: trigger_flag
