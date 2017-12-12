@@ -80,6 +80,7 @@ namespace psyllid
     }
     void frequency_mask_trigger::set_trigger_mode( unsigned trigger_mode_id )
         {
+            LDEBUG( plog, "Performing actual trigger mode configuration");
             if ( trigger_mode_id == 1 )
             {
                 f_trigger_mode_id = 1;
@@ -575,12 +576,12 @@ namespace psyllid
 
                 for ( unsigned i_bin = 0; i_bin < t_mask2_buffer.size(); i_bin++)
                 {
-                    LDEBUG( plog, "Before mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
+                    //LDEBUG( plog, "Before mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
                     t_mask2_buffer[ i_bin ] *= t_high_threshold_factor;
-                    LDEBUG( plog, "After mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
+                    //LDEBUG( plog, "After mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
                 }
 
-                LDEBUG( plog, "Entering apply-threshold loop" );
+                LDEBUG( plog, "Entering apply-two-thresholds loop" );
                 while( ! is_canceled() && ! f_break_exe_func.load() )
                 {
                     // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
@@ -767,7 +768,7 @@ namespace psyllid
         {
             a_node->set_threshold_dB( a_config.get_value< double >( "threshold-db" ) );
         }
-        if( a_config.has( "trigger-mode-id" ) )
+        if( a_config.has( "trigger-mode" ) )
         {
             a_node->set_trigger_mode( a_config.get_value< unsigned >( "trigger-mode" ) );
         }
