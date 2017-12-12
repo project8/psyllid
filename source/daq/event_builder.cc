@@ -327,7 +327,7 @@ namespace psyllid
                         }
                         else
                         {
-                            if(f _skip_buffer.full() )
+                            if(f_skip_buffer.full() )
                             {
                                 LINFO( plog, "Skip_tolerance reached. Continuing as untriggered");
                                 // write out ids as false that are only in the skip buffer

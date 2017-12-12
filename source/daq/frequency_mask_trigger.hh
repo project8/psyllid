@@ -88,13 +88,14 @@ namespace psyllid
             void set_threshold_power_snr( double a_power_snr );
             void set_threshold_power_snr_high( double a_power_snr);
             void set_threshold_dB( double a_dB );
-            void set_trigger_mode( unsigned modeId );
+            void set_trigger_mode( unsigned trigger_mode_id );
 
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
             mv_accessible_noset( double, threshold_snr );
             mv_accessible_noset( double, threshold_snr_high);
             mv_accessible( unsigned, n_spline_points );
+            mv_accessible( unsigned, trigger_mode_id );
 
         public:
             void switch_to_update_mask();
@@ -137,8 +138,8 @@ namespace psyllid
 
             mv_accessible_noset( status, status );
 
-            enum class mode_t { single_level_trigger, two_level_trigger};
-            mode_t f_trigger_mode;
+            enum class trigger_mode_t { single_level_trigger, two_level_trigger};
+            trigger_mode_t f_trigger_mode;
 
     };
 

@@ -31,12 +31,13 @@ namespace psyllid
             f_threshold_snr( 30. ),
             f_threshold_snr_high( 30. ),
             f_n_spline_points( 20 ),
-            f_trigger_mode( mode_t::single_level_trigger),
+            f_trigger_mode_id( 1 ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_n_summed( 0 ),
             f_mask_mutex(),
-            f_status( status::mask_update )
+            f_status( status::mask_update ),
+            f_trigger_mode (trigger_mode_t::single_level_trigger )
     {
     }
 
@@ -77,19 +78,21 @@ namespace psyllid
         LDEBUG( plog, "Setting threshold (power via dB) to " << f_threshold_snr );
         return;
     }
-    void frequency_mask_trigger::set_trigger_mode( unsigned modeId )
+    void frequency_mask_trigger::set_trigger_mode( unsigned trigger_mode_id )
         {
-            if ( modeId == 1 )
+            if ( trigger_mode_id == 1 )
             {
-                f_trigger_mode = mode_t::single_level_trigger;
+                f_trigger_mode_id = 1;
+                f_trigger_mode = trigger_mode_t::single_level_trigger;
             }
-            else if ( modeId == 2 )
+            else if ( trigger_mode_id == 2 )
             {
-                f_trigger_mode = mode_t::two_level_trigger;
+                f_trigger_mode_id = 2;
+                f_trigger_mode = trigger_mode_t::two_level_trigger;
             }
             else
             {
-                throw error() << "Unknown modeID";
+                throw error() << "Unknown trigger_mode_id";
             }
         }
 
@@ -117,11 +120,11 @@ namespace psyllid
             f_break_exe_func.store( true );
             f_status = status::triggering;
 
-            if ( f_trigger_mode == mode_t::single_level_trigger )
+            if ( f_trigger_mode == trigger_mode_t::single_level_trigger )
             {
                 f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
             }
-            else // if ( f_trigger_mode == mode_t::two_level_trigger )
+            else // if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
             {
                 f_exe_func = &frequency_mask_trigger::exe_apply_two_thresholds;
             }
@@ -472,7 +475,7 @@ namespace psyllid
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
                             t_power_amp = t_real*t_real + t_imag*t_imag;
 
-                            t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
+                            //t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
                             if( t_power_amp >= t_mask_buffer[ i_bin ] )
                             {
@@ -570,9 +573,11 @@ namespace psyllid
                 std::vector< double > t_mask2_buffer ( f_mask );
                 f_mask_mutex.unlock();
 
-                for ( int i = 0; i < t_mask2_buffer.size(); i++)
+                for ( unsigned i_bin = 0; i_bin < t_mask2_buffer.size(); i_bin++)
                 {
-                    t_mask2_buffer *= t_high_threshold_factor;
+                    LDEBUG( plog, "Before mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
+                    t_mask2_buffer[ i_bin ] *= t_high_threshold_factor;
+                    LDEBUG( plog, "After mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
                 }
 
                 LDEBUG( plog, "Entering apply-threshold loop" );
@@ -637,14 +642,14 @@ namespace psyllid
                                 t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
                                 t_power_amp = t_real*t_real + t_imag*t_imag;
 
-                                t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
+                                //t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
                                 if(  t_power_amp >= t_mask2_buffer[ i_bin ] )
                                 {
                                     t_trigger_flag->set_flag( true );
                                     t_trigger_flag->set_high_threshold( true );
                                     LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                            "\tdata: " << t_power_amp << ";  mask2: " << t_mask_buffer[ i_bin ]*high_threshold_factor );
+                                            "\tdata: " << t_power_amp << ";  mask2: " << t_mask2_buffer[ i_bin ] );
                                     break;
                                 }
                                 else if( t_power_amp >= t_mask_buffer[ i_bin ] )
@@ -762,9 +767,9 @@ namespace psyllid
         {
             a_node->set_threshold_dB( a_config.get_value< double >( "threshold-db" ) );
         }
-        if( a_config.has( "trigger-mode" ) )
+        if( a_config.has( "trigger-mode-id" ) )
         {
-            a_node->set_trigger_mode( a_config.get_value< mode_t >( "trigger-mode" ) );
+            a_node->set_trigger_mode( a_config.get_value< unsigned >( "trigger-mode" ) );
         }
 
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
@@ -779,7 +784,7 @@ namespace psyllid
         a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
         a_config.add( "threshold-power-snr-high", new scarab::param_value( a_node->get_threshold_snr_high() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
-        a_config.add( "trigger-mode", new scarab::param_value( a_node->get_trigger_mode() ) );
+        a_config.add( "trigger-mode", new scarab::param_value( a_node->get_trigger_mode_id() ) );
         return;
     }
 
