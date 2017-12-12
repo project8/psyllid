@@ -98,6 +98,7 @@ namespace psyllid
             void exe_loop_is_running( exe_loop_context& a_ctx );
 
             monarch_wrap_ptr f_monarch_ptr;
+            unsigned f_stream_no;
     };
 
 
