@@ -486,7 +486,6 @@ namespace psyllid
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
                             t_power_amp = t_real*t_real + t_imag*t_imag;
 
-                            //t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
                             if( t_power_amp >= t_mask_buffer[ i_bin ] )
                             {
@@ -653,7 +652,6 @@ namespace psyllid
                                 t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
                                 t_power_amp = t_real*t_real + t_imag*t_imag;
 
-                                //t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
                                 if(  t_power_amp >= t_mask2_buffer[ i_bin ] )
                                 {
