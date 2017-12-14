@@ -61,6 +61,7 @@ namespace psyllid
      - "threshold-power-snr": float -- The threshold SNR, given as a power SNR
      - "threshold-power-snr-high": float -- A second SNR threshold, given as power SNR
      - "threshold-dB": float -- The threshold SNR, given as a dB factor
+     - "trigger-mode": string -- The trigger mode, canbe set to "single-level-trigger" or "two-level-trigger"
      - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
 
      Available DAQ commands:
@@ -88,14 +89,14 @@ namespace psyllid
             void set_threshold_power_snr( double a_power_snr );
             void set_threshold_power_snr_high( double a_power_snr);
             void set_threshold_dB( double a_dB );
-            void set_trigger_mode( unsigned trigger_mode_id );
+            void set_trigger_mode( std::string trigger_mode );
+            std::string get_trigger_mode() const;
 
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
             mv_accessible_noset( double, threshold_snr );
             mv_accessible_noset( double, threshold_snr_high);
             mv_accessible( unsigned, n_spline_points );
-            mv_accessible( unsigned, trigger_mode_id );
 
         public:
             void switch_to_update_mask();

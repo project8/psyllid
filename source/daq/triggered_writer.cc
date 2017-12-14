@@ -42,7 +42,7 @@ namespace psyllid
             f_center_freq( 50.e6 ),
             f_freq_range( 100.e6 ),
             f_monarch_ptr(),
-            f_stream_no ( 0 )
+            f_stream_no( 0 )
     {
     }
 
