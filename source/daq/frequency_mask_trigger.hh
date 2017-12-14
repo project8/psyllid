@@ -41,7 +41,8 @@ namespace psyllid
 
      It is possible to set a second threshold (threshold-power-snr-high).
      A second mask is calculated for this threshold and the incoming spectra are compared to both masks.
-     The output trigger flag contains the information which threshold led to a trigger.
+     The output trigger flag has an additional variable "high_threshold" which is set true if the higher threshold led to a trigger.
+     It is always set to true if only one trigger level is used.
 
      The mask can be written to a JSON file via the write_mask() function.  The format for the file is:
      {
@@ -61,7 +62,7 @@ namespace psyllid
      - "threshold-power-snr": float -- The threshold SNR, given as a power SNR
      - "threshold-power-snr-high": float -- A second SNR threshold, given as power SNR
      - "threshold-dB": float -- The threshold SNR, given as a dB factor
-     - "trigger-mode": string -- The trigger mode, canbe set to "single-level-trigger" or "two-level-trigger"
+     - "trigger-mode": string -- The trigger mode, can be set to "single-level-trigger" or "two-level-trigger"
      - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
 
      Available DAQ commands:
