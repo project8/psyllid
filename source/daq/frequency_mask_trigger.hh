@@ -81,6 +81,18 @@ namespace psyllid
             public midge::_transformer< frequency_mask_trigger, typelist_1( freq_data ), typelist_1( trigger_flag ) >
     {
         public:
+            enum class status_t
+            {
+                mask_update,
+                triggering
+            };
+            enum class trigger_mode_t
+            {
+                single_level_trigger,
+                two_level_trigger
+            };
+
+        public:
             frequency_mask_trigger();
             virtual ~frequency_mask_trigger();
 
@@ -90,14 +102,16 @@ namespace psyllid
             void set_threshold_power_snr( double a_power_snr );
             void set_threshold_power_snr_high( double a_power_snr);
             void set_threshold_dB( double a_dB );
-            void set_trigger_mode( std::string trigger_mode );
-            std::string get_trigger_mode() const;
+            void set_trigger_mode( const std::string& trigger_mode );
+            std::string get_trigger_mode_str() const;
 
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
             mv_accessible_noset( double, threshold_snr );
             mv_accessible_noset( double, threshold_snr_high);
             mv_accessible( unsigned, n_spline_points );
+            mv_accessible_noset( status_t, status );
+            mv_accessible( trigger_mode_t, trigger_mode );
 
         public:
             void switch_to_update_mask();
@@ -130,18 +144,6 @@ namespace psyllid
             unsigned f_n_summed;
 
             std::mutex f_mask_mutex;
-
-        public:
-            enum class status
-            {
-                mask_update,
-                triggering
-            };
-
-            mv_accessible_noset( status, status );
-
-            enum class trigger_mode_t { single_level_trigger, two_level_trigger};
-            trigger_mode_t f_trigger_mode;
 
     };
 

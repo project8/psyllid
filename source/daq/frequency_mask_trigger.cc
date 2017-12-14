@@ -31,12 +31,12 @@ namespace psyllid
             f_threshold_snr( 30. ),
             f_threshold_snr_high( 30. ),
             f_n_spline_points( 20 ),
+            f_status( status_t::mask_update ),
+            f_trigger_mode (trigger_mode_t::single_level_trigger ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_n_summed( 0 ),
-            f_mask_mutex(),
-            f_status( status::mask_update ),
-            f_trigger_mode (trigger_mode_t::single_level_trigger )
+            f_mask_mutex()
     {
     }
 
@@ -53,31 +53,36 @@ namespace psyllid
         f_n_packets_for_mask = a_n_pkts;
         return;
     }
+
     void frequency_mask_trigger::set_threshold_ampl_snr( double a_ampl_snr )
     {
         f_threshold_snr = a_ampl_snr * a_ampl_snr;
         LDEBUG( plog, "Setting threshold (power via ampl) to " << f_threshold_snr );
         return;
     }
+
     void frequency_mask_trigger::set_threshold_power_snr( double a_power_snr )
     {
         f_threshold_snr = a_power_snr;
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr );
         return;
     }
+
     void frequency_mask_trigger::set_threshold_power_snr_high( double a_power_snr )
     {
         f_threshold_snr_high = a_power_snr;
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr_high );
         return;
     }
+
     void frequency_mask_trigger::set_threshold_dB( double a_dB )
     {
         f_threshold_snr = pow( 10, a_dB / 10. );
         LDEBUG( plog, "Setting threshold (power via dB) to " << f_threshold_snr );
         return;
     }
-    void frequency_mask_trigger::set_trigger_mode( std::string trigger_mode )
+
+    void frequency_mask_trigger::set_trigger_mode( const std::string& trigger_mode )
     {
         LDEBUG( plog, "Performing actual trigger mode configuration");
         if ( trigger_mode == "single-level-trigger" )
@@ -93,18 +98,17 @@ namespace psyllid
            throw error() << "Unknown trigger_mode_id";
         }
     }
-   std::string frequency_mask_trigger::get_trigger_mode() const
+
+    std::string frequency_mask_trigger::get_trigger_mode_str() const
     {
-        std::string return_message;
-        if (f_trigger_mode == trigger_mode_t::single_level_trigger)
+        if( f_trigger_mode == trigger_mode_t::single_level_trigger)
         {
-            return_message = "single-level-trigger";
+            return std::string( "single-level-trigger" );
         }
         else //if f_trigger_mode == trigger_mode_t::two_level_trigger
         {
-            return_message = "two-level-trigger";
+            return std::string( "two-level-trigger" );
         }
-        return return_message;
     }
 
 
@@ -115,7 +119,7 @@ namespace psyllid
         if( f_exe_func != &frequency_mask_trigger::exe_add_to_mask )
         {
             f_break_exe_func.store( true );
-            f_status = status::mask_update;
+            f_status = status_t::mask_update;
             f_exe_func = &frequency_mask_trigger::exe_add_to_mask;
         }
         f_exe_func_mutex.unlock();
@@ -129,7 +133,7 @@ namespace psyllid
         if( f_exe_func != &frequency_mask_trigger::exe_apply_threshold )
         {
             f_break_exe_func.store( true );
-            f_status = status::triggering;
+            f_status = status_t::triggering;
 
             if ( f_trigger_mode == trigger_mode_t::single_level_trigger )
             {
@@ -793,7 +797,7 @@ namespace psyllid
         a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
         a_config.add( "threshold-power-snr-high", new scarab::param_value( a_node->get_threshold_snr_high() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
-        a_config.add( "trigger-mode", new scarab::param_value( a_node->get_trigger_mode() ) );
+        a_config.add( "trigger-mode", new scarab::param_value( a_node->get_trigger_mode_str() ) );
         return;
     }
 
