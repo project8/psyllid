@@ -8,8 +8,9 @@
 #ifndef PSYLLID_EGG3_READER_HH_
 #define PSYLLID_EGG3_READER_HH_
 
+#include "memory_block.hh"
+#include "node_builder.hh"
 #include "time_data.hh"
-//#include "node_builder.hh"
 
 #include "producer.hh"
 //#include "shared_cancel.hh"
@@ -69,7 +70,7 @@ namespace psyllid
 //
     };
 
-    class egg3_reader_binding: public _node_binding< egg3_reader, egg3_reader_binding >
+    class egg3_reader_binding : public _node_binding< egg3_reader, egg3_reader_binding >
     {
         public:
             egg3_reader_binding();

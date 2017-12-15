@@ -5,6 +5,7 @@
  *      Author: laroque
  */
 
+#include "egg3_reader.hh"
 #include "psyllid_error.hh"
 
 #include "logger.hh"
@@ -30,7 +31,7 @@ namespace psyllid
     LOGGER( plog, "egg3_reader" );
 
     egg3_reader::egg3_reader() :
-            f_length( 10 ),
+            f_length( 10 )
 //            f_max_packet_size( 1048576 ),
 //            f_port( 23530 ),
 //            f_ip( "127.0.0.1" ),
@@ -186,7 +187,7 @@ namespace psyllid
 //            out_stream< 0 >().set( stream::s_exit );
 //
 //            return;
-//        }
+        }
         catch(...)
         {
             a_midge->throw_ex( std::current_exception() );
