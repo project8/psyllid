@@ -13,6 +13,7 @@
 #include "time_data.hh"
 
 #include "producer.hh"
+#include "M3Monarch.hh"
 //#include "shared_cancel.hh"
 
 //namespace scarab
@@ -49,6 +50,7 @@ namespace psyllid
 
         public:
             mv_accessible( uint64_t, length );
+            mv_accessible( std::string, egg_path );
 //            mv_accessible( uint32_t, max_packet_size );
 //            mv_accessible( uint32_t, port );
 //            mv_referrable( std::string, ip );

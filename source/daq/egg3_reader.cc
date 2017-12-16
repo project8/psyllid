@@ -9,6 +9,7 @@
 #include "psyllid_error.hh"
 
 #include "logger.hh"
+#include "M3Monarch.hh"
 #include "param.hh"
 
 //#include <arpa/inet.h>
@@ -31,7 +32,8 @@ namespace psyllid
     LOGGER( plog, "egg3_reader" );
 
     egg3_reader::egg3_reader() :
-            f_length( 10 )
+            f_length( 10 ),
+            f_egg_path( "/dev/null" )
 //            f_max_packet_size( 1048576 ),
 //            f_port( 23530 ),
 //            f_ip( "127.0.0.1" ),
@@ -50,6 +52,15 @@ namespace psyllid
     void egg3_reader::initialize()
     {
         out_buffer< 0 >().initialize( f_length );
+
+        LDEBUG( plog, "opening egg file [" << f_egg_path << "]" );
+
+        monarch3::Monarch3 *t_egg_file;
+        t_egg_file->OpenForReading( f_egg_path );
+        t_egg_file->ReadHeader();
+
+        monarch3::M3Header *t_egg_header;
+        t_egg_header = t_egg_file->GetHeader();
 
 //        LDEBUG( plog, "Opening UDP socket receiving at " << f_ip << ":" << f_port );
 //
@@ -235,7 +246,7 @@ namespace psyllid
     void egg3_reader_binding::do_apply_config( egg3_reader* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring egg3_reader with:\n" << a_config );
-//        a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
+        a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
 //        a_node->set_port( a_config.get_value( "port", a_node->get_port() ) );
 //        a_node->ip() = a_config.get_value( "ip", a_node->ip() );
 //        a_node->set_timeout_sec( a_config.get_value( "timeout-sec", a_node->get_timeout_sec() ) );
@@ -245,7 +256,7 @@ namespace psyllid
     void egg3_reader_binding::do_dump_config( const egg3_reader* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for egg3_reader" );
-//        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
+        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
 //        a_config.add( "port", new scarab::param_value( a_node->get_port() ) );
 //        a_config.add( "ip", new scarab::param_value( a_node->ip() ) );
 //        a_config.add( "timeout-sec", new scarab::param_value( a_node->get_timeout_sec() ) );
