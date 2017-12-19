@@ -145,6 +145,14 @@ Returns the run duration (in ms).
 
 - ``values: [[duration (unsigned int)]]`` -- Duration in ms as the first element of the ``values`` array
 
+``use-monarch``
+---------------
+Returns the use-monarch flag.
+
+*Reply Payload*
+
+- ``values: [[flag (bool)]]`` -- Use-monarch flag as the first element of the ``values`` array
+
 
 OP_SET
 ^^^^^^
@@ -221,6 +229,14 @@ Sets the run duration in ms. Takes effect for the next run.
 *Payload*
 
 - ``values: [[duration (unsigned int)]]`` -- Duration in ms
+
+``use-monarch``
+---------------
+Sets the use-monarch flag. Takes effect for the next run.
+
+*Payload*
+
+- ``values: [[flag (bool)]]`` -- Flag value (true, false, 0, 1)
 
 
 OP_CMD

@@ -37,15 +37,26 @@
 
 ### Version: *Upcoming Releases*
 
-#### Release Date: TBD
+#### Release Date: December 19, 2017 (est)
 
 #### New Features:
 
-* . . .
+* Option to use monarch or not in daq_control
+    * Includes dripline get and set functions under the RKS `use-monarch`.
+    * API documentation has been updated.
+    * If the option is `false` and during a run a writer attempts to write to a Monarch file, Psyllid will crash.
+    * Validated by demonstrating that no file is written if the option is `false` (no incoming data; standard streaming 1-channel socket config).
   
 #### Fixes:
 
-* . . .
+* Pretrigger implementation in event_builder
+    * boost::circular buffer used to implement the pretrigger buffer instead of std::deque.
+    * Validated using the ROACH simulator.
+
+* Stream-closing on node exit
+    * Writers perform a final attempt to close a stream when they exit.
+    * Validated by inserting code to purposefully crash a node.
+    
   
 
 ### Version: 1.2.3

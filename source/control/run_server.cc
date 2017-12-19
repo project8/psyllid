@@ -131,6 +131,7 @@ namespace psyllid
         f_request_receiver->register_get_handler( "filename", std::bind( &daq_control::handle_get_filename_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_get_handler( "description", std::bind( &daq_control::handle_get_description_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_get_handler( "duration", std::bind( &daq_control::handle_get_duration_request, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_get_handler( "use-monarch", std::bind( &daq_control::handle_get_use_monarch_request, f_daq_control, _1, _2 ) );
 
         // add set request handlers
         f_request_receiver->register_set_handler( "node-config", std::bind( &stream_manager::handle_configure_node_request, f_stream_manager, _1, _2 ) );
@@ -138,6 +139,7 @@ namespace psyllid
         f_request_receiver->register_set_handler( "filename", std::bind( &daq_control::handle_set_filename_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_set_handler( "description", std::bind( &daq_control::handle_set_description_request, f_daq_control, _1, _2 ) );
         f_request_receiver->register_set_handler( "duration", std::bind( &daq_control::handle_set_duration_request, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_set_handler( "use-monarch", std::bind( &daq_control::handle_set_use_monarch_request, f_daq_control, _1, _2 ) );
 
         // add cmd request handlers
         f_request_receiver->register_cmd_handler( "add-stream", std::bind( &stream_manager::handle_add_stream_request, f_stream_manager, _1, _2 ) );
