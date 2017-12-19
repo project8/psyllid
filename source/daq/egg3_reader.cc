@@ -55,12 +55,15 @@ namespace psyllid
 
         LDEBUG( plog, "opening egg file [" << f_egg_path << "]" );
 
-        monarch3::Monarch3 *t_egg_file;
-        t_egg_file->OpenForReading( f_egg_path );
+        const monarch3::Monarch3 *t_egg_file = monarch3::Monarch3::OpenForReading( f_egg_path );
+        //t_egg_file->OpenForReading( f_egg_path );
+        LDEBUG( plog, "file opened, now read header" );
         t_egg_file->ReadHeader();
+        LDEBUG( plog, "header read, get it" );
 
-        monarch3::M3Header *t_egg_header;
+        const monarch3::M3Header *t_egg_header;
         t_egg_header = t_egg_file->GetHeader();
+        LDEBUG( plog, "header got" );
 
 //        LDEBUG( plog, "Opening UDP socket receiving at " << f_ip << ":" << f_port );
 //
@@ -246,6 +249,7 @@ namespace psyllid
     void egg3_reader_binding::do_apply_config( egg3_reader* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring egg3_reader with:\n" << a_config );
+        a_node->set_egg_path( a_config.get_value( "egg_path", a_node->get_egg_path() ) );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
 //        a_node->set_port( a_config.get_value( "port", a_node->get_port() ) );
 //        a_node->ip() = a_config.get_value( "ip", a_node->ip() );
@@ -256,6 +260,7 @@ namespace psyllid
     void egg3_reader_binding::do_dump_config( const egg3_reader* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for egg3_reader" );
+        a_config.add( "egg_path", new scarab::param_value( a_node->get_egg_path() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
 //        a_config.add( "port", new scarab::param_value( a_node->get_port() ) );
 //        a_config.add( "ip", new scarab::param_value( a_node->ip() ) );
