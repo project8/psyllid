@@ -50,6 +50,7 @@ namespace psyllid
             f_run_return(),
             f_msg_relay( message_relayer::get_instance() ),
             f_run_duration( 1000 ),
+            f_use_monarch( true ),
             f_status( status::deactivated )
     {
         // DAQ config is optional; defaults will work just fine
@@ -343,18 +344,21 @@ namespace psyllid
         LINFO( plog, "Run is commencing" );
         f_msg_relay->slack_notice( "Run is commencing" );
 
-        LDEBUG( plog, "Starting egg files" );
-        try
+        if( f_use_monarch )
         {
-            butterfly_house::get_instance()->start_files();
-        }
-        catch( std::exception& e )
-        {
-            LERROR( plog, "Unable to start files: " << e.what() );
-            set_status( status::error );
-            LDEBUG( plog, "Canceling midge" );
-            if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
-            return;
+            LDEBUG( plog, "Starting egg files" );
+            try
+            {
+                butterfly_house::get_instance()->start_files();
+            }
+            catch( std::exception& e )
+            {
+                LERROR( plog, "Unable to start files: " << e.what() );
+                set_status( status::error );
+                LDEBUG( plog, "Canceling midge" );
+                if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+                return;
+            }
         }
 
         typedef std::chrono::steady_clock::duration duration_t;
@@ -422,18 +426,21 @@ namespace psyllid
         if( f_do_break_run ) LINFO( plog, "Run was stopped manually" );
         if( is_canceled() ) LINFO( plog, "Run was cancelled" );
 
-        LDEBUG( plog, "Finishing egg files" );
-        try
+        if( f_use_monarch )
         {
-            butterfly_house::get_instance()->finish_files();
-        }
-        catch( std::exception& e )
-        {
-            LERROR( plog, "Unable to finish files: " << e.what() );
-            set_status( status::error );
-            LDEBUG( plog, "Canceling midge" );
-            if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
-            return;
+            LDEBUG( plog, "Finishing egg files" );
+            try
+            {
+                butterfly_house::get_instance()->finish_files();
+            }
+            catch( std::exception& e )
+            {
+                LERROR( plog, "Unable to finish files: " << e.what() );
+                set_status( status::error );
+                LDEBUG( plog, "Canceling midge" );
+                if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+                return;
+            }
         }
 
         return;
@@ -880,6 +887,20 @@ namespace psyllid
         }
     }
 
+    bool daq_control::handle_set_use_monarch_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        try
+        {
+            f_use_monarch =  a_request->get_payload().array_at( "values" )->get_value< bool >( 0 );
+            LDEBUG( plog, "Use-monarch set to <" << f_use_monarch << ">" );
+            return a_reply_pkg.send_reply( retcode_t::success, "Use Monarch set" );
+        }
+        catch( std::exception& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set use-monarch: " ) + e.what() );
+        }
+    }
+
     bool daq_control::handle_get_status_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         param_node* t_server_node = new param_node();
@@ -948,6 +969,16 @@ namespace psyllid
         a_reply_pkg.f_payload.add( "values", t_values_array );
 
         return a_reply_pkg.send_reply( retcode_t::success, "Duration request completed" );
+    }
+
+    bool daq_control::handle_get_use_monarch_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    {
+        param_array* t_values_array = new param_array();
+        t_values_array->push_back( new param_value( f_use_monarch ) );
+
+        a_reply_pkg.f_payload.add( "values", t_values_array );
+
+        return a_reply_pkg.send_reply( retcode_t::success, "Use Monarch request completed" );
     }
 
 
