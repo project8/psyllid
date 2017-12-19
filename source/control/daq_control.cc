@@ -928,14 +928,12 @@ namespace psyllid
             param_array* t_values_array = new param_array();
             t_values_array->push_back( new param_value( get_filename( t_file_num ) ) );
             a_reply_pkg.f_payload.add( "values", t_values_array );
-            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+            return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
         }
         catch( scarab::error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to get description: " ) + e.what() );
         }
-
-        return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
     }
 
     bool daq_control::handle_get_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
@@ -951,14 +949,12 @@ namespace psyllid
             param_array* t_values_array = new param_array();
             t_values_array->push_back( new param_value( get_description( t_file_num ) ) );
             a_reply_pkg.f_payload.add( "values", t_values_array );
-            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+            return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
         }
         catch( scarab::error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to get description: " ) + e.what() );
         }
-
-        return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
     }
 
     bool daq_control::handle_get_duration_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
