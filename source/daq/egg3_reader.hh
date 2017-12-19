@@ -14,12 +14,6 @@
 
 #include "producer.hh"
 #include "M3Monarch.hh"
-//#include "shared_cancel.hh"
-
-//namespace scarab
-//{
-//    class param_node;
-//}
 
 namespace psyllid
 {
@@ -49,27 +43,18 @@ namespace psyllid
             virtual ~egg3_reader();
 
         public:
-            mv_accessible( uint64_t, length );
+            mv_accessible( const monarch3::Monarch3*, egg );
             mv_accessible( std::string, egg_path );
-//            mv_accessible( uint32_t, max_packet_size );
-//            mv_accessible( uint32_t, port );
-//            mv_referrable( std::string, ip );
-//            mv_accessible( unsigned, timeout_sec );  /// Timeout in seconds for waiting on socket recv function
-//
+            mv_accessible( uint64_t, length );
+
         public:
             virtual void initialize();
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
-//
-//        private:
-//            void cleanup_socket();
-//
-//            int f_socket;
-//            sockaddr_in* f_address;
-//
-//        protected:
-//            int f_last_errno;
-//
+
+        private:
+            void cleanup_file();
+
     };
 
     class egg3_reader_binding : public _node_binding< egg3_reader, egg3_reader_binding >
