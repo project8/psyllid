@@ -39,11 +39,9 @@ namespace psyllid
 
         LDEBUG( plog, "opening egg file [" << f_egg_path << "]" );
         f_egg = monarch3::Monarch3::OpenForReading( f_egg_path );
-
-        // do i actually care about reading or getting the header?
-        // if so, do i do it here or in execute? can i update the DAQ settings so that the header info is retained in the output?
-        //t_egg_file->ReadHeader();
-        //const monarch3::M3Header *t_egg_header = t_egg_file->GetHeader();
+        f_egg->ReadHeader();
+        // do we want/need to do anything with the header?
+        //const monarch3::M3Header *t_egg_header = f_egg->GetHeader();
         return;
 
     }
@@ -53,6 +51,24 @@ namespace psyllid
         try
         {
             LDEBUG( plog, "Executing the egg3_reader" );
+            // use header to loop streams so we can send more than one?
+            //const monarch3::M3Header *t_egg_header = f_egg->GetHeader();
+            const monarch3::M3Record* t_data = f_egg->GetStream( 0 )->GetChannelRecord( 0 );
+
+            if( ! out_stream< 0 >().set( stream::s_start ) ) return;
+
+            // starting loop over file contents
+            while (! is_canceled() )
+            {
+                if( (out_stream< 0 >().get() == stream::s_stop) )
+                {
+                    LWARN( plog, "Output stream(s) have stop condition" );
+                    break;
+                }
+            }
+
+            // reading data goes herea
+            //TODO we probably do want support for multiple streams
         }
         catch(...)
         {

@@ -31,7 +31,7 @@ namespace psyllid
      Node type: "egg3-reader"
 
      Available configuration values:
-     - "path": string -- resolvable path to the egg file from which to read data
+     - "egg_path": string -- resolvable path to the egg file from which to read data
 
      Output Streams:
      - 0: time_data
