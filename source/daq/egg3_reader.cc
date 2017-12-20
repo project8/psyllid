@@ -75,7 +75,7 @@ namespace psyllid
                 // read next record in egg file, writing into the output_stream
                 if ( !t_stream->ReadRecord() )
                 {
-                    LDEBUG( PLOG, "reached end of file" );
+                    LDEBUG( plog, "reached end of file" );
                     break;
                 }
             }
