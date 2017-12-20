@@ -73,7 +73,11 @@ namespace psyllid
                 // update M3Record so that it will write into t_data
                 t_record->UpdateDataPtr( reinterpret_cast< const monarch3::byte_type* >(t_data->get_raw_array()) );
                 // read next record in egg file, writing into the output_stream
-                t_stream->ReadRecord();
+                if ( !t_stream->ReadRecord() )
+                {
+                    LDEBUG( PLOG, "reached end of file" );
+                    break;
+                }
             }
 
 
@@ -82,6 +86,7 @@ namespace psyllid
         }
         catch(...)
         {
+            LWARN( plog, "got an exception, throwing" );
             a_midge->throw_ex( std::current_exception() );
         }
     }
