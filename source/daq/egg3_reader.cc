@@ -53,7 +53,10 @@ namespace psyllid
             LDEBUG( plog, "Executing the egg3_reader" );
             // use header to loop streams so we can send more than one?
             //const monarch3::M3Header *t_egg_header = f_egg->GetHeader();
-            const monarch3::M3Record* t_data = f_egg->GetStream( 0 )->GetChannelRecord( 0 );
+            const monarch3::M3Stream* t_stream = f_egg->GetStream( 0 );
+            const monarch3::M3Record* t_record = t_stream->GetChannelRecord( 0 );
+
+            time_data* t_data = nullptr;
 
             if( ! out_stream< 0 >().set( stream::s_start ) ) return;
 
@@ -65,7 +68,14 @@ namespace psyllid
                     LWARN( plog, "Output stream(s) have stop condition" );
                     break;
                 }
+                // update t_data to point to the next slot in the output stream
+                t_data = out_stream< 0 >().data();
+                // update M3Record so that it will write into t_data
+                t_record->UpdateDataPtr( t_data->get_raw_array() );
+                // read next record in egg file, writing into the output_stream
+                t_stream->ReadRecord();
             }
+
 
             // reading data goes herea
             //TODO we probably do want support for multiple streams
