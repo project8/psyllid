@@ -71,7 +71,7 @@ namespace psyllid
                 // update t_data to point to the next slot in the output stream
                 t_data = out_stream< 0 >().data();
                 // update M3Record so that it will write into t_data
-                t_record->UpdateDataPtr( t_data->get_raw_array() );
+                t_record->UpdateDataPtr( reinterpret_cast< const monarch3::byte_type* >(t_data->get_raw_array()) );
                 // read next record in egg file, writing into the output_stream
                 t_stream->ReadRecord();
             }
