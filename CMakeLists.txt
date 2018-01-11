@@ -20,9 +20,6 @@ pbuilder_prepare_project()
 
 set_option( USE_CPP11 TRUE )
 
-# add an option to build docs
-option( Psyllid_BUILD_DOCS "Enable make targets for both doxygen and sphinx (requires Doxygen, Sphinx, and Breathe)" FALSE )
-
 # add an option to perform iterator time profiling
 option( Psyllid_ENABLE_ITERATOR_TIMING "Flag to enable iterator time profiling" FALSE )
 if( Psyllid_ENABLE_ITERATOR_TIMING )
@@ -78,8 +75,3 @@ add_subdirectory( source/control )
 
 add_subdirectory( source/applications )
 add_subdirectory( source/test )
-
-if( Psyllid_BUILD_DOCS )
-    add_subdirectory( documentation )
-endif( Psyllid_BUILD_DOCS )
-
