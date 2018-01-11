@@ -498,21 +498,8 @@ namespace psyllid
     void monarch_wrapper::finish_file()
     {
         unique_lock t_monarch_lock( f_monarch_mutex );
-        try
-        {
-            finish_file_nolock();
-        }
-        catch( error& e )
-        {
-            throw;
-        }
-        return;
-    }
 
-    void monarch_wrapper::finish_file_nolock()
-    {
         std::string t_filename( f_monarch->GetHeader()->GetFilename() );
-        set_stage( monarch_stage::finished );
 
         f_monarch_od_manager.finish_to_finish();
 
@@ -531,17 +518,20 @@ namespace psyllid
         }
         else if( f_stage == monarch_stage::writing )
         {
-            if( ! f_stream_wraps.empty() )
+            t_monarch_lock.unlock(); // finish_stream() locks f_monarch_mutex, so it needs to be unlocked before calls on that can be processed
+            for( unsigned i_attempt = 0; i_attempt < 10 && ! f_stream_wraps.empty(); ++i_attempt)
             {
                 // give midge time to finish the streams before finishing the files
                 std::this_thread::sleep_for( std::chrono::milliseconds(500));
-                if( ! f_stream_wraps.empty() )
-                {
-                    throw error() << "Streams have not all been finished";
-                }
             }
+            if( ! f_stream_wraps.empty() )
+            {
+                throw error() << "Streams did not all finish after 5 seconds";
+            }
+            t_monarch_lock.lock();
         }
         LINFO( plog, "Finished writing file <" << t_filename << ">" );
+        set_stage( monarch_stage::finished );
         f_monarch->FinishWriting();
         f_monarch.reset();
         f_file_size_est_mb = 0.;

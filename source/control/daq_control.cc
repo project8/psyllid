@@ -50,6 +50,7 @@ namespace psyllid
             f_run_return(),
             f_msg_relay( message_relayer::get_instance() ),
             f_run_duration( 1000 ),
+            f_use_monarch( true ),
             f_status( status::deactivated )
     {
         // DAQ config is optional; defaults will work just fine
@@ -122,6 +123,7 @@ namespace psyllid
                 {
                     LWARN( plog, "Exception caught while resetting midge: " << e.what() );
                     LWARN( plog, "Returning to the \"deactivated\" state and awaiting further instructions" );
+                    f_msg_relay->slack_error( std::string("Psyllid could not be activated.\nDetails: ") + e.what() );
                     set_status( status::deactivated );
                     continue;
                 }
@@ -151,6 +153,7 @@ namespace psyllid
                 catch( std::exception& e )
                 {
                     LERROR( plog, "An exception was thrown while running midge: " << e.what() );
+                    f_msg_relay->slack_error( std::string("An exception was thrown while running midge: ") + e.what() );
                     set_status( status::error );
                 }
 
@@ -165,21 +168,27 @@ namespace psyllid
                     catch( midge::error& e )
                     {
                         LERROR( plog, "A Midge error has been caught: " << e.what() );
+                        f_msg_relay->slack_error( std::string("A Midge error has been caught: ") + e.what() );
                         set_status( status::error );
                     }
                     catch( midge::node_fatal_error& e )
                     {
                         LERROR( plog, "A fatal node error was thrown from midge: " << e.what() );
+                        f_msg_relay->slack_error( std::string("A fatal node error was thrown from midge: ") + e.what() );
                         set_status( status::error );
                     }
                     catch( midge::node_nonfatal_error& e )
                     {
                         LWARN( plog, "A non-fatal node error was thrown from midge: " << e.what() );
+                        f_msg_relay->slack_error( std::string("A non-fatal node error was thrown from midge.  ") +
+                                "Psyllid is still running (hopefully) but its state has been reset.\n" +
+                                "Error details: " + e.what() );
                         set_status( status::do_restart );
                     }
                     catch( std::exception& e )
                     {
                         LERROR( plog, "An unknown exception was thrown from midge: " << e.what() );
+                        f_msg_relay->slack_error( std::string("An unknown exception was thrown from midge: ") + e.what() );
                         set_status( status::error );
                     }
                     LDEBUG( plog, "Calling stop_run" );
@@ -198,6 +207,7 @@ namespace psyllid
                 else if( get_status() == status::error )
                 {
                     LERROR( plog, "Canceling due to midge error" );
+                    f_msg_relay->slack_error( "Psyllid has crashed due to an error while running.  Hopefully the details have already been reported." );
                     raise(SIGINT);
                     continue;
                 }
@@ -206,6 +216,7 @@ namespace psyllid
                     LDEBUG( plog, "Setting status to deactivated" );
                     set_status( status::deactivated );
                     LINFO( plog, "Commencing restart of the DAQ" );
+                    f_msg_relay->slack_warn( "Commencing restart of the Psyllid DAQ nodes" );
                     std::this_thread::sleep_for( std::chrono::milliseconds(250) );
                     LDEBUG( plog, "Will activate DAQ control asynchronously" );
                     t_activation_return = std::async( std::launch::async,
@@ -271,6 +282,7 @@ namespace psyllid
     void daq_control::reactivate()
     {
         deactivate();
+        std::this_thread::sleep_for( std::chrono::seconds(1) );
         activate();
         return;
     }
@@ -332,18 +344,21 @@ namespace psyllid
         LINFO( plog, "Run is commencing" );
         f_msg_relay->slack_notice( "Run is commencing" );
 
-        LDEBUG( plog, "Starting egg files" );
-        try
+        if( f_use_monarch )
         {
-            butterfly_house::get_instance()->start_files();
-        }
-        catch( std::exception& e )
-        {
-            LERROR( plog, "Unable to start files: " << e.what() );
-            set_status( status::error );
-            LDEBUG( plog, "Canceling midge" );
-            if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
-            return;
+            LDEBUG( plog, "Starting egg files" );
+            try
+            {
+                butterfly_house::get_instance()->start_files();
+            }
+            catch( std::exception& e )
+            {
+                LERROR( plog, "Unable to start files: " << e.what() );
+                set_status( status::error );
+                LDEBUG( plog, "Canceling midge" );
+                if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+                return;
+            }
         }
 
         typedef std::chrono::steady_clock::duration duration_t;
@@ -411,18 +426,21 @@ namespace psyllid
         if( f_do_break_run ) LINFO( plog, "Run was stopped manually" );
         if( is_canceled() ) LINFO( plog, "Run was cancelled" );
 
-        LDEBUG( plog, "Finishing egg files" );
-        try
+        if( f_use_monarch )
         {
-            butterfly_house::get_instance()->finish_files();
-        }
-        catch( std::exception& e )
-        {
-            LERROR( plog, "Unable to finish files: " << e.what() );
-            set_status( status::error );
-            LDEBUG( plog, "Canceling midge" );
-            if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
-            return;
+            LDEBUG( plog, "Finishing egg files" );
+            try
+            {
+                butterfly_house::get_instance()->finish_files();
+            }
+            catch( std::exception& e )
+            {
+                LERROR( plog, "Unable to finish files: " << e.what() );
+                set_status( status::error );
+                LDEBUG( plog, "Canceling midge" );
+                if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+                return;
+            }
         }
 
         return;
@@ -869,6 +887,20 @@ namespace psyllid
         }
     }
 
+    bool daq_control::handle_set_use_monarch_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        try
+        {
+            f_use_monarch =  a_request->get_payload().array_at( "values" )->get_value< bool >( 0 );
+            LDEBUG( plog, "Use-monarch set to <" << f_use_monarch << ">" );
+            return a_reply_pkg.send_reply( retcode_t::success, "Use Monarch set" );
+        }
+        catch( std::exception& e )
+        {
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set use-monarch: " ) + e.what() );
+        }
+    }
+
     bool daq_control::handle_get_status_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         param_node* t_server_node = new param_node();
@@ -896,14 +928,12 @@ namespace psyllid
             param_array* t_values_array = new param_array();
             t_values_array->push_back( new param_value( get_filename( t_file_num ) ) );
             a_reply_pkg.f_payload.add( "values", t_values_array );
-            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+            return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
         }
         catch( scarab::error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to get description: " ) + e.what() );
         }
-
-        return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
     }
 
     bool daq_control::handle_get_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
@@ -919,14 +949,12 @@ namespace psyllid
             param_array* t_values_array = new param_array();
             t_values_array->push_back( new param_value( get_description( t_file_num ) ) );
             a_reply_pkg.f_payload.add( "values", t_values_array );
-            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+            return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
         }
         catch( scarab::error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to get description: " ) + e.what() );
         }
-
-        return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
     }
 
     bool daq_control::handle_get_duration_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
@@ -937,6 +965,16 @@ namespace psyllid
         a_reply_pkg.f_payload.add( "values", t_values_array );
 
         return a_reply_pkg.send_reply( retcode_t::success, "Duration request completed" );
+    }
+
+    bool daq_control::handle_get_use_monarch_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    {
+        param_array* t_values_array = new param_array();
+        t_values_array->push_back( new param_value( f_use_monarch ) );
+
+        a_reply_pkg.f_payload.add( "values", t_values_array );
+
+        return a_reply_pkg.send_reply( retcode_t::success, "Use Monarch request completed" );
     }
 
 

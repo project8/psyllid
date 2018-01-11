@@ -50,8 +50,10 @@ namespace psyllid
     {
     }
 
-    void triggered_writer::prepare_to_write( monarch_wrap_ptr /*a_mw_ptr*/, header_wrap_ptr a_hw_ptr )
+    void triggered_writer::prepare_to_write( monarch_wrap_ptr a_mw_ptr, header_wrap_ptr a_hw_ptr )
     {
+        f_monarch_ptr = a_mw_ptr;
+
         scarab::dig_calib_params t_dig_params;
         scarab::get_calib_params( f_bit_depth, f_data_type_size, f_v_offset, f_v_range, true, &t_dig_params );
 
@@ -133,30 +135,30 @@ namespace psyllid
                 break;
             }
 
-            LTRACE( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
+            LTRACE( plog, "Triggered writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
 
             if( t_time_command == stream::s_exit )
             {
-                LDEBUG( plog, "Egg writer is exiting due to time-stream command; no run in progress" );
+                LDEBUG( plog, "Triggered writer is exiting due to time-stream command; no run in progress" );
                 a_ctx.f_should_exit = true;
                 break;
             }
 
             if( t_time_command == stream::s_stop )
             {
-                LDEBUG( plog, "Egg writer received stop command on the time stream while already stopped; no action taken" );
+                LDEBUG( plog, "Triggered writer received stop command on the time stream while already stopped; no action taken" );
                 continue;
             }
 
             if( t_time_command == stream::s_run )
             {
-                LWARN( plog, "Egg writer received run command on the time stream while stopped; no action taken" );
+                LWARN( plog, "Triggered writer received run command on the time stream while stopped; no action taken" );
                 continue;
             }
 
             if( t_time_command == stream::s_start )
             {
-                LDEBUG( plog, "Egg writer received start command on the time stream; looking for start command on the trigger stream" );
+                LDEBUG( plog, "Triggered writer received start command on the time stream; looking for start command on the trigger stream" );
 
                 // do this in a while loop so we don't re-do the time stream get()
                 while( ! is_canceled() )
@@ -165,7 +167,7 @@ namespace psyllid
                     for( unsigned i_attempt = 0; i_attempt < 10 && t_trig_command != stream::s_start; ++i_attempt )
                     {
                         t_trig_command = in_stream< 1 >().get();
-                        LTRACE( plog, "(attempt " << i_attempt << ") Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
+                        LTRACE( plog, "(attempt " << i_attempt << ") Triggered writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
                     }
 
                     if( t_trig_command == stream::s_start )
@@ -178,7 +180,7 @@ namespace psyllid
                         if( a_ctx.f_swrap_ptr ) a_ctx.f_swrap_ptr.reset();
 
                         LDEBUG( plog, "Getting stream <" << a_ctx.f_stream_no << ">" );
-                        a_ctx.f_swrap_ptr = a_ctx.f_monarch_ptr->get_stream( a_ctx.f_stream_no );
+                        a_ctx.f_swrap_ptr = f_monarch_ptr->get_stream( a_ctx.f_stream_no );
                         a_ctx.f_record_ptr = a_ctx.f_swrap_ptr->get_stream_record();
 
                         a_ctx.f_start_file_with_next_data = true;
@@ -229,7 +231,7 @@ namespace psyllid
                     if( a_ctx.f_swrap_ptr )
                     {
                         LDEBUG( plog, "Finishing stream <" << a_ctx.f_stream_no << ">" );
-                        a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
+                        f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                         a_ctx.f_swrap_ptr.reset();
                     }
                     throw error() << "Trig command doesn't match time command: time command = " << t_time_command << "; trig command = " << t_trig_command;
@@ -247,7 +249,7 @@ namespace psyllid
                 LDEBUG( plog, "Egg writer is exiting due to trig-stream command; run is in progress" );
                 if( a_ctx.f_swrap_ptr )
                 {
-                    a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
+                    f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                     a_ctx.f_swrap_ptr.reset();
                 }
                 a_ctx.f_should_exit = true;
@@ -259,7 +261,7 @@ namespace psyllid
                 LDEBUG( plog, "Egg writer received stop command on the trig stream while run is in progress" );
                 if( a_ctx.f_swrap_ptr )
                 {
-                    a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
+                    f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                     a_ctx.f_swrap_ptr.reset();
                 }
                 t_time_command = in_stream< 0 >().get();
@@ -275,7 +277,7 @@ namespace psyllid
                 LERROR( plog, "Egg writer received unexpected start command on the trig stream while running")
                 if( a_ctx.f_swrap_ptr )
                 {
-                    a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
+                    f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                     a_ctx.f_swrap_ptr.reset();
                 }
                 t_time_command = in_stream< 0 >().get();
@@ -293,10 +295,22 @@ namespace psyllid
                 {
                     if( a_ctx.f_swrap_ptr )
                     {
-                        a_ctx.f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
+                        f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
                         a_ctx.f_swrap_ptr.reset();
                     }
-                    throw midge::node_nonfatal_error() << "Trig command doesn't match time command: time command = " << t_time_command << "; trig command = " << t_trig_command;
+                    if (t_time_command == stream::s_stop)
+                    {
+                        t_trig_command = in_stream< 1 >().get();
+                        LDEBUG( plog, "Egg writer received stop command on the time stream while run in progress.");
+                        LDEBUG( plog, "Advancing trig stream; time command matched trig command? trig command = " << t_trig_command << "; time command = " << t_time_command );
+                        LDEBUG( plog, "Breaking out of is-running exe loop" );
+                        a_ctx.f_is_running = false;
+                        break; // out of is-running exe loop
+                    }
+                    else
+                    {
+                        throw midge::node_nonfatal_error() << "Trig command doesn't match time command: time command = " << t_time_command << "; trig command = " << t_trig_command;
+                    }
                 }
 
                 // everything agrees that we're running
@@ -319,15 +333,17 @@ namespace psyllid
                 if( ! a_ctx.f_swrap_ptr )
                 {
                     LDEBUG( plog, "Getting stream <" << a_ctx.f_stream_no << ">" );
-                    a_ctx.f_swrap_ptr = a_ctx.f_monarch_ptr->get_stream( a_ctx.f_stream_no );
+                    a_ctx.f_swrap_ptr = f_monarch_ptr->get_stream( a_ctx.f_stream_no );
                     a_ctx.f_record_ptr = a_ctx.f_swrap_ptr->get_stream_record();
                 }
 
                 uint64_t t_time_id = t_time_data->get_pkt_in_session();
                 uint64_t t_trig_id = t_trig_data->get_id();
+                LTRACE( plog, "Time id: <" << t_time_id << ">; Trig id: <" << t_trig_id << ">");
 
                 if( t_time_id != t_trig_id )
                 {
+                    /*
                     LTRACE( plog, "Mismatch between time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
                     while( t_time_id < t_trig_id )
                     {
@@ -344,10 +360,12 @@ namespace psyllid
                         t_trig_id = t_trig_data->get_id();
                     }
                     if( t_time_id != t_trig_id )
-                    {
+                    {*/
+                    LERROR( plog, "Mismatch between time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
                         throw midge::node_nonfatal_error() << "Unable to match time and trigger streams";
-                    }
+                    /*}
                     LTRACE( plog, "Mismatch resolved: time id <" << t_time_id << "> and trigger id <" << t_trig_id << ">" );
+                    */
                 }
 
                 if( t_trig_data->get_flag() )
@@ -375,6 +393,15 @@ namespace psyllid
             }
 
         } // end while ! is_canceled()
+
+        // final attempt to finish the stream if the outer while loop is broken without the stream having been stopped or exited
+        // e.g. if cancelled first, before anything else happens
+        if( a_ctx.f_swrap_ptr )
+        {
+            LDEBUG( plog, "Finishing stream <" << a_ctx.f_stream_no << ">" );
+            f_monarch_ptr->finish_stream( a_ctx.f_stream_no );
+            a_ctx.f_swrap_ptr.reset();
+        }
 
         return;
     }

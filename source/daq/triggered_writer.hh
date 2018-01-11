@@ -86,7 +86,6 @@ namespace psyllid
             {
                 bool f_is_running;
                 bool f_should_exit;
-                monarch_wrap_ptr f_monarch_ptr;
                 stream_wrap_ptr f_swrap_ptr;
                 monarch3::M3Record* f_record_ptr;
                 unsigned f_stream_no;

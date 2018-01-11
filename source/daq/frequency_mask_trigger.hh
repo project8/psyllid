@@ -39,6 +39,11 @@ namespace psyllid
      In triggering mode, each arriving spectrum is compared to the mask bin-by-bin.  If a bin crosses the threshold, the spectrum passes
      the trigger and the bin-by-bin comparison is stopped.
 
+     It is possible to set a second threshold (threshold-power-snr-high).
+     A second mask is calculated for this threshold and the incoming spectra are compared to both masks.
+     The output trigger flag has an additional variable "high_threshold" which is set true if the higher threshold led to a trigger.
+     It is always set to true if only one trigger level is used.
+
      The mask can be written to a JSON file via the write_mask() function.  The format for the file is:
      {
          "timestamp": "[timestamp]",
@@ -55,7 +60,9 @@ namespace psyllid
      - "n-packets-for-mask": uint -- The number of spectra used to calculate the trigger mask
      - "threshold-ampl-snr": float -- The threshold SNR, given as an amplitude SNR
      - "threshold-power-snr": float -- The threshold SNR, given as a power SNR
+     - "threshold-power-snr-high": float -- A second SNR threshold, given as power SNR
      - "threshold-dB": float -- The threshold SNR, given as a dB factor
+     - "trigger-mode": string -- The trigger mode, can be set to "single-level-trigger" or "two-level-trigger"
      - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
 
      Available DAQ commands:
@@ -74,6 +81,18 @@ namespace psyllid
             public midge::_transformer< frequency_mask_trigger, typelist_1( freq_data ), typelist_1( trigger_flag ) >
     {
         public:
+            enum class status_t
+            {
+                mask_update,
+                triggering
+            };
+            enum class trigger_mode_t
+            {
+                single_level_trigger,
+                two_level_trigger
+            };
+
+        public:
             frequency_mask_trigger();
             virtual ~frequency_mask_trigger();
 
@@ -81,12 +100,18 @@ namespace psyllid
 
             void set_threshold_ampl_snr( double a_ampl_snr );
             void set_threshold_power_snr( double a_power_snr );
+            void set_threshold_power_snr_high( double a_power_snr);
             void set_threshold_dB( double a_dB );
+            void set_trigger_mode( const std::string& trigger_mode );
+            std::string get_trigger_mode_str() const;
 
-            accessible( uint64_t, length );
+            mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
             mv_accessible_noset( double, threshold_snr );
+            mv_accessible_noset( double, threshold_snr_high);
             mv_accessible( unsigned, n_spline_points );
+            mv_accessible_noset( status_t, status );
+            mv_accessible( trigger_mode_t, trigger_mode );
 
         public:
             void switch_to_update_mask();
@@ -107,6 +132,7 @@ namespace psyllid
             };
 
             void exe_apply_threshold( exe_func_context& a_ctx );
+            void exe_apply_two_thresholds( exe_func_context& a_ctx );
             void exe_add_to_mask( exe_func_context& a_ctx );
 
             void (frequency_mask_trigger::*f_exe_func)( exe_func_context& a_ctx );
@@ -118,15 +144,6 @@ namespace psyllid
             unsigned f_n_summed;
 
             std::mutex f_mask_mutex;
-
-        public:
-            enum class status
-            {
-                mask_update,
-                triggering
-            };
-
-            mv_accessible_noset( status, status );
 
     };
 

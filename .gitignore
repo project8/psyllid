@@ -32,5 +32,6 @@
 .cproject
 .settings/
 
-# Build directories
+# Build and test directories
 build*/
+test*/
