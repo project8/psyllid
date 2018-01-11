@@ -46,8 +46,21 @@ Log
 Version: *Upcoming Releases*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Release Date: January 11, 2018 (est)
+Release Date: ... (est)
 ''''''''''''''''''''''''''''''''''''
+
+New Features:
+'''''''''''''
+  
+Fixes:
+''''''
+
+
+Version: 1.3.0
+~~~~~~~~~~~~~~
+
+Release Date: January 11, 2018
+''''''''''''''''''''''''''''''
 
 New Features:
 '''''''''''''
@@ -71,8 +84,7 @@ Fixes:
 * Stream-closing on node exit
     * Writers perform a final attempt to close a stream when they exit.
     * Validated by inserting code to purposefully crash a node.
-    
-  
+
 
 Version: 1.2.3
 ~~~~~~~~~~~~~~
@@ -87,7 +99,8 @@ New Features:
     * This file, documentation/validation_log.md, was added to record changes to Psyllid as they're made.
     * No validation is needed as this is not a functional change.
   
-#### Fixes:
+Fixes:
+''''''
 
 * Propagate missing header values to subsequent files
     * Previously-missing information included voltage offset and range, DAC gain, and frequency min and range.
