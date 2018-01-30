@@ -56,6 +56,18 @@ Fixes:
 ''''''
 
 
+Version: 1.3.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Release Date: January 30, 2018
+''''''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Documentation system update
+
+
 Version: 1.3.0
 ~~~~~~~~~~~~~~
 
