@@ -1,28 +1,16 @@
-.. Psyllid documentation master file.
-   You can adapt this file completely to your liking,
-   but it should at least contain the root `toctree` directive.
-
-Welcome to Psyllid's documentation!
-==================================
+Psyllid Use and API Documentation
+=================================
 
 Contents:
 
 .. toctree::
-   :glob:
    :maxdepth: 2
 
    Node Configurations <node_configurations>
    Roach Packets <roach_packets>
    Server API <server_api>
+   Validation Log <validation_log>
 
-   from_doxygen
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
-
-.. * :ref:`Doxygen Info <from_doxygen>`
-.. * :ref:`modindex`
+.. end of toc
+.. (you must not remove or modify the above comment line, it is required by the API Doc generation)
+`Full Doxygen API Reference <_static/index.html>`_
