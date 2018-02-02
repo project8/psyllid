@@ -30,6 +30,6 @@ Make sure to also pull the submodules by navigating to the cloned directory and 
 
 ``git submodule update --init --recursive``
 
-Create a ``build`` directory and run ``ccmake [path to psyllid]``.
-If you are going to run psyllid with a node configuration including the ``packet_receiver_fpa`` it is recommended to set the ``CMAKE_BUILD_TYPE`` to ``RELEASE``.
-To build and install psyllid run ``cmake [path to psyllid]`` and ``make install`` in the ``build`` directory.
+Create a *build* directory and run ``ccmake [path to psyllid]``.
+If you are going to run psyllid with a node configuration including the *packet_receiver_fpa* it is recommended to set the *CMAKE_BUILD_TYPE* to *RELEASE*.
+To build and install psyllid run ``cmake [path to psyllid]`` and ``make install`` in the *build* directory.
