@@ -24,6 +24,17 @@ namespace psyllid
     // node_binding
     //****************
 
+	/*!
+     @class node_binding
+     @author N. S. Oblath
+
+     @brief Allows access to midge nodes
+
+     @details
+     Every midge node has a binding class that inherits from node_binding.
+     An instance of these binding classes is created by the stream_manager who adds them to the midge object together with the node class.
+     The binding classes allow to apply and dump node configurations and do run commands while the daq is activated.
+     */
     class node_binding
     {
         public:
@@ -83,7 +94,16 @@ namespace psyllid
     //****************
     // node_builder
     //****************
+	/*!
+     @class node_builder
+     @author N. S. Oblath
 
+     @brief Holds node configuration and can be used to create node classes and node binding classes.
+
+     @details
+     stream_manager creates a node_builder instance for every node in a stream and passes the node configuration to the builder.
+     Fresh copies of a node class and a node binding class can be made from the node_builder class.
+     */
     class node_builder : public node_binding
     {
         public:

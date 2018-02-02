@@ -15,7 +15,18 @@
 namespace psyllid
 {
     class run_server;
+	/*!
+     @class request_receiver
+     @author N. S. Oblath
 
+     @brief Receives request from a amqp broker.
+
+     @details
+     A request_receiver instance is initialized by run_server.
+     request_receiver holds maps for set, get, cmd and run requests.
+     When a request is received the handle_function registered with this request gets called.
+     The registration of requests and functions is done in dripline::hub.
+     */
     class request_receiver : public dripline::hub, public scarab::cancelable
     {
         private:

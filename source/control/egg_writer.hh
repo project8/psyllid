@@ -13,7 +13,14 @@
 
 namespace psyllid
 {
+	/*!
+     @class egg_writer
+     @author N. S. Oblath
 
+     @brief Base class for all writers.
+
+     @details
+     */
     class egg_writer
     {
         public:
