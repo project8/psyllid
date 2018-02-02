@@ -66,6 +66,7 @@ Considers triggered packets and accounts for pretrigger and skipped packets
   - "length": uint -- The size of the output buffer
   - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet
   - "skip-tolerance": uint -- Number of untriggered packets to include in the event between two triggered packets
+  - "n-triggers": uint -- Number of trigger flags with flag == true required before switching to triggered state
 
 * Input
 
@@ -86,7 +87,10 @@ Packet trigger based on high power above a pre-calculated frequency mask
   - "n-packets-for-mask": uint -- The number of spectra used to calculate the trigger mask
   - "threshold-ampl-snr": float -- The threshold SNR, given as an amplitude SNR
   - "threshold-power-snr": float -- The threshold SNR, given as a power SNR
+  - "threshold-power-snr-high": float -- A second SNR threshold, given as power SNR
   - "threshold-dB": float -- The threshold SNR, given as a dB factor
+  - "trigger-mode": string -- The trigger mode, can be set to "single-level-trigger" or "two-level-trigger"
+  - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
 
 * Input
 
@@ -124,11 +128,11 @@ ____
 Consumers
 ---------
 
-``egg_writer``
-^^^^^^^^^^^^^^
+``triggered_writer``
+^^^^^^^^^^^^^^^^^^^^
 Writes triggered data to an egg file
 
-* Type: ``egg-writer``
+* Type: ``triggered-writer``
 * Configuration
 
   - "file-size-limit-mb": uint -- Not used currently
@@ -233,6 +237,7 @@ Stream Presets
     * ``tfrr.out_0:strw.in_0``
     * ``tfrr.out_1:term.in_0``
 
+
 * ``streaming_1ch_fpa`` (``str-1ch-fpa``)
 
   * Nodes
@@ -248,18 +253,74 @@ Stream Presets
     * ``tfrr.out_0:strw.in_0``
     * ``tfrr.out_1:term.in_0``
 
+
 * ``fmask_trigger_1ch`` (``fmask-1ch``)
 
   * Nodes
 
-    * ``packet-receiver-socket`` (``prf``)
+    * ``packet-receiver-socket`` (``prs``)
     * ``tf-roach-receiver`` (``tfrr``)
     * ``frequency-mask-trigger`` (``fmt``)
-    * ``egg-writer`` (``ew``)
+    * ``triggered-writer`` (``trw``)
+
+  * Connections
+
+    * ``prs.out_0:tfrr.in_0``
+    * ``tfrr.out_0:trw.in_0``
+    * ``tfrr.out_1:fmt.in_0``
+    * ``fmt.out_0:trw.in_1``
+
+
+* ``fmask_trigger_1ch_fpa`` (``fmask-1ch-fpa``)
+
+  * Nodes
+
+    * ``packet-receiver-fpa`` (``prf``)
+    * ``tf-roach-receiver`` (``tfrr``)
+    * ``frequency-mask-trigger`` (``fmt``)
+    * ``triggered-writer`` (``trw``)
 
   * Connections
 
     * ``prf.out_0:tfrr.in_0``
-    * ``tfrr.out_0:ew.in_0``
+    * ``tfrr.out_0:trw.in_0``
     * ``tfrr.out_1:fmt.in_0``
-    * ``fmt.out_0:ew.in_1``
+    * ``fmt.out_0:trw.in_1``
+
+
+* ``event_builder_1ch`` (``events-1ch``)
+
+  * Nodes
+
+    * ``packet-receiver-socket`` (``prs``)
+    * ``tf-roach-receiver`` (``tfrr``)
+    * ``frequency-mask-trigger`` (``fmt``)
+    * ``event-builder`` (``eb``)
+    * ``triggered-writer`` (``trw``)
+
+  * Connections
+
+    * ``prs.out_0:tfrr.in_0``
+    * ``tfrr.out_0:trw.in_0``
+    * ``tfrr.out_1:fmt.in_0``
+    * ``fmt.out_0:eb.in_0``
+    * ``eb.out_0:trw.in_1``
+
+
+* ``event_builder_1ch_fpa`` (``events-1ch-fpa``)
+
+  * Nodes
+
+    * ``packet-receiver-fpa`` (``prf``)
+    * ``tf-roach-receiver`` (``tfrr``)
+    * ``frequency-mask-trigger`` (``fmt``)
+    * ``event-builder`` (``eb``)
+    * ``triggered-writer`` (``trw``)
+
+  * Connections
+
+    * ``prf.out_0:tfrr.in_0``
+    * ``tfrr.out_0:trw.in_0``
+    * ``tfrr.out_1:fmt.in_0``
+    * ``fmt.out_0:eb.in_0``
+    * ``eb.out_0:trw.in_1``
