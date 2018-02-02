@@ -30,6 +30,19 @@ namespace psyllid
     class request_receiver;
     class stream_manager;
 
+    /*!
+     @class run_server
+     @author N. S. Oblath
+
+     @brief Sets up daq_control, strea_manager and request_receiver. Registers request handles.
+
+     @details
+     A run_server instance is created by the psyllid executable. The executable calls run_server.execute() and waits for it's return.
+     When told to execute the run_server instance creates new instances of  daq_control, stream_manager and request_receiver.
+     run_server adds set, get and cmd request handlers by registering handlers in the request_receiver.
+     Then it executes daq_control and request_receiver in 2 separate threads.
+     run_server.execute() only returns when all threads were joined.
+     */
     class run_server : public scarab::cancelable
     {
         public:

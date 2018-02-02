@@ -26,6 +26,22 @@ namespace psyllid
 {
     class message_relayer;
 
+    /*!
+     @class daq_control
+     @author N. S. Oblath
+
+     @brief Controls psyllid'status and forwards requests to the DAQ nodes.
+
+     @details
+     Handles all requests received via request_receiver that don't affect the stream setup directly.
+     It switches between daq-states, starts and stops runs by un-pausing and pausing midge and forwards run-daq-commands.
+
+     Settings that can be applied:
+     - "duration": the duration of the next run in ms
+     - "filename": the complete path of the egg files
+     - "description": a run description
+     - "use-monarch": when false no data will be written to egg files
+     */
     class daq_control : public scarab::cancelable, public control_access
     {
         public:
