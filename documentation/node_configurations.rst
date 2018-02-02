@@ -63,7 +63,7 @@ Transformers
 ^^^^^^^^^^^^^^^^^
 Keeps track of the state of the packet sequence (is-triggered, or not).
 
-When going from untriggered to triggered, adds some number of pretrigger packets.
+When going from *untriggered* to *triggered*, adds some number of pretrigger packets.
 Includes a skip tolerance for untriggered packets between two triggered packets.
 
 In untriggered state, the *flag* and the *high_threshold* variables of the trigger flags are checked.
@@ -76,7 +76,7 @@ Events are built by switching some untriggered packets to triggered packets acco
 
 Parameter setting is not thread-safe.  Executing is thread-safe.
 
-The cofigurable value *time-lengt* in the tf_roach_receiver must be set to a value greater than *pretrigger* and *skip-tolerance* (+5 is advised).
+The cofigurable value *time-lengt* in the ``tf_roach_receiver`` must be set to a value greater than *pretrigger* and *skip-tolerance* (+5 is advised).
 Otherwise the time domain buffer gets filled and blocks further packet processing.
 
 * Type: ``event-builder``
@@ -107,14 +107,9 @@ It is possible to set a second threshold (*threshold-power-snr-high*).
 In this case a second mask is calculated for this threshold and the incoming spectra are compared to both masks.
 The output trigger flag has an additional variable *high_threshold* which is set true if the higher threshold led to a trigger. This variable is always set to true if only one trigger level is used.
 
-The mask can be written to a JSON file via the write_mask() function.  The format for the file is:
-     {
-     
-         "timestamp": "[timestamp]",
-         "n-packets": [number of packets averaged],
-         "mask": [value_0, value_1, . . . .]
-         
-     }
+The mask can be written to a JSON file via the *write_mask()* function.  The format for the file is:
+
+*{   "timestamp": "[timestamp]", "n-packets": [number of packets averaged], "mask": [value_0, value_1, . . . .]     }*
 
 Parameter setting is not thread-safe.  Executing (including switching modes) is thread-safe.
 
@@ -129,6 +124,12 @@ Parameter setting is not thread-safe.  Executing (including switching modes) is 
   - "threshold-dB": float -- The threshold SNR, given as a dB factor
   - "trigger-mode": string -- The trigger mode, can be set to "single-level-trigger" or "two-level-trigger"
   - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
+
+* Available DAQ commands
+
+  - "update-mask" (no args) -- Switch the execution mode to updating the trigger mask
+  - "apply-trigger" (no args) -- Switch the execution mode to applying the trigger
+  - "write-mask" ("filename" string) -- Write the mask in JSON format to the given file
 
 * Input
 
@@ -258,6 +259,8 @@ Does nothing with time data
 * Input
 
   * 0: ``time_data``
+
+____
 
 
 Stream Presets
