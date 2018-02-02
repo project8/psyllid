@@ -30,7 +30,7 @@ namespace psyllid
      @class daq_control
      @author N. S. Oblath
 
-     @brief Controls psyllid'status and forwards requests to the DAQ nodes.
+     @brief Controls psyllid's status and forwards requests to the DAQ nodes.
 
      @details
      Handles all requests received via request_receiver that don't affect the stream setup directly.
