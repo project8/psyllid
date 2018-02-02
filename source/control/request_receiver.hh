@@ -10,7 +10,6 @@
 #include <atomic>
 #include <functional>
 #include <memory>
-#include <unordered_map>
 
 namespace psyllid
 {
@@ -29,38 +28,14 @@ namespace psyllid
      */
     class request_receiver : public dripline::hub, public scarab::cancelable
     {
-        private:
-            typedef std::function< bool( const dripline::request_ptr_t, dripline::reply_package& ) > handler_func_t;
-
         public:
             request_receiver( const scarab::param_node& a_master_config );
             virtual ~request_receiver();
 
-            void set_run_handler( const handler_func_t& a_func );
-            void register_get_handler( const std::string& a_key, const handler_func_t& a_func );
-            void register_set_handler( const std::string& a_key, const handler_func_t& a_func );
-            void register_cmd_handler( const std::string& a_key, const handler_func_t& a_func );
-
-            void remove_get_handler( const std::string& a_key );
-            void remove_set_handler( const std::string& a_key );
-            void remove_cmd_handler( const std::string& a_key );
-
             void execute();
 
         private:
-            virtual bool do_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            virtual bool do_get_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            virtual bool do_set_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            virtual bool do_cmd_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-
             virtual void do_cancellation();
-
-            handler_func_t f_run_handler;
-
-            typedef std::unordered_map< std::string, handler_func_t > handler_funcs_t;
-            handler_funcs_t f_get_handlers;
-            handler_funcs_t f_set_handlers;
-            handler_funcs_t f_cmd_handlers;
 
         public:
             enum status
