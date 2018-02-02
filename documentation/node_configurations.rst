@@ -10,7 +10,9 @@ Producers
 
 ``packet_receiver_fpa``
 ^^^^^^^^^^^^^^^^^^^^^^^
-UDP packet receiver using fast-packet-acquisition (Linux only)
+A producer to receive UDP packets via the fast-packet-acquisition interface and write them as raw blocks of memory.
+Works in Linux only. 
+Parameter setting is not thread-safe. Executing is thread-safe.
 
 * Type: ``packet-receiver-fpa``
 * Configuration
@@ -30,7 +32,8 @@ UDP packet receiver using fast-packet-acquisition (Linux only)
 
 ``packet_receiver_socket``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-UDP packet receiver using standard socket networking
+A producer to receive UDP packets via the standard socket interface and write them as raw blocks of memory.
+Parameter setting is not thread-safe.  Executing is thread-safe.
 
 * Type: ``packet-receiver-socket``
 * Configuration
@@ -58,7 +61,24 @@ Transformers
 
 ``event_builder``
 ^^^^^^^^^^^^^^^^^
-Considers triggered packets and accounts for pretrigger and skipped packets
+Keeps track of the state of the packet sequence (is-triggered, or not).
+
+When going from untriggered to triggered, adds some number of pretrigger packets.
+Includes a skip tolerance for untriggered packets between two triggered packets.
+
+In untriggered state, the ``flag`` and the ``high_threshold`` variables of the trigger flags are checked.
+Only if both are true the event builder switches state.
+If ``f_n_triggers`` > 1 the next state is collecting_triggers, otherwise triggered.
+In collecting_triggers state the event builder counts the incomming trigger flags with ``flag =  true``.
+Only if this ``count == f_n_triggers`` the state is switched to triggered.
+
+Events are built by switching some untriggered packets to triggered packets according to the pretrigger and skip-tolerance parameters.
+Contiguous sequences of triggered packets constitute events.
+
+Parameter setting is not thread-safe.  Executing is thread-safe.
+
+The cofigurable value ``time-lengt`` in the tf_roach_receiver must be set to a value greater than ``pretrigge`` and ``skip-tolerance`` (+5 is advised).
+Otherwise the time domain buffer gets filled and blocks further packet processing.
 
 * Type: ``event-builder``
 * Configuration
@@ -78,7 +98,26 @@ Considers triggered packets and accounts for pretrigger and skipped packets
 
 ``frequency_mask_trigger``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Packet trigger based on high power above a pre-calculated frequency mask
+The FMT has two modes of operation: updating the mask, and triggering.
+
+When switched to the "updating" mode, the existing mask is erased, and the subsequent spectra that are passed to the FMT are used to calculate the new mask. The number of spectra used for the mask is configurable.  Those spectra are summed together as they arrive. Once the appropriate number of spectra have been used, the average value is calculated, and the mask is multiplied by the threshold SNR (assuming the data are amplitude values, not power).
+
+In triggering mode, each arriving spectrum is compared to the mask bin-by-bin.  If a bin crosses the threshold, the spectrum passes the trigger and the bin-by-bin comparison is stopped.
+
+It is possible to set a second threshold (``threshold-power-snr-high``).
+In this case a second mask is calculated for this threshold and the incoming spectra are compared to both masks.
+The output trigger flag has an additional variable ``high_threshold`` which is set true if the higher threshold led to a trigger. This variable is always set to true if only one trigger level is used.
+
+The mask can be written to a JSON file via the write_mask() function.  The format for the file is:
+     {
+     
+         "timestamp": "[timestamp]",
+         "n-packets": [number of packets averaged],
+         "mask": [value_0, value_1, . . . .]
+         
+     }
+
+Parameter setting is not thread-safe.  Executing (including switching modes) is thread-safe.
 
 * Type: ``frequency-mask-trigger``
 * Configuration
@@ -102,7 +141,8 @@ Packet trigger based on high power above a pre-calculated frequency mask
 
 ``tf_roach_receiver``
 ^^^^^^^^^^^^^^^^^^^^^
-Splits raw combined time-frequency stream into time and frequency streams
+Splits raw combined time-frequency stream into time and frequency streams.
+Parameter setting is not thread-safe.  Executing is thread-safe.
 
 * Type: ``tf-roach-receiver``
 * Configuration
@@ -130,7 +170,8 @@ Consumers
 
 ``triggered_writer``
 ^^^^^^^^^^^^^^^^^^^^
-Writes triggered data to an egg file
+Writes triggered data to an egg file.
+Parameter setting is not thread-safe.  Executing is thread-safe.
 
 * Type: ``triggered-writer``
 * Configuration
@@ -175,7 +216,8 @@ Checks for missing time packets
 
 ``streaming_writer``
 ^^^^^^^^^^^^^^^^^^^^
-Writes streamed data to an egg file
+Writes streamed data to an egg file.
+Parameter setting is not thread-safe.  Executing is thread-safe.
 
 * Type: ``streaming-writer``
 * Configuration
