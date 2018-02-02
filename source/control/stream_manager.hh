@@ -30,14 +30,14 @@ namespace psyllid
 
      @details
      Holds pointer to midge object that is running all nodes.
-     With initialization strea_manager is given the node configurations set for the currently running psyllid instance.
-     A stream is added for every configred set of modge nodes.
+     With initialization, stream_manager is given the node configurations set for the currently running psyllid instance.
+     A stream is added for every configured set of midge nodes.
      For every node in a node config an instance of the nodes builder class is created.
      daq_control activate-daq calls reset_midge in stream_manager.
      reset_midge makes fresh copies of the configured node classes and the node binding classes and adds the classes and all the node connections to the midge object.
      The node binding classes allow access to the nodes held and owned by midge.
-     Via the node binding classes some node confiugrations can be changed while the daq is activated.
-     When the daq is de- or re- activated these settings are lost, as stream_manager makes a fresh copy of every node with the original/global configurations.
+     Via the node binding classes some node configurations can be changed while the daq is activated.
+     When the daq is de- or re-activated these settings are lost, as stream_manager makes a fresh copy of every node with the original/global configurations.
      */
     class stream_manager;
     typedef locked_resource< midge::diptera, stream_manager > midge_package;

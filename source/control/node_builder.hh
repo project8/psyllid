@@ -101,8 +101,8 @@ namespace psyllid
      @brief Holds node configuration and can be used to create node classes and node binding classes.
 
      @details
-     stream_manager creates a node_builder instance for every node in a stream and passes the node configuration to the builder.
-     Fresh copies of a node class and a node binding class can be made from the node_builder class.
+     stream_manager creates a node_builder instance for every node in a stream and passes the node configuration to the node_builder.
+     Fresh copies of a node class and a node binding class can then be made from these node_builder classes.
      */
     class node_builder : public node_binding
     {

@@ -38,9 +38,9 @@ namespace psyllid
 
      @details
      A run_server instance is created by the psyllid executable. The executable calls run_server.execute() and waits for it's return.
-     When told to execute run_server creates new instances of daq_control, stream_manager and request_receiver.
-     run_server adds set, get and cmd request handlers by registering handlers with the request_receiver.
-     Then it executes daq_control and request_receiver in 2 separate threads.
+     In execute(), run_server creates new instances of daq_control, stream_manager and request_receiver.
+     It also adds set, get and cmd request handlers by registering handlers with the request_receiver.
+     Then it calls daq_control.execute and request_receiver.execute in 2 separate threads.
      run_server.execute() only returns when all threads were joined.
      */
     class run_server : public scarab::cancelable
