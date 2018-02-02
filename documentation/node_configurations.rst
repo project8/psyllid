@@ -72,7 +72,7 @@ If *f_n_triggers > 1* the next state is collecting_triggers, otherwise triggered
 In collecting_triggers state the event builder counts the incomming trigger flags with *flag =  true*.
 Only if this *count == f_n_triggers* the state is switched to triggered.
 
-Events are built by switching some untriggered packets to triggered packets according to the pretrigger and skip-tolerance parameters. Contiguous sequences of triggered packets constitute events.
+Events are built by switching some untriggered packets to triggered packets according to the pretrigger and skip-tolerance parameters. Continuous sequences of triggered packets constitute events.
 
 Parameter setting is not thread-safe.  Executing is thread-safe.
 
