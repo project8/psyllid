@@ -46,6 +46,10 @@ namespace psyllid
             mv_accessible( const monarch3::Monarch3*, egg );
             mv_accessible( std::string, egg_path );
             mv_accessible( uint64_t, length );
+            mv_accessible( bool, start_paused );
+
+        private:
+            bool f_paused;
 
         public:
             virtual void initialize();

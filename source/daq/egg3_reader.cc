@@ -24,7 +24,9 @@ namespace psyllid
     egg3_reader::egg3_reader() :
             f_egg( nullptr ),
             f_egg_path( "/dev/null" ),
-            f_length( 10 )
+            f_length( 10 ),
+            f_paused( true ),
+            f_start_paused( true )
     {
     }
 
@@ -35,6 +37,8 @@ namespace psyllid
 
     void egg3_reader::initialize()
     {
+        f_paused = f_start_paused;
+
         out_buffer< 0 >().initialize( f_length );
 
         LDEBUG( plog, "opening egg file [" << f_egg_path << "]" );
@@ -122,6 +126,7 @@ namespace psyllid
         LDEBUG( plog, "Configuring egg3_reader with:\n" << a_config );
         a_node->set_egg_path( a_config.get_value( "egg_path", a_node->get_egg_path() ) );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
+        a_node->set_start_paused( a_config.get_value( "start_paused", a_node->get_start_paused() ) );
         return;
     }
 
@@ -130,6 +135,7 @@ namespace psyllid
         LDEBUG( plog, "Dumping configuration for egg3_reader" );
         a_config.add( "egg_path", new scarab::param_value( a_node->get_egg_path() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
+        a_config.add( "start_paused", new scarab::param_value( a_node->get_length() ) );
         return;
     }
 
