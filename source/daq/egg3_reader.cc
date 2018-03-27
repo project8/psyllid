@@ -5,6 +5,8 @@
  *      Author: laroque
  */
 
+#include <chrono>
+
 #include "egg3_reader.hh"
 #include "psyllid_error.hh"
 
@@ -25,8 +27,8 @@ namespace psyllid
             f_egg( nullptr ),
             f_egg_path( "/dev/null" ),
             f_length( 10 ),
-            f_paused( true ),
-            f_start_paused( true )
+            f_start_paused( true ),
+            f_paused( true )
     {
     }
 
@@ -55,7 +57,7 @@ namespace psyllid
         try
         {
             LDEBUG( plog, "Executing the egg3_reader" );
-            // use header to loop streams so we can send more than one?
+            //TODO  use header to loop streams so we can send more than one?
             //const monarch3::M3Header *t_egg_header = f_egg->GetHeader();
             const monarch3::M3Stream* t_stream = f_egg->GetStream( 0 );
             const monarch3::M3Record* t_record = t_stream->GetChannelRecord( 0 );
@@ -64,23 +66,36 @@ namespace psyllid
 
             if( ! out_stream< 0 >().set( stream::s_start ) ) return;
 
-            // starting loop over file contents
+            // starting execution loop
             while (! is_canceled() )
             {
+                LPROG( plog, "start of record loop pass" );
                 if( (out_stream< 0 >().get() == stream::s_stop) )
                 {
                     LWARN( plog, "Output stream(s) have stop condition" );
                     break;
                 }
-                // update t_data to point to the next slot in the output stream
-                t_data = out_stream< 0 >().data();
-                // update M3Record so that it will write into t_data
-                t_record->UpdateDataPtr( reinterpret_cast< const monarch3::byte_type* >(t_data->get_raw_array()) );
-                // read next record in egg file, writing into the output_stream
-                if ( !t_stream->ReadRecord() )
+                if( have_instruction() )
                 {
-                    LDEBUG( plog, "reached end of file" );
-                    break;
+                    if( f_paused && use_instruction() == midge::instruction::resume )
+                    {
+                        LDEBUG( plog, "egg reader resuming" );
+                        f_paused = false;
+                    }
+                    else if ( !f_paused && use_instruction() == midge::instruction::pause )
+                    {
+                        LDEBUG( plog, "egg reader pausing" );
+                        if( ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
+                        f_paused = true;
+                    }
+                }
+                // only read if not paused:
+                if ( ! f_paused ) {
+                    LDEBUG( plog, "not paused, reading slice" );
+                    if ( !read_slice(t_data, t_stream, t_record) ) break;
+                } else {
+                    LDEBUG( plog, "paused, sleeping 0.1 s" );
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             }
 
@@ -93,6 +108,7 @@ namespace psyllid
             LWARN( plog, "got an exception, throwing" );
             a_midge->throw_ex( std::current_exception() );
         }
+        LWARN( plog, "at the end of egg3 execute" );
     }
 
     void egg3_reader::finalize()
@@ -100,6 +116,25 @@ namespace psyllid
         LDEBUG( plog, "finalize the egg3_reader" );
         out_buffer< 0 >().finalize();
         cleanup_file();
+    }
+
+    bool egg3_reader::read_slice(time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record)
+    {
+        // update t_data to point to the next slot in the output stream
+        t_data = out_stream< 0 >().data();
+        // update M3Record so that it will write into t_data
+        t_record->UpdateDataPtr( reinterpret_cast< const monarch3::byte_type* >(t_data->get_raw_array()) );
+        // read next record in egg file, writing into the output_stream
+        LPROG( plog, "egg reader reading next record" );
+        if ( !t_stream->ReadRecord() )
+        {
+            LDEBUG( plog, "reached end of file" );
+            return false;
+        } else {
+            LDEBUG( plog, "not at end... (but back to reader)" );
+        }
+        LPROG( plog, "start of record loop pass" );
+        return true;
     }
 
     void egg3_reader::cleanup_file()

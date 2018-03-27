@@ -51,12 +51,13 @@ namespace psyllid
         private:
             bool f_paused;
 
-        public:
+       public:
             virtual void initialize();
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
         private:
+            bool read_slice( time_data*, const monarch3::M3Stream*, const monarch3::M3Record* );
             void cleanup_file();
 
     };
