@@ -133,6 +133,11 @@ namespace psyllid
             LDEBUG( plog, "reached end of file" );
             return false;
         }
+        if ( !out_stream< 0 >().set( stream::s_run ) )
+        {
+            LERROR( plog, "egg reader exiting due to stream error" );
+            return false;
+        }
         return true;
     }
 
