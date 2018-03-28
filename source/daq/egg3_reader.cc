@@ -64,12 +64,14 @@ namespace psyllid
 
             time_data* t_data = nullptr;
 
-            if( ! out_stream< 0 >().set( stream::s_start ) ) return;
+            // starting not in a paused state is not currently known to work
+            if ( !f_paused ) {
+                if( ! out_stream< 0 >().set( stream::s_start ) ) return;
+            }
 
             // starting execution loop
             while (! is_canceled() )
             {
-                LPROG( plog, "start of record loop pass" );
                 if( (out_stream< 0 >().get() == stream::s_stop) )
                 {
                     LWARN( plog, "Output stream(s) have stop condition" );
@@ -80,6 +82,7 @@ namespace psyllid
                     if( f_paused && use_instruction() == midge::instruction::resume )
                     {
                         LDEBUG( plog, "egg reader resuming" );
+                        if( ! out_stream< 0 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 0 error while starting";
                         f_paused = false;
                     }
                     else if ( !f_paused && use_instruction() == midge::instruction::pause )
@@ -94,7 +97,6 @@ namespace psyllid
                     LDEBUG( plog, "not paused, reading slice" );
                     if ( !read_slice(t_data, t_stream, t_record) ) break;
                 } else {
-                    LDEBUG( plog, "paused, sleeping 0.1 s" );
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             }
@@ -120,20 +122,17 @@ namespace psyllid
 
     bool egg3_reader::read_slice(time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record)
     {
+        LDEBUG( plog, "reading a slice" );
         // update t_data to point to the next slot in the output stream
         t_data = out_stream< 0 >().data();
         // update M3Record so that it will write into t_data
         t_record->UpdateDataPtr( reinterpret_cast< const monarch3::byte_type* >(t_data->get_raw_array()) );
         // read next record in egg file, writing into the output_stream
-        LPROG( plog, "egg reader reading next record" );
         if ( !t_stream->ReadRecord() )
         {
             LDEBUG( plog, "reached end of file" );
             return false;
-        } else {
-            LDEBUG( plog, "not at end... (but back to reader)" );
         }
-        LPROG( plog, "start of record loop pass" );
         return true;
     }
 
