@@ -14,7 +14,7 @@
 #include "param.hh"
 
 #include <thread>
-//#include <memory>
+#include <memory>
 #include <sys/types.h> // for ssize_t
 
 using midge::stream;
@@ -58,25 +58,16 @@ namespace psyllid
         {
             LDEBUG( plog, "Executing the frequency transformer" );
 
-            //exe_func_context t_ctx;
-
-            //t_ctx.f_midge = a_midge;
-
-            //t_ctx.f_in_command = stream::s_none;
-
-            //t_ctx.f_memory_block = nullptr;
-            //t_ctx.f_time_data = nullptr;
-            //t_ctx.f_freq_data = nullptr;
-
-            //t_ctx.f_buffer_ptr.reset( new char[ f_udp_buffer_size ] );
+            time_data* time_data_in = nullptr;
+            time_data* time_data_out = nullptr;
+            freq_data* freq_data_out = nullptr;
 
             f_paused = f_start_paused;
 
             //uint64_t t_time_batch_pkt = 0;
             //uint64_t t_freq_batch_pkt = 0;
 
-            //t_ctx.f_pkt_size = 0;
-
+            // starting in a non-paused state is not known to work
             if( ! f_start_paused )
             {
                 LDEBUG( plog, "FREQUENCY TRANSFORM starting unpaused" );
@@ -92,13 +83,51 @@ namespace psyllid
             try
             {
                 LPROG( plog, "Starting main loop (frequency transform)" );
-                //f_break_exe_func.store( true );
-                //while( f_break_exe_func.load() )
-                //{
-                //    f_break_exe_func.store( false );
-                //    f_exe_func_mutex.lock();
-                //    if( ! (this->*f_exe_func)( t_ctx ) ) return;
-                //}
+                while (! is_canceled() )
+                {
+                    if (out_stream< 0 >().get() == stream::s_stop || out_stream< 1 >().get() == stream::s_stop)
+                    {
+                        LWARN( plog, "output stream(s) have stop condition" );
+                        break;
+                    }
+                    // check for [un]pause instruction
+                    if( have_instruction() )
+                    {
+                        if( f_paused && use_instruction() == midge::instruction::resume )
+                        {
+                            LDEBUG( plog, "freq transform resuming" );
+                            if( ! out_stream< 0 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 0 error while starting";
+                            if( ! out_stream< 1 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 1 error while starting";
+                            f_paused = false;
+                        }
+                        else if( !f_paused && use_instruction() == midge::instruction::pause )
+                        {
+                            LDEBUG( plog, "freq transform pausing" );
+                            if( ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
+                            if( ! out_stream< 1 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 1 error while stopping";
+                            f_paused = true;
+                        }
+                    }
+
+                    if ( !f_paused )
+                    {
+                        time_data_in = in_stream< 0 >().data();
+                        time_data_out = out_stream< 0 >().data();
+
+                        //TODO can i really just do this dereference thing?
+                        //     seems like i should need to do something harder, like the commented memcpy or something
+                        *time_data_out = *time_data_in;
+                        //std::memcpy(time_data_out->get_array(), time_data_in->get_array(), time_data_in->get_array_size());
+
+                        //// okay so this is where the real magic happens, should do the FFT bit here
+                        // memcpy just to place some bits so i can do the rest of the logic independent of the FFTW API
+                        std::memcpy(freq_data_out->get_array(), time_data_in->get_array(), time_data_in->get_array_size());
+
+                        //TODO this is based on tf_roach_receiver, why do this at the end of the loop and not the top?
+                        //     i clearly still don't have a great grasp on how these streams work
+                        in_stream< 0 >().get();
+                    }
+                }
             }
             catch( error& e )
             {
