@@ -3,6 +3,7 @@
 #######
 
 set( headers
+    egg3_reader.hh
     event_builder.hh
     #single_value_trigger.hh
     frequency_mask_trigger.hh
@@ -16,6 +17,7 @@ set( headers
 )
 
 set( sources
+    egg3_reader.cc
     event_builder.cc
     #single_value_trigger.cc
     frequency_mask_trigger.cc
