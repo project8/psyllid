@@ -37,7 +37,8 @@ namespace psyllid
             f_fftw_input(),
             f_fftw_output(),
             f_fftw_plan(),
-            f_paused( true )
+            f_paused( true ),
+            f_multithreaded_is_initialized( false )
             //TODO we maybe want these?
             //f_time_session_pkt_counter( 0 ),
             //f_freq_session_pkt_counter( 0 )
@@ -68,10 +69,30 @@ namespace psyllid
                 LWARN( plog, "Unable to read FFTW wisdom from file <" << f_wisdom_filename << ">" );
             }
         }
-        //initialize multithreaded KTForward162
-        //create plan KTForward175
+        //initialize multithreaded KTForward162 -> KTFFT45
+#ifdef FFTW_NTHREADS
+        if (! f_multithreaded_is_initialized)
+        {
+            fftw_init_threads();
+            fftw_plan_with_nthreads(FFTW_NTHREADS);
+            LDEBUG( plog, "Configuring FFTW to use up to " << FFTW_NTHREADS << " threads.");
+            f_multithreaded_is_initialized = true;
+        }
+#endif
+        //create fftw plan
         f_fftw_plan = fftw_plan_dft_1d(f_fft_size, f_fftw_input, f_fftw_output, FFTW_FORWARD, transform_flag | FFTW_PRESERVE_INPUT);
         //save plan
+        if (f_fftw_plan != NULL)
+        {
+            if (f_use_wisdom)
+            {
+                if (fftw_export_wisdom_to_filename(f_wisdom_filename.c_str()) == 0)
+                {
+                    LWARN( plog, "Unable to write FFTW wisdom to file<" << f_wisdom_filename << ">");
+                }
+            }
+            LDEBUG( plog, "FFTW plan created; initialization complete" );
+        }
 
         return;
     }
