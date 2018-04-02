@@ -69,8 +69,8 @@ namespace psyllid
                 LWARN( plog, "Unable to read FFTW wisdom from file <" << f_wisdom_filename << ">" );
             }
         }
-        //initialize multithreaded KTForward162 -> KTFFT45
-#ifdef FFTW_NTHREADS
+        //initialize multithreaded
+        #ifdef FFTW_NTHREADS
         if (! f_multithreaded_is_initialized)
         {
             fftw_init_threads();
@@ -78,7 +78,7 @@ namespace psyllid
             LDEBUG( plog, "Configuring FFTW to use up to " << FFTW_NTHREADS << " threads.");
             f_multithreaded_is_initialized = true;
         }
-#endif
+        #endif
         //create fftw plan
         f_fftw_plan = fftw_plan_dft_1d(f_fft_size, f_fftw_input, f_fftw_output, FFTW_FORWARD, transform_flag | FFTW_PRESERVE_INPUT);
         //save plan
