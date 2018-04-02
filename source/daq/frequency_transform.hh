@@ -51,6 +51,9 @@ namespace psyllid
     */
     class frequency_transform : public midge::_transformer< frequency_transform, typelist_1( time_data ), typelist_2( time_data, freq_data ) >
     {
+        private:
+            typedef std::map< std::string, unsigned > TransformFlagMap;
+
         public:
             frequency_transform();
             virtual ~frequency_transform();
@@ -58,6 +61,7 @@ namespace psyllid
         public:
             mv_accessible( uint64_t, time_length );
             mv_accessible( uint64_t, freq_length );
+            mv_accessible( unsigned, fft_size ); // I really wish I could get this from the egg header
             //mv_accessible( uint64_t, udp_buffer_size );
             //mv_accessible( unsigned, time_sync_tol );
             mv_accessible( bool, start_paused );
@@ -69,6 +73,7 @@ namespace psyllid
             virtual void finalize();
 
         private:
+            TransformFlagMap f_transform_flag_map;
             /*struct exe_func_context
             {
                 midge::diptera* f_midge;
@@ -93,6 +98,8 @@ namespace psyllid
 
             uint64_t f_time_session_pkt_counter;
             uint64_t f_freq_session_pkt_counter;
+        private:
+            void setup_internal_maps();
 
     };
 

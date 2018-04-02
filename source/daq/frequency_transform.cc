@@ -13,6 +13,8 @@
 #include "logger.hh"
 #include "param.hh"
 
+#include <fftw3.h>
+
 #include <thread>
 #include <memory>
 #include <sys/types.h> // for ssize_t
@@ -39,6 +41,7 @@ namespace psyllid
             //f_time_session_pkt_counter( 0 ),
             //f_freq_session_pkt_counter( 0 )
     {
+        setup_internal_maps();
     }
 
     frequency_transform::~frequency_transform()
@@ -113,6 +116,7 @@ namespace psyllid
                     {
                         time_data_in = in_stream< 0 >().data();
                         time_data_out = out_stream< 0 >().data();
+                        freq_data_out = out_stream< 1 >().data();
 
                         //TODO can i really just do this dereference thing?
                         //     seems like i should need to do something harder, like the commented memcpy or something
@@ -122,6 +126,12 @@ namespace psyllid
                         //// okay so this is where the real magic happens, should do the FFT bit here
                         // memcpy just to place some bits so i can do the rest of the logic independent of the FFTW API
                         std::memcpy(freq_data_out->get_array(), time_data_in->get_array(), time_data_in->get_array_size());
+
+                        if (!out_stream< 0 >().set( stream::s_run ) || !out_stream< 1 >().set( stream::s_run ) )
+                        {
+                            LERROR( plog, "frequency transform error setting output stream to s_run" );
+                            break;
+                        }
 
                         //TODO this is based on tf_roach_receiver, why do this at the end of the loop and not the top?
                         //     i clearly still don't have a great grasp on how these streams work
@@ -161,6 +171,15 @@ namespace psyllid
         out_buffer< 0 >().finalize();
         out_buffer< 1 >().finalize();
         return;
+    }
+
+    void frequency_transform::setup_internal_maps()
+    {
+        f_transform_flag_map.clear();
+        f_transform_flag_map["ESTIMATE"] = FFTW_ESTIMATE;
+        f_transform_flag_map["MEASURE"] = FFTW_MEASURE;
+        f_transform_flag_map["PATIENT"] = FFTW_PATIENT;
+        f_transform_flag_map["EXHAUSTIVE"] = FFTW_EXHAUSTIVE;
     }
 
 

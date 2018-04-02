@@ -6,6 +6,8 @@ RUN apt-get update && \
     apt-get clean && \
     apt-get --fix-missing  -y install \
         build-essential \
+        libfftw3-3 \
+        libfftw3-dev \
         gdb \
         libboost-all-dev \
         libhdf5-dev \
