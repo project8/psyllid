@@ -16,6 +16,7 @@
 #include "transformer.hh"
 #include "shared_cancel.hh"
 
+#include <fftw3.h>
 //#include <memory>
 
 namespace scarab
@@ -62,10 +63,11 @@ namespace psyllid
             mv_accessible( uint64_t, time_length );
             mv_accessible( uint64_t, freq_length );
             mv_accessible( unsigned, fft_size ); // I really wish I could get this from the egg header
-            //mv_accessible( uint64_t, udp_buffer_size );
-            //mv_accessible( unsigned, time_sync_tol );
             mv_accessible( bool, start_paused );
-            //mv_accessible( unsigned, skip_after_stop );
+            mv_accessible( std::string, transform_flag );
+            mv_accessible( bool, use_wisdom );
+            mv_accessible( std::string, wisdom_filename );
+            //TODO all of these mv need to be added to the configuration interface class
 
         public:
             virtual void initialize();
@@ -74,25 +76,9 @@ namespace psyllid
 
         private:
             TransformFlagMap f_transform_flag_map;
-            /*struct exe_func_context
-            {
-                midge::diptera* f_midge;
-                midge::enum_t f_in_command;
-                memory_block* f_memory_block;
-                time_data* f_time_data;
-                freq_data* f_freq_data;
-                std::unique_ptr< char[] > f_buffer_ptr;
-                size_t f_pkt_size;
-            };*/
-
-            //bool exe_time_and_freq( exe_func_context& a_ctx );
-            //bool exe_freq_only( exe_func_context& a_ctx );
-
-            //bool (tf_roach_receiver::*f_exe_func)( exe_func_context& a_ctx );
-            //std::mutex f_exe_func_mutex;
-            //std::atomic< bool > f_break_exe_func;
-
-            //virtual void do_cancellation();
+            fftw_complex* f_fftw_input;
+            fftw_complex* f_fftw_output;
+            fftw_plan f_fftw_plan;
 
             bool f_paused;
 

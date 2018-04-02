@@ -13,8 +13,6 @@
 #include "logger.hh"
 #include "param.hh"
 
-#include <fftw3.h>
-
 #include <thread>
 #include <memory>
 #include <sys/types.h> // for ssize_t
@@ -30,12 +28,15 @@ namespace psyllid
     frequency_transform::frequency_transform() :
             f_time_length( 10 ),
             f_freq_length( 10 ),
-            //f_udp_buffer_size( sizeof( roach_packet ) ),
-            //f_time_sync_tol( 2 ),
+            f_fft_size( 4096 ), //TODO is this a reasonable default
             f_start_paused( true ),
-            //f_skip_after_stop( 0 ),
-            //f_exe_func_mutex(),
-            //f_break_exe_func( false ),
+            f_transform_flag( "ESTIMATE" ), //TODO is this a reasonable default?
+            f_use_wisdom( true ),
+            f_wisdom_filename( "wisdom_complexfft.fftw3" ),
+            f_transform_flag_map(),
+            f_fftw_input(),
+            f_fftw_output(),
+            f_fftw_plan(),
             f_paused( true )
             //TODO we maybe want these?
             //f_time_session_pkt_counter( 0 ),
@@ -52,6 +53,26 @@ namespace psyllid
     {
         out_buffer< 0 >().initialize( f_time_length );
         out_buffer< 1 >().initialize( f_freq_length );
+
+        // fftw stuff
+        TransformFlagMap::const_iterator iter = f_transform_flag_map.find(f_transform_flag);
+        unsigned transform_flag = iter->second;
+        // initialize FFTW IO arrays
+        f_fftw_input = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * f_fft_size);
+        f_fftw_output = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * f_fft_size);
+        if (f_use_wisdom)
+        {
+            LDEBUG( plog, "Reading wisdom from file <" << f_wisdom_filename << ">");
+            if (fftw_import_wisdom_from_filename(f_wisdom_filename.c_str()) == 0)
+            {
+                LWARN( plog, "Unable to read FFTW wisdom from file <" << f_wisdom_filename << ">" );
+            }
+        }
+        //initialize multithreaded KTForward162
+        //create plan KTForward175
+        f_fftw_plan = fftw_plan_dft_1d(f_fft_size, f_fftw_input, f_fftw_output, FFTW_FORWARD, transform_flag | FFTW_PRESERVE_INPUT);
+        //save plan
+
         return;
     }
 
@@ -170,6 +191,16 @@ namespace psyllid
     {
         out_buffer< 0 >().finalize();
         out_buffer< 1 >().finalize();
+        if (f_fftw_input != NULL )
+        {
+            fftw_free(f_fftw_input);
+            f_fftw_input = NULL;
+        }
+        if (f_fftw_output != NULL)
+        {
+            fftw_free(f_fftw_output);
+            f_fftw_output = NULL;
+        }
         return;
     }
 
