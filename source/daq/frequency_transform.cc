@@ -161,16 +161,18 @@ namespace psyllid
                         time_data_out = out_stream< 0 >().data();
                         freq_data_out = out_stream< 1 >().data();
 
-                        //TODO can i really just do this dereference thing?
-                        //     seems like i should need to do something harder, like the commented memcpy or something
+                        //time output
                         *time_data_out = *time_data_in;
-                        //std::memcpy(time_data_out->get_array(), time_data_in->get_array(), time_data_in->get_array_size());
-
-                        //// okay so this is where the real magic happens, should do the FFT bit here
-                        // memcpy just to place some bits so i can do the rest of the logic independent of the FFTW API
-                        //std::memcpy(freq_data_out->get_array(), time_data_in->get_array(), time_data_in->get_array_size());
-                        std::copy(&time_data_in->get_array()[0][0], &time_data_in->get_array()[0][0] + 4096*2, &freq_data_out->get_array()[0][0]);
-
+                        //frequency output
+                        std::copy(&time_data_in->get_array()[0][0], &time_data_in->get_array()[0][0] + f_fft_size*2, &f_fftw_input[0][0]);
+                        fftw_execute_dft(f_fftw_plan, f_fftw_input, f_fftw_output);
+                        //is this the normalization we want? (is it what the ROACH does?)
+                        for (size_t i_bin=0; i_bin<f_fft_size; ++i_bin)
+                        {
+                            f_fftw_output[i_bin][0] *= sqrt(1. / (double)f_fft_size);
+                            f_fftw_output[i_bin][1] *= sqrt(1. / (double)f_fft_size);
+                        }
+                        std::copy(&f_fftw_output[0][0], &f_fftw_output[0][0] + f_fft_size*2, &freq_data_out->get_array()[0][0]);
 
                         if (!out_stream< 0 >().set( stream::s_run ) || !out_stream< 1 >().set( stream::s_run ) )
                         {
