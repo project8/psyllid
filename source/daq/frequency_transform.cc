@@ -151,6 +151,7 @@ namespace psyllid
                         time_data_in = in_stream< 0 >().data();
                         time_data_out = out_stream< 0 >().data();
                         freq_data_out = out_stream< 1 >().data();
+                        LDEBUG( plog, "next steams acquired, doing FFT" );
 
                         //time output
                         *time_data_out = *time_data_in;
