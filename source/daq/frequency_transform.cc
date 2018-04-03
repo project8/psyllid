@@ -8,14 +8,13 @@
 
 #include "frequency_transform.hh"
 
-//#include "psyllid_error.hh"
 
 #include "logger.hh"
 #include "param.hh"
 
 #include <thread>
 #include <memory>
-#include <sys/types.h> // for ssize_t
+#include <sys/types.h>
 
 
 using midge::stream;
@@ -40,9 +39,6 @@ namespace psyllid
             f_fftw_plan(),
             f_paused( true ),
             f_multithreaded_is_initialized( false )
-            //TODO we maybe want these?
-            //f_time_session_pkt_counter( 0 ),
-            //f_freq_session_pkt_counter( 0 )
     {
         setup_internal_maps();
     }
@@ -110,20 +106,15 @@ namespace psyllid
 
             f_paused = f_start_paused;
 
-            //uint64_t t_time_batch_pkt = 0;
-            //uint64_t t_freq_batch_pkt = 0;
-
             // starting in a non-paused state is not known to work
             if( ! f_start_paused )
             {
                 LDEBUG( plog, "FREQUENCY TRANSFORM starting unpaused" );
+                LWARN( plog, "starting unpaused is not currently tested!" );
                 out_stream< 0 >().data()->set_pkt_in_session( 0 );
                 out_stream< 1 >().data()->set_pkt_in_session( 0 );
                 if( ! out_stream< 0 >().set( stream::s_start ) ) return;
                 if( ! out_stream< 1 >().set( stream::s_start ) ) return;
-                //TODO need this?
-                //f_time_session_pkt_counter = 0;
-                //f_freq_session_pkt_counter = 0;
             }
 
             try
@@ -255,7 +246,11 @@ namespace psyllid
         LDEBUG( plog, "Configuring frequency_transform with:\n" << a_config );
         a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );
         a_node->set_freq_length( a_config.get_value( "freq-length", a_node->get_freq_length() ) );
+        a_node->set_fft_size( a_config.get_value( "fft-size", a_node->get_fft_size() ) );
         a_node->set_start_paused( a_config.get_value( "start-paused", a_node->get_start_paused() ) );
+        a_node->set_transform_flag( a_config.get_value( "transform-flag", a_node->get_transform_flag() ) );
+        a_node->set_use_wisdom( a_config.get_value( "use-wisdom", a_node->get_use_wisdom() ) );
+        a_node->set_wisdom_filename( a_config.get_value( "wisdom-filename", a_node->get_wisdom_filename() ) );
         return;
     }
 
@@ -264,27 +259,12 @@ namespace psyllid
         LDEBUG( plog, "Dumping frequency_transform configuration" );
         a_config.add( "time-length", new scarab::param_value( a_node->get_time_length() ) );
         a_config.add( "freq-length", new scarab::param_value( a_node->get_freq_length() ) );
+        a_config.add( "fft-size", new scarab::param_value( a_node->get_fft_size() ) );
         a_config.add( "start-paused", new scarab::param_value( a_node->get_start_paused() ) );
+        a_config.add( "transform-flag", new scarab::param_value( a_node->get_transform_flag() ) );
+        a_config.add( "use-wisdom", new scarab::param_value( a_node->get_use_wisdom() ) );
+        a_config.add( "wisdom-filename", new scarab::param_value( a_node->get_wisdom_filename() ) );
         return;
     }
-
-    //bool frequency_transform_binding::do_run_command( frequency_transform* a_node, const std::string& a_cmd, const scarab::param_node& ) const
-    //{
-    //    if( a_cmd == "freq-only" )
-    //    {
-    //        a_node->switch_to_freq_only();
-    //        return true;
-    //    }
-    //    else if( a_cmd == "time-and-freq" )
-    //    {
-    //        a_node->switch_to_time_and_freq();
-    //        return true;
-    //    }
-    //    else
-    //    {
-    //        LWARN( plog, "Unrecognized command: <" << a_cmd << ">" );
-    //        return false;
-    //    }
-    //}
 
 } /* namespace psyllid */
