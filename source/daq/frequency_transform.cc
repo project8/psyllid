@@ -17,8 +17,6 @@
 #include <memory>
 #include <sys/types.h> // for ssize_t
 
-//TODO maybe remove this once the std::copy is worked out
-#include "time_data.hh"
 
 using midge::stream;
 
@@ -170,12 +168,8 @@ namespace psyllid
 
                         //// okay so this is where the real magic happens, should do the FFT bit here
                         // memcpy just to place some bits so i can do the rest of the logic independent of the FFTW API
-                        std::memcpy(freq_data_out->get_array(), time_data_in->get_array(), time_data_in->get_array_size());
-                        // memcpy bad
-                        time_data::iq_t* tdi = time_data_in->get_array();
-                        time_data::iq_t* fdo = freq_data_out->get_array();
-                        //std::copy(tdi[0][0], tdi[0][0] + 4096*2, f_fftw_input[0][0]);
-                        std::copy(&tdi[0][0], &tdi[0][0] + 4096*2, &fdo[0][0]);
+                        //std::memcpy(freq_data_out->get_array(), time_data_in->get_array(), time_data_in->get_array_size());
+                        std::copy(&time_data_in->get_array()[0][0], &time_data_in->get_array()[0][0] + 4096*2, &freq_data_out->get_array()[0][0]);
 
 
                         if (!out_stream< 0 >().set( stream::s_run ) || !out_stream< 1 >().set( stream::s_run ) )
