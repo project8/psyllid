@@ -32,7 +32,7 @@ namespace psyllid
     streaming_frequency_writer::streaming_frequency_writer() :
             egg_writer(),
             f_file_num( 0 ),
-            f_filename( "default_filename_strw.egg" ),
+            f_filename( "default_filename_strfw.egg" ),
             f_description( "A very nice run" ),
             f_bit_depth( 8 ),
             f_data_type_size( 1 ),

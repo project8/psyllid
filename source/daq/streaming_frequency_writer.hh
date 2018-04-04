@@ -3,6 +3,7 @@
  *
  *  Created on: April 3, 2018
  *      Author: laroque
+ *      (copied from streaming_writer)
  */
 
 #ifndef PSYLLID_STREAMING_FREQUENCY_WRITER_HH_
