@@ -29,7 +29,7 @@ namespace psyllid
             f_time_length( 10 ),
             f_freq_length( 10 ),
             f_fft_size( 4096 ), //TODO is this a reasonable default
-            f_start_paused( true ),
+            f_start_paused( true ), //TODO this node should not support pausing
             f_transform_flag( "ESTIMATE" ), //TODO is this a reasonable default?
             f_use_wisdom( true ),
             f_wisdom_filename( "wisdom_complexfft.fftw3" ),
