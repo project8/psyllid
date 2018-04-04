@@ -1,7 +1,6 @@
 #######
 # daq #
 #######
-
 set( headers
     egg3_reader.hh
     event_builder.hh
@@ -32,8 +31,14 @@ set( sources
     triggered_writer.cc
 )
 
+option( Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT "Flag to enable building node for streaming frequency data (inproper monarch usage)" FALSE )
+if (Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT)
+    set( headers ${sources} streaming_frequency_writer.hh)
+    set( sources ${sources} streaming_frequency_writer.cc)
+endif (Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT)
+
 if( UNIX AND NOT APPLE )
-set( headers 
+set( headers
     ${headers}
     packet_receiver_fpa.hh
 )
