@@ -103,6 +103,7 @@ namespace psyllid
             time_data* time_data_in = nullptr;
             time_data* time_data_out = nullptr;
             freq_data* freq_data_out = nullptr;
+            double fft_norm = sqrt(1. / (double)f_fft_size);
 
             f_paused = f_start_paused;
 
@@ -161,8 +162,8 @@ namespace psyllid
                         //is this the normalization we want? (is it what the ROACH does?)
                         for (size_t i_bin=0; i_bin<f_fft_size; ++i_bin)
                         {
-                            f_fftw_output[i_bin][0] *= sqrt(1. / (double)f_fft_size);
-                            f_fftw_output[i_bin][1] *= sqrt(1. / (double)f_fft_size);
+                            f_fftw_output[i_bin][0] *= fft_norm;
+                            f_fftw_output[i_bin][1] *= fft_norm;
                         }
                         std::copy(&f_fftw_output[0][0], &f_fftw_output[0][0] + f_fft_size*2, &freq_data_out->get_array()[0][0]);
 
@@ -191,7 +192,7 @@ namespace psyllid
             if( ! t_stop_ok ) return;
 
             LDEBUG( plog, "Exiting output streams" );
-            if( ! out_stream< 0 >().set( stream::s_exit ) ) return;
+            out_stream< 0 >().set( stream::s_exit );
             out_stream< 1 >().set( stream::s_exit );
 
             return;

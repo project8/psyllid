@@ -10,14 +10,20 @@
 
 #include "memory_block.hh"
 #include "node_builder.hh"
-#include "time_data.hh"
+//#include "time_data.hh"
 
 #include "producer.hh"
-#include "M3Monarch.hh"
+//#include "M3Monarch.hh"
+
+namespace monarch3
+{
+    class Monarch3;
+    class M3Stream;
+    class M3Record;
+}
 
 namespace psyllid
 {
-
     /*!
      @class egg3_reader
      @author B. H. LaRoque
@@ -36,6 +42,11 @@ namespace psyllid
      Output Streams:
      - 0: time_data
     */
+
+    // forward declarations
+    class time_data;
+
+    // egg3_reader
     class egg3_reader : public midge::_producer< egg3_reader, typelist_1( time_data ) >
     {
         public:
@@ -57,7 +68,7 @@ namespace psyllid
             virtual void finalize();
 
         private:
-            bool read_slice( time_data*, const monarch3::M3Stream*, const monarch3::M3Record* );
+            bool read_slice( time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record);
             void cleanup_file();
 
     };

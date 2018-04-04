@@ -9,6 +9,8 @@
 
 #include "egg3_reader.hh"
 #include "psyllid_error.hh"
+#include "time_data.hh"
+#include "M3Monarch.hh"
 
 #include "logger.hh"
 #include "M3Monarch.hh"
@@ -65,7 +67,8 @@ namespace psyllid
             time_data* t_data = nullptr;
 
             // starting not in a paused state is not currently known to work
-            if ( !f_paused ) {
+            if ( !f_paused )
+            {
                 if( ! out_stream< 0 >().set( stream::s_start ) ) return;
             }
 
@@ -93,19 +96,16 @@ namespace psyllid
                     }
                 }
                 // only read if not paused:
-                if ( ! f_paused ) {
+                if ( ! f_paused )
+                {
                     LDEBUG( plog, "not paused, reading slice" );
                     if ( !read_slice(t_data, t_stream, t_record) ) break;
                 } else {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             }
-
-
-            // reading data goes herea
-            //TODO we probably do want support for multiple streams
         }
-        catch(...)
+        catch( std::exception )
         {
             LWARN( plog, "got an exception, throwing" );
             a_midge->throw_ex( std::current_exception() );
@@ -167,18 +167,18 @@ namespace psyllid
     void egg3_reader_binding::do_apply_config( egg3_reader* a_node, const scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Configuring egg3_reader with:\n" << a_config );
-        a_node->set_egg_path( a_config.get_value( "egg_path", a_node->get_egg_path() ) );
+        a_node->set_egg_path( a_config.get_value( "egg-path", a_node->get_egg_path() ) );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
-        a_node->set_start_paused( a_config.get_value( "start_paused", a_node->get_start_paused() ) );
+        a_node->set_start_paused( a_config.get_value( "start-paused", a_node->get_start_paused() ) );
         return;
     }
 
     void egg3_reader_binding::do_dump_config( const egg3_reader* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for egg3_reader" );
-        a_config.add( "egg_path", new scarab::param_value( a_node->get_egg_path() ) );
+        a_config.add( "egg-path", new scarab::param_value( a_node->get_egg_path() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
-        a_config.add( "start_paused", new scarab::param_value( a_node->get_length() ) );
+        a_config.add( "start-paused", new scarab::param_value( a_node->get_length() ) );
         return;
     }
 

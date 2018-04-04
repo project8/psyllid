@@ -54,8 +54,6 @@ else (FFTW_FOUND)
     message(STATUS "Building without FFTW")
     remove_definitions(-DFFTW_FOUND)
     remove_definitions (-DFFTW_NTHREADS=${FFTW_NTHREADS})
-    # do I really want to do this?... not found so why set the include?
-    #set (FFTW_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/External/FFTW)
 endif (FFTW_FOUND)
 include_directories (${FFTW_INCLUDE_DIR})
 

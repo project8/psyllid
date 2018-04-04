@@ -148,7 +148,7 @@ namespace psyllid
 
             return;
         }
-        catch(...)
+        catch( std::exception )
         {
             if( a_midge ) a_midge->throw_ex( std::current_exception() );
             else throw;
