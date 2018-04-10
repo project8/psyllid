@@ -57,7 +57,7 @@ New Features:
     * is a flow controlling node (ie should start paused, is started by dripline commands)
     * intended use case is for reading previously streamed data and testing different trigger configurations
     * has been tested by reading an egg file and producing output files of reasonable size; content of output has not yet been validated
-    * test to be done would be to compare matched records from the original and a new file
+    * validation by using in conjunction with streaming writer and M3Info; printed record content from input file match output file.
     * documentation in doxygen output and node_configuration.rst
 * Frequency transform
     * transform node which accepts a time_data stream and produces the same time_data stream and a corresponding freq_data stream
