@@ -9,7 +9,6 @@
 #define PSYLLID_FREQUENCY_TRANSFORM_HH_
 
 #include "freq_data.hh"
-//#include "memory_block.hh"
 #include "node_builder.hh"
 #include "time_data.hh"
 
@@ -17,7 +16,6 @@
 #include "shared_cancel.hh"
 
 #include <fftw3.h>
-//#include <memory>
 
 namespace scarab
 {
@@ -42,7 +40,6 @@ namespace psyllid
      - "time-length": uint -- The size of the output time-data buffer
      - "freq-length": uint -- The size of the output frequency-data buffer
      - "fft-size": unsigned -- The length of the fft input/output array (each element is 2-component)
-     - "start-paused": bool -- Whether to start execution paused and wait for an unpause command
      - "transform-flag": string -- FFTW flag to indicate how much optimization of the fftw_plan is desired
      - "use-wisdom": bool -- whether to use a plan from a wisdom file and save the plan to that file
      - "wisdom-filename": string -- if "use-wisdom" is true, resolvable path to the wisdom file
@@ -67,7 +64,6 @@ namespace psyllid
             mv_accessible( uint64_t, time_length );
             mv_accessible( uint64_t, freq_length );
             mv_accessible( unsigned, fft_size ); // I really wish I could get this from the egg header
-            mv_accessible( bool, start_paused );
             mv_accessible( std::string, transform_flag );
             mv_accessible( bool, use_wisdom );
             mv_accessible( std::string, wisdom_filename );
@@ -83,7 +79,6 @@ namespace psyllid
             fftw_complex* f_fftw_output;
             fftw_plan f_fftw_plan;
 
-            bool f_paused;
             bool f_multithreaded_is_initialized;
 
             uint64_t f_time_session_pkt_counter;

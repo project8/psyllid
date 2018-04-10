@@ -133,8 +133,9 @@ namespace psyllid
             LDEBUG( plog, "reached end of file" );
             return false;
         }
+
         // packet ID logic
-        //TODO the packet_in_session should not wrap to 0 when the batch value reaches MAX
+        //TODO do this pkt ID logic reasonable?
         t_data->set_pkt_in_batch(t_record->GetRecordId());
         t_data->set_pkt_in_session(t_record->GetRecordId());
         if ( !out_stream< 0 >().set( stream::s_run ) )

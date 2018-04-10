@@ -29,7 +29,6 @@ namespace psyllid
             f_time_length( 10 ),
             f_freq_length( 10 ),
             f_fft_size( 4096 ), //TODO is this a reasonable default
-            f_start_paused( true ), //TODO this node should not support pausing
             f_transform_flag( "ESTIMATE" ), //TODO is this a reasonable default?
             f_use_wisdom( true ),
             f_wisdom_filename( "wisdom_complexfft.fftw3" ),
@@ -37,7 +36,6 @@ namespace psyllid
             f_fftw_input(),
             f_fftw_output(),
             f_fftw_plan(),
-            f_paused( true ),
             f_multithreaded_is_initialized( false )
     {
         setup_internal_maps();
@@ -105,50 +103,53 @@ namespace psyllid
             freq_data* freq_data_out = nullptr;
             double fft_norm = sqrt(1. / (double)f_fft_size);
 
-            f_paused = f_start_paused;
-
-            // starting in a non-paused state is not known to work
-            if( ! f_start_paused )
-            {
-                LDEBUG( plog, "FREQUENCY TRANSFORM starting unpaused" );
-                LWARN( plog, "starting unpaused is not currently tested!" );
-                out_stream< 0 >().data()->set_pkt_in_session( 0 );
-                out_stream< 1 >().data()->set_pkt_in_session( 0 );
-                if( ! out_stream< 0 >().set( stream::s_start ) ) return;
-                if( ! out_stream< 1 >().set( stream::s_start ) ) return;
-            }
-
             try
             {
                 LPROG( plog, "Starting main loop (frequency transform)" );
                 while (! is_canceled() )
                 {
+                    // stop if output stream buffers have s_stop
                     if (out_stream< 0 >().get() == stream::s_stop || out_stream< 1 >().get() == stream::s_stop)
                     {
                         LWARN( plog, "output stream(s) have stop condition" );
                         break;
                     }
-                    // check for [un]pause instruction
-                    if( have_instruction() )
+                    // grab the next input data and check slot status
+                    midge::enum_t in_cmd = stream::s_none;
+                    in_cmd = in_stream< 0 >().get();
+                    if ( in_cmd == stream::s_none)
                     {
-                        if( f_paused && use_instruction() == midge::instruction::resume )
-                        {
-                            LDEBUG( plog, "freq transform resuming" );
-                            if( ! out_stream< 0 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 0 error while starting";
-                            if( ! out_stream< 1 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 1 error while starting";
-                            f_paused = false;
-                        }
-                        else if( !f_paused && use_instruction() == midge::instruction::pause )
-                        {
-                            LDEBUG( plog, "freq transform pausing" );
-                            if( ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
-                            if( ! out_stream< 1 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 1 error while stopping";
-                            f_paused = true;
-                        }
+                        continue;
                     }
-
-                    if ( !f_paused )
+                    if ( in_cmd == stream::s_error )
                     {
+                        LDEBUG( plog, "got an s_error on slot <" << in_stream< 0 >().get_current_index() << ">" );
+                        break;
+                    }
+                    if ( in_cmd == stream::s_exit )
+                    {
+                        LDEBUG( plog, "got an s_exit on slot <" << in_stream< 0 >().get_current_index() << ">" );
+                        break;
+                    }
+                    if ( in_cmd == stream::s_stop )
+                    {
+                        LDEBUG( plog, "got an s_stop on slot <" << in_stream< 0 >().get_current_index() << ">" );
+                        //TODO do i need to flush a buffer here?
+                        if ( ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
+                        if ( ! out_stream< 1 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 1 error while stopping";
+                        continue;
+                    }
+                    if ( in_cmd == stream::s_start )
+                    {
+                        LDEBUG( plog, "got an s_start on slot <" << in_stream< 0 >().get_current_index() << ">" );
+                        if( ! out_stream< 0 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 0 error while starting";
+                        if( ! out_stream< 1 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 1 error while starting";
+                        continue;
+                    }
+                    if ( in_cmd == stream::s_run )
+                    {
+                        LDEBUG( plog, "got an s_run on slot <" << in_stream< 0 >().get_current_index() << ">" );
+
                         time_data_in = in_stream< 0 >().data();
                         time_data_out = out_stream< 0 >().data();
                         freq_data_out = out_stream< 1 >().data();
@@ -166,16 +167,14 @@ namespace psyllid
                             f_fftw_output[i_bin][1] *= fft_norm;
                         }
                         std::copy(&f_fftw_output[0][0], &f_fftw_output[0][0] + f_fft_size*2, &freq_data_out->get_array()[0][0]);
+                        freq_data_out->set_pkt_in_batch(time_data_out->get_pkt_in_batch());
+                        freq_data_out->set_pkt_in_session(time_data_in->get_pkt_in_session());
 
                         if (!out_stream< 0 >().set( stream::s_run ) || !out_stream< 1 >().set( stream::s_run ) )
                         {
                             LERROR( plog, "frequency transform error setting output stream to s_run" );
                             break;
                         }
-
-                        //TODO this is based on tf_roach_receiver, why do this at the end of the loop and not the top?
-                        //     i clearly still don't have a great grasp on how these streams work
-                        in_stream< 0 >().get();
                     }
                 }
             }
@@ -249,7 +248,6 @@ namespace psyllid
         a_node->set_time_length( a_config.get_value( "time-length", a_node->get_time_length() ) );
         a_node->set_freq_length( a_config.get_value( "freq-length", a_node->get_freq_length() ) );
         a_node->set_fft_size( a_config.get_value( "fft-size", a_node->get_fft_size() ) );
-        a_node->set_start_paused( a_config.get_value( "start-paused", a_node->get_start_paused() ) );
         a_node->set_transform_flag( a_config.get_value( "transform-flag", a_node->get_transform_flag() ) );
         a_node->set_use_wisdom( a_config.get_value( "use-wisdom", a_node->get_use_wisdom() ) );
         a_node->set_wisdom_filename( a_config.get_value( "wisdom-filename", a_node->get_wisdom_filename() ) );
@@ -262,7 +260,6 @@ namespace psyllid
         a_config.add( "time-length", new scarab::param_value( a_node->get_time_length() ) );
         a_config.add( "freq-length", new scarab::param_value( a_node->get_freq_length() ) );
         a_config.add( "fft-size", new scarab::param_value( a_node->get_fft_size() ) );
-        a_config.add( "start-paused", new scarab::param_value( a_node->get_start_paused() ) );
         a_config.add( "transform-flag", new scarab::param_value( a_node->get_transform_flag() ) );
         a_config.add( "use-wisdom", new scarab::param_value( a_node->get_use_wisdom() ) );
         a_config.add( "wisdom-filename", new scarab::param_value( a_node->get_wisdom_filename() ) );
