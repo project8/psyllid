@@ -49,7 +49,9 @@ namespace psyllid
         f_egg = monarch3::Monarch3::OpenForReading( f_egg_path );
         f_egg->ReadHeader();
         // do we want/need to do anything with the header?
-        //const monarch3::M3Header *t_egg_header = f_egg->GetHeader();
+        const monarch3::M3Header *t_egg_header = f_egg->GetHeader();
+        LDEBUG( plog, "egg header content:\n" );
+        LDEBUG( plog, *t_egg_header );
         return;
 
     }
@@ -143,6 +145,24 @@ namespace psyllid
             LERROR( plog, "egg reader exiting due to stream error" );
             return false;
         }
+
+        LWARN( plog, "t_data dump:");
+        LWARN( plog, "      array ptr: " << t_data->get_array() );
+        double pt;
+        for (unsigned i=0; i<3; i++) {
+            pt = t_data->get_array()[i][0];
+            LWARN( plog, "      point[ " << i << "][0] is " << pt );
+            pt = t_data->get_array()[i][1];
+            LWARN( plog, "      point[ " << i << "][1] is " << pt );
+            pt = t_data->get_raw_array()[i];
+            LWARN( plog, "      raw point[ " << i << "] is " << pt );
+            pt = t_record->GetData()[i];
+            LWARN( plog, "      record point[ " << i << "] is " << pt );
+            pt = t_stream->GetChannelRecord( 0 )->GetData()[i];
+            LWARN( plog, "      stream point[ " << i << "] is " << pt );
+        }
+        LWARN( plog, "these lines should all be gone....");
+
         return true;
     }
 
