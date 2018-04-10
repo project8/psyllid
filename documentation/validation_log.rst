@@ -63,12 +63,13 @@ New Features:
     * transform node which accepts a time_data stream and produces the same time_data stream and a corresponding freq_data stream
     * intention is that the frequency data match what would be in a ROACH2 frequency packet (as opposed to being the "best possible" FFT of the data, though hopefully those are similar)
     * has been teted only to show that both output streams can be passed to downstream nodes, content validity has not be tested
-    * test to be done would be to record time and corresponding frequency packets from the roach, then produce frequency data from the streamed time data and see if streamed roach frequency data agrees with calculated frequency data
+    * tested by qualitatively looking at a plot of the frequency magnitudes of frequency output file, and also the fft of the original input time data, they looked very similar (up to a normalization factor)
     * documentation in doxygen output and node_configuration.rst
 * frequency streamer
     * consumer node which is a direct copy of the streaming_writer node, with time_data replaced with freq_data (ie, it abuses the egg format and puts frequency data into what should be a time record)
     * intended for use only in testing nodes (see above), if a useful feature, the egg format needs to be extended to support it properly and this node modified correspondingly
     * documentation in doxygen output and node_configuration.rst
+    * tested as part of the Frequency transoform test above
 * tf_roach_receiver optionally always starts on a t packet
     * prior behavior was to start with the next packet received when unpaused; this feature adds a config option which will discard frequency data until the first time data is received (thus ensuring, in principle, that the output is always a matched pair)
     * documentation in doxygen output and node_configuration.rst
