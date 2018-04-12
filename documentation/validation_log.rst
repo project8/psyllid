@@ -65,7 +65,7 @@ New Features:
     * has been teted only to show that both output streams can be passed to downstream nodes, content validity has not be tested
     * tested by qualitatively looking at a plot of the frequency magnitudes of frequency output file, and also the fft of the original input time data, they looked very similar (up to a normalization factor)
     * documentation in doxygen output and node_configuration.rst
-* frequency streamer
+* Streaming frequency writer
     * consumer node which is a direct copy of the streaming_writer node, with time_data replaced with freq_data (ie, it abuses the egg format and puts frequency data into what should be a time record)
     * intended for use only in testing nodes (see above), if a useful feature, the egg format needs to be extended to support it properly and this node modified correspondingly
     * documentation in doxygen output and node_configuration.rst
