@@ -105,7 +105,9 @@ namespace psyllid
                 {
                     LDEBUG( plog, "not paused, reading slice" );
                     if ( !read_slice(t_data, t_stream, t_record) ) break;
-                } else {
+                }
+                else
+                {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             }
@@ -155,7 +157,8 @@ namespace psyllid
     void egg3_reader::cleanup_file()
     {
         LDEBUG( plog, "clean egg" );
-        if ( f_egg->GetState() != monarch3::Monarch3::eClosed ) {
+        if ( f_egg->GetState() != monarch3::Monarch3::eClosed )
+        {
             LDEBUG( plog, "actually close egg" );
             f_egg->FinishReading();
         }
