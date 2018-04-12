@@ -7,12 +7,12 @@ post-to-slack: false
 daq:
     activate-at-startup: true
     n-files: 1
-    max-file-size-mb: 1000
+    max-file-size-mb: 500
 
 streams:
-    ch1:
-        preset: events-1ch
-
+    ch0:
+        preset: fmask-1ch
+  
         device:
             n-channels: 1
             bit-depth: 8
@@ -22,27 +22,12 @@ streams:
             acq-rate: 100 # MHz
             v-offset: 0.0
             v-range: 0.5
-
+  
         prs:
             length: 10
             port: 23530
             ip: 127.0.0.1
 
-        fmt:
-            length: 10
-            n-packets-for-mask: 2000
-            n-spline-points: 20
-
-        tfrr:
-            freq-length: 10
-            time-length: 1000
-
         trw:
             file-num: 0
-
-        eb:
-            pretrigger: 48
-            length: 10
-            skip-tolerance: 120
-            n-triggers: 1
-
+            

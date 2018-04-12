@@ -31,7 +31,6 @@ namespace psyllid
             f_udp_buffer_size( sizeof( roach_packet ) ),
             f_time_sync_tol( 2 ),
             f_start_paused( true ),
-            f_force_time_first( false ),
             f_skip_after_stop( 0 ),
             f_exe_func( &tf_roach_receiver::exe_time_and_freq ),
             f_exe_func_mutex(),
@@ -149,7 +148,7 @@ namespace psyllid
 
             return;
         }
-        catch( std::exception )
+        catch(...)
         {
             if( a_midge ) a_midge->throw_ex( std::current_exception() );
             else throw;
@@ -161,7 +160,6 @@ namespace psyllid
     bool tf_roach_receiver::exe_time_and_freq( exe_func_context& a_ctx )
     {
         f_exe_func_mutex.unlock();
-        bool t_time_pkt_received = !f_force_time_first;
 
         LDEBUG( plog, "Entering time-and-frequency loop" );
         while( ! is_canceled() && ! f_break_exe_func.load() )
@@ -242,7 +240,6 @@ namespace psyllid
                         if( ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
                         if( ! out_stream< 1 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 1 error while stopping";
                         f_paused = true;
-                        t_time_pkt_received = !f_force_time_first;
                     }
                 }
 
@@ -271,7 +268,6 @@ namespace psyllid
                     if( t_roach_packet->f_freq_not_time )
                     {
                         // packet is frequency data
-                        if( ! t_time_pkt_received ) continue;
                         //t_freq_batch_pkt = t_roach_packet->f_pkt_in_batch;
 
                         a_ctx.f_freq_data = out_stream< 1 >().data();
@@ -294,7 +290,6 @@ namespace psyllid
                     else
                     {
                         // packet is time data
-                        t_time_pkt_received = true;
                         //t_time_batch_pkt = t_roach_packet->f_pkt_in_batch;
 
                         a_ctx.f_time_data = out_stream< 0 >().data();
@@ -503,7 +498,6 @@ namespace psyllid
         a_node->set_udp_buffer_size( a_config.get_value( "udp-buffer-size", a_node->get_udp_buffer_size() ) );
         a_node->set_time_sync_tol( a_config.get_value( "time-sync-tol", a_node->get_time_sync_tol() ) );
         a_node->set_start_paused( a_config.get_value( "start-paused", a_node->get_start_paused() ) );
-        a_node->set_force_time_first( a_config.get_value( "force-time-first", a_node->get_force_time_first() ) );
         return;
     }
 
@@ -515,7 +509,6 @@ namespace psyllid
         a_config.add( "udp-buffer-size", new scarab::param_value( a_node->get_udp_buffer_size() ) );
         a_config.add( "time-sync-tol", new scarab::param_value( a_node->get_time_sync_tol() ) );
         a_config.add( "start-paused", new scarab::param_value( a_node->get_start_paused() ) );
-        a_config.add( "force-time-first", new scarab::param_value( a_node->get_force_time_first() ) );
         return;
 
     }

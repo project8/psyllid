@@ -10,7 +10,6 @@ Contents:
    Roach Packets <roach_packets>
    Server API <server_api>
    Validation Log <validation_log>
-   Installation <installation>
 
 .. end of toc
 .. (you must not remove or modify the above comment line, it is required by the API Doc generation)

@@ -27,12 +27,83 @@ namespace psyllid
     request_receiver::request_receiver( const param_node& a_master_config ) :
             hub( a_master_config.node_at( "amqp" ) ),
             scarab::cancelable(),
+            f_run_handler(),
+            f_get_handlers(),
+            f_set_handlers(),
+            f_cmd_handlers(),
             f_status( k_initialized )
     {
     }
 
     request_receiver::~request_receiver()
     {
+    }
+
+    void request_receiver::set_run_handler( const handler_func_t& a_func )
+    {
+        f_run_handler = a_func;
+        LDEBUG( plog, "Set RUN handler" );
+        return;
+    }
+
+    void request_receiver::register_get_handler( const std::string& a_key, const handler_func_t& a_func )
+    {
+        f_get_handlers[ a_key ] = a_func;
+        LDEBUG( plog, "Set GET handler for <" << a_key << ">" );
+        return;
+    }
+
+    void request_receiver::register_set_handler( const std::string& a_key, const handler_func_t& a_func )
+    {
+        f_set_handlers[ a_key ] = a_func;
+        LDEBUG( plog, "Set SET handler for <" << a_key << ">" );
+        return;
+    }
+
+    void request_receiver::register_cmd_handler( const std::string& a_key, const handler_func_t& a_func )
+    {
+        f_cmd_handlers[ a_key ] = a_func;
+        LDEBUG( plog, "Set CMD handler for <" << a_key << ">" );
+        return;
+    }
+
+    void request_receiver::remove_get_handler( const std::string& a_key )
+    {
+        if( f_get_handlers.erase( a_key ) == 0 )
+        {
+            LWARN( plog, "GET handler <" << a_key << "> was not present; nothing was removed" );
+        }
+        else
+        {
+            LDEBUG( plog, "GET handler <" << a_key << "> was removed" );
+        }
+        return;
+    }
+
+    void request_receiver::remove_set_handler( const std::string& a_key )
+    {
+        if( f_set_handlers.erase( a_key ) == 0 )
+        {
+            LWARN( plog, "SET handler <" << a_key << "> was not present; nothing was removed" );
+        }
+        else
+        {
+            LDEBUG( plog, "SET handler <" << a_key << "> was removed" );
+        }
+        return;
+    }
+
+    void request_receiver::remove_cmd_handler( const std::string& a_key )
+    {
+        if( f_cmd_handlers.erase( a_key ) == 0 )
+        {
+            LWARN( plog, "CMD handler <" << a_key << "> was not present; nothing was removed" );
+        }
+        else
+        {
+            LDEBUG( plog, "CMD handler <" << a_key << "> was removed" );
+        }
+        return;
     }
 
     void request_receiver::execute()
@@ -65,6 +136,61 @@ namespace psyllid
         LDEBUG( plog, "Request receiver is done" );
 
         return;
+    }
+
+    bool request_receiver::do_run_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        return f_run_handler( a_request, a_reply_pkg );
+    }
+
+    bool request_receiver::do_get_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        std::string t_query_type = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        try
+        {
+            return f_get_handlers.at( t_query_type )( a_request, a_reply_pkg );
+        }
+        catch( std::out_of_range& e )
+        {
+            LWARN( plog, "GET query type <" << t_query_type << "> was not understood (" << e.what() << ")" );
+            return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Unrecognized query type or no query type provided: <" + t_query_type + ">" );;
+        }
+    }
+
+    bool request_receiver::do_set_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        std::string t_set_type = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        try
+        {
+            return f_set_handlers.at( t_set_type )( a_request, a_reply_pkg );
+        }
+        catch( std::out_of_range& e )
+        {
+            LWARN( plog, "SET request <" << t_set_type << "> not understood (" << e.what() << ")" );
+            return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Unrecognized set request type or no set request type provided: <" + t_set_type + ">" );
+        }
+    }
+
+    bool request_receiver::do_cmd_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        // get the instruction before checking the lockout key authentication because we need to have the exception for
+        // the unlock instruction that allows us to force the unlock.
+        std::string t_instruction = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        try
+        {
+            return f_cmd_handlers.at( t_instruction )( a_request, a_reply_pkg );
+        }
+        catch( std::out_of_range& e )
+        {
+            LWARN( plog, "CMD instruction <" << t_instruction << "> not understood (" << e.what() << ")" );
+            return a_reply_pkg.send_reply( retcode_t::message_error_bad_payload, "Instruction <" + t_instruction + "> not understood" );;
+        }
     }
 
     void request_receiver::do_cancellation()
