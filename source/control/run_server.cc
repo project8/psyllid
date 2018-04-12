@@ -156,6 +156,7 @@ namespace psyllid
         LPROG( plog, "Starting threads" );
         std::exception_ptr t_dc_ex_ptr;
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
+        //TODO i think this is where i want to stop if in batch mode, don't create/run this thread
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
         t_lock.unlock();
@@ -164,6 +165,7 @@ namespace psyllid
         LPROG( plog, "Running..." );
 
         t_daq_control_thread.join();
+        //TODO and ends here
         LDEBUG( plog, "DAQ control thread has ended" );
 
         t_receiver_thread.join();
