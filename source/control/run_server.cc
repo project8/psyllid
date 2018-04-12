@@ -87,7 +87,7 @@ namespace psyllid
             }
 
             // node manager
-            LDEBUG( plog, "Creating stream manager" );
+            LDEBUG( plog, "Creating steam manager" );
             f_stream_manager.reset( new stream_manager() );
 
             // daq control

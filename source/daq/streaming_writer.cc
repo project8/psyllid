@@ -88,7 +88,6 @@ namespace psyllid
 
     void streaming_writer::execute( midge::diptera* a_midge )
     {
-        LDEBUG( plog, "execute streaming writer" );
         try
         {
             midge::enum_t t_time_command = stream::s_none;
@@ -201,7 +200,6 @@ namespace psyllid
         }
         catch(...)
         {
-            LWARN( plog, "an error occurred executing streaming writer" );
             if( a_midge ) a_midge->throw_ex( std::current_exception() );
             else throw;
         }
@@ -209,7 +207,6 @@ namespace psyllid
 
     void streaming_writer::finalize()
     {
-        LDEBUG( plog, "finalize streaming writer" );
         butterfly_house::get_instance()->unregister_writer( this );
         return;
     }
