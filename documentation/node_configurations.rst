@@ -53,6 +53,18 @@ Parameter setting is not thread-safe.  Executing is thread-safe.
   * Output 0: ``time_data``
   * Output 1: ``freq_data``
 
+``egg3_reader``
+^^^^^^^^^^^^^^^
+Egg file reader based on the monarch3 library
+
+* Type: ``egg3-reader``
+* Configuration
+
+  - "egg_path": string -- resolvable path tot he egg file from which to read time series data
+
+* Output
+  * 0: ``time_data``
+
 ____
 
 
@@ -139,6 +151,30 @@ Parameter setting is not thread-safe.  Executing (including switching modes) is 
 
   * 0: ``trigger_flag``
 
+``frequency_transform``
+^^^^^^^^^^^^^^^^^^^^^^^
+Compute fourier transform of time dataa
+
+* Type: ``frequency-transform``
+* Configuration
+
+  - "time-length": uint -- The size of the output time-data buffer
+  - "freq-length": uint -- The size of the output frequency-data buffer
+  - "fft-size": unsigned -- The length of the fft input/output array (each element is 2-component)
+  - "start-paused": bool -- Whether to start execution paused and wait for an unpause command
+  - "transform-flag": string -- FFTW flag to indicate how much optimization of the fftw_plan is desired
+  - "use-wisdom": bool -- whether to use a plan from a wisdom file and save the plan to that file
+  - "wisdom-filename": string -- if "use-wisdom" is true, resolvable path to the wisdom file
+
+* Input
+
+  * 0: ``time_data``
+
+* Output
+
+  * 0: ``time_data``
+  * 1: ``freq_data``
+
 ``tf_roach_receiver``
 ^^^^^^^^^^^^^^^^^^^^^
 Splits raw combined time-frequency stream into time and frequency streams.
@@ -152,6 +188,7 @@ Parameter setting is not thread-safe.  Executing is thread-safe.
   - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed and is specified by the ROACH configuration
   - "time-sync-tol": uint -- (currently unused) Tolerance for time synchronization between the ROACH and the server (seconds)
   - "start-paused": bool -- Whether to start execution paused and wait for an unpause command
+  - "force-time-first": bool -- If true, when starting ignore f packets until the first t packet is received
 
 * Input
 
@@ -239,6 +276,31 @@ Parameter setting is not thread-safe.  Executing is thread-safe.
 * Input
 
   * 0: ``time_data``
+
+``streaming_frequency_writer``
+^^^^^^^^^^^^^^^^^^^^
+Writes streamed frequency data to an egg file
+
+* Type: ``streaming-frequency-writer``
+* Configuration
+
+  - "file-size-limit-mb": uint -- Not used currently
+  - "device": node -- digitizer parameters
+
+    - "bit-depth": uint -- bit depth of each sample
+    - "data-type-size": uint -- number of bytes in each sample (or component of a sample for sample-size > 1)
+    - "sample-size": uint -- number of components in each sample (1 for real sampling; 2 for IQ sampling)
+    - "record-size": uint -- number of samples in each record
+    - "acq-rate": uint -- acquisition rate in MHz
+    - "v-offset": double -- voltage offset for ADC calibration
+    - "v-range": double -- voltage range for ADC calibration
+
+  - "center-freq": double -- the center frequency of the data being digitized
+  - "freq-range": double -- the frequency window (bandwidth) of the data being digitized
+
+* Input
+
+  * 0: ``freq_data``
 
 ``terminator_freq``
 ^^^^^^^^^^^^^^^^^^^

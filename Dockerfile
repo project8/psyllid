@@ -6,6 +6,8 @@ RUN apt-get update && \
     apt-get clean && \
     apt-get --fix-missing  -y install \
         build-essential \
+        libfftw3-3 \
+        libfftw3-dev \
         gdb \
         libboost-all-dev \
         libhdf5-dev \
@@ -39,7 +41,7 @@ RUN cd /usr/local/src && \
     cd build && \
     cmake .. && \
     # unclear while I have to run cmake twice
-    cmake -DPsyllid_ENABLE_TESTING=TRUE -DCMAKE_INSTALL_PREFIX:PATH=/usr/local . && \
+    cmake -DPsyllid_ENABLE_TESTING=TRUE -DCMAKE_INSTALL_PREFIX:PATH=/usr/local -DPsyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT=TRUE . && \
     make -j2 install
 
 RUN cp /usr/local/src/examples/str_1ch_fpa.yaml /etc/psyllid_config.yaml
