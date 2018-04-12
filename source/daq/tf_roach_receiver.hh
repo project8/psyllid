@@ -43,6 +43,7 @@ namespace psyllid
      - "udp-buffer-size": uint -- The number of bytes in the UDP memory buffer for a single packet; generally this shouldn't be changed and is specified by the ROACH configuration
      - "time-sync-tol": uint -- (currently unused) Tolerance for time synchronization between the ROACH and the server (seconds)
      - "start-paused": bool -- Whether to start execution paused and wait for an unpause command
+     - "force-time-first": bool -- If true, when starting ignore f packets before the first t packet
 
      Available DAQ commands:
      - "freq-only" (no args) -- Switch the execution mode to frequency-only
@@ -68,6 +69,7 @@ namespace psyllid
             mv_accessible( uint64_t, udp_buffer_size );
             mv_accessible( unsigned, time_sync_tol );
             mv_accessible( bool, start_paused );
+            mv_accessible( bool, force_time_first );
             mv_accessible( unsigned, skip_after_stop );
 
         public:

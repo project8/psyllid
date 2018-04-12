@@ -1,11 +1,11 @@
 /*
- * streaming_writer.cc
+ * streaming_frequency_writer.cc
  *
- *  Created on: May 31, 2016
- *      Author: nsoblath
+ *  Created on: April 3, 2018
+ *      Author: laroque
  */
 
-#include "streaming_writer.hh"
+#include "streaming_frequency_writer.hh"
 
 #include "butterfly_house.hh"
 #include "psyllid_error.hh"
@@ -25,14 +25,14 @@ using std::vector;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( streaming_writer, "streaming-writer", streaming_writer_binding );
+    REGISTER_NODE_AND_BUILDER( streaming_frequency_writer, "streaming-frequency-writer", streaming_frequency_writer_binding );
 
-    LOGGER( plog, "streaming_writer" );
+    LOGGER( plog, "streaming_frequency_writer" );
 
-    streaming_writer::streaming_writer() :
+    streaming_frequency_writer::streaming_frequency_writer() :
             egg_writer(),
             f_file_num( 0 ),
-            f_filename( "default_filename_strw.egg" ),
+            f_filename( "default_filename_strfw.egg" ),
             f_description( "A very nice run" ),
             f_bit_depth( 8 ),
             f_data_type_size( 1 ),
@@ -49,11 +49,11 @@ namespace psyllid
     {
     }
 
-    streaming_writer::~streaming_writer()
+    streaming_frequency_writer::~streaming_frequency_writer()
     {
     }
 
-    void streaming_writer::prepare_to_write( monarch_wrap_ptr a_mw_ptr, header_wrap_ptr a_hw_ptr )
+    void streaming_frequency_writer::prepare_to_write( monarch_wrap_ptr a_mw_ptr, header_wrap_ptr a_hw_ptr )
     {
         f_monarch_ptr = a_mw_ptr;
 
@@ -80,20 +80,20 @@ namespace psyllid
         return;
     }
 
-    void streaming_writer::initialize()
+    void streaming_frequency_writer::initialize()
     {
         butterfly_house::get_instance()->register_writer( this, f_file_num );
         return;
     }
 
-    void streaming_writer::execute( midge::diptera* a_midge )
+    void streaming_frequency_writer::execute( midge::diptera* a_midge )
     {
         LDEBUG( plog, "execute streaming writer" );
         try
         {
             midge::enum_t t_time_command = stream::s_none;
 
-            time_data* t_time_data = nullptr;
+            freq_data* t_freq_data = nullptr;
 
             stream_wrap_ptr t_swrap_ptr;
 
@@ -154,28 +154,28 @@ namespace psyllid
 
                 if( t_time_command == stream::s_run )
                 {
-                    t_time_data = in_stream< 0 >().data();
+                    t_freq_data = in_stream< 0 >().data();
 
                     if( t_start_file_with_next_data )
                     {
                         LDEBUG( plog, "Handling first packet in run" );
 
-                        t_first_pkt_in_run = t_time_data->get_pkt_in_session();
+                        t_first_pkt_in_run = t_freq_data->get_pkt_in_session();
 
                         t_is_new_acquisition = true;
 
                         t_start_file_with_next_data = false;
                     }
 
-                    uint64_t t_time_id = t_time_data->get_pkt_in_session();
+                    uint64_t t_time_id = t_freq_data->get_pkt_in_session();
                     LTRACE( plog, "Writing packet (in session) " << t_time_id );
 
                     uint32_t t_expected_pkt_in_batch = f_last_pkt_in_batch + 1;
                     if( t_expected_pkt_in_batch >= BATCH_COUNTER_SIZE ) t_expected_pkt_in_batch = 0;
-                    if( ! t_is_new_acquisition && t_time_data->get_pkt_in_batch() != t_expected_pkt_in_batch ) t_is_new_acquisition = true;
-                    f_last_pkt_in_batch = t_time_data->get_pkt_in_batch();
+                    if( ! t_is_new_acquisition && t_freq_data->get_pkt_in_batch() != t_expected_pkt_in_batch ) t_is_new_acquisition = true;
+                    f_last_pkt_in_batch = t_freq_data->get_pkt_in_batch();
 
-                    if( ! t_swrap_ptr->write_record( t_time_id, t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ), t_time_data->get_raw_array(), t_bytes_per_record, t_is_new_acquisition ) )
+                    if( ! t_swrap_ptr->write_record( t_time_id, t_record_length_nsec * ( t_time_id - t_first_pkt_in_run ), t_freq_data->get_raw_array(), t_bytes_per_record, t_is_new_acquisition ) )
                     {
                         throw midge::node_nonfatal_error() << "Unable to write record to file; record ID: " << t_time_id;
                     }
@@ -207,7 +207,7 @@ namespace psyllid
         }
     }
 
-    void streaming_writer::finalize()
+    void streaming_frequency_writer::finalize()
     {
         LDEBUG( plog, "finalize streaming writer" );
         butterfly_house::get_instance()->unregister_writer( this );
@@ -215,18 +215,18 @@ namespace psyllid
     }
 
 
-    streaming_writer_binding::streaming_writer_binding() :
-            _node_binding< streaming_writer, streaming_writer_binding >()
+    streaming_frequency_writer_binding::streaming_frequency_writer_binding() :
+            _node_binding< streaming_frequency_writer, streaming_frequency_writer_binding >()
     {
     }
 
-    streaming_writer_binding::~streaming_writer_binding()
+    streaming_frequency_writer_binding::~streaming_frequency_writer_binding()
     {
     }
 
-    void streaming_writer_binding::do_apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const
+    void streaming_frequency_writer_binding::do_apply_config( streaming_frequency_writer* a_node, const scarab::param_node& a_config ) const
     {
-        LDEBUG( plog, "Configuring streaming_writer with:\n" << a_config );
+        LDEBUG( plog, "Configuring streaming_frequency_writer with:\n" << a_config );
         a_node->set_file_num( a_config.get_value( "file-num", a_node->get_file_num() ) );
         const scarab::param_node *t_dev_config = a_config.node_at( "device" );
         if( t_dev_config != nullptr )
@@ -244,9 +244,9 @@ namespace psyllid
         return;
     }
 
-    void streaming_writer_binding::do_dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const
+    void streaming_frequency_writer_binding::do_dump_config( const streaming_frequency_writer* a_node, scarab::param_node& a_config ) const
     {
-        LDEBUG( plog, "Dumping configuration for streaming_writer" );
+        LDEBUG( plog, "Dumping configuration for streaming_frequency_writer" );
         a_config.add( "file-num", new scarab::param_value( a_node->get_file_num() ) );
         scarab::param_node* t_dev_node = new scarab::param_node();
         t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );
