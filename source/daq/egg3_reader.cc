@@ -30,7 +30,8 @@ namespace psyllid
             f_egg_path( "/dev/null" ),
             f_length( 10 ),
             f_start_paused( true ),
-            f_paused( true )
+            f_paused( true ),
+            f_record_length( 0 )
     {
     }
 
@@ -52,6 +53,8 @@ namespace psyllid
         const monarch3::M3Header *t_egg_header = f_egg->GetHeader();
         LDEBUG( plog, "egg header content:\n" );
         LDEBUG( plog, *t_egg_header );
+        //TODO this should probably not assume single-channel mode...
+        f_record_length = t_egg_header->GetChannelHeaders()[0].GetRecordSize();
         return;
 
     }
@@ -127,14 +130,15 @@ namespace psyllid
         LDEBUG( plog, "reading a slice" );
         // update t_data to point to the next slot in the output stream
         t_data = out_stream< 0 >().data();
-        // update M3Record so that it will write into t_data
-        t_record->UpdateDataPtr( reinterpret_cast< const monarch3::byte_type* >(t_data->get_raw_array()) );
+        // update M3Record so that it will write into t_data... this doesn't currently work
+        //t_record->UpdateDataPtr( reinterpret_cast< const monarch3::byte_type* >(t_data->get_raw_array()) );
         // read next record in egg file, writing into the output_stream
         if ( !t_stream->ReadRecord() )
         {
             LDEBUG( plog, "reached end of file" );
             return false;
         }
+        std::copy(&t_record->GetData()[0], &t_record->GetData()[f_record_length*2], &t_data->get_array()[0][0]);
 
         // packet ID logic
         //TODO do this pkt ID logic reasonable?
@@ -145,24 +149,6 @@ namespace psyllid
             LERROR( plog, "egg reader exiting due to stream error" );
             return false;
         }
-
-        LWARN( plog, "t_data dump:");
-        LWARN( plog, "      array ptr: " << t_data->get_array() );
-        double pt;
-        for (unsigned i=0; i<3; i++) {
-            pt = t_data->get_array()[i][0];
-            LWARN( plog, "      point[ " << i << "][0] is " << pt );
-            pt = t_data->get_array()[i][1];
-            LWARN( plog, "      point[ " << i << "][1] is " << pt );
-            pt = t_data->get_raw_array()[i];
-            LWARN( plog, "      raw point[ " << i << "] is " << pt );
-            pt = t_record->GetData()[i];
-            LWARN( plog, "      record point[ " << i << "] is " << pt );
-            pt = t_stream->GetChannelRecord( 0 )->GetData()[i];
-            LWARN( plog, "      stream point[ " << i << "] is " << pt );
-        }
-        LWARN( plog, "these lines should all be gone....");
-
         return true;
     }
 

@@ -59,6 +59,7 @@ namespace psyllid
 
         private:
             bool f_paused;
+            uint32_t f_record_length;
 
        public:
             virtual void initialize();
