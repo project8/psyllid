@@ -48,21 +48,22 @@ namespace psyllid
         if ( ! f_actions_node.is_array() )
         {
             LWARN( plog, "batch-actions configuration is not an array" );
-            for ( scarab::param_array::iterator action_it = f_actions_node.as_array().begin();
-                  action_it!=f_actions_node.as_array().end();
-                  ++action_it )
-            {
-                //access each action (still a node) as *action_it
-                // get this from the iterator
-                scarab::param_node* a_payload = new scarab::param_node();
-                // is there a map for strings to dripline::op_t? should dripline have one?
-                dripline::op_t a_msg_op = dripline::op_t::cmd;
-                request_ptr_t a_reqeust = dripline::msg_request::create(
-                                                  a_payload, //*action_it->as_node()->at( "payload" ),//payload
-                                                  a_msg_op, //1, //msg_op [op_t]
-                                                  "", //routing key [std::string]
-                                                  "" );//, //reply-to [std::string]
-            }
+            return
+        }
+        for ( scarab::param_array::iterator action_it = f_actions_node.as_array().begin();
+              action_it!=f_actions_node.as_array().end();
+              ++action_it )
+        {
+            //access each action (still a node) as *action_it
+            // get this from the iterator
+            scarab::param_node* a_payload = (*action_it)->as_node().at( "payload" );
+            // is there a map for strings to dripline::op_t? should dripline have one?
+            dripline::op_t a_msg_op = dripline::op_t::cmd;
+            request_ptr_t a_reqeust = dripline::msg_request::create(
+                                              a_payload, //*action_it->as_node()->at( "payload" ),//payload
+                                              a_msg_op, //1, //msg_op [op_t]
+                                              "", //routing key [std::string]
+                                              "" );//, //reply-to [std::string]
         }
     }
 
