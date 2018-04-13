@@ -18,4 +18,8 @@ namespace psyllid
     {
     }
 
+    void batch_executor::execute()
+    {
+    }
+
 } /* namespace psyllid */

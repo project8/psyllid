@@ -157,17 +157,29 @@ namespace psyllid
         LPROG( plog, "Starting threads" );
         std::exception_ptr t_dc_ex_ptr;
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
-        //TODO i think this is where i want to stop if in batch mode, don't create/run this thread
-        batch_executor a_batch_executor = batch_executor();
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
+        //TODO batch execution bits... should this happen prior to creating the above threads, or after they are running?
+        batch_executor t_batch_executor = batch_executor();
+        std::thread t_executor_thread( &batch_executor::execute, &t_batch_executor );
+
         t_lock.unlock();
+
+        t_executor_thread.join();
+        LDEBUG( plog, "batch executions complete" );
 
         set_status( k_running );
         LPROG( plog, "Running..." );
 
+        if ( true )//condition to see if in batch only mode
+        {
+            //TODO is this the right (necessary and sufficient) way to cancel everything?
+            f_daq_control->cancel();
+            f_request_receiver->cancel();
+        }
+        //TODO end of batch mode changes
+
         t_daq_control_thread.join();
-        //TODO and ends here
         LDEBUG( plog, "DAQ control thread has ended" );
 
         t_receiver_thread.join();

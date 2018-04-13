@@ -27,6 +27,8 @@ namespace psyllid
         public:
             batch_executor();
             virtual ~batch_executor();
+
+            void execute();
     };
 
 } /* namespace psyllid */
