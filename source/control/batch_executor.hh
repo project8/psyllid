@@ -33,6 +33,9 @@ namespace psyllid
             virtual ~batch_executor();
 
             void execute();
+
+        private:
+            scarab::param_node f_actions_node;
     };
 
 } /* namespace psyllid */

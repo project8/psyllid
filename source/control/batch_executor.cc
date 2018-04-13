@@ -10,11 +10,13 @@
 namespace psyllid
 {
 
-    batch_executor::batch_executor()
+    batch_executor::batch_executor() :
+        f_actions_node()
     {
     }
 
-    batch_executor::batch_executor( const scarab::param_node& a_master_config )
+    batch_executor::batch_executor( const scarab::param_node& a_master_config ) :
+        f_actions_node( *a_master_config.node_at( "batch-actions" ) )
     {
     }
 
