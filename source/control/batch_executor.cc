@@ -5,10 +5,14 @@
  *     Author: laroque
  */
 
+
+#include "logger.hh"
 #include "batch_executor.hh"
 
 namespace psyllid
 {
+
+    LOGGER( plog, "batch_executor" );
 
     batch_executor::batch_executor() :
         f_actions_node()
@@ -26,6 +30,10 @@ namespace psyllid
 
     void batch_executor::execute()
     {
+        if ( ! f_actions_node.is_array() )
+        {
+            LWARN( plog, "batch-actions configuration is not an array" );
+        }
     }
 
 } /* namespace psyllid */
