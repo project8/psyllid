@@ -8,6 +8,8 @@
 #ifndef PSYLLID_BATCH_EXECUTOR_HH_
 #define PSYLLID_BATCH_EXECUTOR_HH_
 
+#include "param.hh"
+
 namespace psyllid
 {
     /*!
@@ -22,10 +24,12 @@ namespace psyllid
 
     */
 
+    //TODO should be scarab::cancelable?
     class batch_executor
     {
         public:
             batch_executor();
+            batch_executor( const scarab::param_node& a_master_config );
             virtual ~batch_executor();
 
             void execute();

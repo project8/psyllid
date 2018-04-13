@@ -26,6 +26,7 @@ namespace scarab
 
 namespace psyllid
 {
+    class batch_executor;
     class daq_control;
     class request_receiver;
     class stream_manager;
@@ -59,6 +60,7 @@ namespace psyllid
 
             // component pointers for asynchronous access
             std::shared_ptr< request_receiver > f_request_receiver;
+            std::shared_ptr< batch_executor > f_batch_executor;
             //std::shared_ptr< daq_worker > f_daq_worker;
             std::shared_ptr< daq_control > f_daq_control;
             std::shared_ptr< stream_manager > f_stream_manager;

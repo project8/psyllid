@@ -14,6 +14,10 @@ namespace psyllid
     {
     }
 
+    batch_executor::batch_executor( const scarab::param_node& a_master_config )
+    {
+    }
+
     batch_executor::~batch_executor()
     {
     }

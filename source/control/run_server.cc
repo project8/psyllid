@@ -36,6 +36,7 @@ namespace psyllid
             f_version( a_version ),
             f_return( RETURN_ERROR ),
             f_request_receiver(),
+            f_batch_executor(),
             f_daq_control(),
             f_stream_manager(),
             f_component_mutex(),
@@ -109,6 +110,9 @@ namespace psyllid
             // request receiver
             LDEBUG( plog, "Creating request receiver" );
             f_request_receiver.reset( new request_receiver( f_config ) );
+            // batch executor
+            LDEBUG( plog, "Creating batch executor" );
+            f_batch_executor.reset( new batch_executor( f_config ) );
 
         }
         catch( std::exception& e )
@@ -160,8 +164,7 @@ namespace psyllid
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
         //TODO batch execution bits... should this happen prior to creating the above threads, or after they are running?
-        batch_executor t_batch_executor = batch_executor();
-        std::thread t_executor_thread( &batch_executor::execute, &t_batch_executor );
+        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get() );
 
         t_lock.unlock();
 
@@ -171,9 +174,10 @@ namespace psyllid
         set_status( k_running );
         LPROG( plog, "Running..." );
 
-        if ( true )//condition to see if in batch only mode
+        if ( true )//condition to see if in batch only mode...
         {
             //TODO is this the right (necessary and sufficient) way to cancel everything?
+            // should I instead move the executor up before some threads are created and not start them if in batch mode?
             f_daq_control->cancel();
             f_request_receiver->cancel();
         }
