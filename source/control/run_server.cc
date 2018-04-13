@@ -13,6 +13,7 @@
 #include "request_receiver.hh"
 #include "signal_handler.hh"
 #include "stream_manager.hh"
+#include "batch_executor.hh"
 
 #include "logger.hh"
 
@@ -157,6 +158,7 @@ namespace psyllid
         std::exception_ptr t_dc_ex_ptr;
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
         //TODO i think this is where i want to stop if in batch mode, don't create/run this thread
+        batch_executor a_batch_executor = batch_executor();
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
         t_lock.unlock();

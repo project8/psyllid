@@ -3,6 +3,7 @@
 ###########
 
 set( headers
+    batch_executor.hh
     butterfly_house.hh
     control_access.hh
     daq_control.hh
@@ -18,6 +19,7 @@ set( headers
 )
 
 set( sources
+    batch_executor.cc
     butterfly_house.cc
     control_access.cc
     daq_control.cc
