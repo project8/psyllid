@@ -35,7 +35,7 @@ namespace psyllid
             void execute();
 
         private:
-            scarab::param_node f_actions_node;
+            scarab::param_array f_actions_array;
     };
 
 } /* namespace psyllid */
