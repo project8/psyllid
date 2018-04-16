@@ -111,7 +111,7 @@ namespace psyllid
         set_status( k_starting );
 
         // start the service
-        if( ! start() )
+        if( ! start() && f_make_connection )
         {
             LERROR( plog, "Unable to start the dripline service" );
             raise( SIGINT );

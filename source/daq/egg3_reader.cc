@@ -122,7 +122,9 @@ namespace psyllid
     {
         LDEBUG( plog, "finalize the egg3_reader" );
         out_buffer< 0 >().finalize();
+        LDEBUG( plog, "buffer finalized" );
         cleanup_file();
+        return;
     }
 
     bool egg3_reader::read_slice(time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record)
@@ -154,6 +156,8 @@ namespace psyllid
 
     void egg3_reader::cleanup_file()
     {
+        LDEBUG( plog, "cleaning up file" );
+        if ( f_egg == NULL ) return;
         LDEBUG( plog, "clean egg" );
         if ( f_egg->GetState() != monarch3::Monarch3::eClosed ) {
             LDEBUG( plog, "actually close egg" );
