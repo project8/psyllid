@@ -53,10 +53,12 @@ namespace psyllid
             // get this from the iterator
             scarab::param* a_payload = (*action_it)->as_node().at( "payload" );
             //TODO add string -> op_t mapping in dripline-cpp
-            dripline::op_t a_msg_op = dripline::op_t::cmd;
+            scarab::param_value a_val = (*action_it)->as_node().value_at( "type" );
+            std::string a_str_op_val = (*action_it)->as_node().value_at( "type" )->as_string();
+            //dripline::op_t a_msg_op = dripline::to_op_t( (*action_it)->value_at("type").as_string() );
             request_ptr_t a_reqeust = dripline::msg_request::create(
                                               &(a_payload->as_node()),
-                                              a_msg_op, //1, //msg_op [op_t]
+                                              dripline::op_t::cmd,//a_msg_op, //1, //msg_op [op_t]
                                               std::string(""), //routing key [std::string]
                                               std::string("") );//, //reply-to [std::string]
         }
