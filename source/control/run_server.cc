@@ -112,7 +112,7 @@ namespace psyllid
             f_request_receiver.reset( new request_receiver( f_config ) );
             // batch executor
             LDEBUG( plog, "Creating batch executor" );
-            f_batch_executor.reset( new batch_executor( f_config ) );
+            f_batch_executor.reset( new batch_executor( f_config, f_request_receiver ) );
 
         }
         catch( std::exception& e )

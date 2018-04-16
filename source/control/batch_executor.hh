@@ -24,18 +24,24 @@ namespace psyllid
 
     */
 
+    // forward declarations
+    class request_receiver;
+
     //TODO should be scarab::cancelable?
     class batch_executor
     {
         public:
             batch_executor();
-            batch_executor( const scarab::param_node& a_master_config );
+            batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver );
             virtual ~batch_executor();
 
             void execute();
 
         private:
             scarab::param_array f_actions_array;
+            //TODO do i want a shared pointer here?
+            std::shared_ptr<request_receiver> f_request_receiver;
+
     };
 
 } /* namespace psyllid */

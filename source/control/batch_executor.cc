@@ -12,6 +12,7 @@
 #include "dripline_constants.hh"
 #include "logger.hh"
 #include "message.hh"
+#include "request_receiver.hh"
 
 using dripline::request_ptr_t;
 
@@ -21,12 +22,14 @@ namespace psyllid
     LOGGER( plog, "batch_executor" );
 
     batch_executor::batch_executor() :
-        f_actions_array()
+        f_actions_array(),
+        f_request_receiver()
     {
     }
 
-    batch_executor::batch_executor( const scarab::param_node& a_master_config ) :
-        f_actions_array( *a_master_config.array_at( "batch-actions" ) )
+    batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
+        f_actions_array( *a_master_config.array_at( "batch-actions" ) ),
+        f_request_receiver( a_request_receiver )
     {
     }
 
@@ -49,18 +52,17 @@ namespace psyllid
               action_it!=f_actions_array.end();
               ++action_it )
         {
-            //access each action (still a node) as *action_it
-            // get this from the iterator
-            scarab::param* a_payload = (*action_it)->as_node().at( "payload" );
-            //TODO add string -> op_t mapping in dripline-cpp
-            scarab::param_value a_val = (*action_it)->as_node().value_at( "type" );
-            std::string a_str_op_val = (*action_it)->as_node().value_at( "type" )->as_string();
-            //dripline::op_t a_msg_op = dripline::to_op_t( (*action_it)->value_at("type").as_string() );
-            request_ptr_t a_reqeust = dripline::msg_request::create(
-                                              &(a_payload->as_node()),
-                                              dripline::op_t::cmd,//a_msg_op, //1, //msg_op [op_t]
-                                              std::string(""), //routing key [std::string]
-                                              std::string("") );//, //reply-to [std::string]
+            // first, create a request object
+            scarab::param_node* a_payload = (*action_it)->as_node().node_at( "payload" );
+            dripline::op_t a_msg_op = dripline::to_op_t( (*action_it)->as_node().value_at( "type" )->as_string() );
+            std::string a_routing_key = std::string(".") + (*action_it)->as_node().value_at( "rks")->as_string();
+            request_ptr_t a_request = dripline::msg_request::create(
+                                              a_payload,
+                                              a_msg_op,
+                                              a_routing_key,
+                                              std::string("") );// reply-to is empty because no reply for batch reqeusts
+            // submit the request object to the receiver
+            f_request_receiver.get()->submit_request_message( a_request );
         }
     }
 
