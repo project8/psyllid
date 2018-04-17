@@ -105,7 +105,7 @@ namespace psyllid
 
             try
             {
-                LPROG( plog, "Starting main loop (frequency transform)" );
+                LINFO( plog, "Starting main loop (frequency transform)" );
                 while (! is_canceled() )
                 {
                     // stop if output stream buffers have s_stop

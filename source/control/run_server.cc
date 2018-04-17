@@ -107,12 +107,15 @@ namespace psyllid
                 }
             }
 
+            LWARN( plog, "rr and be" );
             // request receiver
             LDEBUG( plog, "Creating request receiver" );
             f_request_receiver.reset( new request_receiver( f_config ) );
             // batch executor
+            LWARN( plog, "be specifically" );
             LDEBUG( plog, "Creating batch executor" );
             f_batch_executor.reset( new batch_executor( f_config, f_request_receiver ) );
+            LWARN( plog, "after reset");
 
         }
         catch( std::exception& e )
@@ -174,6 +177,7 @@ namespace psyllid
         set_status( k_running );
         LPROG( plog, "Running..." );
 
+        /* //this isn't required, if rabbit connections are disabled, implies batch-only
         if ( true )//condition to see if in batch only mode...
         {
             //TODO is this the right (necessary and sufficient) way to cancel everything?
@@ -181,13 +185,18 @@ namespace psyllid
             f_daq_control->cancel();
             f_request_receiver->cancel();
         }
+        */
         //TODO end of batch mode changes
 
-        t_daq_control_thread.join();
-        LDEBUG( plog, "DAQ control thread has ended" );
-
         t_receiver_thread.join();
-        LDEBUG( plog, "Receiver thread has ended" );
+        LPROG( plog, "Receiver thread has ended" );
+        if ( ! f_request_receiver.get()->get_make_connection() )
+        {
+            LINFO( plog, "request receiver not making connections, canceling daq control" );
+            f_daq_control->cancel();
+        }
+        t_daq_control_thread.join();
+        LPROG( plog, "DAQ control thread has ended" );
 
         t_sig_hand.remove_cancelable( this );
 

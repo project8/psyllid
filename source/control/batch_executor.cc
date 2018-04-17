@@ -27,12 +27,18 @@ namespace psyllid
         f_actions_array(),
         f_request_receiver()
     {
+        LWARN( plog, "in batch_executor default constructor" );
     }
 
     batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
-        f_actions_array( *a_master_config.array_at( "batch-actions" ) ),
+        //f_actions_array( *a_master_config.array_at( "batch-actions" ) ),
+        f_actions_array(),
         f_request_receiver( a_request_receiver )
     {
+        LWARN( plog, "in batch_executor constructor" );
+        LWARN( plog, "array is: " << a_master_config.array_at( "batch-actions" ) );
+        f_actions_array = *(a_master_config.array_at( "batch-actions" ));
+        LWARN( plog, "actions array size is: " << f_actions_array.size() );
     }
 
     batch_executor::~batch_executor()
@@ -51,6 +57,14 @@ namespace psyllid
     */
     void batch_executor::execute()
     {
+        if ( f_actions_array.is_null() )
+        {
+            LWARN( plog, "actions array is null" );
+            return;
+        } else {
+            LWARN( plog, "actions array not null" );
+        }
+        LWARN( plog, "actions array size is: " << f_actions_array.size() );
         for ( scarab::param_array::iterator action_it = f_actions_array.begin();
               action_it!=f_actions_array.end();
               ++action_it )
@@ -71,6 +85,7 @@ namespace psyllid
             f_request_receiver.get()->submit_request_message( a_request );
             std::this_thread::sleep_for( std::chrono::milliseconds( a_sleep ) );
         }
+        LWARN( plog, "action loop complete" );
     }
 
 } /* namespace psyllid */
