@@ -107,12 +107,10 @@ namespace psyllid
                 }
             }
 
-            LWARN( plog, "rr and be" );
             // request receiver
             LDEBUG( plog, "Creating request receiver" );
             f_request_receiver.reset( new request_receiver( f_config ) );
             // batch executor
-            LWARN( plog, "be specifically" );
             LDEBUG( plog, "Creating batch executor" );
             f_batch_executor.reset( new batch_executor( f_config, f_request_receiver ) );
             LWARN( plog, "after reset");
@@ -166,16 +164,15 @@ namespace psyllid
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
-        //TODO batch execution bits... should this happen prior to creating the above threads, or after they are running?
-        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get() );
-
         t_lock.unlock();
-
-        t_executor_thread.join();
-        LDEBUG( plog, "batch executions complete" );
 
         set_status( k_running );
         LPROG( plog, "Running..." );
+
+        //TODO batch execution bits... should this happen prior to creating the above threads, or after they are running?
+        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get() );
+        t_executor_thread.join();
+        LDEBUG( plog, "batch executions complete" );
 
         /* //this isn't required, if rabbit connections are disabled, implies batch-only
         if ( true )//condition to see if in batch only mode...
