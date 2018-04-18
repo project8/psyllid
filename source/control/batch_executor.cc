@@ -13,6 +13,8 @@
 #include "logger.hh"
 #include "message.hh"
 #include "request_receiver.hh"
+//TODO keep?
+#include "routing_key_specifier.hh"
 
 //external includes
 #include <chrono>
@@ -85,16 +87,18 @@ namespace psyllid
             // parse/cast useful variables/types from the action node
             scarab::param_node* a_payload = (*action_it)->as_node().node_at( "payload" );
             dripline::op_t a_msg_op = dripline::to_op_t( (*action_it)->as_node().value_at( "type" )->as_string() );
-            std::string a_routing_key = (*action_it)->as_node().value_at( "rks")->as_string();
+            std::string a_rks = (*action_it)->as_node().value_at( "rks")->as_string();
             unsigned a_sleep = std::stoi( (*action_it)->as_node().get_value( "sleep-for", "500"), nullptr, 10 );
             // put it together into a request
             dripline::request_ptr_t a_request = dripline::msg_request::create(
                                               a_payload,
                                               a_msg_op,
-                                              a_routing_key,
+                                              std::string(""),
                                               std::string("") );// reply-to is empty because no reply for batch reqeusts
             // submit the request object to the receiver and sleep
             LDEBUG( plog, "from batch exe, request rk is: " << a_request->routing_key() );
+            //a_request->rks() = "start-run";
+            a_request->set_routing_key_specifier( a_rks, dripline::routing_key_specifier( a_rks ) );
             f_request_receiver.get()->submit_request_message( a_request );
             std::this_thread::sleep_for( std::chrono::milliseconds( a_sleep ) );
         }
