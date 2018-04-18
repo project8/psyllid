@@ -8,6 +8,7 @@
 #ifndef PSYLLID_BATCH_EXECUTOR_HH_
 #define PSYLLID_BATCH_EXECUTOR_HH_
 
+#include "cancelable.hh"
 #include "param.hh"
 
 namespace psyllid
@@ -28,7 +29,7 @@ namespace psyllid
     class request_receiver;
 
     //TODO should be scarab::cancelable?
-    class batch_executor
+    class batch_executor : public scarab::cancelable
     {
         public:
             batch_executor();
@@ -41,6 +42,8 @@ namespace psyllid
             scarab::param_array f_actions_array;
             //TODO do i want a shared pointer here?
             std::shared_ptr<request_receiver> f_request_receiver;
+
+            virtual void do_cancellation();
 
     };
 

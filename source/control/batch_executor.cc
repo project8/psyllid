@@ -13,8 +13,6 @@
 #include "logger.hh"
 #include "message.hh"
 #include "request_receiver.hh"
-//TODO keep?
-#include "routing_key_specifier.hh"
 
 //external includes
 #include <chrono>
@@ -83,6 +81,7 @@ namespace psyllid
               action_it!=f_actions_array.end();
               ++action_it )
         {
+            if ( is_canceled() ) break;
             LDEBUG( plog, "doing next action:\n" << **action_it );
             // parse/cast useful variables/types from the action node
             scarab::param_node* a_payload = (*action_it)->as_node().node_at( "payload" );
@@ -99,10 +98,16 @@ namespace psyllid
             LDEBUG( plog, "from batch exe, request rk is: " << a_request->routing_key() );
             //a_request->rks() = "start-run";
             a_request->set_routing_key_specifier( a_rks, dripline::routing_key_specifier( a_rks ) );
-            f_request_receiver.get()->submit_request_message( a_request );
+            f_request_receiver->submit_request_message( a_request );
             std::this_thread::sleep_for( std::chrono::milliseconds( a_sleep ) );
         }
         LINFO( plog, "action loop complete" );
+    }
+
+    void batch_executor::do_cancellation()
+    {
+        LDEBUG( plog, "canceling batch executor" );
+        return;
     }
 
 } /* namespace psyllid */

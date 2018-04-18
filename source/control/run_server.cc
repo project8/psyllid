@@ -178,8 +178,8 @@ namespace psyllid
         LPROG( plog, "Receiver thread has ended" );
         if ( ! f_request_receiver.get()->get_make_connection() )
         {
-            LINFO( plog, "request receiver not making connections, canceling daq control" );
-            f_daq_control->cancel();
+            LINFO( plog, "request receiver not making connections, canceling run server" );
+            this->cancel();
         }
         t_daq_control_thread.join();
         LPROG( plog, "DAQ control thread has ended" );
@@ -203,6 +203,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Canceling run server" );
         message_relayer::get_instance()->slack_notice( "Psyllid is shutting down" );
+        f_batch_executor->cancel();
         f_request_receiver->cancel();
         f_daq_control->cancel();
         message_relayer::get_instance()->cancel();
