@@ -614,6 +614,7 @@ namespace psyllid
         try
         {
             if( a_request->get_payload().has( "filename" ) ) set_filename( a_request->get_payload().get_value( "filename" ), 0 );
+            //TODO BUG here, if filenames exists but is not an array (only case i tried), this causes a seg fault which is not handled below
             if( a_request->get_payload().has( "filenames" ) )
             {
                 const scarab::param_array* t_filenames = a_request->get_payload().array_at( "filenames" );
@@ -640,6 +641,7 @@ namespace psyllid
         }
         catch( std::exception& e )
         {
+            LWARN( plog, "there was an error starting a run" );
             return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to start run: " ) + e.what() );
         }
     }
