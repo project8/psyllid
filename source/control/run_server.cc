@@ -174,17 +174,6 @@ namespace psyllid
         t_executor_thread.join();
         LDEBUG( plog, "batch executions complete" );
 
-        /* //this isn't required, if rabbit connections are disabled, implies batch-only
-        if ( true )//condition to see if in batch only mode...
-        {
-            //TODO is this the right (necessary and sufficient) way to cancel everything?
-            // should I instead move the executor up before some threads are created and not start them if in batch mode?
-            f_daq_control->cancel();
-            f_request_receiver->cancel();
-        }
-        */
-        //TODO end of batch mode changes
-
         t_receiver_thread.join();
         LPROG( plog, "Receiver thread has ended" );
         if ( ! f_request_receiver.get()->get_make_connection() )
@@ -206,6 +195,7 @@ namespace psyllid
 
         f_return = RETURN_SUCCESS;
 
+        LDEBUG( plog, "last print before end of execute" );
         return;
     }
 
