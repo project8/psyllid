@@ -95,8 +95,8 @@ namespace psyllid
             // daq control
             LDEBUG( plog, "Creating DAQ control" );
             f_daq_control.reset( new daq_control( f_config, f_stream_manager ) );
-            // give daq_control a weak pointer to itself
-            f_daq_control->set_daq_control( f_daq_control );
+            // provide the pointer to the daq_control to control_access
+            control_access::set_daq_control( f_daq_control );
             f_daq_control->initialize();
 
             if( f_config.has( "streams" ) && f_config.at( "streams" )->is_node() )

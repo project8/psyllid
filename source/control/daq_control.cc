@@ -70,7 +70,6 @@ namespace psyllid
 
     void daq_control::initialize()
     {
-        butterfly_house::get_instance()->set_daq_control( f_daq_control );
         butterfly_house::get_instance()->prepare_files( f_daq_config.get() );
         return;
     }
