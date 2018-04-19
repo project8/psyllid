@@ -76,31 +76,38 @@ namespace psyllid
             LINFO( plog, "actions array is null" );
             return;
         }
+
         LDEBUG( plog, "actions array size is: " << f_actions_array.size() );
-        for ( scarab::param_array::iterator action_it = f_actions_array.begin();
+        for( scarab::param_array::const_iterator action_it = f_actions_array.begin();
               action_it!=f_actions_array.end();
               ++action_it )
         {
             if ( is_canceled() ) break;
+
             LDEBUG( plog, "doing next action:\n" << **action_it );
+
             // parse/cast useful variables/types from the action node
-            scarab::param_node* a_payload = (*action_it)->as_node().node_at( "payload" );
-            dripline::op_t a_msg_op = dripline::to_op_t( (*action_it)->as_node().value_at( "type" )->as_string() );
-            std::string a_rks = (*action_it)->as_node().value_at( "rks")->as_string();
-            unsigned a_sleep = std::stoi( (*action_it)->as_node().get_value( "sleep-for", "500"), nullptr, 10 );
+            const scarab::param_node& t_action = (*action_it)->as_node();
+            scarab::param_node* t_payload = &t_action.node_at( "payload" )->clone()->as_node();
+            dripline::op_t t_msg_op = dripline::to_op_t( t_action.get_value( "type" ) );
+            std::string t_rks( t_action.get_value( "rks") );
+            unsigned t_sleep = std::stoi( t_action.get_value( "sleep-for", "500" ) );
+
             // put it together into a request
-            dripline::request_ptr_t a_request = dripline::msg_request::create(
-                                              a_payload,
-                                              a_msg_op,
-                                              std::string(""),
-                                              std::string("") );// reply-to is empty because no reply for batch reqeusts
+            dripline::request_ptr_t t_request = dripline::msg_request::create(
+                                              t_payload,
+                                              t_msg_op,
+                                              std::string(),
+                                              std::string() );// reply-to is empty because no reply for batch requests
+
             // submit the request object to the receiver and sleep
-            LDEBUG( plog, "from batch exe, request rk is: " << a_request->routing_key() );
+            LDEBUG( plog, "from batch exe, request rk is: " << t_request->routing_key() );
             //a_request->rks() = "start-run";
-            a_request->set_routing_key_specifier( a_rks, dripline::routing_key_specifier( a_rks ) );
-            f_request_receiver->submit_request_message( a_request );
-            std::this_thread::sleep_for( std::chrono::milliseconds( a_sleep ) );
+            t_request->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
+            f_request_receiver->submit_request_message( t_request );
+            std::this_thread::sleep_for( std::chrono::milliseconds( t_sleep ) );
         }
+
         LINFO( plog, "action loop complete" );
     }
 
