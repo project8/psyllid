@@ -12,6 +12,7 @@
 #include "logger.hh"
 #include "param.hh"
 
+#include <cmath>
 #include <thread>
 #include <memory>
 #include <sys/types.h>
