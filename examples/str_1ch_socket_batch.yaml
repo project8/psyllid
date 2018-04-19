@@ -1,0 +1,35 @@
+post-to-slack: false
+
+daq:
+    activate-at-startup: true
+    n-files: 1
+    max-file-size-mb: 500
+    
+batch-actions:
+    - type: set
+      rks: filename
+      payload:
+          values: ["new_filename.egg"]
+
+streams:
+    ch0:
+        preset: str-1ch
+  
+        device:
+            n-channels: 1
+            bit-depth: 8
+            data-type-size: 1
+            sample-size: 2
+            record-size: 4096
+            acq-rate: 100 # MHz
+            v-offset: 0.0
+            v-range: 0.5
+  
+        prs:
+            length: 10
+            port: 23530
+            ip: 127.0.0.1
+            
+        strw:
+            file-num: 0
+           

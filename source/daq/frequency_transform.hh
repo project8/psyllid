@@ -91,8 +91,8 @@ namespace psyllid
 
             bool f_multithreaded_is_initialized;
 
-            uint64_t f_time_session_pkt_counter;
-            uint64_t f_freq_session_pkt_counter;
+            //uint64_t f_time_session_pkt_counter;
+            //uint64_t f_freq_session_pkt_counter;
         private:
             void setup_internal_maps();
 
