@@ -188,7 +188,7 @@ namespace psyllid
                             f_fftw_output[i_bin][1] *= fft_norm;
                         }
                         std::copy(&f_fftw_output[0][0], &f_fftw_output[0][0] + f_fft_size*2, &freq_data_out->get_array()[0][0]);
-                        freq_data_out->set_pkt_in_batch(time_data_out->get_pkt_in_batch());
+                        freq_data_out->set_pkt_in_batch(time_data_in->get_pkt_in_batch());
                         freq_data_out->set_pkt_in_session(time_data_in->get_pkt_in_session());
 
                         if ( f_enable_time_output && !out_stream< 0 >().set( stream::s_run ) )
@@ -213,7 +213,7 @@ namespace psyllid
 
             // normal exit condition
             LDEBUG( plog, "Stopping output streams" );
-            bool t_t_stop_ok = f_enable_time_output || out_stream< 0 >().set( stream::s_stop );
+            bool t_t_stop_ok = f_enable_time_output && out_stream< 0 >().set( stream::s_stop );
             bool t_f_stop_ok = out_stream< 1 >().set( stream::s_stop );
             if( ! t_t_stop_ok && ! t_f_stop_ok) return;
 
