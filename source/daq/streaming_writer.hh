@@ -59,8 +59,6 @@ namespace psyllid
 
         public:
             mv_accessible( unsigned, file_num );
-            mv_referrable( std::string, filename ); /// used if f_daq_control is not set
-            mv_referrable( std::string, description ); /// used if f_daq_control is not set
 
             mv_accessible( unsigned, bit_depth ); // # of bits
             mv_accessible( unsigned, data_type_size ); // # of bytes
