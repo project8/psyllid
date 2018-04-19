@@ -62,7 +62,8 @@ New Features:
 * Frequency transform
     * transform node which accepts a time_data stream and produces the same time_data stream and a corresponding freq_data stream
     * intention is that the frequency data match what would be in a ROACH2 frequency packet (as opposed to being the "best possible" FFT of the data, though hopefully those are similar)
-    * has been teted only to show that both output streams can be passed to downstream nodes, content validity has not be tested
+    * supports a frequency-only output mode (for building a frequency mask)
+    * has been tested only to show that both output streams can be passed to downstream nodes, content validity has not be tested
     * tested by qualitatively looking at a plot of the frequency magnitudes of frequency output file, and also the fft of the original input time data, they looked very similar (up to a normalization factor)
     * documentation in doxygen output and node_configuration.rst
 * frequency streamer
@@ -73,10 +74,14 @@ New Features:
 * tf_roach_receiver optionally always starts on a t packet
     * prior behavior was to start with the next packet received when unpaused; this feature adds a config option which will discard frequency data until the first time data is received (thus ensuring, in principle, that the output is always a matched pair)
     * documentation in doxygen output and node_configuration.rst
+* batch_executor control class
+    * allows a list of actions to be provided within the master configuration, which specifies a sequence of actions to execute at startup
+    * control system modified to allow batch-only mode if the amqp configuration has `make-connection: false`, which will exit after completing batch commands
+    * NOTE: currently does not do anything other than print return codes from commands, would be nice to upgrade to check those codes and crash if a command fails
+    * tested using a configuration file which configures and uses a frequency mask trigger and event builder
 
 Fixes:
 ''''''
-
 
 Version: 1.3.1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
