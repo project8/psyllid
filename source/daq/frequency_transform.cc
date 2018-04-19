@@ -32,6 +32,7 @@ namespace psyllid
             f_transform_flag( "ESTIMATE" ), //TODO is this a reasonable default?
             f_use_wisdom( true ),
             f_wisdom_filename( "wisdom_complexfft.fftw3" ),
+            f_enable_time_output( true ),
             f_transform_flag_map(),
             f_fftw_input(),
             f_fftw_output(),
@@ -43,6 +44,18 @@ namespace psyllid
 
     frequency_transform::~frequency_transform()
     {
+    }
+
+    void frequency_transform::switch_to_freq_only()
+    {
+        LDEBUG( plog, "switching to frequency output only mode" );
+        f_enable_time_output = false;
+    }
+
+    void frequency_transform::switch_to_time_and_freq()
+    {
+        LDEBUG( plog, "switching to frequency and time output mode" );
+        f_enable_time_output = true;
     }
 
     void frequency_transform::initialize()
@@ -109,9 +122,14 @@ namespace psyllid
                 while (! is_canceled() )
                 {
                     // stop if output stream buffers have s_stop
-                    if (out_stream< 0 >().get() == stream::s_stop || out_stream< 1 >().get() == stream::s_stop)
+                    if (f_enable_time_output && out_stream< 0 >().get() == stream::s_stop)
                     {
-                        LWARN( plog, "output stream(s) have stop condition" );
+                        LWARN( plog, "time output stream has stop condition" );
+                        break;
+                    }
+                    if (out_stream< 1 >().get() == stream::s_stop)
+                    {
+                        LWARN( plog, "frequency output stream has stop condition" );
                         break;
                     }
                     // grab the next input data and check slot status
@@ -135,29 +153,31 @@ namespace psyllid
                     {
                         LDEBUG( plog, "got an s_stop on slot <" << in_stream< 0 >().get_current_index() << ">" );
                         //TODO do i need to flush a buffer here?
-                        if ( ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
+                        if ( f_enable_time_output && ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
                         if ( ! out_stream< 1 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 1 error while stopping";
                         continue;
                     }
                     if ( in_cmd == stream::s_start )
                     {
                         LDEBUG( plog, "got an s_start on slot <" << in_stream< 0 >().get_current_index() << ">" );
-                        if( ! out_stream< 0 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 0 error while starting";
-                        if( ! out_stream< 1 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 1 error while starting";
+                        if ( f_enable_time_output && ! out_stream< 0 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 0 error while starting";
+                        if ( ! out_stream< 1 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 1 error while starting";
                         continue;
                     }
                     if ( in_cmd == stream::s_run )
                     {
                         LDEBUG( plog, "got an s_run on slot <" << in_stream< 0 >().get_current_index() << ">" );
-
                         time_data_in = in_stream< 0 >().data();
-                        time_data_out = out_stream< 0 >().data();
-                        freq_data_out = out_stream< 1 >().data();
-                        LDEBUG( plog, "next steams acquired, doing FFT" );
 
                         //time output
-                        *time_data_out = *time_data_in;
+                        if (f_enable_time_output)
+                        {
+                            time_data_out = out_stream< 0 >().data();
+                            *time_data_out = *time_data_in;
+                        }
                         //frequency output
+                        freq_data_out = out_stream< 1 >().data();
+                        LDEBUG( plog, "next steams acquired, doing FFT" );
                         std::copy(&time_data_in->get_array()[0][0], &time_data_in->get_array()[0][0] + f_fft_size*2, &f_fftw_input[0][0]);
                         fftw_execute_dft(f_fftw_plan, f_fftw_input, f_fftw_output);
                         //is this the normalization we want? (is it what the ROACH does?)
@@ -170,9 +190,14 @@ namespace psyllid
                         freq_data_out->set_pkt_in_batch(time_data_out->get_pkt_in_batch());
                         freq_data_out->set_pkt_in_session(time_data_in->get_pkt_in_session());
 
-                        if (!out_stream< 0 >().set( stream::s_run ) || !out_stream< 1 >().set( stream::s_run ) )
+                        if ( f_enable_time_output && !out_stream< 0 >().set( stream::s_run ) )
                         {
-                            LERROR( plog, "frequency transform error setting output stream to s_run" );
+                            LERROR( plog, "frequency_transform error setting time output stream to s_run" );
+                            break;
+                        }
+                        if ( !out_stream< 1 >().set( stream::s_run ) )
+                        {
+                            LERROR( plog, "frequency_transform error setting frequency output stream to s_run" );
                             break;
                         }
                     }
@@ -187,8 +212,9 @@ namespace psyllid
 
             // normal exit condition
             LDEBUG( plog, "Stopping output streams" );
-            bool t_stop_ok = out_stream< 0 >().set( stream::s_stop ) && out_stream< 1 >().set( stream::s_stop );
-            if( ! t_stop_ok ) return;
+            bool t_t_stop_ok = f_enable_time_output || out_stream< 0 >().set( stream::s_stop );
+            bool t_f_stop_ok = out_stream< 1 >().set( stream::s_stop );
+            if( ! t_t_stop_ok && ! t_f_stop_ok) return;
 
             LDEBUG( plog, "Exiting output streams" );
             out_stream< 0 >().set( stream::s_exit );
@@ -264,6 +290,27 @@ namespace psyllid
         a_config.add( "use-wisdom", new scarab::param_value( a_node->get_use_wisdom() ) );
         a_config.add( "wisdom-filename", new scarab::param_value( a_node->get_wisdom_filename() ) );
         return;
+    }
+
+    bool frequency_transform_binding::do_run_command( frequency_transform* a_node, const std::string& a_cmd, const scarab::param_node& ) const
+    {
+        if ( a_cmd == "freq-only" )
+        {
+            LDEBUG( plog, "should enable freq-only mode" );
+            a_node->switch_to_freq_only();
+            return true;
+        }
+        else if ( a_cmd == "time-and-freq" )
+        {
+            LDEBUG( plog, "should enable time-and-freq mode" );
+            a_node->switch_to_time_and_freq();
+            return true;
+        }
+        else
+        {
+            LWARN( plog, "unrecognized command: <" << a_cmd << ">" );
+            return false;
+        }
     }
 
 } /* namespace psyllid */
