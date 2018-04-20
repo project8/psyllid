@@ -461,7 +461,8 @@ namespace psyllid
                     t_freq_data = in_stream< 0 >().data();
                     t_trigger_flag = out_stream< 0 >().data();
 
-                    LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
+                    //TODO put back to LTRACE
+                    LINFO( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
                            "  time = " << t_freq_data->get_unix_time() <<
                            "  id = " << t_freq_data->get_pkt_in_session() <<
                            "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
@@ -507,7 +508,8 @@ namespace psyllid
                         }
 #endif
 
-                        LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
+                        //TODO put back to LTRACE
+                        LDEBUG( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
                         if( ! out_stream< 0 >().set( stream::s_run ) )
                         {
                             LERROR( plog, "Exiting due to stream error" );

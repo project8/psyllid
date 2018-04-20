@@ -216,7 +216,8 @@ namespace psyllid
         while( ! is_canceled() )
         {
             t_trig_command = in_stream< 1 >().get();
-            LTRACE( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
+            //TODO back to trace
+            LINFO( plog, "Egg writer reading stream 1 (trig) at index " << in_stream< 1 >().get_current_index() );
 
             if( t_trig_command == stream::s_none )
             {
@@ -287,7 +288,8 @@ namespace psyllid
             if( t_trig_command == stream::s_run )
             {
                 t_time_command = in_stream< 0 >().get();
-                LTRACE( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
+                //TODO back to trace
+                LINFO( plog, "Egg writer reading stream 0 (time) at index " << in_stream< 0 >().get_current_index() );
                 LTRACE( plog, "Advancing time stream; time command matched trig command? trig command = " << t_trig_command << "; time command = " << t_time_command );
                 if( t_time_command != stream::s_run )
                 {
@@ -337,7 +339,8 @@ namespace psyllid
 
                 uint64_t t_time_id = t_time_data->get_pkt_in_session();
                 uint64_t t_trig_id = t_trig_data->get_id();
-                LTRACE( plog, "Time id: <" << t_time_id << ">; Trig id: <" << t_trig_id << ">");
+                //TODO back to trace
+                LINFO( plog, "Time id: <" << t_time_id << ">; Trig id: <" << t_trig_id << ">");
 
                 if( t_time_id != t_trig_id )
                 {
