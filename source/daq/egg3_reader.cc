@@ -7,6 +7,7 @@
 
 #include <chrono>
 
+#include "daq_control.hh"
 #include "egg3_reader.hh"
 #include "psyllid_error.hh"
 #include "time_data.hh"
@@ -114,10 +115,9 @@ namespace psyllid
                     }
                     if ( !read_slice_ok || (f_read_n_records > 0 && t_records_read >= f_read_n_records) )
                     {
-                        //TODO do something here to end the run, the following may not be enough
                         LWARN( plog, "breaking out of loop because record limit reached" );
-                        if( ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
-                        f_paused = true;
+                        std::shared_ptr< daq_control > t_daq_control = use_daq_control();
+                        t_daq_control->stop_run();
                     }
                 } else {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
