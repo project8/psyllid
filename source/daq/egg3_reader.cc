@@ -115,10 +115,12 @@ namespace psyllid
                     }
                     if ( !read_slice_ok || (f_read_n_records > 0 && t_records_read >= f_read_n_records) )
                     {
-                        LWARN( plog, "breaking out of loop because record limit reached" );
+                        LWARN( plog, "breaking out of loop because record limit or end of file reached" );
                         std::shared_ptr< daq_control > t_daq_control = use_daq_control();
                         t_daq_control->stop_run();
                     }
+                    // add some sleep to try and not lap downstream nodes
+                    std::this_thread::sleep_for(std::chrono::microseconds(100));
                 } else {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
