@@ -175,7 +175,8 @@ namespace psyllid
         LDEBUG( plog, "cleaning up file" );
         if ( f_egg == NULL ) return;
         LDEBUG( plog, "clean egg" );
-        if ( f_egg->GetState() != monarch3::Monarch3::eClosed ) {
+        if ( f_egg->GetState() != monarch3::Monarch3::eClosed )
+        {
             LDEBUG( plog, "actually close egg" );
             f_egg->FinishReading();
         }
