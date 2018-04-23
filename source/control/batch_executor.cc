@@ -27,18 +27,12 @@ namespace psyllid
         f_actions_array(),
         f_request_receiver()
     {
-        //TODO not warm
-        LWARN( plog, "in batch_executor default constructor" );
     }
 
     batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
-        //f_actions_array( *a_master_config.array_at( "batch-actions" ) ),
-        f_actions_array(),//scarab::param_array
+        f_actions_array(),
         f_request_receiver( a_request_receiver )
     {
-        //TODO not warn
-        LWARN( plog, "in batch executor constructor2" );
-        //scarab::param_array a_config = *a_master_config.array_at( "batch-actions" );
         if ( a_master_config.has( "batch-actions" ) )
         {
             LWARN( plog, "got array" );
@@ -49,8 +43,6 @@ namespace psyllid
             LWARN( plog, "batch array is null" );
             f_actions_array = scarab::param_array();
         }
-        //TODO not warn
-        LWARN( plog, "actions array size is: " << f_actions_array.size() );
     }
 
     batch_executor::~batch_executor()

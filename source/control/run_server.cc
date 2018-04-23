@@ -169,7 +169,6 @@ namespace psyllid
         set_status( k_running );
         LPROG( plog, "Running..." );
 
-        //TODO batch execution bits... should this happen prior to creating the above threads, or after they are running?
         std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get() );
         t_executor_thread.join();
         LDEBUG( plog, "batch executions complete" );
