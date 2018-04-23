@@ -29,8 +29,8 @@ namespace psyllid
     frequency_transform::frequency_transform() :
             f_time_length( 10 ),
             f_freq_length( 10 ),
-            f_fft_size( 4096 ), //TODO is this a reasonable default
-            f_transform_flag( "ESTIMATE" ), //TODO is this a reasonable default?
+            f_fft_size( 4096 ),
+            f_transform_flag( "ESTIMATE" ),
             f_use_wisdom( true ),
             f_wisdom_filename( "wisdom_complexfft.fftw3" ),
             f_enable_time_output( true ),
@@ -153,7 +153,6 @@ namespace psyllid
                     if ( in_cmd == stream::s_stop )
                     {
                         LDEBUG( plog, "got an s_stop on slot <" << in_stream< 0 >().get_current_index() << ">" );
-                        //TODO do i need to flush a buffer here?
                         if ( f_enable_time_output && ! out_stream< 0 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 0 error while stopping";
                         if ( ! out_stream< 1 >().set( stream::s_stop ) ) throw midge::node_nonfatal_error() << "Stream 1 error while stopping";
                         continue;
@@ -178,6 +177,8 @@ namespace psyllid
                         }
                         //frequency output
                         freq_data_out = out_stream< 1 >().data();
+                        freq_data_out->set_freq_not_time( true );
+                        //TODO there are many other members of the underlying roach_packet_data type; should more carefully think through all of them and if they should be on the frequency_data (is there a way to copy all the members *except* the data array?)
                         LDEBUG( plog, "next steams acquired, doing FFT" );
                         std::copy(&time_data_in->get_array()[0][0], &time_data_in->get_array()[0][0] + f_fft_size*2, &f_fftw_input[0][0]);
                         fftw_execute_dft(f_fftw_plan, f_fftw_input, f_fftw_output);
