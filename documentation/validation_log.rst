@@ -43,10 +43,10 @@ Fixes:
 Log
 ---
 
-Version: *Upcoming Releases*
+Version: 1.4.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Release Date: ... (est)
+Release Date: April 23, 2018
 ''''''''''''''''''''''''''''''''''''
 
 New Features:
@@ -79,9 +79,8 @@ New Features:
     * control system modified to allow batch-only mode if the amqp configuration has `make-connection: false`, which will exit after completing batch commands
     * NOTE: currently does not do anything other than print return codes from commands, would be nice to upgrade to check those codes and crash if a command fails
     * tested using a configuration file which configures and uses a frequency mask trigger and event builder
+* Dripline-cpp updated to v1.5.0
 
-Fixes:
-''''''
 
 Version: 1.3.1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
