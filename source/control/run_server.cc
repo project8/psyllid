@@ -13,6 +13,7 @@
 #include "request_receiver.hh"
 #include "signal_handler.hh"
 #include "stream_manager.hh"
+#include "batch_executor.hh"
 
 #include "logger.hh"
 
@@ -35,6 +36,7 @@ namespace psyllid
             f_version( a_version ),
             f_return( RETURN_ERROR ),
             f_request_receiver(),
+            f_batch_executor(),
             f_daq_control(),
             f_stream_manager(),
             f_component_mutex(),
@@ -87,14 +89,14 @@ namespace psyllid
             }
 
             // node manager
-            LDEBUG( plog, "Creating steam manager" );
+            LDEBUG( plog, "Creating stream manager" );
             f_stream_manager.reset( new stream_manager() );
 
             // daq control
             LDEBUG( plog, "Creating DAQ control" );
             f_daq_control.reset( new daq_control( f_config, f_stream_manager ) );
-            // give daq_control a weak pointer to itself
-            f_daq_control->set_daq_control( f_daq_control );
+            // provide the pointer to the daq_control to control_access
+            control_access::set_daq_control( f_daq_control );
             f_daq_control->initialize();
 
             if( f_config.has( "streams" ) && f_config.at( "streams" )->is_node() )
@@ -108,6 +110,10 @@ namespace psyllid
             // request receiver
             LDEBUG( plog, "Creating request receiver" );
             f_request_receiver.reset( new request_receiver( f_config ) );
+            // batch executor
+            LDEBUG( plog, "Creating batch executor" );
+            f_batch_executor.reset( new batch_executor( f_config, f_request_receiver ) );
+            LWARN( plog, "after reset");
 
         }
         catch( std::exception& e )
@@ -163,11 +169,19 @@ namespace psyllid
         set_status( k_running );
         LPROG( plog, "Running..." );
 
-        t_daq_control_thread.join();
-        LDEBUG( plog, "DAQ control thread has ended" );
+        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get() );
+        t_executor_thread.join();
+        LDEBUG( plog, "batch executions complete" );
 
         t_receiver_thread.join();
-        LDEBUG( plog, "Receiver thread has ended" );
+        LPROG( plog, "Receiver thread has ended" );
+        if ( ! f_request_receiver.get()->get_make_connection() )
+        {
+            LINFO( plog, "request receiver not making connections, canceling run server" );
+            this->cancel();
+        }
+        t_daq_control_thread.join();
+        LPROG( plog, "DAQ control thread has ended" );
 
         t_sig_hand.remove_cancelable( this );
 
@@ -180,6 +194,7 @@ namespace psyllid
 
         f_return = RETURN_SUCCESS;
 
+        LDEBUG( plog, "last print before end of execute" );
         return;
     }
 
@@ -187,6 +202,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Canceling run server" );
         message_relayer::get_instance()->slack_notice( "Psyllid is shutting down" );
+        f_batch_executor->cancel();
         f_request_receiver->cancel();
         f_daq_control->cancel();
         message_relayer::get_instance()->cancel();

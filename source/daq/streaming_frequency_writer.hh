@@ -1,16 +1,17 @@
 /*
- * streaming_writer.hh
+ * streaming_frequency_writer.hh
  *
- *  Created on: May 31, 2016
- *      Author: nsoblath
+ *  Created on: April 3, 2018
+ *      Author: laroque
+ *      (copied from streaming_writer)
  */
 
-#ifndef PSYLLID_STREAMING_WRITER_HH_
-#define PSYLLID_STREAMING_WRITER_HH_
+#ifndef PSYLLID_STREAMING_FREQUENCY_WRITER_HH_
+#define PSYLLID_STREAMING_FREQUENCY_WRITER_HH_
 
 #include "egg_writer.hh"
 #include "node_builder.hh"
-#include "time_data.hh"
+#include "freq_data.hh"
 
 #include "consumer.hh"
 
@@ -18,16 +19,18 @@ namespace psyllid
 {
 
     /*!
-     @class streaming_writer
-     @author N. S. Oblath
+     @class streaming_frequency_writer
+     @author B. H. LaRoque
 
-     @brief A consumer to that writes all time ROACH packets to an egg file.
+     @brief A consumer to that writes all frequency ROACH packets to an egg file.
 
      @details
 
+     WARNING! the output of this node is not proper egg file, frequency data is not supported
+
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
-     Node type: "streaming-writer"
+     Node type: "streaming-frequency-writer"
 
      Available configuration values:
      - "device": node -- digitizer parameters
@@ -45,17 +48,17 @@ namespace psyllid
                       gain = v-range / # of digital levels
 
      Input Stream:
-     - 0: time_data
+     - 0: freq_data
 
      Output Streams: (none)
     */
-    class streaming_writer :
-            public midge::_consumer< streaming_writer, typelist_1( time_data ) >,
+    class streaming_frequency_writer :
+            public midge::_consumer< streaming_frequency_writer, typelist_1( freq_data ) >,
             public egg_writer
     {
         public:
-            streaming_writer();
-            virtual ~streaming_writer();
+            streaming_frequency_writer();
+            virtual ~streaming_frequency_writer();
 
         public:
             mv_accessible( unsigned, file_num );
@@ -86,17 +89,17 @@ namespace psyllid
     };
 
 
-    class streaming_writer_binding : public _node_binding< streaming_writer, streaming_writer_binding >
+    class streaming_frequency_writer_binding : public _node_binding< streaming_frequency_writer, streaming_frequency_writer_binding >
     {
         public:
-            streaming_writer_binding();
-            virtual ~streaming_writer_binding();
+            streaming_frequency_writer_binding();
+            virtual ~streaming_frequency_writer_binding();
 
         private:
-            virtual void do_apply_config( streaming_writer* a_node, const scarab::param_node& a_config ) const;
-            virtual void do_dump_config( const streaming_writer* a_node, scarab::param_node& a_config ) const;
+            virtual void do_apply_config( streaming_frequency_writer* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const streaming_frequency_writer* a_node, scarab::param_node& a_config ) const;
     };
 
 } /* namespace psyllid */
 
-#endif /* PSYLLID_STREAMING_WRITER_HH_ */
+#endif /* PSYLLID_STREAMING_FREQUENCY_WRITER_HH_ */

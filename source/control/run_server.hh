@@ -26,10 +26,24 @@ namespace scarab
 
 namespace psyllid
 {
+    class batch_executor;
     class daq_control;
     class request_receiver;
     class stream_manager;
 
+    /*!
+     @class run_server
+     @author N. S. Oblath
+
+     @brief Sets up daq_control, strea_manager and request_receiver. Registers request handles.
+
+     @details
+     A run_server instance is created by the psyllid executable. The executable calls run_server.execute() and waits for it's return.
+     In execute(), run_server creates new instances of daq_control, stream_manager and request_receiver.
+     It also adds set, get and cmd request handlers by registering handlers with the request_receiver.
+     Then it calls daq_control.execute and request_receiver.execute in 2 separate threads.
+     run_server.execute() only returns when all threads were joined.
+     */
     class run_server : public scarab::cancelable
     {
         public:
@@ -59,6 +73,7 @@ namespace psyllid
 
             // component pointers for asynchronous access
             std::shared_ptr< request_receiver > f_request_receiver;
+            std::shared_ptr< batch_executor > f_batch_executor;
             //std::shared_ptr< daq_worker > f_daq_worker;
             std::shared_ptr< daq_control > f_daq_control;
             std::shared_ptr< stream_manager > f_stream_manager;

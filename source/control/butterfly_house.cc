@@ -71,17 +71,12 @@ namespace psyllid
     {
         std::unique_lock< std::mutex > t_lock( f_house_mutex );
 
-        unsigned t_run_duration = 0;
-        if( ! f_daq_control.expired() )
-        {
-            std::shared_ptr< daq_control > t_daq_control = f_daq_control.lock();
-            t_run_duration = t_daq_control->get_run_duration();
-        }
-        else
+        if( control_access::daq_control_expired() )
         {
             LERROR( plog, "Unable to get access to the DAQ control" );
             throw error() << "Butterfly house is unable to get access to the DAQ control";
         }
+        unsigned t_run_duration = use_daq_control()->get_run_duration();
 
         LINFO( plog, "Starting egg3 files" );
         try

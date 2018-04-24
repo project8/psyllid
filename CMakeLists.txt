@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.1)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.3.1 )
+project( Psyllid VERSION 1.4.0 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
 include( PackageBuilder )
@@ -32,6 +32,30 @@ endif( Psyllid_ENABLE_ITERATOR_TIMING )
 ################
 # dependencies #
 ################
+
+# FFTW
+option( Psyllid_ENABLE_FFTW "Flag to enable FFTW features" TRUE )
+if (Psyllid_ENABLE_FFTW)
+    find_package(FFTW REQUIRED)
+else (Psyllid_ENABLE_FFTW)
+    set (FFTW_FOUND FALSE)
+endif (Psyllid_ENABLE_FFTW)
+if (FFTW_FOUND)
+    add_definitions(-DFFTW_FOUND)
+    pbuilder_add_ext_libraries (${FFTW_LIBRARIES})
+    if (FFTW_THREADS_FOUND)
+        set (FFTW_NTHREADS 1 CACHE STRING "Number of threads to use for FFTW processes")
+        add_definitions (-DFFTW_NTHREADS=${FFTW_NTHREADS})
+        message (STATUS "FFTW configured to use up to ${FFTW_NTHREADS} threads.")
+    else (FFTW_THREADS_FOUND)
+        remove_definitions (-DFFTW_NTHREADS=${FFTW_NTHREADS})
+    endif (FFTW_THREADS_FOUND)
+else (FFTW_FOUND)
+    message(STATUS "Building without FFTW")
+    remove_definitions(-DFFTW_FOUND)
+    remove_definitions (-DFFTW_NTHREADS=${FFTW_NTHREADS})
+endif (FFTW_FOUND)
+include_directories (${FFTW_INCLUDE_DIR})
 
 # Boost
 # Boost (1.48 required for container; scarab minimum is 1.46)

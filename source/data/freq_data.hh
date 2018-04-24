@@ -26,6 +26,7 @@ namespace psyllid
             typedef int8_t iq_t[2];
 
             const iq_t* get_array() const;
+            iq_t* get_array();
             size_t get_array_size() const;
 
             mv_accessible( uint64_t, pkt_in_session );
@@ -36,6 +37,11 @@ namespace psyllid
     };
 
     inline const freq_data::iq_t* freq_data::get_array() const
+    {
+        return f_array;
+    }
+
+    inline freq_data::iq_t* freq_data::get_array()
     {
         return f_array;
     }

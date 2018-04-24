@@ -1,17 +1,19 @@
-amqp:
-    broker: localhost
-    queue: psyllid
-
 post-to-slack: false
 
 daq:
     activate-at-startup: true
     n-files: 1
     max-file-size-mb: 500
+    
+batch-actions:
+    - type: set
+      rks: filename
+      payload:
+          values: ["new_filename.egg"]
 
 streams:
     ch0:
-        preset: fmask-1ch
+        preset: str-1ch
   
         device:
             n-channels: 1
@@ -27,7 +29,7 @@ streams:
             length: 10
             port: 23530
             ip: 127.0.0.1
-
-        trw:
-            file-num: 0
             
+        strw:
+            file-num: 0
+           
