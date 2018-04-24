@@ -12,6 +12,7 @@
 #include "node_builder.hh"
 
 #include "producer.hh"
+#include "control_access.hh"
 
 namespace monarch3
 {
@@ -35,7 +36,8 @@ namespace psyllid
      Node type: "egg3-reader"
 
      Available configuration values:
-     - "egg_path": string -- resolvable path to the egg file from which to read data
+     - "egg-path": string -- resolvable path to the egg file from which to read data
+     - "read-n-records": int -- number of records to read from file when executing, 0 means until end of file
 
      Output Streams:
      - 0: time_data
@@ -45,7 +47,7 @@ namespace psyllid
     class time_data;
 
     // egg3_reader
-    class egg3_reader : public midge::_producer< egg3_reader, typelist_1( time_data ) >
+    class egg3_reader : public midge::_producer< egg3_reader, typelist_1( time_data ) >, public control_access
     {
         public:
             egg3_reader();
@@ -54,6 +56,7 @@ namespace psyllid
         public:
             mv_accessible( const monarch3::Monarch3*, egg );
             mv_accessible( std::string, egg_path );
+            mv_accessible( uint64_t, read_n_records );
             mv_accessible( uint64_t, length );
             mv_accessible( bool, start_paused );
 

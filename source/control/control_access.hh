@@ -26,13 +26,17 @@ namespace psyllid
     class control_access
     {
         public:
-            control_access( std::weak_ptr< daq_control > a_daq_control = std::weak_ptr< daq_control >() );
+            control_access();
             virtual ~control_access();
 
-            void set_daq_control( std::weak_ptr< daq_control > a_daq_control );
+            static void set_daq_control( std::weak_ptr< daq_control > a_daq_control );
 
         protected:
-            std::weak_ptr< daq_control > f_daq_control;
+            static std::weak_ptr< daq_control > f_daq_control;
+
+            std::shared_ptr< daq_control > use_daq_control() {return control_access::f_daq_control.lock();}
+
+            bool daq_control_expired() {return control_access::f_daq_control.expired();}
     };
 
 } /* namespace psyllid */

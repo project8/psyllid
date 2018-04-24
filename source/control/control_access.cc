@@ -15,8 +15,9 @@ namespace psyllid
 {
     LOGGER( plog, "control_access" );
 
-    control_access::control_access( std::weak_ptr< daq_control > a_daq_control ) :
-            f_daq_control( a_daq_control )
+    std::weak_ptr< daq_control > control_access::f_daq_control = std::weak_ptr< daq_control >();
+
+    control_access::control_access()
     {
     }
 

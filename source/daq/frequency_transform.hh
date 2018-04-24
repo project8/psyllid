@@ -44,6 +44,10 @@ namespace psyllid
      - "use-wisdom": bool -- whether to use a plan from a wisdom file and save the plan to that file
      - "wisdom-filename": string -- if "use-wisdom" is true, resolvable path to the wisdom file
 
+    Available DAQ commands:
+    - "freq-only" (no args) -- Switch the execution mode to frequency only
+    - "time-and-freq" (no args) -- Switch the execution mode to time-and-frequency
+
      Input Stream:
      - 0: time_data
 
@@ -68,7 +72,13 @@ namespace psyllid
             mv_accessible( bool, use_wisdom );
             mv_accessible( std::string, wisdom_filename );
 
+        private:
+            bool f_enable_time_output;
+
         public:
+            void switch_to_freq_only();
+            void switch_to_time_and_freq();
+
             virtual void initialize();
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
@@ -81,8 +91,8 @@ namespace psyllid
 
             bool f_multithreaded_is_initialized;
 
-            uint64_t f_time_session_pkt_counter;
-            uint64_t f_freq_session_pkt_counter;
+            //uint64_t f_time_session_pkt_counter;
+            //uint64_t f_freq_session_pkt_counter;
         private:
             void setup_internal_maps();
 
@@ -97,8 +107,7 @@ namespace psyllid
         private:
             virtual void do_apply_config( frequency_transform* a_node, const scarab::param_node& a_config ) const;
             virtual void do_dump_config( const frequency_transform* a_node, scarab::param_node& a_config ) const;
-
-            //virtual bool do_run_command( frequency_transform* a_node, const std::string& a_cmd, const scarab::param_node& ) const;
+            virtual bool do_run_command( frequency_transform* a_node, const std::string& a_cmd, const scarab::param_node& ) const;
     };
 
 } /* namespace psyllid */

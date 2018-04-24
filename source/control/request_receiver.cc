@@ -40,21 +40,24 @@ namespace psyllid
         set_status( k_starting );
 
         // start the service
-        if( ! start() )
+        if( ! start() && f_make_connection )
         {
             LERROR( plog, "Unable to start the dripline service" );
             raise( SIGINT );
             return;
         }
 
-        LINFO( plog, "Waiting for incoming messages" );
 
-        set_status( k_listening );
+        if ( f_make_connection ) {
+            LINFO( plog, "Waiting for incoming messages" );
 
-        while( ! cancelable::is_canceled() )
-        {
-            // blocking call to wait for incoming message
-            listen();
+            set_status( k_listening );
+
+            while( ! cancelable::is_canceled() )
+            {
+                // blocking call to wait for incoming message
+                listen();
+            }
         }
 
         LINFO( plog, "No longer waiting for messages" );

@@ -7,6 +7,7 @@
 
 #include <chrono>
 
+#include "daq_control.hh"
 #include "egg3_reader.hh"
 #include "psyllid_error.hh"
 #include "time_data.hh"
@@ -28,6 +29,7 @@ namespace psyllid
     egg3_reader::egg3_reader() :
             f_egg( nullptr ),
             f_egg_path( "/dev/null" ),
+            f_read_n_records( 0 ),
             f_length( 10 ),
             f_start_paused( true ),
             f_paused( true ),
@@ -77,6 +79,8 @@ namespace psyllid
                 if( ! out_stream< 0 >().set( stream::s_start ) ) return;
             }
 
+            uint64_t t_records_read = 0;
+
             // starting execution loop
             while (! is_canceled() )
             {
@@ -92,6 +96,7 @@ namespace psyllid
                         LDEBUG( plog, "egg reader resuming" );
                         if( ! out_stream< 0 >().set( stream::s_start ) ) throw midge::node_nonfatal_error() << "Stream 0 error while starting";
                         f_paused = false;
+                        t_records_read = 0;
                     }
                     else if ( !f_paused && use_instruction() == midge::instruction::pause )
                     {
@@ -103,11 +108,20 @@ namespace psyllid
                 // only read if not paused:
                 if ( ! f_paused )
                 {
-                    LDEBUG( plog, "not paused, reading slice" );
-                    if ( !read_slice(t_data, t_stream, t_record) ) break;
-                }
-                else
-                {
+                    //if ( !read_slice(t_data, t_stream, t_record) ) break;
+                    bool read_slice_ok = read_slice(t_data, t_stream, t_record);
+                    if (read_slice_ok) {
+                        t_records_read++;
+                    }
+                    if ( !read_slice_ok || (f_read_n_records > 0 && t_records_read >= f_read_n_records) )
+                    {
+                        LWARN( plog, "breaking out of loop because record limit or end of file reached" );
+                        std::shared_ptr< daq_control > t_daq_control = use_daq_control();
+                        t_daq_control->stop_run();
+                    }
+                    // add some sleep to try and not lap downstream nodes
+                    std::this_thread::sleep_for(std::chrono::microseconds(100));
+                } else {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             }
@@ -124,7 +138,9 @@ namespace psyllid
     {
         LDEBUG( plog, "finalize the egg3_reader" );
         out_buffer< 0 >().finalize();
+        LDEBUG( plog, "buffer finalized" );
         cleanup_file();
+        return;
     }
 
     bool egg3_reader::read_slice(time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record)
@@ -156,6 +172,8 @@ namespace psyllid
 
     void egg3_reader::cleanup_file()
     {
+        LDEBUG( plog, "cleaning up file" );
+        if ( f_egg == NULL ) return;
         LDEBUG( plog, "clean egg" );
         if ( f_egg->GetState() != monarch3::Monarch3::eClosed )
         {
@@ -178,6 +196,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Configuring egg3_reader with:\n" << a_config );
         a_node->set_egg_path( a_config.get_value( "egg-path", a_node->get_egg_path() ) );
+        a_node->set_read_n_records( a_config.get_value( "read-n-records", a_node->get_read_n_records() ) );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
         a_node->set_start_paused( a_config.get_value( "start-paused", a_node->get_start_paused() ) );
         return;
@@ -187,6 +206,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Dumping configuration for egg3_reader" );
         a_config.add( "egg-path", new scarab::param_value( a_node->get_egg_path() ) );
+        a_config.add( "read-n-records", new scarab::param_value( a_node->get_read_n_records() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         a_config.add( "start-paused", new scarab::param_value( a_node->get_length() ) );
         return;
