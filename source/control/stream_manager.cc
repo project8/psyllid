@@ -432,7 +432,7 @@ namespace psyllid
         return;
     }
 
-    bool stream_manager::handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info stream_manager::handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         if( ! a_request->get_payload().has( "name" ) || ! a_request->get_payload().has( "config" ) )
         {
@@ -451,7 +451,7 @@ namespace psyllid
         return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + a_request->get_payload().get_value( "name" ) + " has been added" );
     }
 
-    bool stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         if( ! a_request->get_payload().has( "values" ) )
         {
@@ -475,7 +475,7 @@ namespace psyllid
         return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + t_values_array->get_value( 0 ) + " has been removed" );
     }
 
-    bool stream_manager::handle_configure_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info stream_manager::handle_configure_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         if( a_request->parsed_rks().size() < 2 )
         {
@@ -543,7 +543,7 @@ namespace psyllid
         return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed node-config" );
     }
 
-    bool stream_manager::handle_dump_config_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info stream_manager::handle_dump_config_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         if( a_request->parsed_rks().size() < 2 )
         {

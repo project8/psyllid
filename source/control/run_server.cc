@@ -218,7 +218,7 @@ namespace psyllid
     }
 
 
-    bool run_server::handle_get_server_status_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info run_server::handle_get_server_status_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         /*
         param_node* t_server_node = new param_node();
@@ -255,9 +255,9 @@ namespace psyllid
         return a_reply_pkg.send_reply( retcode_t::message_error_invalid_method, "Server status request not yet supported" );
     }
 
-    bool run_server::handle_quit_server_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info run_server::handle_quit_server_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
-        bool t_return = a_reply_pkg.send_reply( retcode_t::success, "Server-quit command processed" );
+        dripline::reply_info t_return = a_reply_pkg.send_reply( retcode_t::success, "Server-quit command processed" );
         quit_server();
         return t_return;
     }

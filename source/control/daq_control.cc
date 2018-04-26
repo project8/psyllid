@@ -569,7 +569,7 @@ namespace psyllid
     }
 
 
-    bool daq_control::handle_activate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_activate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -582,7 +582,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_reactivate_daq_control( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_reactivate_daq_control( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -595,7 +595,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_deactivate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_deactivate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -608,7 +608,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_start_run_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_start_run_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -645,7 +645,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_stop_run_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_stop_run_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -658,7 +658,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_apply_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_apply_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         if( a_request->parsed_rks().size() < 2 )
         {
@@ -726,7 +726,7 @@ namespace psyllid
         return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed node-config" );
     }
 
-    bool daq_control::handle_dump_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_dump_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         if( a_request->parsed_rks().size() < 2 )
         {
@@ -782,7 +782,7 @@ namespace psyllid
         return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-active-node-config" );
     }
 
-    bool daq_control::handle_run_command_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_run_command_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         if( a_request->parsed_rks().size() < 2 )
         {
@@ -827,7 +827,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -848,7 +848,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_set_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_set_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -869,7 +869,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_set_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_set_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -888,7 +888,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_set_use_monarch_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_set_use_monarch_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -902,7 +902,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_get_status_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_get_status_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         param_node* t_server_node = new param_node();
         t_server_node->add( "status", new param_value( interpret_status( get_status() ) ) );
@@ -916,7 +916,7 @@ namespace psyllid
 
     }
 
-    bool daq_control::handle_get_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_get_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -937,7 +937,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_get_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_get_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
         try
         {
@@ -958,7 +958,7 @@ namespace psyllid
         }
     }
 
-    bool daq_control::handle_get_duration_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_get_duration_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         param_array* t_values_array = new param_array();
         t_values_array->push_back( new param_value( f_run_duration ) );
@@ -968,7 +968,7 @@ namespace psyllid
         return a_reply_pkg.send_reply( retcode_t::success, "Duration request completed" );
     }
 
-    bool daq_control::handle_get_use_monarch_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_info daq_control::handle_get_use_monarch_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
         param_array* t_values_array = new param_array();
         t_values_array->push_back( new param_value( f_use_monarch ) );
