@@ -14,7 +14,7 @@
 namespace psyllid
 {
     class run_server;
-	/*!
+    /*!
      @class request_receiver
      @author N. S. Oblath
 
