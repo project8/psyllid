@@ -7,6 +7,7 @@
 
 //psyllid includes
 #include "batch_executor.hh"
+#include "daq_control.hh"
 
 //non-psyllid P8 includes
 #include "dripline_constants.hh"
@@ -81,9 +82,24 @@ namespace psyllid
             // parse/cast useful variables/types from the action node
             const scarab::param_node& t_action = (*action_it)->as_node();
             scarab::param_node* t_payload = &t_action.node_at( "payload" )->clone()->as_node();
-            dripline::op_t t_msg_op = dripline::to_op_t( t_action.get_value( "type" ) );
             std::string t_rks( t_action.get_value( "rks") );
             unsigned t_sleep = std::stoi( t_action.get_value( "sleep-for", "500" ) );
+            dripline::op_t t_msg_op;
+            bool t_do_custom_cmd = false;
+            try
+            {
+                t_msg_op = dripline::to_op_t( t_action.get_value( "type" ) );
+            }
+            catch( dripline::dripline_error )
+            {
+                LDEBUG( plog, "got a dripline error parsing request type" );
+                if ( t_action.get_value( "type" ) == "wait-for" && t_rks == "daq-status" )
+                {
+                    t_msg_op = dripline::op_t::get;
+                    t_do_custom_cmd = true;
+                }
+                else throw;
+            }
 
             // put it together into a request
             dripline::request_ptr_t t_request = dripline::msg_request::create(
@@ -96,8 +112,28 @@ namespace psyllid
             LDEBUG( plog, "from batch exe, request rk is: " << t_request->routing_key() );
             //a_request->rks() = "start-run";
             t_request->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
-            f_request_receiver->submit_request_message( t_request );
-            std::this_thread::sleep_for( std::chrono::milliseconds( t_sleep ) );
+            if ( ! t_do_custom_cmd )
+            {
+                dripline::reply_info t_request_reply = f_request_receiver->submit_request_message( t_request );
+                if ( t_request_reply )
+                {
+                    //TODO probably not INFO
+                    LINFO( plog, "return code is: " << t_request_reply.f_return_code );
+                }
+                else
+                {
+                    LWARN( plog, "failed to submit request" );
+                }
+                std::this_thread::sleep_for( std::chrono::milliseconds( t_sleep ) );
+            }
+            else
+            {
+                LDEBUG( plog, "doing wait-for loop" );
+                dripline::reply_info t_request_reply = f_request_receiver->submit_request_message( t_request );
+                LDEBUG( plog, "ret msg is: " << t_request_reply.f_return_msg );
+                //while ( f_request_receiver->submit_request_message( t_request ) // no reply payload...
+                std::this_thread::sleep_for( std::chrono::milliseconds( t_sleep ) );
+            }
         }
 
         LINFO( plog, "action loop complete" );
