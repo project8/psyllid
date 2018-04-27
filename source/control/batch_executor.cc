@@ -86,6 +86,7 @@ namespace psyllid
             unsigned t_sleep = std::stoi( t_action.get_value( "sleep-for", "500" ) );
             dripline::op_t t_msg_op;
             bool t_do_custom_cmd = false;
+            LDEBUG( plog, "get msg_op" );
             try
             {
                 t_msg_op = dripline::to_op_t( t_action.get_value( "type" ) );
@@ -95,11 +96,13 @@ namespace psyllid
                 LDEBUG( plog, "got a dripline error parsing request type" );
                 if ( t_action.get_value( "type" ) == "wait-for" && t_rks == "daq-status" )
                 {
+                    LDEBUG( plog, "action is poll on run status" );
                     t_msg_op = dripline::op_t::get;
                     t_do_custom_cmd = true;
                 }
                 else throw;
             }
+            LDEBUG( plog, "build request object" );
 
             // put it together into a request
             dripline::request_ptr_t t_request = dripline::msg_request::create(
