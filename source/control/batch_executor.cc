@@ -81,12 +81,23 @@ namespace psyllid
 
             // parse/cast useful variables/types from the action node
             const scarab::param_node& t_action = (*action_it)->as_node();
-            scarab::param_node* t_payload = &t_action.node_at( "payload" )->clone()->as_node();
-            std::string t_rks( t_action.get_value( "rks") );
-            unsigned t_sleep = std::stoi( t_action.get_value( "sleep-for", "500" ) );
+            scarab::param_node* t_payload;
+            std::string t_rks;
+            unsigned t_sleep;
             dripline::op_t t_msg_op;
-            bool t_do_custom_cmd = false;
-            LDEBUG( plog, "get msg_op" );
+            bool t_do_custom_cmd;
+            try
+            {
+                t_payload = &t_action.node_at( "payload" )->clone()->as_node();
+                t_rks = t_action.get_value( "rks");
+                t_sleep = std::stoi( t_action.get_value( "sleep-for", "500" ) );
+                t_do_custom_cmd = false;
+            }
+            catch( scarab::error )
+            {
+                LERROR( plog, "error parsing action param_node, check keys and value types" );
+                throw;
+            }
             try
             {
                 t_msg_op = dripline::to_op_t( t_action.get_value( "type" ) );
