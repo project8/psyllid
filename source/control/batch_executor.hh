@@ -11,6 +11,12 @@
 #include "cancelable.hh"
 #include "param.hh"
 
+namespace dripline
+{
+    class msg_reqeust;
+    typedef class std::shared_ptr<dripline::msg_request> request_ptr_t;
+}
+
 namespace psyllid
 {
     /*!
@@ -21,13 +27,23 @@ namespace psyllid
 
      @details
 
-     ... tbd ...
+    batch_executor is a control component used to submit a pre-defined sequence of requests upon startup and in a non-interactive way.
+    This allows submission of any request which would normally be sent via a dripline request.
+    It can also supports (currently one) custom command (type = wait-for), which will poll the provided rks and wait for the return payload to not indicate a daq_status of running.
+
+    The actions taken are defined in the top-level param_node of psyllid's config file named "batch-actions", which must be of type array.
+    Each element of the array is expected to be another param_node and have the following keys:
+    - type (str): valid dripline::msg_op or "wait-for"
+    - rks (str): full routing-key-specifier for the desired action
+    - payload (param_node): request message payload content for the action
+    - sleep-for (int) [optional]: time in milliseconds for which the thread will sleep after receiving a reply on the specified request. Note i) that each request blocks until a reply is generated, but triggered actions may or may not be ongoing; ii) the "wait-for" action type sleeps this much time after *each* poll.
 
     */
 
     // forward declarations
     class request_receiver;
 
+    // local content
     class batch_executor : public scarab::cancelable
     {
         public:
@@ -42,6 +58,7 @@ namespace psyllid
             std::shared_ptr<request_receiver> f_request_receiver;
 
             virtual void do_cancellation();
+            static bool parse_action( bool is_custom_ret, dripline::request_ptr_t request_ptr_ret, const scarab::param_array* a_action );
 
     };
 
