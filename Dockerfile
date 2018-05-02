@@ -1,4 +1,4 @@
-FROM debian:8
+FROM debian:9
 
 # Most dependencies
 
@@ -6,6 +6,7 @@ RUN apt-get update && \
     apt-get clean && \
     apt-get --fix-missing  -y install \
         build-essential \
+        cmake \
         libfftw3-3 \
         libfftw3-dev \
         gdb \
@@ -15,13 +16,13 @@ RUN apt-get update && \
         wget && \
     rm -rf /var/lib/apt/lists/*
 
-# CMake
-ARG CMAKEVER=3.6
-ARG CMAKEINSTALLER=cmake-3.6.2-Linux-x86_64.sh
-RUN wget https://cmake.org/files/v$CMAKEVER/$CMAKEINSTALLER && \
-    chmod u+x $CMAKEINSTALLER && \
-    ./$CMAKEINSTALLER --skip-license --prefix=/usr/local && \
-    rm $CMAKEINSTALLER
+## CMake
+#ARG CMAKEVER=3.6
+#ARG CMAKEINSTALLER=cmake-3.6.2-Linux-x86_64.sh
+#RUN wget https://cmake.org/files/v$CMAKEVER/$CMAKEINSTALLER && \
+#    chmod u+x $CMAKEINSTALLER && \
+#    ./$CMAKEINSTALLER --skip-license --prefix=/usr/local && \
+#    rm $CMAKEINSTALLER
 
 #RUN mkdir /code
 #ADD psyllid /code/psyllid
