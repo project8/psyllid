@@ -44,7 +44,7 @@ namespace psyllid
     struct action_info
     {
         bool f_is_custom_action;
-        dripline::request_ptr_t f_request_ptr_t;
+        dripline::request_ptr_t f_request_ptr;
         unsigned f_sleep_duration_ms;
     };
 
@@ -63,7 +63,7 @@ namespace psyllid
             std::shared_ptr<request_receiver> f_request_receiver;
 
             virtual void do_cancellation();
-            static action_info parse_action( bool is_custom_ret, dripline::request_ptr_t request_ptr_ret, const scarab::param_node* a_action );
+            static action_info parse_action( const scarab::param_node* a_action );
 
     };
 

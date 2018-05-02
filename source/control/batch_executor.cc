@@ -77,75 +77,38 @@ namespace psyllid
             if ( is_canceled() ) break;
 
             LDEBUG( plog, "doing next action:\n" << **action_it );
+            action_info t_action = parse_action( &((*action_it)->as_node()) );
 
-            // parse/cast useful variables/types from the action node
-            const scarab::param_node& t_action = (*action_it)->as_node();
-            scarab::param_node* t_payload;
-            std::string t_rks;
-            unsigned t_sleep;
-            dripline::op_t t_msg_op;
-            bool t_do_custom_cmd;
-            try
-            {
-                t_payload = &t_action.node_at( "payload" )->clone()->as_node();
-                t_rks = t_action.get_value( "rks");
-                t_sleep = std::stoi( t_action.get_value( "sleep-for", "500" ) );
-                t_do_custom_cmd = false;
-            }
-            catch( scarab::error )
-            {
-                LERROR( plog, "error parsing action param_node, check keys and value types" );
-                throw;
-            }
-            try
-            {
-                t_msg_op = dripline::to_op_t( t_action.get_value( "type" ) );
-            }
-            catch( dripline::dripline_error )
-            {
-                LDEBUG( plog, "got a dripline error parsing request type" );
-                if ( t_action.get_value( "type" ) == "wait-for" && t_rks == "daq-status" )
-                {
-                    LDEBUG( plog, "action is poll on run status" );
-                    t_msg_op = dripline::op_t::get;
-                    t_do_custom_cmd = true;
-                }
-                else throw;
-            }
-            LDEBUG( plog, "build request object" );
-
-            // put it together into a request
-            dripline::request_ptr_t t_request = dripline::msg_request::create(
-                                              t_payload,
-                                              t_msg_op,
-                                              std::string(),
-                                              std::string() );// reply-to is empty because no reply for batch requests
             // submit the request object to the receiver and sleep
-            LDEBUG( plog, "from batch exe, request rk is: " << t_request->routing_key() );
-            //a_request->rks() = "start-run";
-            t_request->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
-            dripline::reply_info t_request_reply_info = f_request_receiver->submit_request_message( t_request );
+            LDEBUG( plog, "from batch exe, request rk is: " << t_action.f_request_ptr->routing_key() );
+            dripline::reply_info t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
             if ( ! t_request_reply_info )
             {
                 LWARN( plog, "failed submitting action request" );
                 throw psyllid::error() << "error while submitting command";
             }
-            if ( t_do_custom_cmd )
+            if ( t_action.f_is_custom_action )
             {
                 LWARN( plog, "figuring out how to do a polling loop" );
                 daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
-                //TODO don't do these
-                while ( t_status == daq_control::status::running )//(t_status = daq_control::uint_to_status( f_request_receiver->submit_request_message( t_request ).f_payload.node_at("server")->value_at("status-value")->as_uint()) ) == daq_control::status::running )
+                int ct = 0;
+                while ( ct < 5) //t_status == daq_control::status::running )
                 {
+                    //TODO don't do this
                     LERROR( plog, "status is: [" << daq_control::status_to_uint(t_status) << "] " << daq_control::interpret_status( t_status ) );
                     // update status
-                    t_request_reply_info = f_request_receiver->submit_request_message( t_request );
-                    t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
+                    t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
+                    //t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
+                    std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
                 }
-                throw psyllid::error() << "just exiting so i can read logs";
-                std::this_thread::sleep_for( std::chrono::milliseconds( 6000 ) );
+                //TODO remove these, only here for debugging
+                //throw psyllid::error() << "just exiting so i can read logs";
+                //std::this_thread::sleep_for( std::chrono::milliseconds( 6000 ) );
             }
-            std::this_thread::sleep_for( std::chrono::milliseconds( t_sleep ) );
+            else
+            {
+                std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
+            }
         } // loop over actions param_array
 
         LINFO( plog, "action loop complete" );
@@ -157,20 +120,18 @@ namespace psyllid
         return;
     }
 
-    static action_info parse_action( bool is_custom_ret, dripline::request_ptr_t request_ptr_ret, const scarab::param_node* a_action )
+    action_info batch_executor::parse_action( const scarab::param_node* a_action )
     {
         action_info t_action_info;
         scarab::param_node* t_payload;
         std::string t_rks;
-        //unsigned t_sleep;
         dripline::op_t t_msg_op;
-        bool t_do_custom_cmd;
         try
         {
             t_payload = &(a_action->node_at( "payload" )->clone()->as_node());
             t_rks = a_action->get_value( "rks");
-            //t_sleep = std::stoi( a_action->get_value( "sleep-for", "500" ) );
-            is_custom_ret = false;
+            t_action_info.f_sleep_duration_ms = std::stoi( a_action->get_value( "sleep-for", "500" ) );
+            t_action_info.f_is_custom_action = false;
         }
         catch( scarab::error )
         {
@@ -188,18 +149,19 @@ namespace psyllid
             {
                 LDEBUG( plog, "action is poll on run status" );
                 t_msg_op = dripline::op_t::get;
-                is_custom_ret = true;
+                t_action_info.f_is_custom_action = true;
             }
             else throw;
         }
         LDEBUG( plog, "build request object" );
 
         // put it together into a request
-        request_ptr_ret = dripline::msg_request::create(
-            t_payload,
-            t_msg_op,
-            std::string(),
-            std::string() );// reply-to is empty because no reply for batch requests
+        t_action_info.f_request_ptr = dripline::msg_request::create(
+                                            t_payload,
+                                            t_msg_op,
+                                            std::string(),
+                                            std::string() );// reply-to is empty because no reply for batch requests
+        t_action_info.f_request_ptr->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
         return t_action_info;
     }
 
