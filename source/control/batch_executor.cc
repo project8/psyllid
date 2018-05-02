@@ -121,34 +121,28 @@ namespace psyllid
                                               t_msg_op,
                                               std::string(),
                                               std::string() );// reply-to is empty because no reply for batch requests
-
             // submit the request object to the receiver and sleep
             LDEBUG( plog, "from batch exe, request rk is: " << t_request->routing_key() );
             //a_request->rks() = "start-run";
             t_request->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
-            if ( ! t_do_custom_cmd )
+            dripline::reply_info t_request_reply_info = f_request_receiver->submit_request_message( t_request );
+            if ( ! t_request_reply_info )
             {
-                dripline::reply_info t_request_reply = f_request_receiver->submit_request_message( t_request );
-                if ( t_request_reply )
-                {
-                    //TODO probably not INFO
-                    LINFO( plog, "return code is: " << t_request_reply.f_return_code );
-                }
-                else
-                {
-                    LWARN( plog, "failed to submit request" );
-                }
-                std::this_thread::sleep_for( std::chrono::milliseconds( t_sleep ) );
+                LWARN( plog, "failed submitting action request" );
+                throw psyllid::error() << "error while submitting command";
             }
-            else
+            if ( t_do_custom_cmd )
             {
-                LDEBUG( plog, "doing wait-for loop" );
-                dripline::reply_info t_request_reply = f_request_receiver->submit_request_message( t_request );
-                LDEBUG( plog, "ret msg is: " << t_request_reply.f_return_msg );
+                LWARN( plog, "figuring out how to do a polling loop" );
+                daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
+                //TODO don't do these
+                LERROR( plog, "status is: " << daq_control::status_to_uint(t_status) );
+                LERROR( plog, "or more readably: " << daq_control::interpret_status( t_status ) );
+                std::this_thread::sleep_for( std::chrono::milliseconds( 6000 ) );
                 //while ( f_request_receiver->submit_request_message( t_request ) // no reply payload...
-                std::this_thread::sleep_for( std::chrono::milliseconds( t_sleep ) );
             }
-        }
+            std::this_thread::sleep_for( std::chrono::milliseconds( t_sleep ) );
+        } // loop over actions param_array
 
         LINFO( plog, "action loop complete" );
     }
