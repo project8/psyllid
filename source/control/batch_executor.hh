@@ -8,14 +8,12 @@
 #ifndef PSYLLID_BATCH_EXECUTOR_HH_
 #define PSYLLID_BATCH_EXECUTOR_HH_
 
+// scarab includes
 #include "cancelable.hh"
 #include "param.hh"
 
-namespace dripline
-{
-    class msg_reqeust;
-    typedef class std::shared_ptr<dripline::msg_request> request_ptr_t;
-}
+// dripline
+#include "message.hh"
 
 namespace psyllid
 {
@@ -43,6 +41,13 @@ namespace psyllid
     // forward declarations
     class request_receiver;
 
+    struct action_info
+    {
+        bool f_is_custom_action;
+        dripline::request_ptr_t f_request_ptr_t;
+        unsigned f_sleep_duration_ms;
+    };
+
     // local content
     class batch_executor : public scarab::cancelable
     {
@@ -58,7 +63,7 @@ namespace psyllid
             std::shared_ptr<request_receiver> f_request_receiver;
 
             virtual void do_cancellation();
-            static bool parse_action( bool is_custom_ret, dripline::request_ptr_t request_ptr_ret, const scarab::param_array* a_action );
+            static action_info parse_action( bool is_custom_ret, dripline::request_ptr_t request_ptr_ret, const scarab::param_node* a_action );
 
     };
 
