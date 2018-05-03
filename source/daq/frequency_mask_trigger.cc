@@ -35,6 +35,7 @@ namespace psyllid
             f_trigger_mode (trigger_mode_t::single_level_trigger ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
+            f_mask_data(),
             f_n_summed( 0 ),
             f_mask_mutex()
     {
@@ -169,6 +170,14 @@ namespace psyllid
         }
         t_output_node.add( "mask", t_mask_array );
 
+        scarab::param_array* t_mask_data_array = new scarab::param_array();
+        t_mask_data_array->resize( f_mask_data.size() );
+        for( unsigned i_bin = 0; i_bin < f_mask_data.size(); ++i_bin )
+        {
+            t_mask_data_array->assign( i_bin, new scarab::param_value( f_mask_data[ i_bin ] ) );
+        }
+        t_output_node.add( "mask-data", t_mask_data_array );
+
         //scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "json" );
         scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "yaml" );
         if( t_json_codec == nullptr )
@@ -229,7 +238,6 @@ namespace psyllid
             //trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0.;
             unsigned t_array_size = 0;
-            std::vector< double > t_mask_buffer;
 
             LDEBUG( plog, "Entering add-to-mask loop" );
             while( ! is_canceled() && ! f_break_exe_func.load() )
@@ -257,7 +265,7 @@ namespace psyllid
                     //if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     a_ctx.f_first_packet_after_start = true;
                     f_n_summed = 0;
-                    t_mask_buffer.clear();
+                    f_mask_data.clear();
 
                 }
                 else if( a_ctx.f_in_command == stream::s_run )
@@ -284,10 +292,10 @@ namespace psyllid
                             if( a_ctx.f_first_packet_after_start )
                             {
                                 t_array_size = t_freq_data->get_array_size();
-                                t_mask_buffer.resize( t_array_size );
+                                f_mask_data.resize( t_array_size );
                                 for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                                 {
-                                    t_mask_buffer[ i_bin ] = 0.;
+                                    f_mask_data[ i_bin ] = 0.;
                                 }
                                 a_ctx.f_first_packet_after_start = false;
                             }
@@ -295,7 +303,7 @@ namespace psyllid
                             {
                                 t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
                                 t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
-                                t_mask_buffer[ i_bin ] = t_mask_buffer[ i_bin ] + t_real*t_real + t_imag*t_imag;
+                                f_mask_data[ i_bin ] = f_mask_data[ i_bin ] + t_real*t_real + t_imag*t_imag;
                     /*#ifndef NDEBUG
                                 if( i_bin < 5 )
                                 {
@@ -313,21 +321,21 @@ namespace psyllid
                                 LDEBUG( plog, "Calculating spline for frequency mask" );
 
                                 double t_multiplier = f_threshold_snr / (double)f_n_summed;
-                                LDEBUG( plog, "Size: " << t_mask_buffer.size() << "   Multiplier = " << t_multiplier << " = (threshold_snr) " << f_threshold_snr << " / (n_summed) " << f_n_summed );
+                                LDEBUG( plog, "Size: " << f_mask_data.size() << "   Multiplier = " << t_multiplier << " = (threshold_snr) " << f_threshold_snr << " / (n_summed) " << f_n_summed );
 
                                 std::vector< double > t_x_vals( f_n_spline_points );
                                 std::vector< double > t_y_vals( f_n_spline_points );
-                                unsigned t_n_bins_per_point = t_mask_buffer.size() / f_n_spline_points;
+                                unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
 
                                 // calculate spline points
                                 for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
                                 {
                                     unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
-                                    unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? t_mask_buffer.size() : t_bin_begin + t_n_bins_per_point;
+                                    unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
                                     double t_mean = 0.;
                                     for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
                                     {
-                                        t_mean += t_mask_buffer[ i_bin ];
+                                        t_mean += f_mask_data[ i_bin ];
                                     }
                                     t_mean *= t_multiplier / (double)(t_bin_end - t_bin_begin);
                                     t_y_vals[ i_spline_point ] = t_mean;
@@ -341,7 +349,7 @@ namespace psyllid
                                 f_mask_mutex.lock();
                                 LDEBUG( plog, "Calculating frequency mask" );
 
-                                f_mask.resize( t_mask_buffer.size() );
+                                f_mask.resize( f_mask_data.size() );
                                 for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
                                 {
                                     f_mask[ i_bin ] = t_spline( i_bin );
