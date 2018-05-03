@@ -29,6 +29,7 @@ RUN apt-get update && \
 
 # note that the build dir is *not* in source, this is so that the source can me mounted onto the container without covering the build target
 
+VOLUME /usr/local/src
 COPY dripline-cpp /usr/local/src/dripline-cpp
 COPY examples /usr/local/src/examples
 COPY external /usr/local/src/external
