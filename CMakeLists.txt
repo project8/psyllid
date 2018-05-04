@@ -28,7 +28,7 @@ else( Psyllid_ENABLE_ITERATOR_TIMING )
     remove_definitions( -DENABLE_ITERATOR_TIMING )
 endif( Psyllid_ENABLE_ITERATOR_TIMING )
 
-option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" if( UNIX ) )
+option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" if( UNIX AND NOT APPLE ) )
 if( Psyllid_ENABLE_FPA AND UNIX AND NOT APPLE )
     set( Psyllid_BUILD_FPA TRUE )
     add_definitions( -DBUILD_FPA )
