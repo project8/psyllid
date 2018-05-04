@@ -141,6 +141,7 @@ namespace psyllid
 
         private:
             std::vector< double > f_mask;
+            std::vector< double > f_mask_data;
             unsigned f_n_summed;
 
             std::mutex f_mask_mutex;
