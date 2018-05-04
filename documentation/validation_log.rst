@@ -57,6 +57,7 @@ New Features:
     * updated to also output the summed power data in addition to the spline fit used to define the frequency mask. This goes into a second array in the same output file
     * tested using the egg reader and confirming qualitatively that the mask follows the shape of the accumulated power (after normalizing by the number of accumulated points and the mask's offset)
 * Dripline-cpp updated to v1.6.0
+* CMake option added to allow disabling the FPA on linux builds (useful for batch mode execution without root access).
 
 
 Fixes:
