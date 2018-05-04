@@ -16,13 +16,13 @@ if( Psyllid_ENABLE_EXECUTABLES )
         psyllid
     )
 
-    if( Psyllid_ENABLE_FPA )
+    if( Psyllid_BUILD_FPA )
         set( programs
              ${programs}
              roach_daq_1chan
              roach_daq_streaming_1chan
         )
-    endif( Psyllid_ENABLE_FPA )
+    endif( Psyllid_BUILD_FPA )
 
     pbuilder_executables( programs lib_dependencies )
 
