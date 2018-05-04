@@ -28,6 +28,15 @@ else( Psyllid_ENABLE_ITERATOR_TIMING )
     remove_definitions( -DENABLE_ITERATOR_TIMING )
 endif( Psyllid_ENABLE_ITERATOR_TIMING )
 
+option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" if( UNIX ) )
+if( APPLE AND Psyllid_BUILD_FPA )
+    message( WARNING "FPA feature is linux-only, disabling because APPLE" )
+endif( APPLE AND Psyllid_BUILD_FPA )
+if( Psyllid_ENABLE_FPA )
+    add_definitions( -DBUILD_FPA )
+else( Psyllid_ENABLE_FPA )
+    remove_definitions( -DBUILD_FPA )
+endif( Psyllid_ENABLE_FPA )
 
 ################
 # dependencies #

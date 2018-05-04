@@ -21,7 +21,7 @@
 #include "terminator.hh"
 #include "tf_roach_receiver.hh"
 
-#ifdef __linux__
+#ifdef BUILD_FPA
 #include "packet_receiver_fpa.hh"
 #endif
 
@@ -68,7 +68,7 @@ int main( int argc, char** argv )
 
         if( t_use_fpa )
         {
-#ifdef __linux__
+#ifdef BUILD_FPA
             packet_receiver_fpa* t_pck_rec = new packet_receiver_fpa();
             t_pck_rec->set_name( "pck_rec" );
             t_pck_rec->set_length( 10 );

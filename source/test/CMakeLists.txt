@@ -9,7 +9,7 @@ if( Psyllid_ENABLE_TESTING )
         PsyllidData
         PsyllidDAQ
     )
-    
+
     set( programs
         #test_event_builder
         #test_monarch3_write
@@ -17,7 +17,7 @@ if( Psyllid_ENABLE_TESTING )
         test_tf_roach_monitor
         test_tf_roach_receiver
     )
-    
+
     if( UNIX AND NOT APPLE )
         set( programs
             ${programs}
@@ -25,8 +25,8 @@ if( Psyllid_ENABLE_TESTING )
             test_tpacket_v3
         )
     endif( UNIX AND NOT APPLE )
-    
-    
+
+
     pbuilder_executables( programs lib_dependencies )
 
 endif( Psyllid_ENABLE_TESTING )

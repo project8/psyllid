@@ -37,7 +37,7 @@ if (Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT)
     set( sources ${sources} streaming_frequency_writer.cc)
 endif (Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT)
 
-if( UNIX AND NOT APPLE )
+if( Psyllid_ENABLE_FPA AND ( UNIX AND NOT APPLE ) )
 set( headers
     ${headers}
     packet_receiver_fpa.hh
@@ -47,7 +47,7 @@ set( sources
     ${sources}
     packet_receiver_fpa.cc
 )
-endif( UNIX AND NOT APPLE )
+endif( Psyllid_ENABLE_FPA AND ( UNIX AND NOT APPLE ) )
 
 set( dependencies
     PsyllidUtility
