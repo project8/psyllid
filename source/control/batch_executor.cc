@@ -40,7 +40,7 @@ namespace psyllid
         }
         else
         {
-            LWARN( plog, "batch array is null" );
+            LINFO( plog, "batch array is null" );
             f_actions_array = scarab::param_array();
         }
     }
