@@ -35,7 +35,7 @@ namespace psyllid
     {
         if ( a_master_config.has( "batch-actions" ) )
         {
-            LWARN( plog, "got array" );
+            LINFO( plog, "got array" );
             f_actions_array = *(a_master_config.array_at( "batch-actions" ));
         }
         else
@@ -88,7 +88,6 @@ namespace psyllid
             }
             if ( t_action.f_is_custom_action )
             {
-                LWARN( plog, "figuring out how to do a polling loop" );
                 daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
                 while ( t_status == daq_control::status::running )
                 {
