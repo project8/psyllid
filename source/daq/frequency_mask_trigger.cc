@@ -115,8 +115,8 @@ namespace psyllid
     void frequency_mask_trigger::set_mask_and_data_vectors( const scarab::param_node* a_mask_and_data_values )
     {
         // grab the new arrays
-        const scarab::param_array* t_new_mask = a_mask_and_data_values->array_at( "mask_data" );
-        const scarab::param_array* t_new_mask_data = a_mask_and_data_values->array_at( "mask" );
+        const scarab::param_array* t_new_mask = a_mask_and_data_values->array_at( "mask" );
+        const scarab::param_array* t_new_mask_data = a_mask_and_data_values->array_at( "mask-data" );
         if ( t_new_mask == NULL || t_new_mask_data == NULL ) throw psyllid::error() << "new mask and mask data must not be null";
         // prep the data members
         f_mask.clear();
@@ -812,6 +812,7 @@ namespace psyllid
         }
         if( a_config.has( "mask-configuration" ) )
         {
+            //TODO is this an okay place for this logic, or should it go in the fmt class itself or in a private method of this class?
             const scarab::param* t_mask_config = a_config.at( "mask-configuration" );
             if ( t_mask_config->is_value() )
             {
@@ -820,7 +821,6 @@ namespace psyllid
                 {
                     throw error() << "Unable to create input-codec for YAML";
                 }
-                //TODO read_file doesn't seem to use any other members, could it be static? Would that let me avoid the factory thing above and let the implementation of read_file deal with deciding on the codec to use?
                 scarab::param* t_file_param = t_yaml_codec->read_file( t_mask_config->as_value().as_string(), NULL );
                 if ( t_file_param->is_node() )
                 {
