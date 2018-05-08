@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.1)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.4.0 )
+project( Psyllid VERSION 1.5.0 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
 include( PackageBuilder )
@@ -28,7 +28,11 @@ else( Psyllid_ENABLE_ITERATOR_TIMING )
     remove_definitions( -DENABLE_ITERATOR_TIMING )
 endif( Psyllid_ENABLE_ITERATOR_TIMING )
 
-option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" if( UNIX AND NOT APPLE ) )
+set( default_flag FALSE )
+if( UNIX AND NOT APPLE )
+    set( default_flag TRUE )
+endif( UNIX AND NOT APPLE )
+option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" ${default_flag} )
 if( Psyllid_ENABLE_FPA AND UNIX AND NOT APPLE )
     set( Psyllid_BUILD_FPA TRUE )
     add_definitions( -DBUILD_FPA )
