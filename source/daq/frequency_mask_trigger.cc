@@ -828,7 +828,7 @@ namespace psyllid
                 }
                 else
                 {
-                    throw psyllid::error() << "mask file must be anode";
+                    throw psyllid::error() << "mask file must be a node";
                 }
             }
             else if ( t_mask_config->is_node() )
