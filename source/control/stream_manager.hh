@@ -94,11 +94,11 @@ namespace psyllid
             bool is_in_use() const;
 
         public:
-            bool handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            bool handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_info handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_info handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
-            bool handle_configure_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            bool handle_dump_config_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_info handle_configure_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_info handle_dump_config_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
         private:
             void _add_stream( const std::string& a_name, const scarab::param_node* a_node );

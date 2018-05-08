@@ -14,14 +14,14 @@ Guidelines
   * Perform tests to show that the fix solves the problem that had been indicated.
   * Perform tests to shwo that the fix does not cause other problems.
   * Indicate in this log what tests were performed and how you know the problem was fixed.
-  
+
 Template
 --------
 
-Version: 
+Version:
 ~~~~~~~~
 
-Release Date: 
+Release Date:
 '''''''''''''
 
 New Features:
@@ -31,7 +31,7 @@ New Features:
     * Details
 * Feature 2
     * Details
-  
+
 Fixes:
 ''''''
 
@@ -39,9 +39,26 @@ Fixes:
     * Details
 * Fix 2
     * Details
-  
+
 Log
 ---
+
+Version: 1.5.0
+~~~~~~~~~~~~~~~~~
+
+Release Date: May 8, 2018
+'''''''''''''''''''''''''
+
+New Features:
+'''''''''''''
+
+* batch_executor retries the reply message's payload and return code; each action happens after the prior one returns (which may not be the conclusion of the action, just like any dripline request)
+* frequency mask trigger
+    * updated to also output the summed power data in addition to the spline fit used to define the frequency mask. This goes into a second array in the same output file
+    * tested using the egg reader and confirming qualitatively that the mask follows the shape of the accumulated power (after normalizing by the number of accumulated points and the mask's offset)
+* Dripline-cpp updated to v1.6.0
+* CMake option added to allow disabling the FPA on linux builds (useful for batch mode execution without root access).
+
 
 Version: 1.4.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,7 +94,7 @@ New Features:
 * batch_executor control class
     * allows a list of actions to be provided within the master configuration, which specifies a sequence of actions to execute at startup
     * control system modified to allow batch-only mode if the amqp configuration has `make-connection: false`, which will exit after completing batch commands
-    * NOTE: currently does not do anything other than print return codes from commands, would be nice to upgrade to check those codes and crash if a command fails
+    * NOTE: currently does not do anything other than print return codes from commands; would be nice to upgrade to check those codes and crash if a command fails
     * tested using a configuration file which configures and uses a frequency mask trigger and event builder
 * Dripline-cpp updated to v1.5.0
 

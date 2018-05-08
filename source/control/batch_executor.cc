@@ -7,12 +7,12 @@
 
 //psyllid includes
 #include "batch_executor.hh"
+#include "daq_control.hh"
+#include "request_receiver.hh"
 
 //non-psyllid P8 includes
 #include "dripline_constants.hh"
 #include "logger.hh"
-#include "message.hh"
-#include "request_receiver.hh"
 
 //external includes
 #include <chrono>
@@ -35,12 +35,12 @@ namespace psyllid
     {
         if ( a_master_config.has( "batch-actions" ) )
         {
-            LWARN( plog, "got array" );
+            LINFO( plog, "got array" );
             f_actions_array = *(a_master_config.array_at( "batch-actions" ));
         }
         else
         {
-            LWARN( plog, "batch array is null" );
+            LINFO( plog, "batch array is null" );
             f_actions_array = scarab::param_array();
         }
     }
@@ -77,28 +77,32 @@ namespace psyllid
             if ( is_canceled() ) break;
 
             LDEBUG( plog, "doing next action:\n" << **action_it );
-
-            // parse/cast useful variables/types from the action node
-            const scarab::param_node& t_action = (*action_it)->as_node();
-            scarab::param_node* t_payload = &t_action.node_at( "payload" )->clone()->as_node();
-            dripline::op_t t_msg_op = dripline::to_op_t( t_action.get_value( "type" ) );
-            std::string t_rks( t_action.get_value( "rks") );
-            unsigned t_sleep = std::stoi( t_action.get_value( "sleep-for", "500" ) );
-
-            // put it together into a request
-            dripline::request_ptr_t t_request = dripline::msg_request::create(
-                                              t_payload,
-                                              t_msg_op,
-                                              std::string(),
-                                              std::string() );// reply-to is empty because no reply for batch requests
+            action_info t_action = parse_action( &((*action_it)->as_node()) );
 
             // submit the request object to the receiver and sleep
-            LDEBUG( plog, "from batch exe, request rk is: " << t_request->routing_key() );
-            //a_request->rks() = "start-run";
-            t_request->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
-            f_request_receiver->submit_request_message( t_request );
-            std::this_thread::sleep_for( std::chrono::milliseconds( t_sleep ) );
-        }
+            dripline::reply_info t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
+            if ( ! t_request_reply_info )
+            {
+                LWARN( plog, "failed submitting action request" );
+                throw psyllid::error() << "error while submitting command";
+            }
+            if ( t_action.f_is_custom_action )
+            {
+                daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
+                while ( t_status == daq_control::status::running )
+                {
+                    // update status
+                    t_action = parse_action( &((*action_it)->as_node()) );
+                    t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
+                    t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
+                    std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
+                }
+            }
+            else
+            {
+                std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
+            }
+        } // loop over actions param_array
 
         LINFO( plog, "action loop complete" );
     }
@@ -107,6 +111,55 @@ namespace psyllid
     {
         LDEBUG( plog, "canceling batch executor" );
         return;
+    }
+
+    action_info batch_executor::parse_action( const scarab::param_node* a_action )
+    {
+        action_info t_action_info;
+        std::string t_rks;
+        dripline::op_t t_msg_op;
+        if ( ! a_action->node_at( "payload" )->is_node() )
+        {
+            LERROR( plog, "payload must be a param_node" );
+            throw psyllid::error() << "batch action payload must be a node";
+        }
+        try
+        {
+            t_rks = a_action->get_value( "rks");
+            t_action_info.f_sleep_duration_ms = std::stoi( a_action->get_value( "sleep-for", "500" ) );
+            t_action_info.f_is_custom_action = false;
+        }
+        catch( scarab::error )
+        {
+            LERROR( plog, "error parsing action param_node, check keys and value types" );
+            throw;
+        }
+        try
+        {
+            t_msg_op = dripline::to_op_t( a_action->get_value( "type" ) );
+        }
+        catch( dripline::dripline_error )
+        {
+            LDEBUG( plog, "got a dripline error parsing request type" );
+            if ( a_action->get_value( "type" ) == "wait-for" && t_rks == "daq-status" )
+            {
+                LDEBUG( plog, "action is poll on run status" );
+                t_msg_op = dripline::op_t::get;
+                t_action_info.f_is_custom_action = true;
+            }
+            else throw;
+        }
+        LDEBUG( plog, "build request object" );
+
+        // put it together into a request
+        t_action_info.f_request_ptr = dripline::msg_request::create(
+                                            &(a_action->node_at( "payload" )->clone()->as_node()),
+                                            t_msg_op,
+                                            std::string(),
+                                            std::string() );// reply-to is empty because no reply for batch requests
+        t_action_info.f_request_ptr->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
+        LINFO( plog, "next action will be " << t_action_info.f_request_ptr->get_payload() );
+        return t_action_info;
     }
 
 } /* namespace psyllid */
