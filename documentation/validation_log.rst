@@ -43,11 +43,11 @@ Fixes:
 Log
 ---
 
-Version: Upcoming
+Version: 1.5.0
 ~~~~~~~~~~~~~~~~~
 
-Release Date:
-''''''''''''''''''''''''
+Release Date: May 8, 2018
+'''''''''''''''''''''''''
 
 New Features:
 '''''''''''''
@@ -58,15 +58,6 @@ New Features:
     * tested using the egg reader and confirming qualitatively that the mask follows the shape of the accumulated power (after normalizing by the number of accumulated points and the mask's offset)
 * Dripline-cpp updated to v1.6.0
 * CMake option added to allow disabling the FPA on linux builds (useful for batch mode execution without root access).
-
-
-Fixes:
-''''''
-
-* Fix 1
-    * Details
-* Fix 2
-    * Details
 
 
 Version: 1.4.0
