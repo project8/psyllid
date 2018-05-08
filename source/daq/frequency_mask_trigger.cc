@@ -112,6 +112,17 @@ namespace psyllid
         }
     }
 
+    void frequency_mask_trigger::set_mask_and_data_vectors( scarab::param_node* a_mask_and_data_values )
+    {
+        // grab the new arrays
+        scarab::param_array* t_new_mask = a_mask_and_data_values->array_at( "mask_data" );
+        scarab::param_array* t_new_mask_data = a_mask_and_data_values->array_at( "mask" );
+        if ( t_new_mask == NULL || t_new_mask_data == NULL ) throw psyllid::error() << "new mask and mask data must not be null";
+        f_mask.clear();
+        f_mask_data.clear();
+        f_mask.resize( t_new_mask->size() );
+        f_mask_data.resize( t_new_mask_data->size() );
+    }
 
     void frequency_mask_trigger::switch_to_update_mask()
     {
