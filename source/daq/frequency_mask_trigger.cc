@@ -30,6 +30,9 @@ namespace psyllid
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 30. ),
             f_threshold_snr_high( 30. ),
+            f_threshold_sigma( 10 ),
+            f_threshold_sigma_high( 10 ),
+            f_threshold_type( threshold_type_t::snr_threshold),
             f_n_spline_points( 20 ),
             f_status( status_t::mask_update ),
             f_trigger_mode (trigger_mode_t::single_level_trigger ),
@@ -65,6 +68,7 @@ namespace psyllid
     void frequency_mask_trigger::set_threshold_power_snr( double a_power_snr )
     {
         f_threshold_snr = a_power_snr;
+        f_threshold_type = threshold_type_t::snr_threshold;
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr );
         return;
     }
@@ -75,7 +79,20 @@ namespace psyllid
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr_high );
         return;
     }
+    void frequency_mask_trigger::set_threshold_power_sigma( double a_power_sigma )
+    {
+        f_threshold_sigma = a_power_sigma;
+        f_threshold_type = threshold_type_t::sigma_threshold;
+        LDEBUG( plog, "Setting sigma threshold (power via power) to " << f_threshold_sigma );
+        return;
+    }
 
+    void frequency_mask_trigger::set_threshold_power_sigma_high( double a_power_sigma )
+    {
+        f_threshold_sigma_high = a_power_sigma;
+        LDEBUG( plog, "Setting sigma threshold (power via power) to " << f_threshold_sigma_high );
+        return;
+    }
     void frequency_mask_trigger::set_threshold_dB( double a_dB )
     {
         f_threshold_snr = pow( 10, a_dB / 10. );
@@ -117,11 +134,17 @@ namespace psyllid
     {
         LDEBUG( plog, "Requesting switch to update-mask mode" );
         f_exe_func_mutex.lock();
-        if( f_exe_func != &frequency_mask_trigger::exe_add_to_mask )
+        if( ( f_threshold_type == threshold_type_t::snr_threshold ) and ( f_exe_func != &frequency_mask_trigger::exe_add_to_mask) )
         {
             f_break_exe_func.store( true );
             f_status = status_t::mask_update;
             f_exe_func = &frequency_mask_trigger::exe_add_to_mask;
+        }
+        else if( ( f_threshold_type == threshold_type_t::sigma_threshold ) and ( f_exe_func != &frequency_mask_trigger::exe_add_to_sigma_mask) )
+        {
+            f_break_exe_func.store( true );
+            f_status = status_t::mask_update;
+            f_exe_func = &frequency_mask_trigger::exe_add_to_sigma_mask;
         }
         f_exe_func_mutex.unlock();
         return;
@@ -421,6 +444,202 @@ namespace psyllid
         }
     }
 
+    void frequency_mask_trigger::exe_add_to_sigma_mask( exe_func_context& a_ctx )
+    {
+        f_exe_func_mutex.unlock();
+
+        try
+        {
+            freq_data* t_freq_data = nullptr;
+            //trigger_flag* t_trigger_flag = nullptr;
+            double t_real = 0., t_imag = 0., t_abs_square;
+            unsigned t_array_size = 0;
+
+            LDEBUG( plog, "Entering add-to-mask loop" );
+            while( ! is_canceled() && ! f_break_exe_func.load() )
+            {
+                // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+                // and still handle the input command appropriately
+
+                if( a_ctx.f_in_command == stream::s_none )
+                {
+
+                    LTRACE( plog, "FMT read s_none" );
+
+                }
+                else if( a_ctx.f_in_command == stream::s_error )
+                {
+
+                    LTRACE( plog, "FMT read s_error" );
+                    break;
+
+                }
+                else if( a_ctx.f_in_command == stream::s_start )
+                {
+
+                    LDEBUG( plog, "Starting mask update" ) //; output stream index " << out_stream< 0 >().get_current_index() );
+                    //if( ! out_stream< 0 >().set( stream::s_start ) ) break;
+                    a_ctx.f_first_packet_after_start = true;
+                    f_n_summed = 0;
+                    f_mask_data.clear();
+                    f_variance_data.clear();
+
+                }
+                else if( a_ctx.f_in_command == stream::s_run )
+                {
+
+                    t_freq_data = in_stream< 0 >().data();
+                    //t_trigger_flag = out_stream< 0 >().data();
+
+                    try
+                    {
+                        if( f_n_summed >= f_n_packets_for_mask )
+                        {
+                            LTRACE( plog, "Already have enough packets for the mask; skipping this packet" );
+                        }
+                        else
+                        {
+
+                            LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
+                                   "  time = " << t_freq_data->get_unix_time() <<
+                                   "  id = " << t_freq_data->get_pkt_in_session() <<
+                                   "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
+                                   "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
+
+                            if( a_ctx.f_first_packet_after_start )
+                            {
+                                t_array_size = t_freq_data->get_array_size();
+                                f_mask_data.resize( t_array_size );
+                                f_variance_data.resize( t_array_size );
+                                for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                                {
+                                    t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
+                                    t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
+                                    f_mask_data[ i_bin ] = t_real*t_real + t_imag*t_imag;;
+                                    f_variance_data[ i_bin ] = 0.;
+                                }
+                                a_ctx.f_first_packet_after_start = false;
+                            }
+                            else
+                            {
+                                for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                                {
+                                    t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
+                                    t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
+                                    t_abs_square = t_real*t_real + t_imag*t_imag;
+                                    f_variance_data[ i_bin ] = f_variance_data[ i_bin ] + ( t_abs_square - f_mask_data[ i_bin ] ) * ( t_abs_square - f_mask_data[ i_bin ] );
+                                    f_mask_data[ i_bin ] = f_mask_data[ i_bin ] + ( t_abs_square - f_mask_data[ i_bin] )/( f_n_summed +1 ); //plus 1 because we start counting at 0
+                                }
+                            }
+                            ++f_n_summed;
+                            LTRACE( plog, "Added data to frequency mask; mask now has " << f_n_summed << " packets" );
+
+                            if( f_n_summed == f_n_packets_for_mask )
+                            {
+                                LDEBUG( plog, "Calculating spline for frequency mask" );
+
+                                double t_multiplier = f_threshold_sigma/ (double)f_n_summed;
+                                LDEBUG( plog, "Size: " << f_mask_data.size() << "   Multiplier = " << t_multiplier << " = (threshold_snr) " << f_threshold_snr << " / (n_summed) " << f_n_summed );
+
+                                std::vector< double > t_x_vals( f_n_spline_points );
+                                std::vector< double > t_y_vals( f_n_spline_points );
+                                unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
+
+                                // calculate spline points
+                                for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
+                                {
+                                    unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
+                                    unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
+                                    double t_mean = 0.;
+                                    for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
+                                    {
+                                        t_mean += f_mask_data[ i_bin ] + t_multiplier * f_variance_data[ i_bin ];
+                                    }
+                                    t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
+                                    t_y_vals[ i_spline_point ] = t_mean;
+                                    t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
+                                }
+
+                                // create the spline
+                                tk::spline t_spline;
+                                t_spline.set_points( t_x_vals, t_y_vals );
+
+                                f_mask_mutex.lock();
+                                LDEBUG( plog, "Calculating frequency mask" );
+
+                                f_mask.resize( f_mask_data.size() );
+                                for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
+                                {
+                                    f_mask[ i_bin ] = t_spline( i_bin );
+                                }
+
+                                f_mask_mutex.unlock();
+                            }
+                        }
+                    }
+                    catch( error& e )
+                    {
+                        LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
+                        break;
+                    }
+
+                }
+                else if( a_ctx.f_in_command == stream::s_stop )
+                {
+
+                    LDEBUG( plog, "FMT is stopping" );// at stream index " << out_stream< 0 >().get_current_index() );
+                    if( f_n_summed < f_n_packets_for_mask )
+                    {
+                        LWARN( plog, "FMT is stopping: it did not process enough packets to update the mask" );
+                    }
+                    //if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
+
+                }
+                else if( a_ctx.f_in_command == stream::s_exit )
+                {
+
+                    LDEBUG( plog, "FMT is exiting" );// at stream index " << out_stream< 0 >().get_current_index() );
+                    if( f_n_summed < f_n_packets_for_mask )
+                    {
+                        LWARN( plog, "FMT is exiting: it did not process enough packets to update the mask" );
+                    }
+                    //out_stream< 0 >().set( stream::s_exit );
+                    break;
+
+                }
+
+                a_ctx.f_in_command = in_stream< 0 >().get();
+                LTRACE( plog, "FMT (update-mask) reading stream at index " << in_stream< 0 >().get_current_index() );
+
+            } // end while( ! is_canceled() && ! a_ctx.f_break_exe_loop() )
+
+            LDEBUG( plog, "FMT has exited the add-to-mask while loop; possible reasons: is_canceled() = " << is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
+            if( f_break_exe_func.load() )
+            {
+                LINFO( plog, "FMT is switching exe while loops" );
+                return;
+            }
+            else
+            {
+                LINFO( plog, "FMT is exiting" );
+            }
+
+            LDEBUG( plog, "Stopping output stream" );
+            if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+
+            LDEBUG( plog, "Exiting output stream" );
+            out_stream< 0 >().set( stream::s_exit );
+
+            return;
+        }
+        catch(...)
+        {
+            if( a_ctx.f_midge ) a_ctx.f_midge->throw_ex( std::current_exception() );
+            else throw;
+        }
+    }
+
+
     void frequency_mask_trigger::exe_apply_threshold( exe_func_context& a_ctx )
     {
         f_exe_func_mutex.unlock();
@@ -595,11 +814,23 @@ namespace psyllid
                 std::vector< double > t_mask2_buffer ( f_mask );
                 f_mask_mutex.unlock();
 
-                for ( unsigned i_bin = 0; i_bin < t_mask2_buffer.size(); i_bin++)
+                if (f_threshold_type == threshold_type_t::snr_threshold)
                 {
-                    //LDEBUG( plog, "Before mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
-                    t_mask2_buffer[ i_bin ] *= t_high_threshold_factor;
-                    //LDEBUG( plog, "After mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
+                    for ( unsigned i_bin = 0; i_bin < t_mask2_buffer.size(); i_bin++)
+                    {
+                        //LDEBUG( plog, "Before mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
+                        t_mask2_buffer[ i_bin ] *= f_threshold_snr_high / f_threshold_snr;
+                        //LDEBUG( plog, "After mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
+                    }
+                }
+                else if (f_threshold_type == threshold_type_t::sigma_threshold) // requires furhter changes
+                {
+                    for ( unsigned i_bin = 0; i_bin < t_mask2_buffer.size(); i_bin++)
+                    {
+                        //LDEBUG( plog, "Before mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
+                        t_mask2_buffer[ i_bin ] *= f_threshold_sigma_high / f_threshold_sigma;
+                        //LDEBUG( plog, "After mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
+                    }
                 }
 
                 LDEBUG( plog, "Entering apply-two-thresholds loop" );

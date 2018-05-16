@@ -91,6 +91,11 @@ namespace psyllid
                 single_level_trigger,
                 two_level_trigger
             };
+            enum class threshold_type_t
+            {
+                snr_threshold,
+                sigma_threshold
+            };
 
         public:
             frequency_mask_trigger();
@@ -101,6 +106,8 @@ namespace psyllid
             void set_threshold_ampl_snr( double a_ampl_snr );
             void set_threshold_power_snr( double a_power_snr );
             void set_threshold_power_snr_high( double a_power_snr);
+            void set_threshold_power_sigma( double a_power_sigma );
+            void set_threshold_power_sigma_high( double a_power_sigma);
             void set_threshold_dB( double a_dB );
             void set_trigger_mode( const std::string& trigger_mode );
             std::string get_trigger_mode_str() const;
@@ -109,6 +116,9 @@ namespace psyllid
             mv_accessible_noset( unsigned, n_packets_for_mask );
             mv_accessible_noset( double, threshold_snr );
             mv_accessible_noset( double, threshold_snr_high);
+            mv_accessible_noset( double, threshold_sigma );
+            mv_accessible_noset( double, threshold_sigma_high);
+            mv_accessible( threshold_type_t, threshold_type);
             mv_accessible( unsigned, n_spline_points );
             mv_accessible_noset( status_t, status );
             mv_accessible( trigger_mode_t, trigger_mode );
@@ -134,6 +144,7 @@ namespace psyllid
             void exe_apply_threshold( exe_func_context& a_ctx );
             void exe_apply_two_thresholds( exe_func_context& a_ctx );
             void exe_add_to_mask( exe_func_context& a_ctx );
+            void exe_add_to_sigma_mask( exe_func_context& a_ctx );
 
             void (frequency_mask_trigger::*f_exe_func)( exe_func_context& a_ctx );
             std::mutex f_exe_func_mutex;
@@ -142,6 +153,7 @@ namespace psyllid
         private:
             std::vector< double > f_mask;
             std::vector< double > f_mask_data;
+            std::vector< double > f_variance_data;
             unsigned f_n_summed;
 
             std::mutex f_mask_mutex;
