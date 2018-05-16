@@ -6,6 +6,10 @@
  */
 
 #include "server_config.hh"
+#include "logger.hh"
+
+//scarab
+#include "path.hh"
 
 #include<string>
 
@@ -17,6 +21,8 @@ using scarab::param_value;
 namespace psyllid
 {
 
+    LOGGER( plog, "server_config" );
+
     server_config::server_config()
     {
         // default server configuration
@@ -27,6 +33,18 @@ namespace psyllid
         //TODO remove this line, don't just comment
         //t_amqp_node->add( "auth-file", new param_value() );
         t_amqp_node->add( "slack-queue", new param_value( "slack_interface" ) );
+
+        //add logic for default auth file if it exists
+        scarab::path t_auth_default_path( "~/.project8_authentications.json" );
+        if ( boost::filesystem::exists( t_auth_default_path ) )
+        {
+            LWARN( plog, "path exists");
+        }
+        else
+        {
+            LWARN( plog, "path does not exist" );
+        }
+
         // other available values
         // - auth-file
         // - requests-exchange
