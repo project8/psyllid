@@ -58,7 +58,9 @@ New Features:
     * tested using the egg reader and confirming qualitatively that the mask follows the shape of the accumulated power (after normalizing by the number of accumulated points and the mask's offset)
 * Dripline-cpp updated to v1.6.0
 * CMake option added to allow disabling the FPA on linux builds (useful for batch mode execution without root access).
-
+* server_config now only sets the default authentication file path after checking that the path exists
+    * tested via docker batch execution with and without the auth file present; detection and setting appears to work fine
+    * TODO! per discussion, we want to change the assumptions about where to look (don't look in home, provide an auth-file path not a filename relative to home)... that assumption is in scarab and so changes will need to be made there before this feature is ready to be added (and before testing can be completed).
 
 Version: 1.4.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
