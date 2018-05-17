@@ -43,6 +43,20 @@ Fixes:
 Log
 ---
 
+Version: Upcoming
+~~~~~~~~~~~~~~~~~
+
+Release Date: 
+'''''''''''''''''''''''''
+
+New Features:
+'''''''''''''
+
+* midge updated to v3.5.3 (updates scarab to v1.6.0)
+* server_config now only sets the default authentication file path after checking that the path exists
+    * tested via docker batch execution with and without the auth file present; detection and setting appears to work fine
+
+
 Version: 1.5.0
 ~~~~~~~~~~~~~~~~~
 
@@ -58,7 +72,9 @@ New Features:
     * tested using the egg reader and confirming qualitatively that the mask follows the shape of the accumulated power (after normalizing by the number of accumulated points and the mask's offset)
 * Dripline-cpp updated to v1.6.0
 * CMake option added to allow disabling the FPA on linux builds (useful for batch mode execution without root access).
-
+* midge updated to v3.5.3 (updates scarab to v1.6.0)
+* server_config now only sets the default authentication file path after checking that the path exists
+    * tested via docker batch execution with and without the auth file present; detection and setting appears to work fine
 
 Version: 1.4.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

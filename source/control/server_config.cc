@@ -6,6 +6,11 @@
  */
 
 #include "server_config.hh"
+#include "logger.hh"
+#include "psyllid_error.hh"
+
+//scarab
+#include "path.hh"
 
 #include<string>
 
@@ -17,6 +22,8 @@ using scarab::param_value;
 namespace psyllid
 {
 
+    LOGGER( plog, "server_config" );
+
     server_config::server_config()
     {
         // default server configuration
@@ -24,9 +31,21 @@ namespace psyllid
         param_node* t_amqp_node = new param_node();
         t_amqp_node->add( "broker", new param_value( "localhost" ) );
         t_amqp_node->add( "queue", new param_value( "psyllid" ) );
-        t_amqp_node->add( "auth-file", new param_value( ".project8_authentications.json" ) );
         t_amqp_node->add( "slack-queue", new param_value( "slack_interface" ) );
+        //add logic for default auth file if it exists
+        scarab::path t_auth_default_path = scarab::expand_path( "~/.project8_authentications.json" );
+        if ( boost::filesystem::exists( t_auth_default_path ) )
+        {
+            LDEBUG( plog, "default auth file found, setting that as initial value" );
+            t_amqp_node->add( "auth-file", new param_value( t_auth_default_path.native()  ) );
+        }
+        else
+        {
+            LDEBUG( plog, "default auth file <" << t_auth_default_path.native() << "> does not exist, not setting" );
+        }
+
         // other available values
+        // - auth-file
         // - requests-exchange
         // - alerts-exchange
         // - listen-timeout-ms
