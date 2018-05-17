@@ -563,69 +563,43 @@ namespace psyllid
                             if( f_n_summed == f_n_packets_for_mask )
                             {
                                 LDEBUG( plog, "Calculating spline for frequency mask" );
-
-                                LDEBUG( plog, "Size: " << f_mask_data.size() << " threshold_sigma: " << f_threshold_sigma << " n_summed: " << f_n_summed );
-
                                 std::vector< double > t_x_vals( f_n_spline_points );
                                 std::vector< double > t_y_vals( f_n_spline_points );
-                                unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
-
-                                // calculate spline points
-                                for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
+                                if ( f_threshold_type == threshold_type_t::sigma_threshold )
                                 {
-                                    unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
-                                    unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
-                                    double t_mean = 0.;
-                                    double t_variance;
-                                    for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
+                                    this->calulcate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma);
+
+                                    // create the spline
+                                    tk::spline t_spline;
+                                    t_spline.set_points( t_x_vals, t_y_vals );
+
+                                    f_mask_mutex.lock();
+                                    LDEBUG( plog, "Calculating frequency sigma mask" );
+                                    f_mask.resize( f_mask_data.size() );
+                                    for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
                                     {
-                                        t_variance = (f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_summed)/ ( (double) f_n_summed );
-                                        t_mean += f_mask_data[ i_bin ] / (double)f_n_summed + f_threshold_sigma * sqrt(t_variance);
-                                    }
-                                    t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
-                                    t_y_vals[ i_spline_point ] = t_mean;
-                                    t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
-                                }
+                                        f_mask[ i_bin ] = t_spline( i_bin );
+									}
 
-                                // create the spline
-                                tk::spline t_spline;
-                                t_spline.set_points( t_x_vals, t_y_vals );
-
-                                f_mask_mutex.lock();
-                                LDEBUG( plog, "Calculating frequency sigma mask" );
-
-                                f_mask.resize( f_mask_data.size() );
-                                for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
-                                {
-                                    f_mask[ i_bin ] = t_spline( i_bin );
-                                }
-                                // make second mask if required
-                                if (f_trigger_mode == trigger_mode_t::two_level_trigger)
-                                {
-                                    LDEBUG( plog, "Calculating spline for frequency mask2" );
-
-                                    LDEBUG( plog, "Size: " << f_mask_data.size() << " threshold_sigma: " << f_threshold_sigma << " n_summed: " << f_n_summed );
-
-                                    std::vector< double > t_x_vals( f_n_spline_points );
-                                    std::vector< double > t_y_vals( f_n_spline_points );
-                                    unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
-
-                                    // calculate spline points
-                                    for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
+                                    if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
                                     {
-                                        unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
-                                        unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
-                                        double t_mean = 0.;
-                                        double t_variance;
-                                        for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
+                                        this->calulcate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma_high);
+                                        // create the spline
+                                        tk::spline t_spline;
+                                        t_spline.set_points( t_x_vals, t_y_vals );
+
+                                        LDEBUG( plog, "Calculating frequency sigma mask2" );
+
+                                        f_mask2.resize( f_mask_data.size() );
+                                        for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
                                         {
-                                            t_variance = (f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_summed)/ ( (double) f_n_summed );
-                                            t_mean += f_mask_data[ i_bin ] / (double)f_n_summed + f_threshold_sigma_high * sqrt(t_variance);
+                                            f_mask2[ i_bin ] = t_spline( i_bin );
                                         }
-                                        t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
-                                        t_y_vals[ i_spline_point ] = t_mean;
-                                        t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
-                                    }
+								    }
+                                }
+                                else //if ( f_threshold_type == threshold_type_t::snr_threshold )
+                                {
+                                    this->calulcate_snr_mask_spline_points(t_x_vals, t_y_vals, f_threshold_snr);
 
                                     // create the spline
                                     tk::spline t_spline;
@@ -634,10 +608,26 @@ namespace psyllid
                                     f_mask_mutex.lock();
                                     LDEBUG( plog, "Calculating frequency sigma mask" );
 
-                                    f_mask2.resize( f_mask_data.size() );
-                                    for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
+                                    f_mask.resize( f_mask_data.size() );
+                                    for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
                                     {
-                                        f_mask2[ i_bin ] = t_spline( i_bin );
+                                        f_mask[ i_bin ] = t_spline( i_bin );
+                                    }
+
+                                    if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+                                    {
+                                        this->calulcate_snr_mask_spline_points(t_x_vals, t_y_vals, f_threshold_snr_high);
+                                        // create the spline
+                                        tk::spline t_spline;
+                                        t_spline.set_points( t_x_vals, t_y_vals );
+
+                                        LDEBUG( plog, "Calculating frequency sigma mask2" );
+
+                                        f_mask2.resize( f_mask_data.size() );
+                                        for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
+                                        {
+                                            f_mask2[ i_bin ] = t_spline( i_bin );
+                                        }
                                     }
                                 }
 

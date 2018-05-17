@@ -19,6 +19,8 @@
 #include <mutex>
 #include <vector>
 
+#include <cmath>
+
 namespace psyllid
 {
 
@@ -114,6 +116,10 @@ namespace psyllid
             std::string get_trigger_mode_str() const;
             std::string get_threshold_type_str() const;
 
+            void calulcate_snr_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold);
+            void calulcate_sigma_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold);
+
+
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
             mv_accessible_noset( double, threshold_snr );
@@ -163,6 +169,42 @@ namespace psyllid
 
     };
 
+    inline void frequency_mask_trigger::calulcate_sigma_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold)
+    {
+        unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
+        for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
+        {
+            unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
+            unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
+            double t_mean = 0.;
+            double t_variance;
+            for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
+            {
+                t_variance = (f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_summed)/ ( (double) f_n_summed );
+                t_mean += f_mask_data[ i_bin ] / (double)f_n_summed + threshold * sqrt(t_variance);
+            }
+            t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
+            t_y_vals[ i_spline_point ] = t_mean;
+            t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
+        }
+    }
+    inline void frequency_mask_trigger::calulcate_snr_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold)
+    {
+        unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
+        for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
+        {
+            unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
+            unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
+            double t_mean = 0.;
+            for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
+            {
+                t_mean += f_mask_data[ i_bin ] / (double)f_n_summed *threshold;
+            }
+            t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
+            t_y_vals[ i_spline_point ] = t_mean;
+            t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
+        }
+    }
 
     class frequency_mask_trigger_binding : public _node_binding< frequency_mask_trigger, frequency_mask_trigger_binding >
     {
