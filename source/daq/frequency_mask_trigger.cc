@@ -30,9 +30,9 @@ namespace psyllid
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 30. ),
             f_threshold_snr_high( 30. ),
-            f_threshold_sigma( 10 ),
+            f_threshold_sigma( 20 ),
             f_threshold_sigma_high( 10 ),
-            f_threshold_type( threshold_type_t::snr_threshold),
+            f_threshold_type( threshold_type_t::sigma_threshold),
             f_n_spline_points( 20 ),
             f_status( status_t::mask_update ),
             f_trigger_mode (trigger_mode_t::single_level_trigger ),
@@ -116,6 +116,22 @@ namespace psyllid
            throw error() << "Unknown trigger_mode_id";
         }
     }
+    void frequency_mask_trigger::set_threshold_type( const std::string& trigger_mode )
+    {
+        LDEBUG( plog, "Performing actual threshold type configuration");
+        if ( trigger_mode == "snr" )
+        {
+            f_threshold_type = threshold_type_t::snr_threshold;
+        }
+        else if ( trigger_mode == "sigma" )
+        {
+            f_threshold_type = threshold_type_t::sigma_threshold;
+        }
+        else
+        {
+           throw error() << "Unknown threshold type";
+        }
+    }
 
     std::string frequency_mask_trigger::get_trigger_mode_str() const
     {
@@ -126,6 +142,17 @@ namespace psyllid
         else //if f_trigger_mode == trigger_mode_t::two_level_trigger
         {
             return std::string( "two-level-trigger" );
+        }
+    }
+    std::string frequency_mask_trigger::get_threshold_type_str() const
+    {
+        if( f_threshold_type == threshold_type_t::snr_threshold )
+        {
+            return std::string( "snr" );
+        }
+        else //if f_threshold_type == threshold_type_t::sigma_threshold
+        {
+            return std::string( "sigma" );
         }
     }
 
@@ -513,24 +540,22 @@ namespace psyllid
                                 f_variance_data.resize( t_array_size );
                                 for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                                 {
-                                    t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
-                                    t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
-                                    f_mask_data[ i_bin ] = t_real*t_real + t_imag*t_imag;;
+                                    //t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
+                                    //t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
+                                    f_mask_data[ i_bin ] = 0; //t_real*t_real + t_imag*t_imag;;
                                     f_variance_data[ i_bin ] = 0.;
                                 }
                                 a_ctx.f_first_packet_after_start = false;
                             }
-                            else
+                            for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                             {
-                                for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
-                                {
-                                    t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
-                                    t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
-                                    t_abs_square = t_real*t_real + t_imag*t_imag;
-                                    f_variance_data[ i_bin ] = f_variance_data[ i_bin ] + ( t_abs_square - f_mask_data[ i_bin ] ) * ( t_abs_square - f_mask_data[ i_bin ] );
-                                    f_mask_data[ i_bin ] = f_mask_data[ i_bin ] + ( t_abs_square - f_mask_data[ i_bin] )/( f_n_summed +1 ); //plus 1 because we start counting at 0
-                                }
+                                t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
+                                t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
+                                t_abs_square = t_real*t_real + t_imag*t_imag;
+                                f_variance_data[ i_bin ] = f_variance_data[ i_bin ] + t_abs_square * t_abs_square;
+                                f_mask_data[ i_bin ] = f_mask_data[ i_bin ] +  t_abs_square;
                             }
+
                             ++f_n_summed;
                             LTRACE( plog, "Added data to frequency mask; mask now has " << f_n_summed << " packets" );
 
@@ -538,8 +563,7 @@ namespace psyllid
                             {
                                 LDEBUG( plog, "Calculating spline for frequency mask" );
 
-                                double t_multiplier = f_threshold_sigma/ (double)f_n_summed;
-                                LDEBUG( plog, "Size: " << f_mask_data.size() << "   Multiplier = " << t_multiplier << " = (threshold_snr) " << f_threshold_snr << " / (n_summed) " << f_n_summed );
+                                LDEBUG( plog, "Size: " << f_mask_data.size() << " threshold_sigma: " << f_threshold_sigma << " n_summed: " << f_n_summed );
 
                                 std::vector< double > t_x_vals( f_n_spline_points );
                                 std::vector< double > t_y_vals( f_n_spline_points );
@@ -551,9 +575,11 @@ namespace psyllid
                                     unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
                                     unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
                                     double t_mean = 0.;
+                                    double t_variance;
                                     for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
                                     {
-                                        t_mean += f_mask_data[ i_bin ] + t_multiplier * f_variance_data[ i_bin ];
+                                        t_variance = (f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_summed)/ ( (double) f_n_summed );
+                                        t_mean += f_mask_data[ i_bin ] / (double)f_n_summed + f_threshold_sigma * sqrt(t_variance);
                                     }
                                     t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
                                     t_y_vals[ i_spline_point ] = t_mean;
@@ -565,7 +591,7 @@ namespace psyllid
                                 t_spline.set_points( t_x_vals, t_y_vals );
 
                                 f_mask_mutex.lock();
-                                LDEBUG( plog, "Calculating frequency mask" );
+                                LDEBUG( plog, "Calculating frequency sigma mask" );
 
                                 f_mask.resize( f_mask_data.size() );
                                 for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
@@ -1015,6 +1041,14 @@ namespace psyllid
         {
             a_node->set_threshold_power_snr_high( a_config.get_value< double >( "threshold-power-snr-high" ) );
         }
+        if( a_config.has( "threshold-power-sigma" ) )
+        {
+            a_node->set_threshold_power_sigma( a_config.get_value< double >( "threshold-power-sigma" ) );
+        }
+        if( a_config.has( "threshold-power-sigma-high" ) )
+        {
+            a_node->set_threshold_power_sigma_high( a_config.get_value< double >( "threshold-power-sigma-high" ) );
+        }
         if( a_config.has( "threshold-db" ) )
         {
             a_node->set_threshold_dB( a_config.get_value< double >( "threshold-db" ) );
@@ -1022,6 +1056,10 @@ namespace psyllid
         if( a_config.has( "trigger-mode" ) )
         {
             a_node->set_trigger_mode( a_config.get_value< std::string >( "trigger-mode" ) );
+        }
+        if( a_config.has( "threshold-type" ) )
+        {
+            a_node->set_threshold_type( a_config.get_value< std::string >( "threshold-type" ) );
         }
 
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
@@ -1037,6 +1075,7 @@ namespace psyllid
         a_config.add( "threshold-power-snr-high", new scarab::param_value( a_node->get_threshold_snr_high() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         a_config.add( "trigger-mode", new scarab::param_value( a_node->get_trigger_mode_str() ) );
+        a_config.add( "threshold-type", new scarab::param_value( a_node->get_threshold_type_str() ) );
         return;
     }
 

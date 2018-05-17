@@ -110,7 +110,9 @@ namespace psyllid
             void set_threshold_power_sigma_high( double a_power_sigma);
             void set_threshold_dB( double a_dB );
             void set_trigger_mode( const std::string& trigger_mode );
+            void set_threshold_type( const std::string& threshold_type );
             std::string get_trigger_mode_str() const;
+            std::string get_threshold_type_str() const;
 
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
