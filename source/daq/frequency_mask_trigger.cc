@@ -38,6 +38,7 @@ namespace psyllid
             f_trigger_mode (trigger_mode_t::single_level_trigger ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
+            f_mask2(),
             f_mask_data(),
             f_n_summed( 0 ),
             f_mask_mutex()
@@ -598,6 +599,47 @@ namespace psyllid
                                 {
                                     f_mask[ i_bin ] = t_spline( i_bin );
                                 }
+                                // make second mask if required
+                                if (f_trigger_mode == trigger_mode_t::two_level_trigger)
+                                {
+                                    LDEBUG( plog, "Calculating spline for frequency mask2" );
+
+                                    LDEBUG( plog, "Size: " << f_mask_data.size() << " threshold_sigma: " << f_threshold_sigma << " n_summed: " << f_n_summed );
+
+                                    std::vector< double > t_x_vals( f_n_spline_points );
+                                    std::vector< double > t_y_vals( f_n_spline_points );
+                                    unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
+
+                                    // calculate spline points
+                                    for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
+                                    {
+                                        unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
+                                        unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
+                                        double t_mean = 0.;
+                                        double t_variance;
+                                        for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
+                                        {
+                                            t_variance = (f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_summed)/ ( (double) f_n_summed );
+                                            t_mean += f_mask_data[ i_bin ] / (double)f_n_summed + f_threshold_sigma_high * sqrt(t_variance);
+                                        }
+                                        t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
+                                        t_y_vals[ i_spline_point ] = t_mean;
+                                        t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
+                                    }
+
+                                    // create the spline
+                                    tk::spline t_spline;
+                                    t_spline.set_points( t_x_vals, t_y_vals );
+
+                                    f_mask_mutex.lock();
+                                    LDEBUG( plog, "Calculating frequency sigma mask" );
+
+                                    f_mask2.resize( f_mask_data.size() );
+                                    for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
+                                    {
+                                        f_mask2[ i_bin ] = t_spline( i_bin );
+                                    }
+                                }
 
                                 f_mask_mutex.unlock();
                             }
@@ -832,32 +874,13 @@ namespace psyllid
                 trigger_flag* t_trigger_flag = nullptr;
                 double t_real = 0., t_imag = 0., t_power_amp = 0.;
                 unsigned t_array_size = 0;
-                double t_high_threshold_factor = f_threshold_snr_high / f_threshold_snr;
 
 
                 f_mask_mutex.lock();
                 std::vector< double > t_mask_buffer( f_mask );
-                std::vector< double > t_mask2_buffer ( f_mask );
+                std::vector< double > t_mask2_buffer ( f_mask2 );
                 f_mask_mutex.unlock();
 
-                if (f_threshold_type == threshold_type_t::snr_threshold)
-                {
-                    for ( unsigned i_bin = 0; i_bin < t_mask2_buffer.size(); i_bin++)
-                    {
-                        //LDEBUG( plog, "Before mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
-                        t_mask2_buffer[ i_bin ] *= f_threshold_snr_high / f_threshold_snr;
-                        //LDEBUG( plog, "After mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
-                    }
-                }
-                else if (f_threshold_type == threshold_type_t::sigma_threshold) // requires furhter changes
-                {
-                    for ( unsigned i_bin = 0; i_bin < t_mask2_buffer.size(); i_bin++)
-                    {
-                        //LDEBUG( plog, "Before mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
-                        t_mask2_buffer[ i_bin ] *= f_threshold_sigma_high / f_threshold_sigma;
-                        //LDEBUG( plog, "After mask2 update: i_bin / mask2[ i_bin ] : "<<i_bin<<" / "<< t_mask2_buffer[ i_bin ] );
-                    }
-                }
 
                 LDEBUG( plog, "Entering apply-two-thresholds loop" );
                 while( ! is_canceled() && ! f_break_exe_func.load() )
