@@ -39,7 +39,8 @@ namespace psyllid
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_mask2(),
-            f_mask_data(),
+            f_average_data(),
+            f_variance_data(),
             f_n_summed( 0 ),
             f_mask_mutex()
     {
@@ -229,17 +230,17 @@ namespace psyllid
         }
 
 
-        scarab::param_array* t_mask_data_array = new scarab::param_array();
+        scarab::param_array* t_mean_data_array = new scarab::param_array();
         scarab::param_array* t_variance_data_array = new scarab::param_array();
-        t_mask_data_array->resize( f_mask_data.size() );
+        t_mean_data_array->resize( f_average_data.size() );
         t_variance_data_array->resize( f_variance_data.size() );
-        for( unsigned i_bin = 0; i_bin < f_mask_data.size(); ++i_bin )
+        for( unsigned i_bin = 0; i_bin < f_average_data.size(); ++i_bin )
         {
-            t_mask_data_array->assign( i_bin, new scarab::param_value( f_mask_data[ i_bin ] ) );
-            t_variance_data_array->assign( i_bin, new scarab::param_value( f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_packets_for_mask ));
+            t_mean_data_array->assign( i_bin, new scarab::param_value( f_average_data[ i_bin ] ) );
+            t_variance_data_array->assign( i_bin, new scarab::param_value( f_variance_data[ i_bin ] ) );
         }
-        t_output_node.add( "mask-data", t_mask_data_array );
-        t_output_node.add( "variance-data", t_variance_data_array );
+        t_output_node.add( "data-mean", t_mean_data_array );
+        t_output_node.add( "data-variance", t_variance_data_array );
 
         //scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "json" );
         scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "yaml" );
@@ -328,7 +329,7 @@ namespace psyllid
                     //if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     a_ctx.f_first_packet_after_start = true;
                     f_n_summed = 0;
-                    f_mask_data.clear();
+                    f_average_data.clear();
                     f_variance_data.clear();
 
                 }
@@ -356,11 +357,11 @@ namespace psyllid
                             if( a_ctx.f_first_packet_after_start )
                             {
                                 t_array_size = t_freq_data->get_array_size();
-                                f_mask_data.resize( t_array_size );
+                                f_average_data.resize( t_array_size );
                                 f_variance_data.resize( t_array_size );
                                 for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                                 {
-                                    f_mask_data[ i_bin ] = 0.;
+                                    f_average_data[ i_bin ] = 0.;
                                     f_variance_data[ i_bin ] = 0.;
                                 }
                                 a_ctx.f_first_packet_after_start = false;
@@ -371,7 +372,7 @@ namespace psyllid
                                 t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
                                 t_abs_square = t_real*t_real + t_imag*t_imag;
                                 f_variance_data[ i_bin ] = f_variance_data[ i_bin ] + t_abs_square * t_abs_square;
-                                f_mask_data[ i_bin ] = f_mask_data[ i_bin ] +  t_abs_square;
+                                f_average_data[ i_bin ] = f_average_data[ i_bin ] +  t_abs_square;
                     /*#ifndef NDEBUG
                                 if( i_bin < 5 )
                                 {
@@ -386,9 +387,17 @@ namespace psyllid
 
                             if( f_n_summed == f_n_packets_for_mask )
                             {
+                                // calculate average and variance
+                                for( unsigned i_bin = 0; i_bin < f_average_data.size(); ++i_bin )
+                                {
+                                    f_variance_data [ i_bin ] = ( f_variance_data [ i_bin ] - f_average_data [ i_bin ] * f_average_data [ i_bin ] / (double) f_n_summed ) /( (double) f_n_summed -1 );
+                                    f_average_data[ i_bin ] = f_average_data[ i_bin ]/ (double) f_n_summed;
+                                }
+
                                 LDEBUG( plog, "Calculating spline for frequency mask" );
                                 std::vector< double > t_x_vals( f_n_spline_points );
                                 std::vector< double > t_y_vals( f_n_spline_points );
+
                                 if ( f_threshold_type == threshold_type_t::sigma_threshold )
                                 {
                                     this->calulcate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma);
@@ -399,7 +408,7 @@ namespace psyllid
 
                                     f_mask_mutex.lock();
                                     LDEBUG( plog, "Calculating frequency sigma mask" );
-                                    f_mask.resize( f_mask_data.size() );
+                                    f_mask.resize( f_average_data.size() );
                                     for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
                                     {
                                         f_mask[ i_bin ] = t_spline( i_bin );
@@ -414,7 +423,7 @@ namespace psyllid
 
                                         LDEBUG( plog, "Calculating frequency sigma mask2" );
 
-                                        f_mask2.resize( f_mask_data.size() );
+                                        f_mask2.resize( f_average_data.size() );
                                         for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
                                         {
                                             f_mask2[ i_bin ] = t_spline( i_bin );
@@ -432,7 +441,7 @@ namespace psyllid
                                     f_mask_mutex.lock();
                                     LDEBUG( plog, "Calculating frequency snr mask" );
 
-                                    f_mask.resize( f_mask_data.size() );
+                                    f_mask.resize( f_average_data.size() );
                                     for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
                                     {
                                         f_mask[ i_bin ] = t_spline( i_bin );
@@ -447,7 +456,7 @@ namespace psyllid
 
                                         LDEBUG( plog, "Calculating frequency snr mask2" );
 
-                                        f_mask2.resize( f_mask_data.size() );
+                                        f_mask2.resize( f_average_data.size() );
                                         for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
                                         {
                                             f_mask2[ i_bin ] = t_spline( i_bin );

@@ -160,7 +160,7 @@ namespace psyllid
         private:
             std::vector< double > f_mask;
             std::vector< double > f_mask2;
-            std::vector< double > f_mask_data;
+            std::vector< double > f_average_data;
             std::vector< double > f_variance_data;
             unsigned f_n_summed;
 
@@ -170,17 +170,15 @@ namespace psyllid
 
     inline void frequency_mask_trigger::calulcate_sigma_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold)
     {
-        unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
+        unsigned t_n_bins_per_point = f_average_data.size() / f_n_spline_points;
         for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
         {
             unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
-            unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
+            unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_average_data.size() : t_bin_begin + t_n_bins_per_point;
             double t_mean = 0.;
-            double t_variance;
             for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
             {
-                t_variance = (f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_summed)/ ( (double) f_n_summed -1 );
-                t_mean += f_mask_data[ i_bin ] / (double)f_n_summed + threshold * sqrt(t_variance);
+                t_mean += f_average_data[ i_bin ] + threshold * sqrt( f_variance_data[ i_bin ] );
             }
             t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
             t_y_vals[ i_spline_point ] = t_mean;
@@ -189,15 +187,15 @@ namespace psyllid
     }
     inline void frequency_mask_trigger::calulcate_snr_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold)
     {
-        unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
+        unsigned t_n_bins_per_point = f_average_data.size() / f_n_spline_points;
         for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
         {
             unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
-            unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
+            unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_average_data.size() : t_bin_begin + t_n_bins_per_point;
             double t_mean = 0.;
             for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
             {
-                t_mean += f_mask_data[ i_bin ] / (double)f_n_summed *threshold;
+                t_mean += f_average_data[ i_bin ] *threshold;
             }
             t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
             t_y_vals[ i_spline_point ] = t_mean;
