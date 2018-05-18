@@ -43,6 +43,20 @@ Fixes:
 Log
 ---
 
+Version: Upcoming
+~~~~~~~~~~~~~~~~~
+
+Release Date: 
+'''''''''''''''''''''''''
+
+New Features:
+'''''''''''''
+
+* midge updated to v3.5.3 (updates scarab to v1.6.0)
+* server_config now only sets the default authentication file path after checking that the path exists
+    * tested via docker batch execution with and without the auth file present; detection and setting appears to work fine
+
+
 Version: 1.5.0
 ~~~~~~~~~~~~~~~~~
 
@@ -61,7 +75,9 @@ New Features:
         * tested  from-file by modifying the above output file (so that the values differ), configuring with it as input, and the writing a new output to compare
 * Dripline-cpp updated to v1.6.0
 * CMake option added to allow disabling the FPA on linux builds (useful for batch mode execution without root access).
-
+* midge updated to v3.5.3 (updates scarab to v1.6.0)
+* server_config now only sets the default authentication file path after checking that the path exists
+    * tested via docker batch execution with and without the auth file present; detection and setting appears to work fine
 
 Version: 1.4.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
