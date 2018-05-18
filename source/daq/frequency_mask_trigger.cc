@@ -30,8 +30,8 @@ namespace psyllid
             f_n_packets_for_mask( 10 ),
             f_threshold_snr( 30. ),
             f_threshold_snr_high( 30. ),
-            f_threshold_sigma( 20 ),
-            f_threshold_sigma_high( 10 ),
+            f_threshold_sigma( 30 ),
+            f_threshold_sigma_high( 30 ),
             f_threshold_type( threshold_type_t::sigma_threshold),
             f_n_spline_points( 20 ),
             f_status( status_t::mask_update ),
@@ -230,12 +230,16 @@ namespace psyllid
 
 
         scarab::param_array* t_mask_data_array = new scarab::param_array();
+        scarab::param_array* t_variance_data_array = new scarab::param_array();
         t_mask_data_array->resize( f_mask_data.size() );
+        t_variance_data_array->resize( f_variance_data.size() );
         for( unsigned i_bin = 0; i_bin < f_mask_data.size(); ++i_bin )
         {
             t_mask_data_array->assign( i_bin, new scarab::param_value( f_mask_data[ i_bin ] ) );
+            t_variance_data_array->assign( i_bin, new scarab::param_value( f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_packets_for_mask ));
         }
         t_output_node.add( "mask-data", t_mask_data_array );
+        t_output_node.add( "variance-data", t_variance_data_array );
 
         //scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "json" );
         scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "yaml" );

@@ -179,7 +179,7 @@ namespace psyllid
             double t_variance;
             for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
             {
-                t_variance = (f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_summed)/ ( (double) f_n_summed );
+                t_variance = (f_variance_data[ i_bin ] - f_mask_data[ i_bin ] * f_mask_data[ i_bin ]/ (double) f_n_summed)/ ( (double) f_n_summed -1 );
                 t_mean += f_mask_data[ i_bin ] / (double)f_n_summed + threshold * sqrt(t_variance);
             }
             t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
