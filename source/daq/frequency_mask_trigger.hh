@@ -152,7 +152,6 @@ namespace psyllid
             void exe_apply_threshold( exe_func_context& a_ctx );
             void exe_apply_two_thresholds( exe_func_context& a_ctx );
             void exe_add_to_mask( exe_func_context& a_ctx );
-            void exe_add_to_sigma_mask( exe_func_context& a_ctx );
 
             void (frequency_mask_trigger::*f_exe_func)( exe_func_context& a_ctx );
             std::mutex f_exe_func_mutex;
