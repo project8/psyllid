@@ -162,17 +162,11 @@ namespace psyllid
     {
         LDEBUG( plog, "Requesting switch to update-mask mode" );
         f_exe_func_mutex.lock();
-        if( ( f_threshold_type == threshold_type_t::snr_threshold ) and ( f_exe_func != &frequency_mask_trigger::exe_add_to_mask) )
+        if( f_exe_func != &frequency_mask_trigger::exe_add_to_mask )
         {
             f_break_exe_func.store( true );
             f_status = status_t::mask_update;
             f_exe_func = &frequency_mask_trigger::exe_add_to_mask;
-        }
-        else if( ( f_threshold_type == threshold_type_t::sigma_threshold ) and ( f_exe_func != &frequency_mask_trigger::exe_add_to_sigma_mask) )
-        {
-            f_break_exe_func.store( true );
-            f_status = status_t::mask_update;
-            f_exe_func = &frequency_mask_trigger::exe_add_to_sigma_mask;
         }
         f_exe_func_mutex.unlock();
         return;
@@ -287,7 +281,7 @@ namespace psyllid
         {
             freq_data* t_freq_data = nullptr;
             //trigger_flag* t_trigger_flag = nullptr;
-            double t_real = 0., t_imag = 0.;
+            double t_real = 0., t_imag = 0., t_abs_square = 0.;
             unsigned t_array_size = 0;
 
             LDEBUG( plog, "Entering add-to-mask loop" );
@@ -317,6 +311,7 @@ namespace psyllid
                     a_ctx.f_first_packet_after_start = true;
                     f_n_summed = 0;
                     f_mask_data.clear();
+                    f_variance_data.clear();
 
                 }
                 else if( a_ctx.f_in_command == stream::s_run )
@@ -344,9 +339,11 @@ namespace psyllid
                             {
                                 t_array_size = t_freq_data->get_array_size();
                                 f_mask_data.resize( t_array_size );
+                                f_variance_data.resize( t_array_size );
                                 for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
                                 {
                                     f_mask_data[ i_bin ] = 0.;
+                                    f_variance_data[ i_bin ] = 0.;
                                 }
                                 a_ctx.f_first_packet_after_start = false;
                             }
@@ -354,7 +351,9 @@ namespace psyllid
                             {
                                 t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
                                 t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
-                                f_mask_data[ i_bin ] = f_mask_data[ i_bin ] + t_real*t_real + t_imag*t_imag;
+                                t_abs_square = t_real*t_real + t_imag*t_imag;
+                                f_variance_data[ i_bin ] = f_variance_data[ i_bin ] + t_abs_square * t_abs_square;
+                                f_mask_data[ i_bin ] = f_mask_data[ i_bin ] +  t_abs_square;
                     /*#ifndef NDEBUG
                                 if( i_bin < 5 )
                                 {
@@ -370,40 +369,72 @@ namespace psyllid
                             if( f_n_summed == f_n_packets_for_mask )
                             {
                                 LDEBUG( plog, "Calculating spline for frequency mask" );
-
-                                double t_multiplier = f_threshold_snr / (double)f_n_summed;
-                                LDEBUG( plog, "Size: " << f_mask_data.size() << "   Multiplier = " << t_multiplier << " = (threshold_snr) " << f_threshold_snr << " / (n_summed) " << f_n_summed );
-
                                 std::vector< double > t_x_vals( f_n_spline_points );
                                 std::vector< double > t_y_vals( f_n_spline_points );
-                                unsigned t_n_bins_per_point = f_mask_data.size() / f_n_spline_points;
-
-                                // calculate spline points
-                                for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
+                                if ( f_threshold_type == threshold_type_t::sigma_threshold )
                                 {
-                                    unsigned t_bin_begin = i_spline_point * t_n_bins_per_point;
-                                    unsigned t_bin_end = i_spline_point == f_n_spline_points - 1 ? f_mask_data.size() : t_bin_begin + t_n_bins_per_point;
-                                    double t_mean = 0.;
-                                    for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
+                                    this->calulcate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma);
+
+                                    // create the spline
+                                    tk::spline t_spline;
+                                    t_spline.set_points( t_x_vals, t_y_vals );
+
+                                    f_mask_mutex.lock();
+                                    LDEBUG( plog, "Calculating frequency sigma mask" );
+                                    f_mask.resize( f_mask_data.size() );
+                                    for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
                                     {
-                                        t_mean += f_mask_data[ i_bin ];
+                                        f_mask[ i_bin ] = t_spline( i_bin );
                                     }
-                                    t_mean *= t_multiplier / (double)(t_bin_end - t_bin_begin);
-                                    t_y_vals[ i_spline_point ] = t_mean;
-                                    t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
+
+                                    if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+                                    {
+                                        this->calulcate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma_high);
+                                        // create the spline
+                                        tk::spline t_spline;
+                                        t_spline.set_points( t_x_vals, t_y_vals );
+
+                                        LDEBUG( plog, "Calculating frequency sigma mask2" );
+
+                                        f_mask2.resize( f_mask_data.size() );
+                                        for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
+                                        {
+                                            f_mask2[ i_bin ] = t_spline( i_bin );
+                                        }
+                                    }
                                 }
-
-                                // create the spline
-                                tk::spline t_spline;
-                                t_spline.set_points( t_x_vals, t_y_vals );
-
-                                f_mask_mutex.lock();
-                                LDEBUG( plog, "Calculating frequency mask" );
-
-                                f_mask.resize( f_mask_data.size() );
-                                for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
+                                else //if ( f_threshold_type == threshold_type_t::snr_threshold )
                                 {
-                                    f_mask[ i_bin ] = t_spline( i_bin );
+                                    this->calulcate_snr_mask_spline_points(t_x_vals, t_y_vals, f_threshold_snr);
+
+                                    // create the spline
+                                    tk::spline t_spline;
+                                    t_spline.set_points( t_x_vals, t_y_vals );
+
+                                    f_mask_mutex.lock();
+                                    LDEBUG( plog, "Calculating frequency snr mask" );
+
+                                    f_mask.resize( f_mask_data.size() );
+                                    for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
+                                    {
+                                        f_mask[ i_bin ] = t_spline( i_bin );
+                                    }
+
+                                    if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+                                    {
+                                        this->calulcate_snr_mask_spline_points(t_x_vals, t_y_vals, f_threshold_snr_high);
+                                        // create the spline
+                                        tk::spline t_spline;
+                                        t_spline.set_points( t_x_vals, t_y_vals );
+
+                                        LDEBUG( plog, "Calculating frequency sigma mask2" );
+
+                                        f_mask2.resize( f_mask_data.size() );
+                                        for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
+                                        {
+                                            f_mask2[ i_bin ] = t_spline( i_bin );
+                                        }
+                                    }
                                 }
 
                                 f_mask_mutex.unlock();
@@ -579,7 +610,7 @@ namespace psyllid
                                     for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
                                     {
                                         f_mask[ i_bin ] = t_spline( i_bin );
-									}
+                                    }
 
                                     if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
                                     {
@@ -595,7 +626,7 @@ namespace psyllid
                                         {
                                             f_mask2[ i_bin ] = t_spline( i_bin );
                                         }
-								    }
+                                    }
                                 }
                                 else //if ( f_threshold_type == threshold_type_t::snr_threshold )
                                 {
@@ -606,7 +637,7 @@ namespace psyllid
                                     t_spline.set_points( t_x_vals, t_y_vals );
 
                                     f_mask_mutex.lock();
-                                    LDEBUG( plog, "Calculating frequency sigma mask" );
+                                    LDEBUG( plog, "Calculating frequency snr mask" );
 
                                     f_mask.resize( f_mask_data.size() );
                                     for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
