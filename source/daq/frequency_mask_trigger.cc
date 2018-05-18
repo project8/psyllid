@@ -215,6 +215,22 @@ namespace psyllid
         }
         t_output_node.add( "mask", t_mask_array );
 
+        if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+        {
+            if( f_mask2.empty() )
+            {
+                throw error() << "Mask is empty";
+            }
+            scarab::param_array* t_mask_array2 = new scarab::param_array();
+            t_mask_array2->resize( f_mask2.size() );
+            for( unsigned i_bin = 0; i_bin < f_mask.size(); ++i_bin )
+            {
+                t_mask_array2->assign( i_bin, new scarab::param_value( f_mask2[ i_bin ] ) );
+            }
+            t_output_node.add( "mask2", t_mask_array2 );
+        }
+
+
         scarab::param_array* t_mask_data_array = new scarab::param_array();
         t_mask_data_array->resize( f_mask_data.size() );
         for( unsigned i_bin = 0; i_bin < f_mask_data.size(); ++i_bin )
@@ -427,7 +443,7 @@ namespace psyllid
                                         tk::spline t_spline;
                                         t_spline.set_points( t_x_vals, t_y_vals );
 
-                                        LDEBUG( plog, "Calculating frequency sigma mask2" );
+                                        LDEBUG( plog, "Calculating frequency snr mask2" );
 
                                         f_mask2.resize( f_mask_data.size() );
                                         for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
