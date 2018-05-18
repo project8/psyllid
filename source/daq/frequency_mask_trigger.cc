@@ -69,7 +69,6 @@ namespace psyllid
     void frequency_mask_trigger::set_threshold_power_snr( double a_power_snr )
     {
         f_threshold_snr = a_power_snr;
-        f_threshold_type = threshold_type_t::snr_threshold;
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr );
         return;
     }
@@ -83,7 +82,6 @@ namespace psyllid
     void frequency_mask_trigger::set_threshold_power_sigma( double a_power_sigma )
     {
         f_threshold_sigma = a_power_sigma;
-        f_threshold_type = threshold_type_t::sigma_threshold;
         LDEBUG( plog, "Setting sigma threshold (power via power) to " << f_threshold_sigma );
         return;
     }
