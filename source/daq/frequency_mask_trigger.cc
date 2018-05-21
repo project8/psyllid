@@ -112,6 +112,24 @@ namespace psyllid
         }
     }
 
+    void frequency_mask_trigger::set_mask_and_data_vectors( const scarab::param_node* a_mask_and_data_values )
+    {
+        // grab the new arrays
+        const scarab::param_array* t_new_mask = a_mask_and_data_values->array_at( "mask" );
+        const scarab::param_array* t_new_mask_data = a_mask_and_data_values->array_at( "mask-data" );
+        if ( t_new_mask == nullptr || t_new_mask_data == nullptr ) throw psyllid::error() << "new mask and mask data must not be null";
+        // prep the data members
+        f_mask.clear();
+        f_mask_data.clear();
+        f_mask.resize( t_new_mask->size() );
+        f_mask_data.resize( t_new_mask_data->size() );
+        // assign new values
+        for( unsigned i_bin = 0; i_bin < t_new_mask->size(); ++i_bin )
+        {
+            f_mask[ i_bin ] = t_new_mask->value_at( i_bin )->as_double();
+            f_mask_data[ i_bin ] = t_new_mask_data->value_at( i_bin )->as_double();
+        }
+    }
 
     void frequency_mask_trigger::switch_to_update_mask()
     {
@@ -792,6 +810,36 @@ namespace psyllid
         {
             a_node->set_trigger_mode( a_config.get_value< std::string >( "trigger-mode" ) );
         }
+        if( a_config.has( "mask-configuration" ) )
+        {
+            //TODO is this an okay place for this logic, or should it go in the fmt class itself or in a private method of this class?
+            const scarab::param* t_mask_config = a_config.at( "mask-configuration" );
+            if ( t_mask_config->is_value() )
+            {
+                scarab::param_input_codec* t_yaml_codec = scarab::factory< scarab::param_input_codec >::get_instance()->create( "yaml" );
+                if (t_yaml_codec == nullptr )
+                {
+                    throw error() << "Unable to create input-codec for YAML";
+                }
+                scarab::param* t_file_param = t_yaml_codec->read_file( t_mask_config->as_value().as_string() );
+                if ( t_file_param->is_node() )
+                {
+                    a_node->set_mask_and_data_vectors( &(t_file_param->as_node()) );
+                }
+                else
+                {
+                    throw psyllid::error() << "mask file must be a node";
+                }
+            }
+            else if ( t_mask_config->is_node() )
+            {
+                a_node->set_mask_and_data_vectors( &(t_mask_config->as_node()) );
+            }
+            else
+            {
+                throw psyllid::error() << "invalid config: mask-configuration must be a file path or a node with mask and mask-data";
+            }
+        }
 
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
         return;
@@ -806,6 +854,8 @@ namespace psyllid
         a_config.add( "threshold-power-snr-high", new scarab::param_value( a_node->get_threshold_snr_high() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         a_config.add( "trigger-mode", new scarab::param_value( a_node->get_trigger_mode_str() ) );
+        //TODO these are potentially large, do we want to include the mask and mask-data in this dump? (they also have an existing write to file option)
+        //a_config.add( "mask-configuration", new scarab::param_node( a_node->get_mask_configuration() ) );
         return;
     }
 

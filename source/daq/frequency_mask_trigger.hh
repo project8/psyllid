@@ -64,6 +64,7 @@ namespace psyllid
      - "threshold-dB": float -- The threshold SNR, given as a dB factor
      - "trigger-mode": string -- The trigger mode, can be set to "single-level-trigger" or "two-level-trigger"
      - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
+     - "mask-configuration": string || node -- If a string, path to a yaml file with mask and mask-data arrays to populate the respective vectors; if a node, then contains those arrays of floats.
 
      Available DAQ commands:
      - "update-mask" (no args) -- Switch the execution mode to updating the trigger mask
@@ -104,6 +105,7 @@ namespace psyllid
             void set_threshold_dB( double a_dB );
             void set_trigger_mode( const std::string& trigger_mode );
             std::string get_trigger_mode_str() const;
+            void set_mask_and_data_vectors( const scarab::param_node* a_mask_and_data_values );
 
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );

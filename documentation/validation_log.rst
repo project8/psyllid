@@ -55,6 +55,10 @@ New Features:
 * midge updated to v3.5.3 (updates scarab to v1.6.0)
 * server_config now only sets the default authentication file path after checking that the path exists
     * tested via docker batch execution with and without the auth file present; detection and setting appears to work fine
+* frequency mask trigger
+    * updated to allow the mask and summed power arrays to be configured, either directly in the configuration file, or with a path to another file (such as that output by the above)
+        * tested in file value arrays by setting in a file and calling write mask to ensure the values are in the output file
+        * tested  from-file by modifying the above output file (so that the values differ), configuring with it as input, and the writing a new output to compare
 
 
 Version: 1.5.0
@@ -66,10 +70,10 @@ Release Date: May 8, 2018
 New Features:
 '''''''''''''
 
-* batch_executor retries the reply message's payload and return code; each action happens after the prior one returns (which may not be the conclusion of the action, just like any dripline request)
+* batch_executor receives the reply message's payload and return code; each action happens after the prior one returns (which may not be the conclusion of the action, just like any dripline request)
 * frequency mask trigger
     * updated to also output the summed power data in addition to the spline fit used to define the frequency mask. This goes into a second array in the same output file
-    * tested using the egg reader and confirming qualitatively that the mask follows the shape of the accumulated power (after normalizing by the number of accumulated points and the mask's offset)
+        * tested using the egg reader and confirming qualitatively that the mask follows the shape of the accumulated power (after normalizing by the number of accumulated points and the mask's offset)
 * Dripline-cpp updated to v1.6.0
 * CMake option added to allow disabling the FPA on linux builds (useful for batch mode execution without root access).
 * midge updated to v3.5.3 (updates scarab to v1.6.0)
