@@ -117,7 +117,7 @@ namespace psyllid
         // grab the new arrays
         const scarab::param_array* t_new_mask = a_mask_and_data_values->array_at( "mask" );
         const scarab::param_array* t_new_mask_data = a_mask_and_data_values->array_at( "mask-data" );
-        if ( t_new_mask == NULL || t_new_mask_data == NULL ) throw psyllid::error() << "new mask and mask data must not be null";
+        if ( t_new_mask == nullptr || t_new_mask_data == nullptr ) throw psyllid::error() << "new mask and mask data must not be null";
         // prep the data members
         f_mask.clear();
         f_mask_data.clear();
@@ -821,7 +821,7 @@ namespace psyllid
                 {
                     throw error() << "Unable to create input-codec for YAML";
                 }
-                scarab::param* t_file_param = t_yaml_codec->read_file( t_mask_config->as_value().as_string(), NULL );
+                scarab::param* t_file_param = t_yaml_codec->read_file( t_mask_config->as_value().as_string() );
                 if ( t_file_param->is_node() )
                 {
                     a_node->set_mask_and_data_vectors( &(t_file_param->as_node()) );
