@@ -164,14 +164,14 @@ namespace psyllid
         if ( t_new_mask == nullptr || t_new_mask_data == nullptr ) throw psyllid::error() << "new mask and mask data must not be null";
         // prep the data members
         f_mask.clear();
-        f_mask_data.clear();
+        f_average_data.clear();
         f_mask.resize( t_new_mask->size() );
-        f_mask_data.resize( t_new_mask_data->size() );
+        f_average_data.resize( t_new_mask_data->size() );
         // assign new values
         for( unsigned i_bin = 0; i_bin < t_new_mask->size(); ++i_bin )
         {
             f_mask[ i_bin ] = t_new_mask->value_at( i_bin )->as_double();
-            f_mask_data[ i_bin ] = t_new_mask_data->value_at( i_bin )->as_double();
+            f_average_data[ i_bin ] = t_new_mask_data->value_at( i_bin )->as_double();
         }
     }
 
