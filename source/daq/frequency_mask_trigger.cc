@@ -313,6 +313,7 @@ namespace psyllid
         {
             LINFO( plog, "Starting main loop" );
             f_break_exe_func.store( true );
+            //TODO delete this line
             while( f_break_exe_func.load() )
             {
                 f_break_exe_func.store( false );
@@ -628,8 +629,7 @@ namespace psyllid
                         {
                             if( t_mask_buffer.size() != t_array_size )
                             {
-                                LWARN( plog, "Mask was not the right size; Resizing mask to " << t_array_size << " bins and filling it with zeros" );
-                                t_mask_buffer.resize( t_array_size, 0. );
+                                throw psyllid::error() << "Frequency mask is not the same size as frequency data array";
                             }
                             a_ctx.f_first_packet_after_start = false;
                         }
@@ -737,9 +737,20 @@ namespace psyllid
 
                 f_mask_mutex.lock();
                 std::vector< double > t_mask_buffer( f_mask );
-
-                if ( f_mask2.size() == 0 ) throw psyllid::error() << "second mask is empty";
                 std::vector< double > t_mask2_buffer ( f_mask2 );
+
+                if ( a_ctx.f_first_packet_after_start )
+                {
+                    if ( t_mask_buffer.size() != t_freq_data->get_array_size() )
+                    {
+                        throw psyllid::error() << "Frequency mask is not the same size as frequency data array";
+                    }
+                    if ( t_mask2_buffer.size() != t_freq_data->get_array_size() )
+                    {
+                        throw psyllid::error() << "Frequency mask2 is not the same size as frequency data array";
+                    }
+                    a_ctx.f_first_packet_after_start = false;
+                }
                 f_mask_mutex.unlock();
 
 
