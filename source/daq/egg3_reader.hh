@@ -38,6 +38,7 @@ namespace psyllid
      Available configuration values:
      - "egg-path": string -- resolvable path to the egg file from which to read data
      - "read-n-records": int -- number of records to read from file when executing, 0 means until end of file
+     - "repeat-egg": bool -- indicates if reaching the end of input file should end the reading (false) or loop back to the start of the file (true); default is false
 
      Output Streams:
      - 0: time_data
@@ -57,12 +58,14 @@ namespace psyllid
             mv_accessible( const monarch3::Monarch3*, egg );
             mv_accessible( std::string, egg_path );
             mv_accessible( uint64_t, read_n_records );
+            mv_accessible( bool, repeat_egg );
             mv_accessible( uint64_t, length );
             mv_accessible( bool, start_paused );
 
         private:
             bool f_paused;
             uint32_t f_record_length;
+            uint64_t f_pkt_id_offset;
 
        public:
             virtual void initialize();

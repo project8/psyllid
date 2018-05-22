@@ -30,10 +30,12 @@ namespace psyllid
             f_egg( nullptr ),
             f_egg_path( "/dev/null" ),
             f_read_n_records( 0 ),
+            f_repeat_egg( false ),
             f_length( 10 ),
             f_start_paused( true ),
             f_paused( true ),
-            f_record_length( 0 )
+            f_record_length( 0 ),
+            f_pkt_id_offset( 0 )
     {
     }
 
@@ -121,7 +123,9 @@ namespace psyllid
                     }
                     // add some sleep to try and not lap downstream nodes
                     std::this_thread::sleep_for(std::chrono::microseconds(100));
-                } else {
+                }
+                else
+                {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             }
@@ -148,20 +152,28 @@ namespace psyllid
         LDEBUG( plog, "reading a slice" );
         // update t_data to point to the next slot in the output stream
         t_data = out_stream< 0 >().data();
-        // update M3Record so that it will write into t_data... this doesn't currently work
-        //t_record->UpdateDataPtr( reinterpret_cast< const monarch3::byte_type* >(t_data->get_raw_array()) );
         // read next record in egg file, writing into the output_stream
         if ( !t_stream->ReadRecord() )
         {
-            LDEBUG( plog, "reached end of file" );
-            return false;
+            if ( !f_repeat_egg )
+            {
+                LDEBUG( plog, "reached end of file, stopping" );
+                return false;
+            }
+            else
+            {
+                LDEBUG( plog, "reached end of file, restarting" );
+                t_stream->ReadRecord( -1 * int(t_stream->GetRecordCountInFile()) );
+                // when we loop back, we want the record ID to increment and have a gap relative to the end of the file
+                f_pkt_id_offset += 1 + t_stream->GetNRecordsInFile();
+            }
         }
         std::copy(&t_record->GetData()[0], &t_record->GetData()[f_record_length*2], &t_data->get_array()[0][0]);
 
         // packet ID logic
         //TODO do this pkt ID logic reasonable?
-        t_data->set_pkt_in_batch(t_record->GetRecordId());
-        t_data->set_pkt_in_session(t_record->GetRecordId());
+        t_data->set_pkt_in_batch( t_record->GetRecordId() + f_pkt_id_offset );
+        t_data->set_pkt_in_session( t_record->GetRecordId() + f_pkt_id_offset );
         if ( !out_stream< 0 >().set( stream::s_run ) )
         {
             LERROR( plog, "egg reader exiting due to stream error" );
@@ -197,6 +209,7 @@ namespace psyllid
         LDEBUG( plog, "Configuring egg3_reader with:\n" << a_config );
         a_node->set_egg_path( a_config.get_value( "egg-path", a_node->get_egg_path() ) );
         a_node->set_read_n_records( a_config.get_value( "read-n-records", a_node->get_read_n_records() ) );
+        a_node->set_repeat_egg( a_config.get_value( "repeat-egg", a_node->get_repeat_egg() ) );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
         a_node->set_start_paused( a_config.get_value( "start-paused", a_node->get_start_paused() ) );
         return;
@@ -207,6 +220,7 @@ namespace psyllid
         LDEBUG( plog, "Dumping configuration for egg3_reader" );
         a_config.add( "egg-path", new scarab::param_value( a_node->get_egg_path() ) );
         a_config.add( "read-n-records", new scarab::param_value( a_node->get_read_n_records() ) );
+        a_config.add( "repeat-egg", new scarab::param_value( a_node->get_repeat_egg() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         a_config.add( "start-paused", new scarab::param_value( a_node->get_length() ) );
         return;

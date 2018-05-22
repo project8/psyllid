@@ -46,7 +46,7 @@ Log
 Version: Upcoming
 ~~~~~~~~~~~~~~~~~
 
-Release Date: 
+Release Date:
 '''''''''''''''''''''''''
 
 New Features:
@@ -59,6 +59,8 @@ New Features:
     * updated to allow the mask and summed power arrays to be configured, either directly in the configuration file, or with a path to another file (such as that output by the above)
         * tested in file value arrays by setting in a file and calling write mask to ensure the values are in the output file
         * tested  from-file by modifying the above output file (so that the values differ), configuring with it as input, and the writing a new output to compare
+* egg3-reader: support for "repeat-egg" boolean configuration option, if true, restarts reading the file from the first record upon reaching end of file
+    * tested via batch mode, using two sequential start-run commands with duration set to 0 and the egg reader configured to read 100000 records (file has ~120k records). The second run repeated the egg file (debug prints showed it re-reading earlier record IDs) and prints of the output pkt_id showed that they continued to increase as expected.
 
 
 Version: 1.5.0
