@@ -160,18 +160,36 @@ namespace psyllid
     {
         // grab the new arrays
         const scarab::param_array* t_new_mask = a_mask_and_data_values->array_at( "mask" );
-        const scarab::param_array* t_new_mask_data = a_mask_and_data_values->array_at( "mask-data" );
-        if ( t_new_mask == nullptr || t_new_mask_data == nullptr ) throw psyllid::error() << "new mask and mask data must not be null";
+        const scarab::param_array* t_new_mask2 = a_mask_and_data_values->array_at( "mask2" );
+        const scarab::param_array* t_new_data_mean = a_mask_and_data_values->array_at( "data-mean" );
+        const scarab::param_array* t_new_data_variance = a_mask_and_data_values->array_at( "data-variance" );
+        if ( t_new_mask == nullptr || t_new_data_mean == nullptr || t_new_data_variance == nullptr ) throw psyllid::error() << "new mask and mask data must not be null";
         // prep the data members
         f_mask.clear();
+        f_mask2.clear();
         f_average_data.clear();
+        f_variance_data.clear();
         f_mask.resize( t_new_mask->size() );
-        f_average_data.resize( t_new_mask_data->size() );
+        f_mask2.resize( 0 );
+        f_average_data.resize( t_new_data_mean->size() );
+        f_variance_data.resize( t_new_data_variance->size() );
+
         // assign new values
         for( unsigned i_bin = 0; i_bin < t_new_mask->size(); ++i_bin )
         {
             f_mask[ i_bin ] = t_new_mask->value_at( i_bin )->as_double();
-            f_average_data[ i_bin ] = t_new_mask_data->value_at( i_bin )->as_double();
+            f_average_data[ i_bin ] = t_new_data_mean->value_at( i_bin )->as_double();
+            f_variance_data[ i_bin ] = t_new_data_variance->value_at( i_bin )->as_double();
+        }
+        if ( t_new_data_variance != nullptr )
+        {
+            if ( t_new_mask2->size() != t_new_mask->size() ) throw psyllid::error() << "new mask and new mask2 must have same size";
+
+            f_mask2.resize( t_new_mask2->size() );
+            for( unsigned i_bin = 0; i_bin < t_new_mask2->size(); ++i_bin )
+            {
+                f_mask2[ i_bin ] = t_new_mask2->value_at( i_bin )->as_double();
+            }
         }
     }
 
@@ -719,6 +737,8 @@ namespace psyllid
 
                 f_mask_mutex.lock();
                 std::vector< double > t_mask_buffer( f_mask );
+
+                if ( f_mask2.size() == 0 ) throw psyllid::error() << "second mask is empty";
                 std::vector< double > t_mask2_buffer ( f_mask2 );
                 f_mask_mutex.unlock();
 
