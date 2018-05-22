@@ -123,7 +123,9 @@ namespace psyllid
                     }
                     // add some sleep to try and not lap downstream nodes
                     std::this_thread::sleep_for(std::chrono::microseconds(100));
-                } else {
+                }
+                else
+                {
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             }
@@ -155,13 +157,15 @@ namespace psyllid
         {
             if ( !f_repeat_egg )
             {
-                LDEBUG( plog, "reached end of file" );
+                LDEBUG( plog, "reached end of file, stopping" );
                 return false;
             }
             else
             {
-                //TODO this is bad, it assumes there is no break in RecordID, which is not a safe assumption
-                t_stream->ReadRecord( t_record->GetRecordId() - t_stream->GetFirstRecordInFile() );
+                LDEBUG( plog, "reached end of file, restarting" );
+                t_stream->ReadRecord( -1 * int(t_stream->GetRecordCountInFile()) );
+                // when we loop back, we want the record ID to increment and have a gap relative to the end of the file
+                f_pkt_id_offset += 1 + t_stream->GetNRecordsInFile();
             }
         }
         std::copy(&t_record->GetData()[0], &t_record->GetData()[f_record_length*2], &t_data->get_array()[0][0]);
@@ -205,6 +209,7 @@ namespace psyllid
         LDEBUG( plog, "Configuring egg3_reader with:\n" << a_config );
         a_node->set_egg_path( a_config.get_value( "egg-path", a_node->get_egg_path() ) );
         a_node->set_read_n_records( a_config.get_value( "read-n-records", a_node->get_read_n_records() ) );
+        a_node->set_repeat_egg( a_config.get_value( "repeat-egg", a_node->get_repeat_egg() ) );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
         a_node->set_start_paused( a_config.get_value( "start-paused", a_node->get_start_paused() ) );
         return;
@@ -215,6 +220,7 @@ namespace psyllid
         LDEBUG( plog, "Dumping configuration for egg3_reader" );
         a_config.add( "egg-path", new scarab::param_value( a_node->get_egg_path() ) );
         a_config.add( "read-n-records", new scarab::param_value( a_node->get_read_n_records() ) );
+        a_config.add( "repeat-egg", new scarab::param_value( a_node->get_repeat_egg() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         a_config.add( "start-paused", new scarab::param_value( a_node->get_length() ) );
         return;
