@@ -165,6 +165,7 @@ namespace psyllid
         const scarab::param_array* t_new_mask2 = a_mask_and_data_values->array_at( "mask2" );
         const scarab::param_array* t_new_data_mean = a_mask_and_data_values->array_at( "data-mean" );
         const scarab::param_array* t_new_data_variance = a_mask_and_data_values->array_at( "data-variance" );
+        LDEBUG( plog, "Finished reading mask" );
         if ( t_new_mask == nullptr || t_new_data_mean == nullptr || t_new_data_variance == nullptr ) throw psyllid::error() << "new mask and mask data must not be null";
         // prep the data members
         f_mask.clear();
@@ -183,7 +184,7 @@ namespace psyllid
             f_average_data[ i_bin ] = t_new_data_mean->value_at( i_bin )->as_double();
             f_variance_data[ i_bin ] = t_new_data_variance->value_at( i_bin )->as_double();
         }
-        if ( t_new_data_variance != nullptr )
+        if ( t_new_mask2 != nullptr )
         {
             if ( t_new_mask2->size() != t_new_mask->size() ) throw psyllid::error() << "new mask and new mask2 must have same size";
 
@@ -252,12 +253,8 @@ namespace psyllid
         }
         t_output_node.add( "mask", t_mask_array );
 
-        if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+        if ( !f_mask2.empty() ) //( f_trigger_mode == trigger_mode_t::two_level_trigger )
         {
-            if( f_mask2.empty() )
-            {
-                throw error() << "Mask is empty";
-            }
             scarab::param_array* t_mask_array2 = new scarab::param_array();
             t_mask_array2->resize( f_mask2.size() );
             for( unsigned i_bin = 0; i_bin < f_mask2.size(); ++i_bin )
