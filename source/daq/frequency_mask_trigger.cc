@@ -729,183 +729,176 @@ namespace psyllid
 
 
     void frequency_mask_trigger::exe_apply_two_thresholds( exe_func_context& a_ctx )
+    {
+        f_exe_func_mutex.unlock();
+
+        try
         {
-            f_exe_func_mutex.unlock();
+            freq_data* t_freq_data = nullptr;
+            trigger_flag* t_trigger_flag = nullptr;
+            double t_real = 0., t_imag = 0., t_power_amp = 0.;
+            unsigned t_array_size = 0;
 
-            try
+
+            f_mask_mutex.lock();
+            std::vector< double > t_mask_buffer( f_mask );
+            std::vector< double > t_mask2_buffer( f_mask2 );
+
+            LDEBUG( plog, "mask sizes: "<<t_mask_buffer.size()<<" "<<t_mask2_buffer.size());
+
+            f_mask_mutex.unlock();
+
+
+            LDEBUG( plog, "Entering apply-two-thresholds loop" );
+            while( ! is_canceled() && ! f_break_exe_func.load() )
             {
-                freq_data* t_freq_data = nullptr;
-                trigger_flag* t_trigger_flag = nullptr;
-                double t_real = 0., t_imag = 0., t_power_amp = 0.;
-                unsigned t_array_size = 0;
+                // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+                // and still handle the input command appropriately
 
-
-                f_mask_mutex.lock();
-                std::vector< double > t_mask_buffer( f_mask );
-                std::vector< double > t_mask2_buffer ( f_mask2 );
-
-                if ( a_ctx.f_first_packet_after_start )
+                if( a_ctx.f_in_command == stream::s_none )
                 {
-                    if ( t_mask_buffer.size() != t_freq_data->get_array_size() )
-                    {
-                        throw psyllid::error() << "Frequency mask is not the same size as frequency data array";
-                    }
-                    if ( t_mask2_buffer.size() != t_freq_data->get_array_size() )
-                    {
-                        throw psyllid::error() << "Frequency mask2 is not the same size as frequency data array";
-                    }
-                    a_ctx.f_first_packet_after_start = false;
+
+                    LTRACE( plog, "FMT read s_none" );
+
                 }
-                f_mask_mutex.unlock();
-
-
-                LDEBUG( plog, "Entering apply-two-thresholds loop" );
-                while( ! is_canceled() && ! f_break_exe_func.load() )
+                else if( a_ctx.f_in_command == stream::s_error )
                 {
-                    // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
-                    // and still handle the input command appropriately
 
-                    if( a_ctx.f_in_command == stream::s_none )
+                    LTRACE( plog, "FMT read s_error" );
+                    break;
+
+                }
+                else if( a_ctx.f_in_command == stream::s_start )
+                {
+
+                    LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
+                    if( ! out_stream< 0 >().set( stream::s_start ) ) break;
+                    a_ctx.f_first_packet_after_start = true;
+
+                }
+                if( a_ctx.f_in_command == stream::s_run )
+                {
+
+                    t_freq_data = in_stream< 0 >().data();
+                    t_trigger_flag = out_stream< 0 >().data();
+
+                    LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
+                           "  time = " << t_freq_data->get_unix_time() <<
+                           "  id = " << t_freq_data->get_pkt_in_session() <<
+                           "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
+                           "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
+                    try
                     {
+                        t_array_size = t_freq_data->get_array_size();
 
-                        LTRACE( plog, "FMT read s_none" );
-
-                    }
-                    else if( a_ctx.f_in_command == stream::s_error )
-                    {
-
-                        LTRACE( plog, "FMT read s_error" );
-                        break;
-
-                    }
-                    else if( a_ctx.f_in_command == stream::s_start )
-                    {
-
-                        LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
-                        if( ! out_stream< 0 >().set( stream::s_start ) ) break;
-                        a_ctx.f_first_packet_after_start = true;
-
-                    }
-                    if( a_ctx.f_in_command == stream::s_run )
-                    {
-
-                        t_freq_data = in_stream< 0 >().data();
-                        t_trigger_flag = out_stream< 0 >().data();
-
-                        LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
-                               "  time = " << t_freq_data->get_unix_time() <<
-                               "  id = " << t_freq_data->get_pkt_in_session() <<
-                               "  freqNotTime = " << t_freq_data->get_freq_not_time() <<
-                               "  bin 0 [0] = " << (unsigned)t_freq_data->get_array()[ 0 ][ 0 ] );
-                        try
+                        if( a_ctx.f_first_packet_after_start )
                         {
-                            t_array_size = t_freq_data->get_array_size();
-
-                            if( a_ctx.f_first_packet_after_start )
+                            if ( t_mask_buffer.size() != t_freq_data->get_array_size() )
                             {
-                                if( t_mask_buffer.size() != t_array_size )
-                                {
-                                    LWARN( plog, "Mask was not the right size; Resizing mask to " << t_array_size << " bins and filling it with zeros" );
-                                    t_mask_buffer.resize( t_array_size, 0. );
-                                }
-                                a_ctx.f_first_packet_after_start = false;
+                                throw psyllid::error() << "Frequency mask is not the same size as frequency data array";
                             }
-
-                            t_trigger_flag->set_flag( false );
-                            t_trigger_flag->set_high_threshold( false );
-                            t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
-
-                            for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                            if ( t_mask2_buffer.size() != t_freq_data->get_array_size() )
                             {
-                                t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
-                                t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
-                                t_power_amp = t_real*t_real + t_imag*t_imag;
-
-
-                                if(  t_power_amp >= t_mask2_buffer[ i_bin ] )
-                                {
-                                    t_trigger_flag->set_flag( true );
-                                    t_trigger_flag->set_high_threshold( true );
-                                    LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                            "\tdata: " << t_power_amp << ";  mask2: " << t_mask2_buffer[ i_bin ] );
-                                    break;
-                                }
-                                else if( t_power_amp >= t_mask_buffer[ i_bin ] )
-                                {
-                                    t_trigger_flag->set_flag( true );
-                                    t_trigger_flag->set_high_threshold( false );
-                                    LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                            "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
-                                }
+                                throw psyllid::error() << "Frequency mask2 is not the same size as frequency data array";
                             }
-
-    #ifndef NDEBUG
-                            if( ! t_trigger_flag->get_flag() )
-                            {
-                                LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> resulted in flag <" << t_trigger_flag->get_flag() << ">");
-                            }
-    #endif
-
-                            LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
-                            if( ! out_stream< 0 >().set( stream::s_run ) )
-                            {
-                                LERROR( plog, "Exiting due to stream error" );
-                                throw midge::node_nonfatal_error() << "Stream error while applying threshold";
-                            }
-                        }
-                        catch( error& e )
-                        {
-                            LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
-                            break;
+                            a_ctx.f_first_packet_after_start = false;
                         }
 
+                        t_trigger_flag->set_flag( false );
+                        t_trigger_flag->set_high_threshold( false );
+                        t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
+
+                        for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                        {
+                            t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
+                            t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
+                            t_power_amp = t_real*t_real + t_imag*t_imag;
+
+
+                            if(  t_power_amp >= t_mask2_buffer[ i_bin ] )
+                            {
+                                t_trigger_flag->set_flag( true );
+                                t_trigger_flag->set_high_threshold( true );
+                                LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                        "\tdata: " << t_power_amp << ";  mask2: " << t_mask2_buffer[ i_bin ] );
+                                break;
+                            }
+                            else if( t_power_amp >= t_mask_buffer[ i_bin ] )
+                            {
+                                t_trigger_flag->set_flag( true );
+                                t_trigger_flag->set_high_threshold( false );
+                                LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                        "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
+                            }
+                        }
+
+#ifndef NDEBUG
+                        if( ! t_trigger_flag->get_flag() )
+                        {
+                            LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> resulted in flag <" << t_trigger_flag->get_flag() << ">");
+                        }
+#endif
+
+                        LTRACE( plog, "FMT writing data to output stream at index " << out_stream< 0 >().get_current_index() );
+                        if( ! out_stream< 0 >().set( stream::s_run ) )
+                        {
+                            LERROR( plog, "Exiting due to stream error" );
+                            throw midge::node_nonfatal_error() << "Stream error while applying threshold";
+                        }
                     }
-                    else if( a_ctx.f_in_command == stream::s_stop )
+                    catch( error& e )
                     {
-
-                        LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
-                        if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
-
-                    }
-                    else if( a_ctx.f_in_command == stream::s_exit )
-                    {
-
-                        LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
-                        out_stream< 0 >().set( stream::s_exit );
+                        LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
                         break;
-
                     }
 
-                    a_ctx.f_in_command = in_stream< 0 >().get();
-                    LTRACE( plog, "FMT (apply-threshold) reading stream at index " << in_stream< 0 >().get_current_index() );
-
-                } // while( ! is_canceled() && ! f_break_exe_func.load() )
-
-                LDEBUG( plog, "FMT has exited the apply-threshold while loop; possible reasons: is_canceled() = " << is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
-                if( f_break_exe_func.load() )
-                {
-                    LINFO( plog, "FMT is switching exe while loops" );
-                    return;
                 }
-                else
+                else if( a_ctx.f_in_command == stream::s_stop )
                 {
-                    LINFO( plog, "FMT is exiting" );
+
+                    LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
+                    if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
+
+                }
+                else if( a_ctx.f_in_command == stream::s_exit )
+                {
+
+                    LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
+                    out_stream< 0 >().set( stream::s_exit );
+                    break;
+
                 }
 
-                LDEBUG( plog, "Stopping output stream" );
-                if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+                a_ctx.f_in_command = in_stream< 0 >().get();
+                LTRACE( plog, "FMT (apply-threshold) reading stream at index " << in_stream< 0 >().get_current_index() );
 
-                LDEBUG( plog, "Exiting output stream" );
-                out_stream< 0 >().set( stream::s_exit );
+            } // while( ! is_canceled() && ! f_break_exe_func.load() )
 
+            LDEBUG( plog, "FMT has exited the apply-two-threshold while loop; possible reasons: is_canceled() = " << is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
+            if( f_break_exe_func.load() )
+            {
+                LINFO( plog, "FMT is switching exe while loops" );
                 return;
             }
-            catch(...)
+            else
             {
-                if( a_ctx.f_midge ) a_ctx.f_midge->throw_ex( std::current_exception() );
-                else throw;
+                LINFO( plog, "FMT is exiting" );
             }
+
+            LDEBUG( plog, "Stopping output stream" );
+            if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+
+            LDEBUG( plog, "Exiting output stream" );
+            out_stream< 0 >().set( stream::s_exit );
+
+            return;
         }
+        catch(...)
+        {
+            if( a_ctx.f_midge ) a_ctx.f_midge->throw_ex( std::current_exception() );
+            else throw;
+        }
+    }
 
     void frequency_mask_trigger::finalize()
     {
