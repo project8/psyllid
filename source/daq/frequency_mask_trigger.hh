@@ -120,7 +120,7 @@ namespace psyllid
             void calulcate_snr_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold);
             void calulcate_sigma_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold);
 
-            void set_mask_and_data_vectors( const scarab::param_node* a_mask_and_data_values );
+            void set_mask_parameters_from_node( const scarab::param_node* a_mask_and_data_values );
 
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );

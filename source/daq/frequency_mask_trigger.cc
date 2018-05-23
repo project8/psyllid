@@ -156,8 +156,10 @@ namespace psyllid
         }
     }
 
-    void frequency_mask_trigger::set_mask_and_data_vectors( const scarab::param_node* a_mask_and_data_values )
+    void frequency_mask_trigger::set_mask_parameters_from_node( const scarab::param_node* a_mask_and_data_values )
     {
+        // set n-points
+        f_n_packets_for_mask = a_mask_and_data_values->value_at( "n-packets" )->as_uint();
         // grab the new arrays
         const scarab::param_array* t_new_mask = a_mask_and_data_values->array_at( "mask" );
         const scarab::param_array* t_new_mask2 = a_mask_and_data_values->array_at( "mask2" );
@@ -970,7 +972,7 @@ namespace psyllid
                 scarab::param* t_file_param = t_yaml_codec->read_file( t_mask_config->as_value().as_string() );
                 if ( t_file_param->is_node() )
                 {
-                    a_node->set_mask_and_data_vectors( &(t_file_param->as_node()) );
+                    a_node->set_mask_parameters_from_node( &(t_file_param->as_node()) );
                 }
                 else
                 {
@@ -979,7 +981,7 @@ namespace psyllid
             }
             else if ( t_mask_config->is_node() )
             {
-                a_node->set_mask_and_data_vectors( &(t_mask_config->as_node()) );
+                a_node->set_mask_parameters_from_node( &(t_mask_config->as_node()) );
             }
             else
             {
