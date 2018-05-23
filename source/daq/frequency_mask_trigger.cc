@@ -214,17 +214,23 @@ namespace psyllid
     {
         LDEBUG( plog, "Requesting switch to apply-trigger mode" );
         f_exe_func_mutex.lock();
-        if( f_exe_func != &frequency_mask_trigger::exe_apply_threshold )
+        if ( f_trigger_mode == trigger_mode_t::single_level_trigger )
         {
-            f_break_exe_func.store( true );
-            f_status = status_t::triggering;
-
-            if ( f_trigger_mode == trigger_mode_t::single_level_trigger )
+            if ( f_exe_func != &frequency_mask_trigger::exe_apply_threshold )
             {
+                f_break_exe_func.store( true );
+                f_status = status_t::triggering;
                 f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
             }
-            else // if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+        }
+        else // if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+        {
+            LDEBUG( plog, "Switching to exe_apply_two_thresholds" );
+            if ( f_exe_func != &frequency_mask_trigger::exe_apply_two_thresholds )
             {
+                LDEBUG( plog, "Break exe_func" );
+                f_break_exe_func.store( true );
+                f_status = status_t::triggering;
                 f_exe_func = &frequency_mask_trigger::exe_apply_two_thresholds;
             }
         }
