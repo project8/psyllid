@@ -283,7 +283,6 @@ namespace psyllid
         t_output_node.add( "data-mean", t_mean_data_array );
         t_output_node.add( "data-variance", t_variance_data_array );
 
-        //scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "json" );
         scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "yaml" );
         if( t_json_codec == nullptr )
         {
@@ -318,7 +317,6 @@ namespace psyllid
         {
             LINFO( plog, "Starting main loop" );
             f_break_exe_func.store( true );
-            //TODO delete this line
             while( f_break_exe_func.load() )
             {
                 f_break_exe_func.store( false );
@@ -367,8 +365,7 @@ namespace psyllid
                 else if( a_ctx.f_in_command == stream::s_start )
                 {
 
-                    LDEBUG( plog, "Starting mask update" ) //; output stream index " << out_stream< 0 >().get_current_index() );
-                    //if( ! out_stream< 0 >().set( stream::s_start ) ) break;
+                    LDEBUG( plog, "Starting mask update" );
                     a_ctx.f_first_packet_after_start = true;
                     f_n_summed = 0;
                     f_average_data.clear();
@@ -379,7 +376,6 @@ namespace psyllid
                 {
 
                     t_freq_data = in_stream< 0 >().data();
-                    //t_trigger_flag = out_stream< 0 >().data();
 
                     try
                     {

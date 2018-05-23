@@ -187,6 +187,7 @@ namespace psyllid
             t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
         }
     }
+
     inline void frequency_mask_trigger::calulcate_snr_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold)
     {
         unsigned t_n_bins_per_point = f_average_data.size() / f_n_spline_points;
