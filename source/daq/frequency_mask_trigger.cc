@@ -1003,11 +1003,21 @@ namespace psyllid
         LDEBUG( plog, "Dumping configuration for frequency_mask_trigger" );
         a_config.add( "n-packets-for-mask", new scarab::param_value( a_node->get_n_packets_for_mask() ) );
         a_config.add( "n-spline-points", new scarab::param_value( a_node->get_n_spline_points() ) );
-        a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
-        a_config.add( "threshold-power-snr-high", new scarab::param_value( a_node->get_threshold_snr_high() ) );
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         a_config.add( "trigger-mode", new scarab::param_value( a_node->get_trigger_mode_str() ) );
         a_config.add( "threshold-type", new scarab::param_value( a_node->get_threshold_type_str() ) );
+        // get threshold values corresponding only to the configured threshold type
+        switch ( a_node->get_threshold_type() )
+        {
+            case frequency_mask_trigger::threshold_t::snr:
+                a_config.add( "threshold-power-snr", new scarab::param_value( a_node->get_threshold_snr() ) );
+                a_config.add( "threshold-power-snr-high", new scarab::param_value( a_node->get_threshold_snr_high() ) );
+                break;
+            case frequency_mask_trigger::threshold_t::sigma:
+                a_config.add( "threshold-power-sigma", new scarab::param_value( a_node->get_threshold_sigma() ) );
+                a_config.add( "threshold-power-sigma-high", new scarab::param_value( a_node->get_threshold_sigma_high() ) );
+                break;
+        }
         //TODO these are potentially large, do we want to include the mask and mask-data in this dump? (they also have an existing write to file option)
         //a_config.add( "mask-configuration", new scarab::param_node( a_node->get_mask_configuration() ) );
         return;
