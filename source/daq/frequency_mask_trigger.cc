@@ -118,18 +118,7 @@ namespace psyllid
     void frequency_mask_trigger::set_threshold_type( const std::string& a_threshold_type )
     {
         LDEBUG( plog, "Performing actual threshold type configuration");
-        if ( a_threshold_type == "snr" )
-        {
-            f_threshold_type = threshold_t::snr;
-        }
-        else if ( a_threshold_type == "sigma" )
-        {
-            f_threshold_type = threshold_t::sigma;
-        }
-        else
-        {
-           throw error() << "Unknown threshold type";
-        }
+        set_threshold_type( string_to_threshold( a_threshold_type ) );
     }
 
     std::string frequency_mask_trigger::get_trigger_mode_str() const
@@ -138,7 +127,7 @@ namespace psyllid
         {
             return std::string( "single-level-trigger" );
         }
-        else //if f_trigger_mode == trigger_mode_t::two_level_trigger
+        else
         {
             return std::string( "two-level-trigger" );
         }
@@ -146,14 +135,7 @@ namespace psyllid
 
     std::string frequency_mask_trigger::get_threshold_type_str() const
     {
-        if( f_threshold_type == threshold_t::snr)
-        {
-            return std::string( "snr" );
-        }
-        else
-        {
-            return std::string( "sigma" );
-        }
+        return threshold_to_string( f_threshold_type );
     }
 
     void frequency_mask_trigger::calculate_sigma_mask_spline_points( std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold )
