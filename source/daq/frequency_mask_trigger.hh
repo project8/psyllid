@@ -101,10 +101,10 @@ namespace psyllid
                 snr,
                 sigma
             };
-            uint32_t threshold_to_uint( threshold_t a_threshold );
-            threshold_t uint_to_threshold( uint32_t a_threshold_uint );
-            std::string threshold_to_string( threshold_t a_threshold );
-            threshold_t string_to_threshold( std::string a_thredhold_string );
+            static uint32_t threshold_to_uint( threshold_t a_threshold );
+            static threshold_t uint_to_threshold( uint32_t a_threshold_uint );
+            static std::string threshold_to_string( threshold_t a_threshold );
+            static threshold_t string_to_threshold( std::string a_thredhold_string );
 
 
         public:

@@ -21,9 +21,33 @@ using midge::stream;
 
 namespace psyllid
 {
+
     REGISTER_NODE_AND_BUILDER( frequency_mask_trigger, "frequency-mask-trigger", frequency_mask_trigger_binding );
 
     LOGGER( plog, "frequency_mask_trigger" );
+
+    uint32_t frequency_mask_trigger::threshold_to_uint( frequency_mask_trigger::threshold_t a_threshold )
+    {
+        return static_cast< uint32_t >( a_threshold );
+    }
+    frequency_mask_trigger::threshold_t frequency_mask_trigger::uint_to_threshold( uint32_t a_threshold_uint )
+    {
+        return static_cast< frequency_mask_trigger::threshold_t >( a_threshold_uint );
+    }
+    std::string frequency_mask_trigger::threshold_to_string( frequency_mask_trigger::threshold_t a_threshold )
+    {
+        switch (a_threshold) {
+            case frequency_mask_trigger::threshold_t::snr: return "snr";
+            case frequency_mask_trigger::threshold_t::sigma: return "sigma";
+            default: throw psyllid::error() << "threshold value <" << threshold_to_uint(a_threshold) << "> not recognized";
+        }
+    }
+    frequency_mask_trigger::threshold_t frequency_mask_trigger::string_to_threshold( std::string a_threshold_string )
+    {
+        if ( a_threshold_string == threshold_to_string( frequency_mask_trigger::threshold_t::snr ) ) return threshold_t::snr;
+        if ( a_threshold_string == threshold_to_string( frequency_mask_trigger::threshold_t::sigma ) ) return threshold_t::sigma;
+        throw psyllid::error() << "string <" << a_threshold_string << "> not recognized as valid threshold type";
+    }
 
     frequency_mask_trigger::frequency_mask_trigger() :
             f_length( 10 ),
@@ -66,46 +90,6 @@ namespace psyllid
         LDEBUG( plog, "Setting threshold (power via ampl) to " << f_threshold_snr );
         return;
     }
-
-    //TODO remove block
-    /*
-    void frequency_mask_trigger::set_threshold_power_snr( double a_power_snr )
-    {
-        f_threshold_snr = a_power_snr;
-        LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr );
-        return;
-    }
-    */
-
-    //TODO remove block
-    /*
-    void frequency_mask_trigger::set_threshold_power_snr_high( double a_power_snr )
-    {
-        f_threshold_snr_high = a_power_snr;
-        LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr_high );
-        return;
-    }
-    */
-
-    //TODO remove block
-    /*
-    void frequency_mask_trigger::set_threshold_power_sigma( double a_power_sigma )
-    {
-        f_threshold_sigma = a_power_sigma;
-        LDEBUG( plog, "Setting sigma threshold (power via power) to " << f_threshold_sigma );
-        return;
-    }
-    */
-
-    //TODO remove block
-    /*
-    void frequency_mask_trigger::set_threshold_power_sigma_high( double a_power_sigma )
-    {
-        f_threshold_sigma_high = a_power_sigma;
-        LDEBUG( plog, "Setting sigma threshold (power via power) to " << f_threshold_sigma_high );
-        return;
-    }
-    */
 
     void frequency_mask_trigger::set_threshold_dB( double a_dB )
     {
