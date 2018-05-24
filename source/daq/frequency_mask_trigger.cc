@@ -388,30 +388,23 @@ namespace psyllid
 
                 if( a_ctx.f_in_command == stream::s_none )
                 {
-
                     LTRACE( plog, "FMT read s_none" );
-
                 }
                 else if( a_ctx.f_in_command == stream::s_error )
                 {
-
                     LTRACE( plog, "FMT read s_error" );
                     break;
-
                 }
                 else if( a_ctx.f_in_command == stream::s_start )
                 {
-
                     LDEBUG( plog, "Starting mask update" );
                     a_ctx.f_first_packet_after_start = true;
                     f_n_summed = 0;
                     f_average_data.clear();
                     f_variance_data.clear();
-
                 }
                 else if( a_ctx.f_in_command == stream::s_run )
                 {
-
                     t_freq_data = in_stream< 0 >().data();
 
                     try
@@ -422,7 +415,6 @@ namespace psyllid
                         }
                         else
                         {
-
                             LTRACE( plog, "Considering frequency data:  chan = " << t_freq_data->get_digital_id() <<
                                    "  time = " << t_freq_data->get_unix_time() <<
                                    "  id = " << t_freq_data->get_pkt_in_session() <<
@@ -552,14 +544,14 @@ namespace psyllid
                 }
                 else if( a_ctx.f_in_command == stream::s_stop )
                 {
-
+                    
                     LDEBUG( plog, "FMT is stopping" );// at stream index " << out_stream< 0 >().get_current_index() );
                     if( f_n_summed < f_n_packets_for_mask )
                     {
                         LWARN( plog, "FMT is stopping: it did not process enough packets to update the mask" );
                     }
                     //if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
-
+                    
                 }
                 else if( a_ctx.f_in_command == stream::s_exit )
                 {
@@ -629,24 +621,18 @@ namespace psyllid
 
                 if( a_ctx.f_in_command == stream::s_none )
                 {
-
                     LTRACE( plog, "FMT read s_none" );
-
                 }
                 else if( a_ctx.f_in_command == stream::s_error )
                 {
-
                     LTRACE( plog, "FMT read s_error" );
                     break;
-
                 }
                 else if( a_ctx.f_in_command == stream::s_start )
                 {
-
                     LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     a_ctx.f_first_packet_after_start = true;
-
                 }
                 if( a_ctx.f_in_command == stream::s_run )
                 {
@@ -790,16 +776,12 @@ namespace psyllid
 
                 if( a_ctx.f_in_command == stream::s_none )
                 {
-
                     LTRACE( plog, "FMT read s_none" );
-
                 }
                 else if( a_ctx.f_in_command == stream::s_error )
                 {
-
                     LTRACE( plog, "FMT read s_error" );
                     break;
-
                 }
                 else if( a_ctx.f_in_command == stream::s_start )
                 {
@@ -888,18 +870,14 @@ namespace psyllid
                 }
                 else if( a_ctx.f_in_command == stream::s_stop )
                 {
-
                     LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
-
                 }
                 else if( a_ctx.f_in_command == stream::s_exit )
                 {
-
                     LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
                     out_stream< 0 >().set( stream::s_exit );
                     break;
-
                 }
 
                 a_ctx.f_in_command = in_stream< 0 >().get();
