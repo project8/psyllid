@@ -84,7 +84,7 @@ namespace psyllid
             f_threshold_type( threshold_t::sigma ),
             f_n_spline_points( 20 ),
             f_status( status_t::mask_update ),
-            f_trigger_mode (trigger_mode_t::single_level),
+            f_trigger_mode (trigger_mode_t::single_level ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_mask2(),
@@ -126,18 +126,7 @@ namespace psyllid
     void frequency_mask_trigger::set_trigger_mode( const std::string& a_trigger_mode )
     {
         LDEBUG( plog, "Performing actual trigger mode configuration");
-        if ( a_trigger_mode == "single-level-trigger" )
-        {
-            f_trigger_mode = trigger_mode_t::single_level;
-        }
-        else if ( a_trigger_mode == "two-level-trigger" )
-        {
-            f_trigger_mode = trigger_mode_t::two_level;
-        }
-        else
-        {
-           throw error() << "Unknown trigger_mode_id";
-        }
+        set_trigger_mode( string_to_trigger_mode( a_trigger_mode ) );
     }
 
     void frequency_mask_trigger::set_threshold_type( const std::string& a_threshold_type )
@@ -148,6 +137,8 @@ namespace psyllid
 
     std::string frequency_mask_trigger::get_trigger_mode_str() const
     {
+        return trigger_mode_to_string( f_trigger_mode );
+        /*
         if( f_trigger_mode == trigger_mode_t::single_level)
         {
             return std::string( "single-level-trigger" );
@@ -156,6 +147,7 @@ namespace psyllid
         {
             return std::string( "two-level-trigger" );
         }
+        */
     }
 
     std::string frequency_mask_trigger::get_threshold_type_str() const
