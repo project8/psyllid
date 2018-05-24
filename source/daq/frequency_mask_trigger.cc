@@ -167,7 +167,7 @@ namespace psyllid
             {
                 t_mean += f_average_data[ i_bin ] + threshold * sqrt( f_variance_data[ i_bin ] );
             }
-            t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
+            t_mean *= 1. / (double)(t_bin_end - t_bin_begin);
             t_y_vals[ i_spline_point ] = t_mean;
             t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
         }
@@ -185,7 +185,7 @@ namespace psyllid
             {
                 t_mean += f_average_data[ i_bin ] *threshold;
             }
-            t_mean *= 1 / (double)(t_bin_end - t_bin_begin);
+            t_mean *= 1. / (double)(t_bin_end - t_bin_begin);
             t_y_vals[ i_spline_point ] = t_mean;
             t_x_vals[ i_spline_point ] = (double)t_bin_begin + 0.5 * (double)(t_bin_end - 1 - t_bin_begin);
         }
