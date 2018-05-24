@@ -128,8 +128,8 @@ namespace psyllid
             std::string get_trigger_mode_str() const;
             std::string get_threshold_type_str() const;
 
-            void calculate_snr_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold);
-            void calculate_sigma_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold);
+            void calculate_snr_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, double threshold);
+            void calculate_sigma_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, double threshold);
 
             void set_mask_parameters_from_node( const scarab::param_node* a_mask_and_data_values );
 

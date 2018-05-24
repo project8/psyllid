@@ -155,7 +155,7 @@ namespace psyllid
         return threshold_to_string( f_threshold_type );
     }
 
-    void frequency_mask_trigger::calculate_sigma_mask_spline_points( std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold )
+    void frequency_mask_trigger::calculate_sigma_mask_spline_points( std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, double threshold )
     {
         unsigned t_n_bins_per_point = f_average_data.size() / f_n_spline_points;
         for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
@@ -173,7 +173,7 @@ namespace psyllid
         }
     }
 
-    void frequency_mask_trigger::calculate_snr_mask_spline_points( std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, const double& threshold )
+    void frequency_mask_trigger::calculate_snr_mask_spline_points( std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, double threshold )
     {
         unsigned t_n_bins_per_point = f_average_data.size() / f_n_spline_points;
         for( unsigned i_spline_point = 0; i_spline_point < f_n_spline_points; ++i_spline_point )
@@ -183,7 +183,7 @@ namespace psyllid
             double t_mean = 0.;
             for( unsigned i_bin = t_bin_begin; i_bin < t_bin_end; ++i_bin )
             {
-                t_mean += f_average_data[ i_bin ] *threshold;
+                t_mean += f_average_data[ i_bin ] * threshold;
             }
             t_mean *= 1. / (double)(t_bin_end - t_bin_begin);
             t_y_vals[ i_spline_point ] = t_mean;
