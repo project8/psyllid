@@ -92,9 +92,13 @@ namespace psyllid
 
             enum class trigger_mode_t
             {
-                single_level_trigger,
-                two_level_trigger
+                single_level,
+                two_level
             };
+            static uint32_t trigger_mode_to_uint( trigger_mode_t a_trigger_mode );
+            static trigger_mode_t uint_to_trigger_mode( uint32_t a_trigger_mode_uint );
+            static std::string trigger_mode_to_string( trigger_mode_t a_trigger_mode );
+            static trigger_mode_t string_to_trigger_mode( std::string a_trigger_mode );
 
             enum class threshold_t:uint32_t
             {
@@ -104,7 +108,7 @@ namespace psyllid
             static uint32_t threshold_to_uint( threshold_t a_threshold );
             static threshold_t uint_to_threshold( uint32_t a_threshold_uint );
             static std::string threshold_to_string( threshold_t a_threshold );
-            static threshold_t string_to_threshold( std::string a_thredhold_string );
+            static threshold_t string_to_threshold( std::string a_threshold_string );
 
 
         public:

@@ -26,6 +26,31 @@ namespace psyllid
 
     LOGGER( plog, "frequency_mask_trigger" );
 
+    // trigger_mode_t utility functions
+    uint32_t frequency_mask_trigger::trigger_mode_to_uint( frequency_mask_trigger::trigger_mode_t a_trigger_mode )
+    {
+        return static_cast< uint32_t >( a_trigger_mode );
+    }
+    frequency_mask_trigger::trigger_mode_t frequency_mask_trigger::uint_to_trigger_mode( uint32_t a_trigger_mode_uint )
+    {
+        return static_cast< frequency_mask_trigger::trigger_mode_t >( a_trigger_mode_uint );
+    }
+    std::string frequency_mask_trigger::trigger_mode_to_string( frequency_mask_trigger::trigger_mode_t a_trigger_mode )
+    {
+        switch (a_trigger_mode) {
+            case frequency_mask_trigger::trigger_mode_t::single_level: return "single_level";
+            case frequency_mask_trigger::trigger_mode_t::two_level: return "two_level";
+            default: throw psyllid::error() << "trigger_mode value <" << trigger_mode_to_uint(a_trigger_mode) << "> not recognized";
+        }
+    }
+    frequency_mask_trigger::trigger_mode_t frequency_mask_trigger::string_to_trigger_mode( std::string a_trigger_mode_string )
+    {
+        if ( a_trigger_mode_string == trigger_mode_to_string( frequency_mask_trigger::trigger_mode_t::single_level ) ) return trigger_mode_t::single_level;
+        if ( a_trigger_mode_string == trigger_mode_to_string( frequency_mask_trigger::trigger_mode_t::two_level ) ) return trigger_mode_t::two_level;
+        throw psyllid::error() << "string <" << a_trigger_mode_string << "> not recognized as valid trigger_mode type";
+    }
+
+    // threshold_t utility functions
     uint32_t frequency_mask_trigger::threshold_to_uint( frequency_mask_trigger::threshold_t a_threshold )
     {
         return static_cast< uint32_t >( a_threshold );
@@ -59,7 +84,7 @@ namespace psyllid
             f_threshold_type( threshold_t::sigma ),
             f_n_spline_points( 20 ),
             f_status( status_t::mask_update ),
-            f_trigger_mode (trigger_mode_t::single_level_trigger ),
+            f_trigger_mode (trigger_mode_t::single_level),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_mask2(),
@@ -103,11 +128,11 @@ namespace psyllid
         LDEBUG( plog, "Performing actual trigger mode configuration");
         if ( a_trigger_mode == "single-level-trigger" )
         {
-            f_trigger_mode = trigger_mode_t::single_level_trigger;
+            f_trigger_mode = trigger_mode_t::single_level;
         }
         else if ( a_trigger_mode == "two-level-trigger" )
         {
-            f_trigger_mode = trigger_mode_t::two_level_trigger;
+            f_trigger_mode = trigger_mode_t::two_level;
         }
         else
         {
@@ -123,7 +148,7 @@ namespace psyllid
 
     std::string frequency_mask_trigger::get_trigger_mode_str() const
     {
-        if( f_trigger_mode == trigger_mode_t::single_level_trigger)
+        if( f_trigger_mode == trigger_mode_t::single_level)
         {
             return std::string( "single-level-trigger" );
         }
@@ -232,7 +257,7 @@ namespace psyllid
     {
         LDEBUG( plog, "Requesting switch to apply-trigger mode" );
         f_exe_func_mutex.lock();
-        if ( f_trigger_mode == trigger_mode_t::single_level_trigger )
+        if ( f_trigger_mode == trigger_mode_t::single_level)
         {
             if ( f_exe_func != &frequency_mask_trigger::exe_apply_threshold )
             {
@@ -241,7 +266,7 @@ namespace psyllid
                 f_exe_func = &frequency_mask_trigger::exe_apply_threshold;
             }
         }
-        else // if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+        else
         {
             LDEBUG( plog, "Switching to exe_apply_two_thresholds" );
             if ( f_exe_func != &frequency_mask_trigger::exe_apply_two_thresholds )
@@ -277,7 +302,7 @@ namespace psyllid
         }
         t_output_node.add( "mask", t_mask_array );
 
-        if ( !f_mask2.empty() ) //( f_trigger_mode == trigger_mode_t::two_level_trigger )
+        if ( !f_mask2.empty() )
         {
             scarab::param_array* t_mask_array2 = new scarab::param_array();
             t_mask_array2->resize( f_mask2.size() );
@@ -462,7 +487,7 @@ namespace psyllid
                                         f_mask[ i_bin ] = t_spline( i_bin );
                                     }
 
-                                    if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+                                    if ( f_trigger_mode == trigger_mode_t::two_level )
                                     {
                                         calculate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma_high);
                                         // create the spline
@@ -495,7 +520,7 @@ namespace psyllid
                                         f_mask[ i_bin ] = t_spline( i_bin );
                                     }
 
-                                    if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
+                                    if ( f_trigger_mode == trigger_mode_t::two_level )
                                     {
                                         calculate_snr_mask_spline_points(t_x_vals, t_y_vals, f_threshold_snr_high);
                                         // create the spline
