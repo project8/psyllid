@@ -89,16 +89,23 @@ namespace psyllid
                 mask_update,
                 triggering
             };
+
             enum class trigger_mode_t
             {
                 single_level_trigger,
                 two_level_trigger
             };
-            enum class threshold_type_t
+
+            enum class threshold_t:uint32_t
             {
-                snr_threshold,
-                sigma_threshold
+                snr,
+                sigma
             };
+            uint32_t threshold_to_uint( threshold_t a_threshold );
+            threshold_t uint_to_threshold( uint32_t a_threshold_uint );
+            std::string threshold_to_string( threshold_t a_threshold );
+            threshold_t string_to_threshold( std::string a_thredhold_string );
+
 
         public:
             frequency_mask_trigger();
@@ -112,8 +119,8 @@ namespace psyllid
             void set_threshold_power_sigma( double a_power_sigma );
             void set_threshold_power_sigma_high( double a_power_sigma);
             void set_threshold_dB( double a_dB );
-            void set_trigger_mode( const std::string& trigger_mode );
-            void set_threshold_type( const std::string& threshold_type );
+            void set_trigger_mode( const std::string& a_trigger_mode );
+            void set_threshold_type( const std::string& a_threshold_type );
             std::string get_trigger_mode_str() const;
             std::string get_threshold_type_str() const;
 
@@ -128,7 +135,7 @@ namespace psyllid
             mv_accessible( double, threshold_snr_high);
             mv_accessible( double, threshold_sigma );
             mv_accessible( double, threshold_sigma_high);
-            mv_accessible( threshold_type_t, threshold_type);
+            mv_accessible( threshold_t, threshold_type);
             mv_accessible( unsigned, n_spline_points );
             mv_accessible_noset( status_t, status );
             mv_accessible( trigger_mode_t, trigger_mode );
