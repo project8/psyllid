@@ -467,7 +467,7 @@ namespace psyllid
 
                                 if ( f_threshold_type == threshold_type_t::sigma_threshold )
                                 {
-                                    this->calculate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma);
+                                    calculate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma);
 
                                     // create the spline
                                     tk::spline t_spline;
@@ -483,7 +483,7 @@ namespace psyllid
 
                                     if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
                                     {
-                                        this->calculate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma_high);
+                                        calculate_sigma_mask_spline_points(t_x_vals, t_y_vals, f_threshold_sigma_high);
                                         // create the spline
                                         tk::spline t_spline;
                                         t_spline.set_points( t_x_vals, t_y_vals );
@@ -499,7 +499,7 @@ namespace psyllid
                                 }
                                 else //if ( f_threshold_type == threshold_type_t::snr_threshold )
                                 {
-                                    this->calculate_snr_mask_spline_points(t_x_vals, t_y_vals, f_threshold_snr);
+                                    calculate_snr_mask_spline_points(t_x_vals, t_y_vals, f_threshold_snr);
 
                                     // create the spline
                                     tk::spline t_spline;
@@ -516,7 +516,7 @@ namespace psyllid
 
                                     if ( f_trigger_mode == trigger_mode_t::two_level_trigger )
                                     {
-                                        this->calculate_snr_mask_spline_points(t_x_vals, t_y_vals, f_threshold_snr_high);
+                                        calculate_snr_mask_spline_points(t_x_vals, t_y_vals, f_threshold_snr_high);
                                         // create the spline
                                         tk::spline t_spline;
                                         t_spline.set_points( t_x_vals, t_y_vals );
@@ -544,14 +544,14 @@ namespace psyllid
                 }
                 else if( a_ctx.f_in_command == stream::s_stop )
                 {
-                    
+
                     LDEBUG( plog, "FMT is stopping" );// at stream index " << out_stream< 0 >().get_current_index() );
                     if( f_n_summed < f_n_packets_for_mask )
                     {
                         LWARN( plog, "FMT is stopping: it did not process enough packets to update the mask" );
                     }
                     //if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
-                    
+
                 }
                 else if( a_ctx.f_in_command == stream::s_exit )
                 {
