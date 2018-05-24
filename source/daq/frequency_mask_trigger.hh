@@ -124,10 +124,10 @@ namespace psyllid
 
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
-            mv_accessible_noset( double, threshold_snr );
-            mv_accessible_noset( double, threshold_snr_high);
-            mv_accessible_noset( double, threshold_sigma );
-            mv_accessible_noset( double, threshold_sigma_high);
+            mv_accessible( double, threshold_snr );
+            mv_accessible( double, threshold_snr_high);
+            mv_accessible( double, threshold_sigma );
+            mv_accessible( double, threshold_sigma_high);
             mv_accessible( threshold_type_t, threshold_type);
             mv_accessible( unsigned, n_spline_points );
             mv_accessible_noset( status_t, status );

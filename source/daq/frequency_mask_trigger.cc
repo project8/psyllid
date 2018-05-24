@@ -67,32 +67,46 @@ namespace psyllid
         return;
     }
 
+    //TODO remove block
+    /*
     void frequency_mask_trigger::set_threshold_power_snr( double a_power_snr )
     {
         f_threshold_snr = a_power_snr;
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr );
         return;
     }
+    */
 
+    //TODO remove block
+    /*
     void frequency_mask_trigger::set_threshold_power_snr_high( double a_power_snr )
     {
         f_threshold_snr_high = a_power_snr;
         LDEBUG( plog, "Setting threshold (power via power) to " << f_threshold_snr_high );
         return;
     }
+    */
+
+    //TODO remove block
+    /*
     void frequency_mask_trigger::set_threshold_power_sigma( double a_power_sigma )
     {
         f_threshold_sigma = a_power_sigma;
         LDEBUG( plog, "Setting sigma threshold (power via power) to " << f_threshold_sigma );
         return;
     }
+    */
 
+    //TODO remove block
+    /*
     void frequency_mask_trigger::set_threshold_power_sigma_high( double a_power_sigma )
     {
         f_threshold_sigma_high = a_power_sigma;
         LDEBUG( plog, "Setting sigma threshold (power via power) to " << f_threshold_sigma_high );
         return;
     }
+    */
+
     void frequency_mask_trigger::set_threshold_dB( double a_dB )
     {
         f_threshold_snr = pow( 10, a_dB / 10. );
@@ -116,6 +130,7 @@ namespace psyllid
            throw error() << "Unknown trigger_mode_id";
         }
     }
+
     void frequency_mask_trigger::set_threshold_type( const std::string& trigger_mode )
     {
         LDEBUG( plog, "Performing actual threshold type configuration");
@@ -939,19 +954,19 @@ namespace psyllid
         }
         if( a_config.has( "threshold-power-snr" ) )
         {
-            a_node->set_threshold_power_snr( a_config.get_value< double >( "threshold-power-snr" ) );
+            a_node->set_threshold_snr( a_config.get_value< double >( "threshold-power-snr" ) );
         }
         if( a_config.has( "threshold-power-snr-high" ) )
         {
-            a_node->set_threshold_power_snr_high( a_config.get_value< double >( "threshold-power-snr-high" ) );
+            a_node->set_threshold_snr_high( a_config.get_value< double >( "threshold-power-snr-high" ) );
         }
         if( a_config.has( "threshold-power-sigma" ) )
         {
-            a_node->set_threshold_power_sigma( a_config.get_value< double >( "threshold-power-sigma" ) );
+            a_node->set_threshold_sigma( a_config.get_value< double >( "threshold-power-sigma" ) );
         }
         if( a_config.has( "threshold-power-sigma-high" ) )
         {
-            a_node->set_threshold_power_sigma_high( a_config.get_value< double >( "threshold-power-sigma-high" ) );
+            a_node->set_threshold_sigma_high( a_config.get_value< double >( "threshold-power-sigma-high" ) );
         }
         if( a_config.has( "threshold-db" ) )
         {
