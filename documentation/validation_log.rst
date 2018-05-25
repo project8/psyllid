@@ -43,11 +43,11 @@ Fixes:
 Log
 ---
 
-Version: Upcoming
+Version: 1.6.0
 ~~~~~~~~~~~~~~~~~
 
-Release Date:
-'''''''''''''''''''''''''
+Release Date: May 25, 2018
+''''''''''''''''''''''''''
 
 New Features:
 '''''''''''''
