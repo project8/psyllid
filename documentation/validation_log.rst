@@ -52,7 +52,7 @@ Release Date:
 New Features:
 '''''''''''''
 
-* midge updated to v3.5.3 (updates scarab to v1.6.0)
+* midge updated to v3.5.4 (updates scarab to v1.6.1)
 * server_config now only sets the default authentication file path after checking that the path exists
     * tested via docker batch execution with and without the auth file present; detection and setting appears to work fine
 * frequency mask trigger
