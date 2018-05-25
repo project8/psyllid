@@ -19,6 +19,8 @@
 #include <mutex>
 #include <vector>
 
+#include <cmath>
+
 namespace psyllid
 {
 
@@ -64,6 +66,7 @@ namespace psyllid
      - "threshold-dB": float -- The threshold SNR, given as a dB factor
      - "trigger-mode": string -- The trigger mode, can be set to "single-level-trigger" or "two-level-trigger"
      - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
+     - "mask-configuration": string || node -- If a string, path to a yaml file with mask and mask-data arrays to populate the respective vectors; if a node, then contains those arrays of floats.
 
      Available DAQ commands:
      - "update-mask" (no args) -- Switch the execution mode to updating the trigger mask
@@ -86,11 +89,27 @@ namespace psyllid
                 mask_update,
                 triggering
             };
+
             enum class trigger_mode_t
             {
-                single_level_trigger,
-                two_level_trigger
+                single_level,
+                two_level
             };
+            static uint32_t trigger_mode_to_uint( trigger_mode_t a_trigger_mode );
+            static trigger_mode_t uint_to_trigger_mode( uint32_t a_trigger_mode_uint );
+            static std::string trigger_mode_to_string( trigger_mode_t a_trigger_mode );
+            static trigger_mode_t string_to_trigger_mode( const std::string& a_trigger_mode );
+
+            enum class threshold_t:uint32_t
+            {
+                snr,
+                sigma
+            };
+            static uint32_t threshold_to_uint( threshold_t a_threshold );
+            static threshold_t uint_to_threshold( uint32_t a_threshold_uint );
+            static std::string threshold_to_string( threshold_t a_threshold );
+            static threshold_t string_to_threshold( const std::string& a_threshold_string );
+
 
         public:
             frequency_mask_trigger();
@@ -101,14 +120,26 @@ namespace psyllid
             void set_threshold_ampl_snr( double a_ampl_snr );
             void set_threshold_power_snr( double a_power_snr );
             void set_threshold_power_snr_high( double a_power_snr);
+            void set_threshold_power_sigma( double a_power_sigma );
+            void set_threshold_power_sigma_high( double a_power_sigma);
             void set_threshold_dB( double a_dB );
-            void set_trigger_mode( const std::string& trigger_mode );
+            void set_trigger_mode( const std::string& a_trigger_mode );
+            void set_threshold_type( const std::string& a_threshold_type );
             std::string get_trigger_mode_str() const;
+            std::string get_threshold_type_str() const;
+
+            void calculate_snr_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, double threshold);
+            void calculate_sigma_mask_spline_points(std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, double threshold);
+
+            void set_mask_parameters_from_node( const scarab::param_node* a_mask_and_data_values );
 
             mv_accessible( uint64_t, length );
             mv_accessible_noset( unsigned, n_packets_for_mask );
-            mv_accessible_noset( double, threshold_snr );
-            mv_accessible_noset( double, threshold_snr_high);
+            mv_accessible( double, threshold_snr );
+            mv_accessible( double, threshold_snr_high);
+            mv_accessible( double, threshold_sigma );
+            mv_accessible( double, threshold_sigma_high);
+            mv_accessible( threshold_t, threshold_type);
             mv_accessible( unsigned, n_spline_points );
             mv_accessible_noset( status_t, status );
             mv_accessible( trigger_mode_t, trigger_mode );
@@ -141,13 +172,52 @@ namespace psyllid
 
         private:
             std::vector< double > f_mask;
-            std::vector< double > f_mask_data;
+            std::vector< double > f_mask2;
+            std::vector< double > f_average_data;
+            std::vector< double > f_variance_data;
             unsigned f_n_summed;
 
             std::mutex f_mask_mutex;
 
     };
 
+    inline uint32_t frequency_mask_trigger::trigger_mode_to_uint( frequency_mask_trigger::trigger_mode_t a_trigger_mode )
+    {
+        return static_cast< uint32_t >( a_trigger_mode );
+    }
+    inline frequency_mask_trigger::trigger_mode_t frequency_mask_trigger::uint_to_trigger_mode( uint32_t a_trigger_mode_uint )
+    {
+        return static_cast< frequency_mask_trigger::trigger_mode_t >( a_trigger_mode_uint );
+    }
+
+    inline uint32_t frequency_mask_trigger::threshold_to_uint( frequency_mask_trigger::threshold_t a_threshold )
+    {
+        return static_cast< uint32_t >( a_threshold );
+    }
+    inline frequency_mask_trigger::threshold_t frequency_mask_trigger::uint_to_threshold( uint32_t a_threshold_uint )
+    {
+        return static_cast< frequency_mask_trigger::threshold_t >( a_threshold_uint );
+    }
+
+    inline void frequency_mask_trigger::set_trigger_mode( const std::string& a_trigger_mode )
+    {
+        set_trigger_mode( string_to_trigger_mode( a_trigger_mode ) );
+    }
+
+    inline void frequency_mask_trigger::set_threshold_type( const std::string& a_threshold_type )
+    {
+        set_threshold_type( string_to_threshold( a_threshold_type ) );
+    }
+
+    inline std::string frequency_mask_trigger::get_trigger_mode_str() const
+    {
+        return trigger_mode_to_string( f_trigger_mode );
+    }
+
+    inline std::string frequency_mask_trigger::get_threshold_type_str() const
+    {
+        return threshold_to_string( f_threshold_type );
+    }
 
     class frequency_mask_trigger_binding : public _node_binding< frequency_mask_trigger, frequency_mask_trigger_binding >
     {
