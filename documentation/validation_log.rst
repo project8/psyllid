@@ -63,6 +63,8 @@ New Features:
         * building a mask now must accumulate variance data as well as power data
 * egg3-reader: support for "repeat-egg" boolean configuration option, if true, restarts reading the file from the first record upon reaching end of file
     * tested via batch mode, using two sequential start-run commands with duration set to 0 and the egg reader configured to read 100000 records (file has ~120k records). The second run repeated the egg file (debug prints showed it re-reading earlier record IDs) and prints of the output pkt_id showed that they continued to increase as expected.
+* batch_executor: check return code of each action and exit if >= 100 (ie if an error occurred)
+    * tested with valid config file and one with a syntax error to cause error, both behave as expected (ie the latter causes a crash).
 
 
 Version: 1.5.0
