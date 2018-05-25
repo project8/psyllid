@@ -27,14 +27,6 @@ namespace psyllid
     LOGGER( plog, "frequency_mask_trigger" );
 
     // trigger_mode_t utility functions
-    uint32_t frequency_mask_trigger::trigger_mode_to_uint( frequency_mask_trigger::trigger_mode_t a_trigger_mode )
-    {
-        return static_cast< uint32_t >( a_trigger_mode );
-    }
-    frequency_mask_trigger::trigger_mode_t frequency_mask_trigger::uint_to_trigger_mode( uint32_t a_trigger_mode_uint )
-    {
-        return static_cast< frequency_mask_trigger::trigger_mode_t >( a_trigger_mode_uint );
-    }
     std::string frequency_mask_trigger::trigger_mode_to_string( frequency_mask_trigger::trigger_mode_t a_trigger_mode )
     {
         // note that the string representations use hyphens, not underscores
@@ -52,14 +44,6 @@ namespace psyllid
     }
 
     // threshold_t utility functions
-    uint32_t frequency_mask_trigger::threshold_to_uint( frequency_mask_trigger::threshold_t a_threshold )
-    {
-        return static_cast< uint32_t >( a_threshold );
-    }
-    frequency_mask_trigger::threshold_t frequency_mask_trigger::uint_to_threshold( uint32_t a_threshold_uint )
-    {
-        return static_cast< frequency_mask_trigger::threshold_t >( a_threshold_uint );
-    }
     std::string frequency_mask_trigger::threshold_to_string( frequency_mask_trigger::threshold_t a_threshold )
     {
         switch (a_threshold) {
@@ -123,28 +107,6 @@ namespace psyllid
         LDEBUG( plog, "Setting threshold (power via dB) to " << f_threshold_snr );
         return;
     }
-
-    /*
-    void frequency_mask_trigger::set_trigger_mode( const std::string& a_trigger_mode )
-    {
-        set_trigger_mode( string_to_trigger_mode( a_trigger_mode ) );
-    }
-
-    void frequency_mask_trigger::set_threshold_type( const std::string& a_threshold_type )
-    {
-        set_threshold_type( string_to_threshold( a_threshold_type ) );
-    }
-
-    std::string frequency_mask_trigger::get_trigger_mode_str() const
-    {
-        return trigger_mode_to_string( f_trigger_mode );
-    }
-
-    std::string frequency_mask_trigger::get_threshold_type_str() const
-    {
-        return threshold_to_string( f_threshold_type );
-    }
-    */
 
     void frequency_mask_trigger::calculate_sigma_mask_spline_points( std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, double threshold )
     {
