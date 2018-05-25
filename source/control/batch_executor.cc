@@ -102,6 +102,13 @@ namespace psyllid
             {
                 std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
             }
+            if ( dripline::to_uint(t_request_reply_info.f_return_code) >= 100 )
+            {
+                LWARN( plog, "batch action received an error-level return code; exiting" );
+                throw psyllid::error() << "error completing batch action, received code [" <<
+                                       t_request_reply_info.f_return_code << "]: \"" <<
+                                       t_request_reply_info.f_return_msg << "\"";
+            }
         } // loop over actions param_array
 
         LINFO( plog, "action loop complete" );

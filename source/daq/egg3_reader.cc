@@ -117,7 +117,7 @@ namespace psyllid
                     }
                     if ( !read_slice_ok || (f_read_n_records > 0 && t_records_read >= f_read_n_records) )
                     {
-                        LWARN( plog, "breaking out of loop because record limit or end of file reached" );
+                        LINFO( plog, "breaking out of loop because record limit or end of file reached" );
                         std::shared_ptr< daq_control > t_daq_control = use_daq_control();
                         t_daq_control->stop_run();
                     }
@@ -135,7 +135,7 @@ namespace psyllid
             LWARN( plog, "got an exception, throwing" );
             a_midge->throw_ex( std::current_exception() );
         }
-        LWARN( plog, "at the end of egg3 execute" );
+        LDEBUG( plog, "at the end of egg3 execute" );
     }
 
     void egg3_reader::finalize()

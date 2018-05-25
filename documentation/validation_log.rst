@@ -52,15 +52,26 @@ Release Date:
 New Features:
 '''''''''''''
 
-* midge updated to v3.5.3 (updates scarab to v1.6.0)
+* midge updated to v3.5.4 (updates scarab to v1.6.1)
 * server_config now only sets the default authentication file path after checking that the path exists
     * tested via docker batch execution with and without the auth file present; detection and setting appears to work fine
 * frequency mask trigger
     * updated to allow the mask and summed power arrays to be configured, either directly in the configuration file, or with a path to another file (such as that output by the above)
         * tested in file value arrays by setting in a file and calling write mask to ensure the values are in the output file
         * tested  from-file by modifying the above output file (so that the values differ), configuring with it as input, and the writing a new output to compare
+    * added support for specifying thresholds to be measured in units of sigma of the noise, in addition to power (in dB, amplitude, etc.)
+        * building a mask now must accumulate variance data as well as power data
+        * tested by checking sigma mask matches data-mean + sigma_threshold * sqrt(data-variance)
+        * mask file contains data-mean, data-variance, mask and mask2 if present
+    * in two-level trigger-mode a second mask is created and stored; two masks can also be read in
+        * mask sizes are compared after reading
+        * tested via batch mode that fmt throws error and psyllid deactivates after reading in a mask from a file if sizes mismatch
+        * mask sizes are compared to incoming data array when run is started
+        * tested via batch mode that a missing mask or mismatching mask sizes results in an error when run is started; psyllid exits
 * egg3-reader: support for "repeat-egg" boolean configuration option, if true, restarts reading the file from the first record upon reaching end of file
     * tested via batch mode, using two sequential start-run commands with duration set to 0 and the egg reader configured to read 100000 records (file has ~120k records). The second run repeated the egg file (debug prints showed it re-reading earlier record IDs) and prints of the output pkt_id showed that they continued to increase as expected.
+* batch_executor: check return code of each action and exit if >= 100 (ie if an error occurred)
+    * tested with valid config file and one with a syntax error to cause error, both behave as expected (ie the latter causes a crash).
 
 
 Version: 1.5.0
