@@ -145,7 +145,7 @@ namespace psyllid
         }
         else
         {
-            return std::string( "two-level-trigger" );
+            return std::string( "two-level" );
         }
         */
     }
@@ -319,22 +319,21 @@ namespace psyllid
         t_output_node.add( "data-variance", t_variance_data_array );
 
         scarab::param_translator* t_param_translator = new scarab::param_translator();
-        /*
-        scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "yaml" );
-        if( t_json_codec == nullptr )
+        if( t_param_translator == nullptr )
         {
-            throw error() << "Unable to create output-codec for YAML";
+            throw error() << "unable to create translator!";
         }
-        */
 
         LTRACE( plog, "Mask file:\n" << t_output_node );
-        //if( ! t_json_codec->write_file( t_output_node, a_filename ) )
         if( ! t_param_translator->write_file( t_output_node, a_filename ) )
         {
             throw error() << "Unable to write mask to file <" << a_filename << ">";
         }
+        else
+        {
+            LWARN( plog, "\n\n wrote file \n\n" );
+        }
 
-        //delete t_json_codec;
         delete t_param_translator;
 
         return;
@@ -974,12 +973,12 @@ namespace psyllid
             const scarab::param* t_mask_config = a_config.at( "mask-configuration" );
             if ( t_mask_config->is_value() )
             {
-                scarab::param_input_codec* t_yaml_codec = scarab::factory< scarab::param_input_codec >::get_instance()->create( "yaml" );
-                if (t_yaml_codec == nullptr )
+                scarab::param_translator* t_param_translator = new scarab::param_translator();
+                if (t_param_translator == nullptr )
                 {
-                    throw error() << "Unable to create input-codec for YAML";
+                    throw error() << "Unable to create input-translator";
                 }
-                scarab::param* t_file_param = t_yaml_codec->read_file( t_mask_config->as_value().as_string() );
+                scarab::param* t_file_param = t_param_translator->read_file( t_mask_config->as_value().as_string() );
                 if ( t_file_param->is_node() )
                 {
                     a_node->set_mask_parameters_from_node( &(t_file_param->as_node()) );
