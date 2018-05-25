@@ -138,16 +138,6 @@ namespace psyllid
     std::string frequency_mask_trigger::get_trigger_mode_str() const
     {
         return trigger_mode_to_string( f_trigger_mode );
-        /*
-        if( f_trigger_mode == trigger_mode_t::single_level)
-        {
-            return std::string( "single-level-trigger" );
-        }
-        else
-        {
-            return std::string( "two-level" );
-        }
-        */
     }
 
     std::string frequency_mask_trigger::get_threshold_type_str() const
@@ -374,14 +364,14 @@ namespace psyllid
         try
         {
             freq_data* t_freq_data = nullptr;
-            //trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0., t_abs_square = 0.;
             unsigned t_array_size = 0;
 
             LDEBUG( plog, "Entering add-to-mask loop" );
             while( ! is_canceled() && ! f_break_exe_func.load() )
             {
-                // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+                // the stream::get function is called at the end of the loop so
+                // that we can enter the exe func after switching the function pointer
                 // and still handle the input command appropriately
 
                 if( a_ctx.f_in_command == stream::s_none )
@@ -535,24 +525,19 @@ namespace psyllid
                 }
                 else if( a_ctx.f_in_command == stream::s_stop )
                 {
-
-                    LDEBUG( plog, "FMT is stopping" );// at stream index " << out_stream< 0 >().get_current_index() );
+                    LDEBUG( plog, "FMT is stopping" );
                     if( f_n_summed < f_n_packets_for_mask )
                     {
                         LWARN( plog, "FMT is stopping: it did not process enough packets to update the mask" );
                     }
-                    //if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
-
                 }
                 else if( a_ctx.f_in_command == stream::s_exit )
                 {
-
-                    LDEBUG( plog, "FMT is exiting" );// at stream index " << out_stream< 0 >().get_current_index() );
+                    LDEBUG( plog, "FMT is exiting" );
                     if( f_n_summed < f_n_packets_for_mask )
                     {
                         LWARN( plog, "FMT is exiting: it did not process enough packets to update the mask" );
                     }
-                    //out_stream< 0 >().set( stream::s_exit );
                     break;
 
                 }
@@ -588,7 +573,6 @@ namespace psyllid
         }
     }
 
-
     void frequency_mask_trigger::exe_apply_threshold( exe_func_context& a_ctx )
     {
         f_exe_func_mutex.unlock();
@@ -607,7 +591,8 @@ namespace psyllid
             LDEBUG( plog, "Entering apply-threshold loop" );
             while( ! is_canceled() && ! f_break_exe_func.load() )
             {
-                // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+                // the stream::get function is called at the end of the loop so
+                // that we can enter the exe func after switching the function pointer
                 // and still handle the input command appropriately
 
                 if( a_ctx.f_in_command == stream::s_none )
@@ -627,7 +612,6 @@ namespace psyllid
                 }
                 if( a_ctx.f_in_command == stream::s_run )
                 {
-
                     t_freq_data = in_stream< 0 >().data();
                     t_trigger_flag = out_stream< 0 >().data();
 
@@ -659,13 +643,13 @@ namespace psyllid
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
                             t_power_amp = t_real*t_real + t_imag*t_imag;
 
-
                             if( t_power_amp >= t_mask_buffer[ i_bin ] )
                             {
                                 t_trigger_flag->set_flag( true );
                                 t_trigger_flag->set_high_threshold( true );
-                                LDEBUG( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                        "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
+                                LDEBUG( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin <<
+                                       "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                       "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
                                 break;
                             }
                         }
@@ -692,18 +676,14 @@ namespace psyllid
                 }
                 else if( a_ctx.f_in_command == stream::s_stop )
                 {
-
                     LDEBUG( plog, "FMT is stopping at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_stop ) ) break;
-
                 }
                 else if( a_ctx.f_in_command == stream::s_exit )
                 {
-
                     LDEBUG( plog, "FMT is exiting at stream index " << out_stream< 0 >().get_current_index() );
                     out_stream< 0 >().set( stream::s_exit );
                     break;
-
                 }
 
                 a_ctx.f_in_command = in_stream< 0 >().get();
@@ -711,7 +691,8 @@ namespace psyllid
 
             } // while( ! is_canceled() && ! f_break_exe_func.load() )
 
-            LDEBUG( plog, "FMT has exited the apply-threshold while loop; possible reasons: is_canceled() = " << is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
+            LDEBUG( plog, "FMT has exited the apply-threshold while loop; possible reasons: is_canceled() = " <<
+                   is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
             if( f_break_exe_func.load() )
             {
                 LINFO( plog, "FMT is switching exe while loops" );
@@ -754,15 +735,15 @@ namespace psyllid
             std::vector< double > t_mask_buffer( f_mask );
             std::vector< double > t_mask2_buffer( f_mask2 );
 
-            LDEBUG( plog, "mask sizes: "<<t_mask_buffer.size()<<" "<<t_mask2_buffer.size());
+            LDEBUG( plog, "mask sizes: " << t_mask_buffer.size() << " " << t_mask2_buffer.size() );
 
             f_mask_mutex.unlock();
-
 
             LDEBUG( plog, "Entering apply-two-thresholds loop" );
             while( ! is_canceled() && ! f_break_exe_func.load() )
             {
-                // the stream::get function is called at the end of the loop so that we can enter the exe func after switching the function pointer
+                // the stream::get function is called at the end of the loop so
+                // that we can enter the exe func after switching the function pointer
                 // and still handle the input command appropriately
 
                 if( a_ctx.f_in_command == stream::s_none )
@@ -776,15 +757,12 @@ namespace psyllid
                 }
                 else if( a_ctx.f_in_command == stream::s_start )
                 {
-
                     LDEBUG( plog, "Starting the FMT; output at stream index " << out_stream< 0 >().get_current_index() );
                     if( ! out_stream< 0 >().set( stream::s_start ) ) break;
                     a_ctx.f_first_packet_after_start = true;
-
                 }
                 if( a_ctx.f_in_command == stream::s_run )
                 {
-
                     t_freq_data = in_stream< 0 >().data();
                     t_trigger_flag = out_stream< 0 >().data();
 
@@ -820,28 +798,30 @@ namespace psyllid
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
                             t_power_amp = t_real*t_real + t_imag*t_imag;
 
-
                             if(  t_power_amp >= t_mask2_buffer[ i_bin ] )
                             {
                                 t_trigger_flag->set_flag( true );
                                 t_trigger_flag->set_high_threshold( true );
-                                LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                        "\tdata: " << t_power_amp << ";  mask2: " << t_mask2_buffer[ i_bin ] );
+                                LDEBUG( plog, "Data " << t_trigger_flag->get_id() << " [bin " << i_bin <<
+                                       "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                       "\tdata: " << t_power_amp << ";  mask2: " << t_mask2_buffer[ i_bin ] );
                                 break;
                             }
                             else if( t_power_amp >= t_mask_buffer[ i_bin ] )
                             {
                                 t_trigger_flag->set_flag( true );
                                 t_trigger_flag->set_high_threshold( false );
-                                LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin << "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
-                                        "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
+                                LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> [bin " << i_bin <<
+                                       "] resulted in flag <" << t_trigger_flag->get_flag() << ">" << '\n' <<
+                                       "\tdata: " << t_power_amp << ";  mask1: " << t_mask_buffer[ i_bin ] );
                             }
                         }
 
 #ifndef NDEBUG
                         if( ! t_trigger_flag->get_flag() )
                         {
-                            LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> resulted in flag <" << t_trigger_flag->get_flag() << ">");
+                            LTRACE( plog, "Data id <" << t_trigger_flag->get_id() << "> resulted in flag <" <<
+                                   t_trigger_flag->get_flag() << ">");
                         }
 #endif
 
@@ -876,7 +856,8 @@ namespace psyllid
 
             } // while( ! is_canceled() && ! f_break_exe_func.load() )
 
-            LDEBUG( plog, "FMT has exited the apply-two-threshold while loop; possible reasons: is_canceled() = " << is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
+            LDEBUG( plog, "FMT has exited the apply-two-threshold while loop; possible reasons: is_canceled() = " <<
+                   is_canceled() << "; f_break_exe_func.load() = " << f_break_exe_func.load() );
             if( f_break_exe_func.load() )
             {
                 LINFO( plog, "FMT is switching exe while loops" );
@@ -958,7 +939,6 @@ namespace psyllid
         }
         if( a_config.has( "mask-configuration" ) )
         {
-            //TODO is this an okay place for this logic, or should it go in the fmt class itself or in a private method of this class?
             const scarab::param* t_mask_config = a_config.at( "mask-configuration" );
             if ( t_mask_config->is_value() )
             {
@@ -1011,8 +991,7 @@ namespace psyllid
                 a_config.add( "threshold-power-sigma-high", new scarab::param_value( a_node->get_threshold_sigma_high() ) );
                 break;
         }
-        //TODO these are potentially large, do we want to include the mask and mask-data in this dump? (they also have an existing write to file option)
-        //a_config.add( "mask-configuration", new scarab::param_node( a_node->get_mask_configuration() ) );
+        //TODO the vectors of average and variance data are large, should add logic to export them to a file
         return;
     }
 
