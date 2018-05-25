@@ -61,6 +61,13 @@ New Features:
         * tested  from-file by modifying the above output file (so that the values differ), configuring with it as input, and the writing a new output to compare
     * added support for specifying thresholds to be measured in units of sigma of the noise, in addition to power (in dB, amplitude, etc.)
         * building a mask now must accumulate variance data as well as power data
+        * tested by checking sigma mask matches data-mean + sigma_threshold * sqrt(data-variance)
+        * mask file contains data-mean, data-variance, mask and mask2 if present
+    * in two-level trigger-mode a second mask is created and stored; two masks can also be read in
+        * mask sizes are compared after reading
+        * tested via batch mode that fmt throws error and psyllid deactivates after reading in a mask from a file if sizes mismatch
+        * mask sizes are compared to incoming data array when run is started
+        * tested via batch mode that a missing mask or mismatching mask sizes results in an error when run is started; psyllid exits
 * egg3-reader: support for "repeat-egg" boolean configuration option, if true, restarts reading the file from the first record upon reaching end of file
     * tested via batch mode, using two sequential start-run commands with duration set to 0 and the egg reader configured to read 100000 records (file has ~120k records). The second run repeated the egg file (debug prints showed it re-reading earlier record IDs) and prints of the output pkt_id showed that they continued to increase as expected.
 
