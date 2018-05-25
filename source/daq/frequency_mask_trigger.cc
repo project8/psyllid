@@ -43,7 +43,7 @@ namespace psyllid
             default: throw psyllid::error() << "trigger_mode value <" << trigger_mode_to_uint(a_trigger_mode) << "> not recognized";
         }
     }
-    frequency_mask_trigger::trigger_mode_t frequency_mask_trigger::string_to_trigger_mode( std::string a_trigger_mode_string )
+    frequency_mask_trigger::trigger_mode_t frequency_mask_trigger::string_to_trigger_mode( const std::string& a_trigger_mode_string )
     {
         if ( a_trigger_mode_string == trigger_mode_to_string( frequency_mask_trigger::trigger_mode_t::single_level ) ) return trigger_mode_t::single_level;
         if ( a_trigger_mode_string == trigger_mode_to_string( frequency_mask_trigger::trigger_mode_t::two_level ) ) return trigger_mode_t::two_level;
@@ -67,7 +67,7 @@ namespace psyllid
             default: throw psyllid::error() << "threshold value <" << threshold_to_uint(a_threshold) << "> not recognized";
         }
     }
-    frequency_mask_trigger::threshold_t frequency_mask_trigger::string_to_threshold( std::string a_threshold_string )
+    frequency_mask_trigger::threshold_t frequency_mask_trigger::string_to_threshold( const std::string& a_threshold_string )
     {
         if ( a_threshold_string == threshold_to_string( frequency_mask_trigger::threshold_t::snr ) ) return threshold_t::snr;
         if ( a_threshold_string == threshold_to_string( frequency_mask_trigger::threshold_t::sigma ) ) return threshold_t::sigma;
@@ -318,19 +318,24 @@ namespace psyllid
         t_output_node.add( "data-mean", t_mean_data_array );
         t_output_node.add( "data-variance", t_variance_data_array );
 
+        scarab::param_translator* t_param_translator = new scarab::param_translator();
+        /*
         scarab::param_output_codec* t_json_codec = scarab::factory< scarab::param_output_codec >::get_instance()->create( "yaml" );
         if( t_json_codec == nullptr )
         {
             throw error() << "Unable to create output-codec for YAML";
         }
+        */
 
         LTRACE( plog, "Mask file:\n" << t_output_node );
-        if( ! t_json_codec->write_file( t_output_node, a_filename ) )
+        //if( ! t_json_codec->write_file( t_output_node, a_filename ) )
+        if( ! t_param_translator->write_file( t_output_node, a_filename ) )
         {
             throw error() << "Unable to write mask to file <" << a_filename << ">";
         }
 
-        delete t_json_codec;
+        //delete t_json_codec;
+        delete t_param_translator;
 
         return;
     }
