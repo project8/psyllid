@@ -633,7 +633,7 @@ namespace psyllid
                     catch( error& e )
                     {
                         LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
-                        break;
+                        throw;
                     }
 
                 }
@@ -798,7 +798,7 @@ namespace psyllid
                     catch( error& e )
                     {
                         LERROR( plog, "Exiting due to error while processing frequency data: " << e.what() );
-                        break;
+                        throw;
                     }
 
                 }
