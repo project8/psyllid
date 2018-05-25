@@ -37,9 +37,10 @@ namespace psyllid
     }
     std::string frequency_mask_trigger::trigger_mode_to_string( frequency_mask_trigger::trigger_mode_t a_trigger_mode )
     {
+        // note that the string representations use hyphens, not underscores
         switch (a_trigger_mode) {
-            case frequency_mask_trigger::trigger_mode_t::single_level: return "single_level";
-            case frequency_mask_trigger::trigger_mode_t::two_level: return "two_level";
+            case frequency_mask_trigger::trigger_mode_t::single_level: return "single-level";
+            case frequency_mask_trigger::trigger_mode_t::two_level: return "two-level";
             default: throw psyllid::error() << "trigger_mode value <" << trigger_mode_to_uint(a_trigger_mode) << "> not recognized";
         }
     }
@@ -123,15 +124,14 @@ namespace psyllid
         return;
     }
 
+    /*
     void frequency_mask_trigger::set_trigger_mode( const std::string& a_trigger_mode )
     {
-        LDEBUG( plog, "Performing actual trigger mode configuration");
         set_trigger_mode( string_to_trigger_mode( a_trigger_mode ) );
     }
 
     void frequency_mask_trigger::set_threshold_type( const std::string& a_threshold_type )
     {
-        LDEBUG( plog, "Performing actual threshold type configuration");
         set_threshold_type( string_to_threshold( a_threshold_type ) );
     }
 
@@ -144,6 +144,7 @@ namespace psyllid
     {
         return threshold_to_string( f_threshold_type );
     }
+    */
 
     void frequency_mask_trigger::calculate_sigma_mask_spline_points( std::vector< double >& t_x_vals, std::vector< double >& t_y_vals, double threshold )
     {

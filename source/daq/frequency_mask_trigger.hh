@@ -181,6 +181,26 @@ namespace psyllid
 
     };
 
+    inline void frequency_mask_trigger::set_trigger_mode( const std::string& a_trigger_mode )
+    {
+        set_trigger_mode( string_to_trigger_mode( a_trigger_mode ) );
+    }
+
+    inline void frequency_mask_trigger::set_threshold_type( const std::string& a_threshold_type )
+    {
+        set_threshold_type( string_to_threshold( a_threshold_type ) );
+    }
+
+    inline std::string frequency_mask_trigger::get_trigger_mode_str() const
+    {
+        return trigger_mode_to_string( f_trigger_mode );
+    }
+
+    inline std::string frequency_mask_trigger::get_threshold_type_str() const
+    {
+        return threshold_to_string( f_threshold_type );
+    }
+
     class frequency_mask_trigger_binding : public _node_binding< frequency_mask_trigger, frequency_mask_trigger_binding >
     {
         public:
