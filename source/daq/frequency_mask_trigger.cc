@@ -329,10 +329,6 @@ namespace psyllid
         {
             throw error() << "Unable to write mask to file <" << a_filename << ">";
         }
-        else
-        {
-            LWARN( plog, "\n\n wrote file \n\n" );
-        }
 
         delete t_param_translator;
 
@@ -442,13 +438,6 @@ namespace psyllid
                                 t_abs_square = t_real*t_real + t_imag*t_imag;
                                 f_variance_data[ i_bin ] = f_variance_data[ i_bin ] + t_abs_square * t_abs_square;
                                 f_average_data[ i_bin ] = f_average_data[ i_bin ] +  t_abs_square;
-                    /*#ifndef NDEBUG
-                                if( i_bin < 5 )
-                                {
-                                    LWARN( plog, "Bin " << i_bin << " -- real = " << t_real << ";  imag = " << t_imag << ";  value = " << t_real*t_real + t_imag*t_imag <<
-                                            ";  mask = " << f_mask[ i_bin ] );
-                                }
-                    #endif*/
                             }
 
                             ++f_n_summed;
