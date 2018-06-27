@@ -40,8 +40,15 @@ Fixes:
 * Fix 2
     * Details
 
-Upcoming Release:
+
+Log
+---
+
+Version 1.7.0:
 ~~~~~~~~~~~~~~~~~
+
+Release Date: June 27, 2018
+'''''''''''''''''''''''''''
 
 New Features:
 '''''''''''''
@@ -53,8 +60,6 @@ New Features:
         * get node-list: returns error (need to specify a stream)
         * get node-list.ch0: returns nodes
 
-Log
----
 
 Version: 1.6.0
 ~~~~~~~~~~~~~~~~~
