@@ -40,8 +40,26 @@ Fixes:
 * Fix 2
     * Details
 
+
 Log
 ---
+
+Version 1.7.0:
+~~~~~~~~~~~~~~~~~
+
+Release Date: June 27, 2018
+'''''''''''''''''''''''''''
+
+New Features:
+'''''''''''''
+
+* stream_manager methods for OP_GET of stream and node lists
+    * methods added to stream_manager, with extra get bindings in run_server
+    * tested by getting each from a running psyllid instance in insectarium and confirming:
+        * get stream-list: returns streams
+        * get node-list: returns error (need to specify a stream)
+        * get node-list.ch0: returns nodes
+
 
 Version: 1.6.0
 ~~~~~~~~~~~~~~~~~
