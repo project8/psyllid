@@ -636,14 +636,14 @@ namespace psyllid
 
         if( !f_streams.count( t_target_stream ) )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-config.[stream]" );
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-list.[stream]" );
         }
         stream_manager::stream_template::nodes_t* t_these_nodes = &(f_streams[ t_target_stream ].f_nodes);
 
-        scarab::param_array t_node_list = scarab::param_array();
         LDEBUG( plog, "Getting list of nodes from the stream handler" );
         try
         {
+            scarab::param_array t_node_list;
             for ( stream_manager::stream_template::nodes_t::iterator t_nodes_it = t_these_nodes->begin(); t_nodes_it != t_these_nodes->end(); ++t_nodes_it )
             {
                 t_node_list.push_back( scarab::param_value( t_nodes_it->first ) );
