@@ -599,4 +599,63 @@ namespace psyllid
         return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-node-config" );
     }
 
+    dripline::reply_info stream_manager::handle_get_stream_list_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        if( a_request->parsed_rks().size() > 1 )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-config.[stream]" );
+        }
+
+        scarab::param_array t_streams_list = scarab::param_array();
+        LDEBUG( plog, "Getting list of streams from the stream handler" );
+        try
+        {
+            for ( streams_t::iterator t_stream_it = f_streams.begin(); t_stream_it != f_streams.end(); ++t_stream_it )
+            {
+                t_streams_list.push_back( scarab::param_value( t_stream_it->first ) );
+            }
+            a_reply_pkg.f_payload.add( "streams", t_streams_list );
+        }
+        catch( std::exception& e )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform get-stream-list request: ") + e.what() );
+        }
+        LDEBUG( plog, "Get-stream-list was successful" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-stream-list" );
+    }
+
+    dripline::reply_info stream_manager::handle_get_stream_node_list_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        if( a_request->parsed_rks().size() < 1 )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-config.[stream]" );
+        }
+
+        std::string t_target_stream = a_request->parsed_rks().front();
+        a_request->parsed_rks().pop_front();
+
+        if( !f_streams.count( t_target_stream ) )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-config.[stream]" );
+        }
+        stream_manager::stream_template::nodes_t* t_these_nodes = &(f_streams[ t_target_stream ].f_nodes);
+
+        scarab::param_array t_node_list = scarab::param_array();
+        LDEBUG( plog, "Getting list of nodes from the stream handler" );
+        try
+        {
+            for ( stream_manager::stream_template::nodes_t::iterator t_nodes_it = t_these_nodes->begin(); t_nodes_it != t_these_nodes->end(); ++t_nodes_it )
+            {
+                t_node_list.push_back( scarab::param_value( t_nodes_it->first ) );
+            }
+            a_reply_pkg.f_payload.add( "nodes", t_node_list );
+        }
+        catch( std::exception& e )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform get-stream-node-list request: ") + e.what() );
+        }
+        LDEBUG( plog, "Get-stream-node-list was successful" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-stream-node-list" );
+    }
+
 } /* namespace psyllid */
