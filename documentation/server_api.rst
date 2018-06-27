@@ -121,6 +121,22 @@ Please note that this action will not necessarily return the value in use (e.g. 
 
 - ``[parameter name]: [value]`` -- Parameter name and value
 
+``stream-list``
+---------------
+Returns a list of all streams in the psyllid instance
+
+*Reply Payload*
+
+- ``streams: [[stream_name (string)]]`` -- array of names of the streams
+
+``node-list.[stream]``
+----------------------
+Returns a list of all the nodes in the indicated stream
+
+*Reply Payload*
+
+- ``nodes: [[node_name (string)]]`` -- array of names of the nodes
+
 ``filename.[file_number (optional)]``
 ------------
 Returns the filename that will be written to by writters registered to ``file_number``.  Default for ``file_number`` is 0.
