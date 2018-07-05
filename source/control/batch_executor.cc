@@ -25,22 +25,27 @@ namespace psyllid
 
     batch_executor::batch_executor() :
         f_actions_array(),
-        f_request_receiver()
+        f_request_receiver(),
+        f_action_queue()
     {
     }
 
     batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
         f_actions_array(),
-        f_request_receiver( a_request_receiver )
+        f_request_receiver( a_request_receiver ),
+        f_action_queue()
     {
         if ( a_master_config.has( "batch-actions" ) )
         {
-            LINFO( plog, "got array" );
+            LINFO( plog, "have an initial action array" );
             f_actions_array = *(a_master_config.array_at( "batch-actions" ));
+            add_to_queue( a_master_config.array_at( "batch-actions" ) );
+            //TODO REMOVE
+            LINFO( plog, "queue size is: " << f_action_queue.size());
         }
         else
         {
-            LINFO( plog, "batch array is null" );
+            LINFO( plog, "initial batch array is null" );
             f_actions_array = scarab::param_array();
         }
     }
@@ -49,6 +54,22 @@ namespace psyllid
     {
     }
 
+    void batch_executor::add_to_queue( const scarab::param_node* an_action )
+    {
+        f_action_queue.push( parse_action( an_action ) );
+    }
+
+    void batch_executor::add_to_queue( const scarab::param_array* actions_array )
+    {
+        for( scarab::param_array::const_iterator action_it = actions_array->begin();
+              action_it!=actions_array->end();
+              ++action_it )
+        {
+            //TODO reduce or remove
+            LWARN( plog, "adding an item: " << (*action_it)->as_node())
+            add_to_queue( &((*action_it)->as_node()) );
+        }
+    }
 
     /* considering yaml that looks like:
     batch-actions:
@@ -70,48 +91,52 @@ namespace psyllid
         }
 
         LDEBUG( plog, "actions array size is: " << f_actions_array.size() );
-        for( scarab::param_array::const_iterator action_it = f_actions_array.begin();
-              action_it!=f_actions_array.end();
-              ++action_it )
+        while ( f_action_queue.size() )
         {
             if ( is_canceled() ) break;
+            do_an_action();
 
-            LDEBUG( plog, "doing next action:\n" << **action_it );
-            action_info t_action = parse_action( &((*action_it)->as_node()) );
-
-            // submit the request object to the receiver and sleep
-            dripline::reply_info t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
-            if ( ! t_request_reply_info )
-            {
-                LWARN( plog, "failed submitting action request" );
-                throw psyllid::error() << "error while submitting command";
-            }
-            if ( t_action.f_is_custom_action )
-            {
-                daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
-                while ( t_status == daq_control::status::running )
-                {
-                    // update status
-                    t_action = parse_action( &((*action_it)->as_node()) );
-                    t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
-                    t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
-                    std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
-                }
-            }
-            else
-            {
-                std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
-            }
-            if ( dripline::to_uint(t_request_reply_info.f_return_code) >= 100 )
-            {
-                LWARN( plog, "batch action received an error-level return code; exiting" );
-                throw psyllid::error() << "error completing batch action, received code [" <<
-                                       t_request_reply_info.f_return_code << "]: \"" <<
-                                       t_request_reply_info.f_return_msg << "\"";
-            }
-        } // loop over actions param_array
+        }
 
         LINFO( plog, "action loop complete" );
+    }
+
+    void batch_executor::do_an_action()
+    {
+        action_info t_action;
+        if ( !f_action_queue.try_pop( t_action ) )
+        {
+            LDEBUG( plog, "there are no actions in the queue" );
+            return;
+        }
+        dripline::reply_info t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
+        if ( ! t_request_reply_info )
+        {
+            LWARN( plog, "failed submitting action request" );
+            throw psyllid::error() << "error while submitting command";
+        }
+        // wait until daq status is no longer "running"
+        if ( t_action.f_is_custom_action )
+        {
+            daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
+            while ( t_status == daq_control::status::running )
+            {
+                t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
+                t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
+                std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
+            }
+        }
+        else
+        {
+            std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
+        }
+        if ( dripline::to_uint(t_request_reply_info.f_return_code) >= 100 )
+        {
+            LWARN( plog, "batch action received an error-level return code; exiting" );
+            throw psyllid::error() << "error completing batch action, received code [" <<
+                                   t_request_reply_info.f_return_code << "]: \"" <<
+                                   t_request_reply_info.f_return_msg << "\"";
+        }
     }
 
     void batch_executor::do_cancellation()

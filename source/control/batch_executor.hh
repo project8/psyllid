@@ -10,6 +10,7 @@
 
 // scarab includes
 #include "cancelable.hh"
+#include "concurrent_queue.hh"
 #include "param.hh"
 
 // dripline
@@ -56,11 +57,17 @@ namespace psyllid
             batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver );
             virtual ~batch_executor();
 
+            void add_to_queue( const scarab::param_node* an_action );
+            void add_to_queue( const scarab::param_array* actions_array );
+
             void execute();
 
         private:
             scarab::param_array f_actions_array;
             std::shared_ptr<request_receiver> f_request_receiver;
+            scarab::concurrent_queue< action_info > f_action_queue;
+
+            void do_an_action();
 
             virtual void do_cancellation();
             static action_info parse_action( const scarab::param_node* a_action );
