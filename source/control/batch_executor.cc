@@ -48,6 +48,9 @@ namespace psyllid
             LINFO( plog, "initial batch array is null" );
             //f_actions_array = scarab::param_array();
         }
+        if ( a_master_config.has( "settable-conditions" ) )
+        {
+        }
     }
 
     batch_executor::~batch_executor()
@@ -80,33 +83,16 @@ namespace psyllid
             duration: 200
             filenames: '["/tmp/foo_t.yaml", "/tmp/foo_f.yaml"]'
     */
-    void batch_executor::execute()
+    void batch_executor::execute( bool run_forever )
     {
-        // start with a sleep... is request_receiver ready?
-        //TODO this sleep should not be needed here, if something isn't ready, run control should call execute when it is
-        std::this_thread::sleep_for( std::chrono::milliseconds( 500 ) );
-        /*
-        if ( f_actions_array.is_null() )
-        {
-            LINFO( plog, "actions array is null" );
-            return;
-        }
-        */
-
-        LDEBUG( plog, "initial actions queue size is: " << f_action_queue.size() );
-        while ( f_action_queue.size() )
+        while ( run_forever || f_action_queue.size() )
         {
             if ( is_canceled() ) break;
             if ( f_action_queue.size() )
             {
                 //TODO remove or lower level
-                LWARN( plog, "there are: <" << f_action_queue.size() << "> actions remaining" );
+                LWARN( plog, "there are: >= " << f_action_queue.size() << " actions remaining" );
                 do_an_action();
-            }
-            else
-            {
-                //TODO is this desired, do other controllers sleep?
-                std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
             }
         }
 

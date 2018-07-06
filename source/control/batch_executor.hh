@@ -60,7 +60,7 @@ namespace psyllid
             void add_to_queue( const scarab::param_node* an_action );
             void add_to_queue( const scarab::param_array* actions_array );
 
-            void execute();
+            void execute( bool run_forever = false );
 
         private:
             //scarab::param_array f_actions_array;

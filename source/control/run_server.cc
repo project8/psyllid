@@ -163,6 +163,13 @@ namespace psyllid
         LPROG( plog, "Starting threads" );
         std::exception_ptr t_dc_ex_ptr;
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
+        // batch execution to do initial calls (AMQP consume hasn't started yet)
+        std::thread t_executor_thread_initial( &batch_executor::execute, f_batch_executor.get(), false );
+        t_executor_thread_initial.join();
+        LDEBUG( plog, "initial batch executions complete" );
+        // now execute the request receiver to start consuming
+        //     and start the batch executor in infinite mode so that more command sets may be staged later
+        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get(), true );
         std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
 
         t_lock.unlock();
@@ -170,19 +177,16 @@ namespace psyllid
         set_status( k_running );
         LPROG( plog, "Running..." );
 
-        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get() );
-        //t_executor_thread.join();
-        //LDEBUG( plog, "batch executions complete" );
-
         t_receiver_thread.join();
         LPROG( plog, "Receiver thread has ended" );
+        // if make_connection is false, we need to actually call cancel:
         if ( ! f_request_receiver.get()->get_make_connection() )
         {
             LINFO( plog, "request receiver not making connections, canceling run server" );
             this->cancel();
         }
+        // and then wait for the controllers to finish up...
         t_executor_thread.join();
-        LDEBUG( plog, "batch executions complete" );
         t_daq_control_thread.join();
         LPROG( plog, "DAQ control thread has ended" );
 
