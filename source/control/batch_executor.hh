@@ -63,7 +63,7 @@ namespace psyllid
             void execute();
 
         private:
-            scarab::param_array f_actions_array;
+            //scarab::param_array f_actions_array;
             std::shared_ptr<request_receiver> f_request_receiver;
             scarab::concurrent_queue< action_info > f_action_queue;
 

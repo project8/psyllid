@@ -171,8 +171,8 @@ namespace psyllid
         LPROG( plog, "Running..." );
 
         std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get() );
-        t_executor_thread.join();
-        LDEBUG( plog, "batch executions complete" );
+        //t_executor_thread.join();
+        //LDEBUG( plog, "batch executions complete" );
 
         t_receiver_thread.join();
         LPROG( plog, "Receiver thread has ended" );
@@ -181,6 +181,8 @@ namespace psyllid
             LINFO( plog, "request receiver not making connections, canceling run server" );
             this->cancel();
         }
+        t_executor_thread.join();
+        LDEBUG( plog, "batch executions complete" );
         t_daq_control_thread.join();
         LPROG( plog, "DAQ control thread has ended" );
 

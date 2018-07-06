@@ -24,21 +24,21 @@ namespace psyllid
     LOGGER( plog, "batch_executor" );
 
     batch_executor::batch_executor() :
-        f_actions_array(),
+        //f_actions_array(),
         f_request_receiver(),
         f_action_queue()
     {
     }
 
     batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
-        f_actions_array(),
+        //f_actions_array(),
         f_request_receiver( a_request_receiver ),
         f_action_queue()
     {
         if ( a_master_config.has( "batch-actions" ) )
         {
             LINFO( plog, "have an initial action array" );
-            f_actions_array = *(a_master_config.array_at( "batch-actions" ));
+            //f_actions_array = *(a_master_config.array_at( "batch-actions" ));
             add_to_queue( a_master_config.array_at( "batch-actions" ) );
             //TODO REMOVE
             LINFO( plog, "queue size is: " << f_action_queue.size());
@@ -46,7 +46,7 @@ namespace psyllid
         else
         {
             LINFO( plog, "initial batch array is null" );
-            f_actions_array = scarab::param_array();
+            //f_actions_array = scarab::param_array();
         }
     }
 
@@ -83,19 +83,31 @@ namespace psyllid
     void batch_executor::execute()
     {
         // start with a sleep... is request_receiver ready?
+        //TODO this sleep should not be needed here, if something isn't ready, run control should call execute when it is
         std::this_thread::sleep_for( std::chrono::milliseconds( 500 ) );
+        /*
         if ( f_actions_array.is_null() )
         {
             LINFO( plog, "actions array is null" );
             return;
         }
+        */
 
-        LDEBUG( plog, "actions array size is: " << f_actions_array.size() );
+        LDEBUG( plog, "initial actions queue size is: " << f_action_queue.size() );
         while ( f_action_queue.size() )
         {
             if ( is_canceled() ) break;
-            do_an_action();
-
+            if ( f_action_queue.size() )
+            {
+                //TODO remove or lower level
+                LWARN( plog, "there are: <" << f_action_queue.size() << "> actions remaining" );
+                do_an_action();
+            }
+            else
+            {
+                //TODO is this desired, do other controllers sleep?
+                std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+            }
         }
 
         LINFO( plog, "action loop complete" );
