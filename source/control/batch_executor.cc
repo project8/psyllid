@@ -24,32 +24,33 @@ namespace psyllid
     LOGGER( plog, "batch_executor" );
 
     batch_executor::batch_executor() :
-        //f_actions_array(),
         f_request_receiver(),
-        f_action_queue()
+        f_action_queue(),
+        f_condition_actions()
     {
     }
 
     batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
-        //f_actions_array(),
         f_request_receiver( a_request_receiver ),
-        f_action_queue()
+        f_action_queue(),
+        f_condition_actions()
     {
         if ( a_master_config.has( "batch-actions" ) )
         {
             LINFO( plog, "have an initial action array" );
-            //f_actions_array = *(a_master_config.array_at( "batch-actions" ));
             add_to_queue( a_master_config.array_at( "batch-actions" ) );
-            //TODO REMOVE
-            LINFO( plog, "queue size is: " << f_action_queue.size());
         }
         else
         {
-            LINFO( plog, "initial batch array is null" );
-            //f_actions_array = scarab::param_array();
+            LINFO( plog, "no initial batch actions" );
         }
         if ( a_master_config.has( "settable-conditions" ) )
         {
+            LINFO( plog, "storing setable conditions mapping" );
+            if ( !a_master_config.node_at( "settable-conditions" ) ) {
+                // settable-conditions is not a node, throw an exception
+            }
+            //f_condition_actions = *(a_master_config.node_at( "settable-conditions" ).clone());
         }
     }
 
