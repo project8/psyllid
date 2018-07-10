@@ -57,8 +57,13 @@ namespace psyllid
             batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver );
             virtual ~batch_executor();
 
+            mv_accessible( scarab::param_node, batch_commands );
+
+        public:
+            void clear_queue();
             void add_to_queue( const scarab::param_node* an_action );
             void add_to_queue( const scarab::param_array* actions_array );
+            void add_to_queue( const std::string a_batch_command_name );
 
             void execute( bool run_forever = false );
 

@@ -24,6 +24,7 @@ namespace psyllid
     LOGGER( plog, "batch_executor" );
 
     batch_executor::batch_executor() :
+        f_batch_commands(),
         f_request_receiver(),
         f_action_queue(),
         f_condition_actions()
@@ -31,10 +32,12 @@ namespace psyllid
     }
 
     batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
+        f_batch_commands( ),
         f_request_receiver( a_request_receiver ),
         f_action_queue(),
         f_condition_actions()
     {
+        f_batch_commands.merge( *(a_master_config.node_at( "batch-commands" )) );
         if ( a_master_config.has( "batch-actions" ) )
         {
             LINFO( plog, "have an initial action array" );
@@ -58,6 +61,14 @@ namespace psyllid
     {
     }
 
+    void batch_executor::clear_queue()
+    {
+        action_info t_action;
+        while ( f_action_queue.try_pop( t_action ) )
+        {
+        }
+    }
+
     void batch_executor::add_to_queue( const scarab::param_node* an_action )
     {
         f_action_queue.push( parse_action( an_action ) );
@@ -72,6 +83,18 @@ namespace psyllid
             //TODO reduce or remove
             LWARN( plog, "adding an item: " << (*action_it)->as_node())
             add_to_queue( &((*action_it)->as_node()) );
+        }
+    }
+
+    void batch_executor::add_to_queue( const std::string a_batch_command_name )
+    {
+        if ( f_batch_commands.has( a_batch_command_name ) )
+        {
+            add_to_queue( f_batch_commands.array_at( a_batch_command_name ) );
+        }
+        else
+        {
+            LWARN( plog, "no configured batch action for: '" << a_batch_command_name << "' ignoring" );
         }
     }
 
