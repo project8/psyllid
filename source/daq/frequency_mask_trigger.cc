@@ -69,7 +69,9 @@ namespace psyllid
             f_threshold_type( threshold_t::sigma ),
             f_n_spline_points( 20 ),
             f_status( status_t::mask_update ),
-            f_trigger_mode (trigger_mode_t::single_level ),
+            f_trigger_mode(trigger_mode_t::single_level ),
+            f_min_bin( 0 ),
+            f_max_bin( 4096 ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_mask2(),
@@ -900,6 +902,14 @@ namespace psyllid
         {
             a_node->set_threshold_type( a_config.get_value< std::string >( "threshold-type" ) );
         }
+        if( a_config.has( "min-bin" ))
+        {
+            a_node->set_min_bin( a_config.get_value< unsigned >( "min-bin" ) );
+        }
+        if( a_config.has( "max-bin" ))
+        {
+            a_node->set_min_bin( a_config.get_value< unsigned >( "max-bin" ) );
+        }
         if( a_config.has( "mask-configuration" ) )
         {
             const scarab::param* t_mask_config = a_config.at( "mask-configuration" );
@@ -942,6 +952,8 @@ namespace psyllid
         a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
         a_config.add( "trigger-mode", new scarab::param_value( a_node->get_trigger_mode_str() ) );
         a_config.add( "threshold-type", new scarab::param_value( a_node->get_threshold_type_str() ) );
+        a_config.add( "min-bin", new scarab::param_value( a_node->get_min_bin() ) );
+        a_config.add( "max-bin", new scarab::param_value( a_node->get_max_bin() ) );
         // get threshold values corresponding only to the configured threshold type
         switch ( a_node->get_threshold_type() )
         {
