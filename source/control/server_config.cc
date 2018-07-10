@@ -16,6 +16,7 @@
 
 using std::string;
 
+using scarab::param_array;
 using scarab::param_node;
 using scarab::param_value;
 
@@ -60,6 +61,21 @@ namespace psyllid
         t_daq_node->add( "duration", new param_value( 1000U ) );
         t_daq_node->add( "max-file-size-mb", new param_value( 500.0 ) );
         add( "daq", t_daq_node );
+
+        param_node* t_batch_commands = new param_node();
+        param_array* t_stop_array = new param_array();
+        param_node* t_stop_action = new param_node();
+        t_stop_action->add( "type", new param_value( "cmd" ) );
+        t_stop_action->add( "rks", new param_value( "stop-run" ) );
+        t_stop_action->add( "payload", new param_node() );
+        t_stop_array->push_back( t_stop_action );
+        t_batch_commands->add( "hard-abort", t_stop_array );
+        add( "batch-commands",  t_batch_commands );
+
+        param_node* t_set_conditions = new param_node();
+        t_set_conditions->add( "10", new param_value( "hard-abort" ) );
+        t_set_conditions->add( "12", new param_value( "hard-abort" ) );
+        add( "set-conditions", t_set_conditions );
 
         /*
         // this devices node can be used for multiple streams
