@@ -143,8 +143,7 @@ namespace psyllid
             mv_accessible( unsigned, n_spline_points );
             mv_accessible_noset( status_t, status );
             mv_accessible( trigger_mode_t, trigger_mode );
-            mv_accessible( unsigned, min_bin );
-            mv_accessible( unsigned, max_bin );
+            mv_accessible( unsigned, n_excluded_bins );
 
         public:
             void switch_to_update_mask();
