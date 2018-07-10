@@ -64,6 +64,9 @@ namespace psyllid
             void add_to_queue( const scarab::param_node* an_action );
             void add_to_queue( const scarab::param_array* actions_array );
             void add_to_queue( const std::string a_batch_command_name );
+            void replace_queue( const scarab::param_node* an_action );
+            void replace_queue( const scarab::param_array* actions_array );
+            void replace_queue( const std::string a_batch_command_name );
 
             void execute( bool run_forever = false );
 

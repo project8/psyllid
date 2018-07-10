@@ -98,6 +98,24 @@ namespace psyllid
         }
     }
 
+    void batch_executor::replace_queue( const scarab::param_node* an_action )
+    {
+        clear_queue();
+        add_to_queue( an_action );
+    }
+
+    void batch_executor::replace_queue( const scarab::param_array* actions_array )
+    {
+        clear_queue();
+        add_to_queue( actions_array );
+    }
+
+    void batch_executor::replace_queue( const std::string a_batch_command_name )
+    {
+        clear_queue();
+        add_to_queue( a_batch_command_name );
+    }
+
     /* considering yaml that looks like:
     batch-actions:
         - type: cmd
