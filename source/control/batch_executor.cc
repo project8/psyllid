@@ -86,8 +86,7 @@ namespace psyllid
               action_it!=actions_array->end();
               ++action_it )
         {
-            //TODO reduce or remove
-            LWARN( plog, "adding an item: " << (*action_it)->as_node())
+            LDEBUG( plog, "adding an item: " << (*action_it)->as_node())
             add_to_queue( &((*action_it)->as_node()) );
         }
     }
@@ -167,8 +166,6 @@ namespace psyllid
             if ( is_canceled() ) break;
             if ( f_action_queue.size() )
             {
-                //TODO remove or lower level
-                LWARN( plog, "there are: >= " << f_action_queue.size() << " actions remaining" );
                 do_an_action();
             }
         }
