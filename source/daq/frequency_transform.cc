@@ -190,7 +190,7 @@ namespace psyllid
                         }
                         //std::copy(&f_fftw_output[0][0], &f_fftw_output[0][0] + f_fft_size*2, &freq_data_out->get_array()[0][0]);
                         // FFT unfolding based on katydid:Source/Data/Transform/KTFrequencyTransformFFTW
-                        unsigned t_center_bin = time_data_in->get_array_size()/2;
+                        unsigned t_center_bin = time_data_in->get_array_size();
                         std::copy(&f_fftw_output[0][0], &f_fftw_output[0][0] + (t_center_bin - 1), &freq_data_out->get_array()[0][0]);
                         std::copy(&f_fftw_output[0][0] + t_center_bin, &f_fftw_output[0][0] + f_fft_size*2, &freq_data_out->get_array()[0][0]);
                         freq_data_out->set_pkt_in_batch(time_data_in->get_pkt_in_batch());
