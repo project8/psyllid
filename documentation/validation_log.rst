@@ -41,6 +41,21 @@ Fixes:
     * Details
 
 
+Version 1.7.1:
+~~~~~~~~~~~~~~
+
+Release Date: July 11, 2018
+'''''''''''''''''''''''''''
+
+New Features
+''''''''''''
+None
+
+Fixes
+'''''
+* Modified the Frequency Transform node to re-order FFTW output into ascending frequency order (should match Roach packet content order)
+  * tested by: ... TODO
+
 Log
 ---
 
