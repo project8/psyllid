@@ -33,12 +33,11 @@ namespace psyllid
     }
 
     batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
-        f_batch_commands( ),
+        f_batch_commands( *(a_master_config.node_at( "batch-commands" )) ),
         f_request_receiver( a_request_receiver ),
         f_action_queue(),
         f_condition_actions()
     {
-        f_batch_commands.merge( *(a_master_config.node_at( "batch-commands" )) );
         if ( a_master_config.has( "batch-actions" ) )
         {
             LINFO( plog, "have an initial action array" );
