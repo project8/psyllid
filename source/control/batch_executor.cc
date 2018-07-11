@@ -12,6 +12,7 @@
 
 //non-psyllid P8 includes
 #include "dripline_constants.hh"
+#include "dripline_error.hh"
 #include "logger.hh"
 
 //external includes
@@ -53,7 +54,13 @@ namespace psyllid
             if ( !a_master_config.node_at( "settable-conditions" ) ) {
                 // settable-conditions is not a node, throw an exception
             }
-            //f_condition_actions = *(a_master_config.node_at( "settable-conditions" ).clone());
+        }
+
+        // register batch commands
+        using namespace std::placeholders;
+        for ( scarab::param_node::iterator command_it = f_batch_commands.begin(); command_it != f_batch_commands.end(); command_it++ )
+        {
+            a_request_receiver->register_cmd_handler( command_it->first, std::bind( &batch_executor::do_batch_cmd_request, this, command_it->first, _1, _2 ) );
         }
     }
 
@@ -114,6 +121,33 @@ namespace psyllid
     {
         clear_queue();
         add_to_queue( a_batch_command_name );
+    }
+
+    dripline::reply_info batch_executor::do_batch_cmd_request( const std::string& a_command, const dripline::request_ptr_t a_request_ptr_t, dripline::reply_package& a_reply_package )
+    {
+        try
+        {
+            add_to_queue( a_command );
+        }
+        catch( dripline::dripline_error& e )
+        {
+            return a_reply_package.send_reply( dripline::retcode_t::daq_error, std::string("Error processing command: ") + e.what() );
+        }
+        return a_reply_package.send_reply( dripline::retcode_t::success, "" );
+    }
+
+    dripline::reply_info batch_executor::do_replace_actions_request( const std::string& a_command, const dripline::request_ptr_t a_request_ptr_t, dripline::reply_package& a_reply_package )
+    {
+        try
+        {
+            //TODO do we have a good way to interrupt an ongoing action here?
+            replace_queue( a_command );
+        }
+        catch( dripline::dripline_error& e )
+        {
+            return a_reply_package.send_reply( dripline::retcode_t::daq_error, std::string("Error processing command: ") + e.what() );
+        }
+        return a_reply_package.send_reply( dripline::retcode_t::success, "" );
     }
 
     /* considering yaml that looks like:
