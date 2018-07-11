@@ -44,6 +44,20 @@ Fixes:
 Log
 ---
 
+Upcoming Release:
+~~~~~~~~~~~~~~~~~~~
+
+Release Date:
+'''''''''''''
+
+New Features:
+'''''''''''''
+
+* ids in skip_buffer are written as true when event_builder switches from skipping to untriggered
+    * as before, if capacity of skip_buffer is greater than capacity of pretrigger_buffer only ids that don't fit into pretrigger_buffer are written out as true
+    * if capacity of skip_buffer is smaller than capacity of pretrigger_buffer all ids in skip_buffer are written out as true
+
+
 Version 1.7.0:
 ~~~~~~~~~~~~~~~~~
 
