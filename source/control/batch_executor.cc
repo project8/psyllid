@@ -122,7 +122,8 @@ namespace psyllid
         add_to_queue( a_batch_command_name );
     }
 
-    dripline::reply_info batch_executor::do_batch_cmd_request( const std::string& a_command, const dripline::request_ptr_t a_request_ptr_t, dripline::reply_package& a_reply_package )
+    // this method should be bound in the request receiver to be called with a command name, the request_ptr_t is not used
+    dripline::reply_info batch_executor::do_batch_cmd_request( const std::string& a_command, const dripline::request_ptr_t /* a_request_ptr_t */, dripline::reply_package& a_reply_package )
     {
         try
         {
@@ -135,7 +136,8 @@ namespace psyllid
         return a_reply_package.send_reply( dripline::retcode_t::success, "" );
     }
 
-    dripline::reply_info batch_executor::do_replace_actions_request( const std::string& a_command, const dripline::request_ptr_t a_request_ptr_t, dripline::reply_package& a_reply_package )
+    // this method should be bound in the request receiver to be called with a command name, the request_ptr_t is not used
+    dripline::reply_info batch_executor::do_replace_actions_request( const std::string& a_command, const dripline::request_ptr_t /* a_request_ptr_t */, dripline::reply_package& a_reply_package )
     {
         try
         {
