@@ -37,6 +37,7 @@ namespace psyllid
 
             void execute();
 
+            mv_accessible_noset( scarab::param_node, set_conditions );
         private:
             virtual void do_cancellation();
 
