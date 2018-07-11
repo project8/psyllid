@@ -1,7 +1,10 @@
 #ifndef PSYLLID_REQUEST_RECEIVER_HH_
 #define PSYLLID_REQUEST_RECEIVER_HH_
 
+// dripline
 #include "hub.hh"
+#include "message.hh"
+#include "reply_package.hh"
 
 #include "param.hh"
 
@@ -55,6 +58,7 @@ namespace psyllid
 
         private:
             std::atomic< status > f_status;
+            virtual dripline::reply_info __do_handle_set_condition_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
     };
 

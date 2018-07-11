@@ -1,5 +1,6 @@
 
 #include "request_receiver.hh"
+#include "dripline_constants.hh"
 
 #include "psyllid_error.hh"
 
@@ -105,5 +106,9 @@ namespace psyllid
         }
     }
 
+    dripline::reply_info request_receiver::__do_handle_set_condition_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "" );
+    }
 
 }
