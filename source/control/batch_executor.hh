@@ -64,10 +64,10 @@ namespace psyllid
             void clear_queue();
             void add_to_queue( const scarab::param_node* an_action );
             void add_to_queue( const scarab::param_array* actions_array );
-            void add_to_queue( const std::string a_batch_command_name );
+            void add_to_queue( const std::string& a_batch_command_name );
             void replace_queue( const scarab::param_node* an_action );
             void replace_queue( const scarab::param_array* actions_array );
-            void replace_queue( const std::string a_batch_command_name );
+            void replace_queue( const std::string& a_batch_command_name );
 
             dripline::reply_info do_batch_cmd_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
             dripline::reply_info do_replace_actions_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );

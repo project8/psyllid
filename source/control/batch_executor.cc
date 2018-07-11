@@ -57,7 +57,7 @@ namespace psyllid
 
         // register batch commands
         using namespace std::placeholders;
-        for ( scarab::param_node::iterator command_it = f_batch_commands.begin(); command_it != f_batch_commands.end(); command_it++ )
+        for ( scarab::param_node::iterator command_it = f_batch_commands.begin(); command_it != f_batch_commands.end(); ++command_it )
         {
             a_request_receiver->register_cmd_handler( command_it->first, std::bind( &batch_executor::do_batch_cmd_request, this, command_it->first, _1, _2 ) );
         }
@@ -91,7 +91,7 @@ namespace psyllid
         }
     }
 
-    void batch_executor::add_to_queue( const std::string a_batch_command_name )
+    void batch_executor::add_to_queue( const std::string& a_batch_command_name )
     {
         if ( f_batch_commands.has( a_batch_command_name ) )
         {
@@ -115,7 +115,7 @@ namespace psyllid
         add_to_queue( actions_array );
     }
 
-    void batch_executor::replace_queue( const std::string a_batch_command_name )
+    void batch_executor::replace_queue( const std::string& a_batch_command_name )
     {
         clear_queue();
         add_to_queue( a_batch_command_name );
