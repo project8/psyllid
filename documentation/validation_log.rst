@@ -52,6 +52,10 @@ Release Date: <TBD>
 New Features:
 '''''''''''''
 
+* ids in skip_buffer are written as true when event_builder switches from skipping to untriggered
+    * as before, if the capacity of the skip_buffer is greater than the capacity of the pretrigger_buffer only ids that don't fit into pretrigger_buffer are written out as true
+    * if the capacity of the skip_buffer is smaller than the capacity of the pretrigger_buffer all ids in the skip_buffer are written out as true
+    * tested by running psyllid with the egg3-reader and checking the logging output. No crash occured and the looging output showed that the correct number of ids were written.
 * implementing support for both set_condition and batch actions:
     * server_config now defines condition 10 and 12, both call the cmd 'hard-abort'
     * server_config now defines a top-level node 'batch-commands' with an entry for 'hard-abort' which calls 'stop-run'
