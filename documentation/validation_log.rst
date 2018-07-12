@@ -40,6 +40,9 @@ Fixes:
 * Fix 2
     * Details
 
+Log
+---
+
 Version <upcoming>
 ~~~~~~~~~~~~~~~~~~
 
@@ -65,6 +68,7 @@ Fixes:
 
 * corrected compiler warnings related to use of '%u' vs '%lu' for long unsigned ints in testing
 
+
 Version 1.7.1:
 ~~~~~~~~~~~~~~
 
@@ -80,8 +84,6 @@ Fixes
 * Modified the Frequency Transform node to re-order FFTW output into ascending frequency order (should match Roach packet content order)
     * Tested by making psyllid record and write a frequency mask from frequency data that it produced by reading and fourier-transforming the time series from an egg file. The content of the array is now ordered correctly. This was verified by comparing the mask to the gain variation calculated by Katydid. 
 
-Log
----
 
 Version 1.7.0:
 ~~~~~~~~~~~~~~~~~
