@@ -41,6 +41,21 @@ Fixes:
     * Details
 
 
+Version 1.7.1:
+~~~~~~~~~~~~~~
+
+Release Date: July 11, 2018
+'''''''''''''''''''''''''''
+
+New Features
+''''''''''''
+None
+
+Fixes
+'''''
+* Modified the Frequency Transform node to re-order FFTW output into ascending frequency order (should match Roach packet content order)
+    * Tested by making psyllid record and write a frequency mask from frequency data that it produced by reading and fourier-transforming the time series from an egg file. The content of the array is now ordered correctly. This was verified by comparing the mask to the gain variation calculated by Katydid. 
+
 Log
 ---
 
