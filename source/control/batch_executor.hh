@@ -10,10 +10,12 @@
 
 // scarab includes
 #include "cancelable.hh"
+#include "concurrent_queue.hh"
 #include "param.hh"
 
 // dripline
 #include "message.hh"
+#include "reply_package.hh"
 
 namespace psyllid
 {
@@ -56,11 +58,28 @@ namespace psyllid
             batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver );
             virtual ~batch_executor();
 
-            void execute();
+            mv_referrable_const( scarab::param_node, batch_commands );
+
+        public:
+            void clear_queue();
+            void add_to_queue( const scarab::param_node* an_action );
+            void add_to_queue( const scarab::param_array* actions_array );
+            void add_to_queue( const std::string& a_batch_command_name );
+            void replace_queue( const scarab::param_node* an_action );
+            void replace_queue( const scarab::param_array* actions_array );
+            void replace_queue( const std::string& a_batch_command_name );
+
+            dripline::reply_info do_batch_cmd_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
+            dripline::reply_info do_replace_actions_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
+
+            void execute( bool run_forever = false );
 
         private:
-            scarab::param_array f_actions_array;
             std::shared_ptr<request_receiver> f_request_receiver;
+            scarab::concurrent_queue< action_info > f_action_queue;
+            scarab::param_node f_condition_actions;
+
+            void do_an_action();
 
             virtual void do_cancellation();
             static action_info parse_action( const scarab::param_node* a_action );

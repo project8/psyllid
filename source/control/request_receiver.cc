@@ -1,5 +1,6 @@
 
 #include "request_receiver.hh"
+#include "dripline_constants.hh"
 
 #include "psyllid_error.hh"
 
@@ -27,6 +28,7 @@ namespace psyllid
     request_receiver::request_receiver( const param_node& a_master_config ) :
             hub( a_master_config.node_at( "amqp" ) ),
             scarab::cancelable(),
+            f_set_conditions( *(a_master_config.node_at( "set-conditions" )) ),
             f_status( k_initialized )
     {
     }
@@ -105,5 +107,19 @@ namespace psyllid
         }
     }
 
+    dripline::reply_info request_receiver::__do_handle_set_condition_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    {
+        std::string t_condition = std::to_string(a_request->get_payload().array_at( "values" )->get_value< unsigned >( 0 ));
+        if ( f_set_conditions.has( t_condition ) )
+        {
+            std::string t_rks = f_set_conditions.get_value( t_condition );
+            dripline::request_ptr_t t_request = dripline::msg_request::create( new scarab::param_node(), dripline::op_t::cmd, std::string(), std::string() );
+            t_request->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
+
+            dripline::reply_info t_reply_info = submit_request_message( t_request );
+            return a_reply_pkg.send_reply( t_reply_info.f_return_code, t_reply_info.f_return_msg );
+        }
+        return a_reply_pkg.send_reply( dripline::retcode_t::daq_error, "set condition not configured" );
+    }
 
 }

@@ -40,15 +40,14 @@ Fixes:
 * Fix 2
     * Details
 
-
 Log
 ---
 
-Upcoming Release:
-~~~~~~~~~~~~~~~~~~~
+Version <upcoming>
+~~~~~~~~~~~~~~~~~~
 
-Release Date:
-'''''''''''''
+Release Date: <TBD>
+'''''''''''''''''''
 
 New Features:
 '''''''''''''
@@ -56,6 +55,37 @@ New Features:
 * ids in skip_buffer are written as true when event_builder switches from skipping to untriggered
     * as before, if capacity of skip_buffer is greater than capacity of pretrigger_buffer only ids that don't fit into pretrigger_buffer are written out as true
     * if capacity of skip_buffer is smaller than capacity of pretrigger_buffer all ids in skip_buffer are written out as true
+* implementing support for both set_condition and batch actions:
+    * server_config now defines condition 10 and 12, both call the cmd 'hard-abort'
+    * server_config now defines a top-level node 'batch-commands' with an entry for 'hard-abort' which calls 'stop-run'
+    * request_receiver stores the above map (configurable in config file as top-level node 'set-conditions'); responds to set-condition commands by calling the mapped rks as an OP_CMD with empty message body
+    * batch_executor stores the batch-commands map (each entry in the node is an array of commands following the same syntax as those run when the system starts
+    * batch_executor's constructor binds request-receiver commands for each key in the above map to do_batch_cmd_request, which adds the configured array of actions to the batch queue. This is called as `agent cmd <queue>.<key>`.
+    * batch_executor's execute() method now has an infinite loop option which always tries to empty a concurrent_queue of actions (there are now utility methods plus the above which can populate that queue.
+    * run_server's thread execution logic changed to account for the above changes to batch_executor's execute()
+    * the 'batch-actions' top-level node name is changed to 'on-startup' to be more clear
+    * tested by running psyllid in insectarium and confirming execution of stop run both on `cmd broadcast.set_condition 0` and `cmd psyllid_queue.hard-abort`.
+
+Fixes:
+''''''
+
+* corrected compiler warnings related to use of '%u' vs '%lu' for long unsigned ints in testing
+
+
+Version 1.7.1:
+~~~~~~~~~~~~~~
+
+Release Date: July 11, 2018
+'''''''''''''''''''''''''''
+
+New Features
+''''''''''''
+None
+
+Fixes
+'''''
+* Modified the Frequency Transform node to re-order FFTW output into ascending frequency order (should match Roach packet content order)
+    * Tested by making psyllid record and write a frequency mask from frequency data that it produced by reading and fourier-transforming the time series from an egg file. The content of the array is now ordered correctly. This was verified by comparing the mask to the gain variation calculated by Katydid. 
 
 
 Version 1.7.0:
