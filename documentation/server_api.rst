@@ -50,6 +50,16 @@ Requests that the server lockout be disabled.
 --------
 Check that the server receives requests and sends replies. No other action is taken.
 
+``set_condition``
+-----------------
+Cause the server to move to some defined state as quickly as possible; Psyllid implements conditions 10 and 12, both of which stop any ongoing run.
+_Note:_ set_condition is expected to be a broadcast command (routing key target is `broadcast` not `<psyllid-queue>`).
+
+
+*Payload*
+
+- ``values=[condition (int)]`` -- the integer condition
+
 
 Psyllid API
 ===========
@@ -314,3 +324,9 @@ Put in its deactivated state, in which it is not immediately ready to take data.
 ``quit-psyllid``
 ----------------
 Instruct the Psyllid executable to exit.
+
+<batch-command-key>
+-------------------
+All keys listed in the `batch-commands` node of the configuration are bound as command names and may be called.
+These add one or more commands to the batch_executor queue; the return code indicates only that the actions were queued, nothing about their execution status.
+The command `hard-abort` is defined in the default server_config to execute `stop-run`.
