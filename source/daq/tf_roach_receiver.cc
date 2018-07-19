@@ -510,12 +510,12 @@ namespace psyllid
     void tf_roach_receiver_binding::do_dump_config( const tf_roach_receiver* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping tf_roach_receiver configuration" );
-        a_config.add( "time-length", new scarab::param_value( a_node->get_time_length() ) );
-        a_config.add( "freq-length", new scarab::param_value( a_node->get_freq_length() ) );
-        a_config.add( "udp-buffer-size", new scarab::param_value( a_node->get_udp_buffer_size() ) );
-        a_config.add( "time-sync-tol", new scarab::param_value( a_node->get_time_sync_tol() ) );
-        a_config.add( "start-paused", new scarab::param_value( a_node->get_start_paused() ) );
-        a_config.add( "force-time-first", new scarab::param_value( a_node->get_force_time_first() ) );
+        a_config.add( "time-length", scarab::param_value( a_node->get_time_length() ) );
+        a_config.add( "freq-length", scarab::param_value( a_node->get_freq_length() ) );
+        a_config.add( "udp-buffer-size", scarab::param_value( a_node->get_udp_buffer_size() ) );
+        a_config.add( "time-sync-tol", scarab::param_value( a_node->get_time_sync_tol() ) );
+        a_config.add( "start-paused", scarab::param_value( a_node->get_start_paused() ) );
+        a_config.add( "force-time-first", scarab::param_value( a_node->get_force_time_first() ) );
         return;
 
     }

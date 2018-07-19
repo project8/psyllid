@@ -96,7 +96,7 @@ namespace psyllid
             stream_wrap_ptr t_swrap_ptr;
 
             uint64_t t_bytes_per_record = f_record_size * f_sample_size * f_data_type_size;
-            scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)f_acq_rate * 1.e3 );
+            uint64_t t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)f_acq_rate * 1.e3 );
 
             uint64_t t_first_pkt_in_run = 0;
 
@@ -247,13 +247,13 @@ namespace psyllid
         LDEBUG( plog, "Dumping configuration for streaming_writer" );
         a_config.add( "file-num", scarab::param_value( a_node->get_file_num() ) );
         scarab::param_node t_dev_node = scarab::param_node();
-        t_dev_node->add( "bit-depth", scarab::param_value( a_node->get_bit_depth() ) );
-        t_dev_node->add( "data-type-size", scarab::param_value( a_node->get_data_type_size() ) );
-        t_dev_node->add( "sample-size", scarab::param_value( a_node->get_sample_size() ) );
-        t_dev_node->add( "record-size", scarab::param_value( a_node->get_record_size() ) );
-        t_dev_node->add( "acq-rate", scarab::param_value( a_node->get_acq_rate() ) );
-        t_dev_node->add( "v-offset", scarab::param_value( a_node->get_v_offset() ) );
-        t_dev_node->add( "v-range", scarab::param_value( a_node->get_v_range() ) );
+        t_dev_node.add( "bit-depth", scarab::param_value( a_node->get_bit_depth() ) );
+        t_dev_node.add( "data-type-size", scarab::param_value( a_node->get_data_type_size() ) );
+        t_dev_node.add( "sample-size", scarab::param_value( a_node->get_sample_size() ) );
+        t_dev_node.add( "record-size", scarab::param_value( a_node->get_record_size() ) );
+        t_dev_node.add( "acq-rate", scarab::param_value( a_node->get_acq_rate() ) );
+        t_dev_node.add( "v-offset", scarab::param_value( a_node->get_v_offset() ) );
+        t_dev_node.add( "v-range", scarab::param_value( a_node->get_v_range() ) );
         a_config.add( "device", t_dev_node );
         a_config.add( "center-freq", scarab::param_value( a_node->get_center_freq() ) );
         a_config.add( "freq-range", scarab::param_value( a_node->get_freq_range() ) );
