@@ -24,7 +24,7 @@ namespace psyllid
     // node_binding
     //****************
 
-	/*!
+    /*!
      @class node_binding
      @author N. S. Oblath
 
@@ -94,7 +94,7 @@ namespace psyllid
     //****************
     // node_builder
     //****************
-	/*!
+    /*!
      @class node_builder
      @author N. S. Oblath
 
@@ -360,7 +360,7 @@ namespace psyllid
 
 
 
-
+//TODO are we keeping this here for a reason?
 /*
     class node_builder : public control_access
     {

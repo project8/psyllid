@@ -15,14 +15,14 @@ namespace psyllid
     class daq_control;
 
     /*!
-	 @class control_access
-	 @author N. S. Oblath
+     @class control_access
+     @author N. S. Oblath
 
-	 @brief Gives other classes access to daq_control.
+     @brief Gives other classes access to daq_control.
 
-	 @details
-	 Used for example by butterfly_house to get the run name and description from daq_control.
-	 */
+     @details
+     Used for example by butterfly_house to get the run name and description from daq_control.
+     */
     class control_access
     {
         public:
