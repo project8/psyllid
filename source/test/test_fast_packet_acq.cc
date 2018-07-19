@@ -32,16 +32,16 @@ int main( int argc, char** argv )
     try
     {
         scarab::param_node t_default_config;
-        t_default_config.add( "interface", new scarab::param_value( "eth1" ) );
+        t_default_config.add( "interface", scarab::param_value( "eth1" ) );
 
         scarab::configurator t_configurator( argc, argv, &t_default_config );
 
         std::string t_interface( t_configurator.get< std::string >( "interface" ) );
 
         // setup the server config
-        scarab::param_node* t_server_config = new scarab::param_node();
-        t_server_config->add( "type", new scarab::param_value( "fpa" ) );
-        t_server_config->add( "interface", new scarab::param_value( t_interface ) );
+        scarab::param_node t_server_config = scarab::param_node();
+        t_server_config.add( "type", scarab::param_value( "fpa" ) );
+        t_server_config.add( "interface", scarab::param_value( t_interface ) );
 
         LINFO( plog, "Creating and configuring receiver" );
 
