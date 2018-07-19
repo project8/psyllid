@@ -60,7 +60,7 @@ int main( int argc, char** argv )
         t_default_config.add( "max-packet-size", scarab::param_value( 16384U ) );
         t_default_config.add( "packet-type", scarab::param_value( "roach" ) );
 
-        scarab::configurator t_configurator( argc, argv, &t_default_config );
+        scarab::configurator t_configurator( argc, argv, t_default_config );
 
         unsigned t_n_packets( t_configurator.get< unsigned >( "n" ) );
         std::string t_ip( t_configurator.get< std::string >( "ip" ) );
