@@ -52,13 +52,13 @@ int main( int argc, char** argv )
     try
     {
         scarab::param_node t_default_config;
-        t_default_config.add( "n", new scarab::param_value( 1U ) );
-        t_default_config.add( "ip", new scarab::param_value( "127.0.0.1" ) );
-        t_default_config.add( "port", new scarab::param_value( 23530U ) );
-        t_default_config.add( "interface", new scarab::param_value( "eth1" ) );
-        t_default_config.add( "timeout", new scarab::param_value( 10U ) );
-        t_default_config.add( "max-packet-size", new scarab::param_value( 16384U ) );
-        t_default_config.add( "packet-type", new scarab::param_value( "roach" ) );
+        t_default_config.add( "n", scarab::param_value( 1U ) );
+        t_default_config.add( "ip", scarab::param_value( "127.0.0.1" ) );
+        t_default_config.add( "port", scarab::param_value( 23530U ) );
+        t_default_config.add( "interface", scarab::param_value( "eth1" ) );
+        t_default_config.add( "timeout", scarab::param_value( 10U ) );
+        t_default_config.add( "max-packet-size", scarab::param_value( 16384U ) );
+        t_default_config.add( "packet-type", scarab::param_value( "roach" ) );
 
         scarab::configurator t_configurator( argc, argv, &t_default_config );
 
