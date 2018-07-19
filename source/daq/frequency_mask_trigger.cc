@@ -154,8 +154,6 @@ namespace psyllid
         const scarab::param_array t_new_data_mean = a_mask_and_data_values.array_at( "data-mean" );
         const scarab::param_array t_new_data_variance = a_mask_and_data_values.array_at( "data-variance" );
         LDEBUG( plog, "Finished reading mask" );
-        //TODO do we want a check for this, the above array_at() calls will all throw scarab exceptions
-        //if ( t_new_mask == nullptr || t_new_data_mean == nullptr || t_new_data_variance == nullptr ) throw psyllid::error() << "new mask and mask data must not be null";
         // prep the data members
         f_mask.clear();
         f_mask2.clear();

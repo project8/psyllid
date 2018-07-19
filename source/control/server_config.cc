@@ -62,7 +62,6 @@ namespace psyllid
         t_daq_node.add( "max-file-size-mb", param_value( 500.0 ) );
         add( "daq", t_daq_node );
 
-        //TODO clean this up in scarab2
         param_node t_batch_commands = param_node();
         param_array t_stop_array = param_array();
         param_node t_stop_action = param_node();
