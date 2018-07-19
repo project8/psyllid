@@ -144,7 +144,7 @@ namespace psyllid
         std::string t_type;
         for( scarab::param_array::const_iterator t_nodes_it = t_nodes_array.begin(); t_nodes_it != t_nodes_array.end(); ++t_nodes_it )
         {
-            if( ! (*t_nodes_it)->is_node() )
+            if( ! t_nodes_it->is_node() )
             {
                 LERROR( plog, "Invalid node specification in preset <" << t_preset_type << ">" );
                 scarab::factory< stream_preset, runtime_stream_preset, const std::string& >::get_instance()->remove_class( t_preset_type );
@@ -152,7 +152,7 @@ namespace psyllid
                 return false;
             }
 
-            t_type = (*t_nodes_it)->as_node().get_value( "type", "" );
+            t_type = t_nodes_it->as_node().get_value( "type", "" );
             if( t_type.empty() )
             {
                 LERROR( plog, "No type given for one of the nodes in preset <" << t_preset_type << ">" );
@@ -161,8 +161,8 @@ namespace psyllid
                 return false;
             }
 
-            LDEBUG( plog, "Adding node <" << t_type << ":" << (*t_nodes_it)->as_node().get_value( "name", t_type ) << "> to preset <" << t_preset_type << ">" );
-            t_new_rsp_creator->second.f_preset_ptr->node( t_type, (*t_nodes_it)->as_node().get_value( "name", t_type ) );
+            LDEBUG( plog, "Adding node <" << t_type << ":" << t_nodes_it->as_node().get_value( "name", t_type ) << "> to preset <" << t_preset_type << ">" );
+            t_new_rsp_creator->second.f_preset_ptr->node( t_type, t_nodes_it->as_node().get_value( "name", t_type ) );
         }
 
         if( ! a_preset_node.has( "connections" ) )
@@ -174,7 +174,7 @@ namespace psyllid
             const scarab::param_array& t_conn_array = a_preset_node.array_at( "connections" );
             for( scarab::param_array::const_iterator t_conn_it = t_conn_array.begin(); t_conn_it != t_conn_array.end(); ++t_conn_it )
             {
-                if( ! (*t_conn_it)->is_value() )
+                if( ! t_conn_it->is_value() )
                 {
                     LERROR( plog, "Invalid connection specification in preset <" << t_preset_type << ">" );
                     scarab::factory< stream_preset, runtime_stream_preset, const std::string& >::get_instance()->remove_class( t_preset_type );
@@ -182,8 +182,8 @@ namespace psyllid
                     return false;
                 }
 
-                LDEBUG( plog, "Adding connection <" << (*t_conn_it)->as_value().as_string() << "> to preset <" << t_preset_type << ">");
-                t_new_rsp_creator->second.f_preset_ptr->connection( (*t_conn_it)->as_value().as_string() );
+                LDEBUG( plog, "Adding connection <" << t_conn_it->as_value().as_string() << "> to preset <" << t_preset_type << ">");
+                t_new_rsp_creator->second.f_preset_ptr->connection( t_conn_it->as_value().as_string() );
             }
         }
 

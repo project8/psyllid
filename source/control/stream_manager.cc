@@ -51,12 +51,12 @@ namespace psyllid
     {
         for( scarab::param_node::const_iterator t_str_conf_it = a_config.begin(); t_str_conf_it != a_config.end(); ++t_str_conf_it )
         {
-            if( ! *t_str_conf_it->second->is_node() )
+            if( ! t_str_conf_it->is_node() )
             {
                 LERROR( plog, "Invalid stream configuration" );
                 return false;
             }
-            if( ! add_stream( t_str_conf_it->first, t_str_conf_it->second->as_node() ) )
+            if( ! add_stream( t_str_conf_it.name(), t_str_conf_it->as_node() ) )
             {
                 LERROR( plog, "Something went wrong while adding a stream" );
                 return false;
@@ -422,30 +422,30 @@ namespace psyllid
 
     dripline::reply_info stream_manager::handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
-        if( ! a_request->get_payload().has( "name" ) || ! a_request->get_payload().has( "config" ) )
+        if( ! a_request->payload().has( "name" ) || ! a_request->payload().has( "config" ) )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Add-stream request is missing either \"name\" or \"config\"" );
         }
 
         try
         {
-            add_stream( a_request->get_payload().get_value( "name" ), a_request->get_payload().node_at( "config" ) );
+            add_stream( a_request->payload().get_value( "name" ), a_request->payload().node_at( "config" ) );
         }
         catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::warning_no_action_taken, e.what() );
         }
 
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + a_request->get_payload().get_value( "name" ) + " has been added" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + a_request->payload().get_value( "name" ) + " has been added" );
     }
 
     dripline::reply_info stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
     {
-        if( ! a_request->get_payload().has( "values" ) )
+        if( ! a_request->payload().has( "values" ) )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: values array is missing" );
         }
-        const scarab::param_array* t_values_array = &a_request->get_payload().array_at( "values" );
+        const scarab::param_array* t_values_array = &a_request->payload().array_at( "values" );
         if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
@@ -483,15 +483,15 @@ namespace psyllid
             // payload should be a map of all parameters to be set
             LDEBUG( plog, "Performing node config for multiple values in stream <" << t_target_stream << "> and node <" << t_target_node << ">" );
 
-            if( a_request->get_payload().empty() )
+            if( a_request->payload().empty() )
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config request: payload is empty" );
             }
 
             try
             {
-                _configure_node( t_target_stream, t_target_node, a_request->get_payload() );
-                a_reply_pkg.f_payload.merge( a_request->get_payload() );
+                _configure_node( t_target_stream, t_target_node, a_request->payload() );
+                a_reply_pkg.f_payload.merge( a_request->payload() );
             }
             catch( std::exception& e )
             {
@@ -503,18 +503,18 @@ namespace psyllid
             // payload should be values array with a single entry for the particular parameter to be set
             LDEBUG( plog, "Performing node config for a single value in stream <" << t_target_stream << "> and node <" << t_target_node << ">" );
 
-            if( ! a_request->get_payload().has( "values" ) )
+            if( ! a_request->payload().has( "values" ) )
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): values array is missing" );
             }
-            const scarab::param_array* t_values_array = &a_request->get_payload().array_at( "values" );
+            const scarab::param_array* t_values_array = &a_request->payload().array_at( "values" );
             if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
             }
 
             scarab::param_node t_param_to_set;
-            t_param_to_set.add( a_request->parsed_rks().front(), new scarab::param_value( (*t_values_array)[0].as_value() ) );
+            t_param_to_set.add( a_request->parsed_rks().front(), scarab::param_value( t_values_array[0].as_value() ) );
 
             try
             {
@@ -575,7 +575,7 @@ namespace psyllid
                 {
                     return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get node parameter: cannot find parameter <" + t_param_to_get + ">" );
                 }
-                a_reply_pkg.f_payload.add( t_param_to_get, new scarab::param_value( t_param_dump.value_at( t_param_to_get ) ) );
+                a_reply_pkg.f_payload.add( t_param_to_get, scarab::param_value( t_param_dump.value_at( t_param_to_get ) ) );
             }
             catch( std::exception& e )
             {
