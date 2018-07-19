@@ -56,7 +56,7 @@ namespace psyllid
                 LERROR( plog, "Invalid stream configuration" );
                 return false;
             }
-            if( ! add_stream( t_str_conf_it->first, &(t_str_conf_it->second->as_node()) ) )
+            if( ! add_stream( t_str_conf_it->first, t_str_conf_it->second->as_node() ) )
             {
                 LERROR( plog, "Something went wrong while adding a stream" );
                 return false;
@@ -65,7 +65,7 @@ namespace psyllid
         return true;
     }
 
-    bool stream_manager::add_stream( const std::string& a_name, const scarab::param_node* a_node )
+    bool stream_manager::add_stream( const std::string& a_name, const scarab::param_node& a_node )
     {
         // do not need to lock the mutex here because we're not doing anything to the stream_manager until inside _add_stream()
         try
@@ -166,57 +166,45 @@ namespace psyllid
     }
 
 
-    void stream_manager::_add_stream( const std::string& a_name, const scarab::param_node* a_node )
+    void stream_manager::_add_stream( const std::string& a_name, const scarab::param_node& a_node )
     {
         // do not need to lock the mutex here because we're not doing anything to the stream_manager until inside _add_stream( string, param_node )
 
-        if( a_node == nullptr )
+        try
         {
-            throw error() << "Null config received";
-        }
+            if( ! a_node.has( "preset" ) )
+            {
+                throw error() << "No preset specified";
+            }
+            const scarab::param& t_preset_param = a_node.at( "preset" );
 
-        const scarab::param* t_preset_param = a_node->at( "preset" );
+            if( t_preset_param.is_node() )
+            {
+                const scarab::param_node& t_preset_param_node = t_preset_param.as_node();
+                if( ! runtime_stream_preset::add_preset( t_preset_param_node ) )
+                {
+                    throw error() << "Runtime preset could not be added";
+                }
 
-        if( t_preset_param == nullptr )
-        {
-            throw error() << "No preset specified";
-        }
-        else if( t_preset_param->is_node() )
-        {
-            const scarab::param_node* t_preset_param_node = &t_preset_param->as_node();
-            if( ! runtime_stream_preset::add_preset( t_preset_param_node ) )
-            {
-                throw error() << "Runtime preset could not be added";
+                // "name" is guaranteed to be there by the successful completion of runtime_stream_preset::add_preset
+                return _add_stream( a_name, t_preset_param_node.get_value( "type" ), a_node );
             }
-
-            // "name" is guaranteed to be there by the successful completion of runtime_stream_preset::add_preset
-            try
+            else if( t_preset_param.is_value() )
             {
-                return _add_stream( a_name, t_preset_param_node->get_value( "type" ), a_node );
+                return _add_stream( a_name, t_preset_param.as_value().as_string(), a_node );
             }
-            catch( std::exception& e )
+            else
             {
-                throw( e );
+                throw error() << "Invalid preset specification";
             }
         }
-        else if( t_preset_param->is_value() )
+        catch( std::exception& e )
         {
-            try
-            {
-                return _add_stream( a_name, t_preset_param->as_value().as_string(), a_node );
-            }
-            catch( std::exception& e )
-            {
-                throw( e );
-            }
-        }
-        else
-        {
-            throw error() << "Invalid preset specification";
+            throw;
         }
     }
 
-    void stream_manager::_add_stream( const std::string& a_name, const std::string& a_type, const scarab::param_node* a_node )
+    void stream_manager::_add_stream( const std::string& a_name, const std::string& a_type, const scarab::param_node& a_node )
     {
         // do not need to lock the mutex here because we're not doing anything to the stream_manager until later
 
@@ -261,9 +249,9 @@ namespace psyllid
             // setup the node config
             scarab::param_node t_node_config;
             // first get the node-specific config, if present (refer to it by its original name, not t_node_name)
-            if( a_node->has( t_node_it->first ) ) t_node_config.merge( *a_node->node_at( t_node_it->first ) );
+            if( a_node.has( t_node_it->first ) ) t_node_config.merge( a_node.node_at( t_node_it->first ) );
             // add stream-wide config data to the node config
-            if( a_node->has( "device" ) ) t_node_config.add( "device", *a_node->node_at( "device" ) );
+            if( a_node.has( "device" ) ) t_node_config.add( "device", a_node.node_at( "device" ) );
             // pass the configuration to the builder
             t_builder->configure_builder( t_node_config );
 
@@ -457,7 +445,7 @@ namespace psyllid
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: values array is missing" );
         }
-        const scarab::param_array* t_values_array = a_request->get_payload().array_at( "values" );
+        const scarab::param_array* t_values_array = &a_request->get_payload().array_at( "values" );
         if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
@@ -519,7 +507,7 @@ namespace psyllid
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): values array is missing" );
             }
-            const scarab::param_array* t_values_array = a_request->get_payload().array_at( "values" );
+            const scarab::param_array* t_values_array = &a_request->get_payload().array_at( "values" );
             if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
@@ -587,7 +575,7 @@ namespace psyllid
                 {
                     return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get node parameter: cannot find parameter <" + t_param_to_get + ">" );
                 }
-                a_reply_pkg.f_payload.add( t_param_to_get, new scarab::param_value( *t_param_dump.value_at( t_param_to_get ) ) );
+                a_reply_pkg.f_payload.add( t_param_to_get, new scarab::param_value( t_param_dump.value_at( t_param_to_get ) ) );
             }
             catch( std::exception& e )
             {
