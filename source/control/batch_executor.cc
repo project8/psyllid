@@ -183,11 +183,11 @@ namespace psyllid
         // wait until daq status is no longer "running"
         if ( t_action.f_is_custom_action )
         {
-            daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
+            daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server").value_at("status-value").as_uint());
             while ( t_status == daq_control::status::running )
             {
                 t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
-                t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server")->value_at("status-value")->as_uint());
+                t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server").value_at("status-value").as_uint());
                 std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
             }
         }

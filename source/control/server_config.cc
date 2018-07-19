@@ -63,19 +63,19 @@ namespace psyllid
         add( "daq", t_daq_node );
 
         //TODO clean this up in scarab2
-        param_node* t_batch_commands = new param_node();
-        param_array* t_stop_array = new param_array();
-        param_node* t_stop_action = new param_node();
-        t_stop_action->add( "type", new param_value( "cmd" ) );
-        t_stop_action->add( "rks", new param_value( "stop-run" ) );
-        t_stop_action->add( "payload", new param_node() );
-        t_stop_array->push_back( t_stop_action );
-        t_batch_commands->add( "hard-abort", t_stop_array );
+        param_node t_batch_commands = param_node();
+        param_array t_stop_array = param_array();
+        param_node t_stop_action = param_node();
+        t_stop_action.add( "type", param_value( "cmd" ) );
+        t_stop_action.add( "rks", param_value( "stop-run" ) );
+        t_stop_action.add( "payload", param_node() );
+        t_stop_array.push_back( t_stop_action );
+        t_batch_commands.add( "hard-abort", t_stop_array );
         add( "batch-commands",  t_batch_commands );
 
-        param_node* t_set_conditions = new param_node();
-        t_set_conditions->add( "10", new param_value( "hard-abort" ) );
-        t_set_conditions->add( "12", new param_value( "hard-abort" ) );
+        param_node t_set_conditions = param_node();
+        t_set_conditions.add( "10", param_value( "hard-abort" ) );
+        t_set_conditions.add( "12", param_value( "hard-abort" ) );
         add( "set-conditions", t_set_conditions );
 
         /*
