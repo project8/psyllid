@@ -23,7 +23,7 @@ namespace psyllid
     class message_relayer : public dripline::relayer, public scarab::singleton< message_relayer >
     {
         public:
-            message_relayer( const scarab::param_node* a_config = nullptr );
+            message_relayer( const scarab::param_node& a_config = scarab::param_node() );
             virtual ~message_relayer();
 
         public:
