@@ -51,7 +51,7 @@ namespace psyllid
     {
         for( scarab::param_node::const_iterator t_str_conf_it = a_config.begin(); t_str_conf_it != a_config.end(); ++t_str_conf_it )
         {
-            if( ! t_str_conf_it->second->is_node() )
+            if( ! *t_str_conf_it->second->is_node() )
             {
                 LERROR( plog, "Invalid stream configuration" );
                 return false;

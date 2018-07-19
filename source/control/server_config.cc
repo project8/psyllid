@@ -28,16 +28,16 @@ namespace psyllid
     {
         // default server configuration
 
-        param_node* t_amqp_node = new param_node();
-        t_amqp_node->add( "broker", new param_value( "localhost" ) );
-        t_amqp_node->add( "queue", new param_value( "psyllid" ) );
-        t_amqp_node->add( "slack-queue", new param_value( "slack_interface" ) );
+        param_node t_amqp_node = param_node();
+        t_amqp_node.add( "broker", param_value( "localhost" ) );
+        t_amqp_node.add( "queue", param_value( "psyllid" ) );
+        t_amqp_node.add( "slack-queue", param_value( "slack_interface" ) );
         //add logic for default auth file if it exists
         scarab::path t_auth_default_path = scarab::expand_path( "~/.project8_authentications.json" );
         if ( boost::filesystem::exists( t_auth_default_path ) )
         {
             LDEBUG( plog, "default auth file found, setting that as initial value" );
-            t_amqp_node->add( "auth-file", new param_value( t_auth_default_path.native()  ) );
+            t_amqp_node.add( "auth-file", param_value( t_auth_default_path.native()  ) );
         }
         else
         {
@@ -52,13 +52,13 @@ namespace psyllid
         // - broker-port
         add( "amqp", t_amqp_node );
 
-        add( "post-to-slack", new param_value( false ) );
+        add( "post-to-slack", param_value( false ) );
 
-        param_node* t_daq_node = new param_node();
-        t_daq_node->add( "activate-at-startup", new param_value( true ) );
-        t_daq_node->add( "n-files", new param_value( 1U ) );
-        t_daq_node->add( "duration", new param_value( 1000U ) );
-        t_daq_node->add( "max-file-size-mb", new param_value( 500.0 ) );
+        param_node t_daq_node = param_node();
+        t_daq_node.add( "activate-at-startup", param_value( true ) );
+        t_daq_node.add( "n-files", param_value( 1U ) );
+        t_daq_node.add( "duration", param_value( 1000U ) );
+        t_daq_node.add( "max-file-size-mb", param_value( 500.0 ) );
         add( "daq", t_daq_node );
 
         /*
