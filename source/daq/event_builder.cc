@@ -575,10 +575,10 @@ exit_outer_loop:
     void event_builder_binding::do_dump_config( const event_builder* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for event_builder" );
-        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
-        a_config.add( "pretrigger", new scarab::param_value( a_node->get_pretrigger() ) );
-        a_config.add( "skip-tolerance", new scarab::param_value( a_node->get_skip_tolerance() ) );
-        a_config.add( "n-triggers", new scarab::param_value( a_node->get_n_triggers() ) );
+        a_config.add( "length", scarab::param_value( a_node->get_length() ) );
+        a_config.add( "pretrigger", scarab::param_value( a_node->get_pretrigger() ) );
+        a_config.add( "skip-tolerance", scarab::param_value( a_node->get_skip_tolerance() ) );
+        a_config.add( "n-triggers", scarab::param_value( a_node->get_n_triggers() ) );
         return;
     }
 
