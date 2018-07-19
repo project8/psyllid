@@ -330,29 +330,47 @@ namespace psyllid
                             if(f_skip_buffer.full() )
                             {
                                 LINFO( plog, "Skip_tolerance reached. Continuing as untriggered");
-                                // write out ids as false that are only in the skip buffer
-                                while( f_skip_buffer.size() > f_pretrigger_buffer.size() )
+                                // if skip buffer is not bigger than pretrigger buffer, write out ids as true
+                                if ( f_skip_buffer.capacity() <= f_pretrigger_buffer.capacity() )
                                 {
-                                    LTRACE( plog, "Current state skipping. Writing id " << f_skip_buffer.front() << " as true" );
-                                    
-                                    if( ! write_output_from_skipbuff_front( true, t_write_flag ) )
+                                    while( ! f_skip_buffer.empty() )
                                     {
-                                        goto exit_outer_loop;
+                                        LTRACE( plog, "Current state skipping. Writing id " << f_skip_buffer.front() << " as true" );
+                                        if( ! write_output_from_skipbuff_front( true, t_write_flag ) )
+                                        {
+                                            goto exit_outer_loop;
+                                        }
+                                        // advance our output data pointer to the next in the stream
+                                        t_write_flag = out_stream< 0 >().data();
+                                        f_pretrigger_buffer.pop_front();
                                     }
-                                    // advance our output data pointer to the next in the stream
-                                    t_write_flag = out_stream< 0 >().data();
                                 }
-                                // then delete the remaining content of the skip buffer
-                                f_skip_buffer.clear();
-
-                                // contents of the buffer are the existing pretrigger plus the current trig id
-                                // only write out from the front of the buffer if the buffer is full; otherwise we're filling the buffer
-                                if( f_pretrigger_buffer.full() )
+                                else
                                 {
-                                    LTRACE( plog, "Current state skipping. Writing id "<<f_pretrigger_buffer.front()<<" as false");
-                                    if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
+                                    // write out ids as true that are only in the skip buffer
+                                    while( f_skip_buffer.size() > f_pretrigger_buffer.size() )
                                     {
-                                        break;
+                                        LTRACE( plog, "Current state skipping. Writing id " << f_skip_buffer.front() << " as true" );
+
+                                        if( ! write_output_from_skipbuff_front( true, t_write_flag ) )
+                                        {
+                                            goto exit_outer_loop;
+                                        }
+                                        // advance our output data pointer to the next in the stream
+                                        t_write_flag = out_stream< 0 >().data();
+                                    }
+                                    // then delete the remaining content of the skip buffer
+                                    f_skip_buffer.clear();
+
+                                    // contents of the buffer are the existing pretrigger plus the current trig id
+                                    // only write out from the front of the buffer if the buffer is full; otherwise we're filling the buffer
+                                    if( f_pretrigger_buffer.full() )
+                                    {
+                                        LTRACE( plog, "Current state skipping. Writing id "<<f_pretrigger_buffer.front()<<" as false");
+                                        if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
+                                        {
+                                            break;
+                                        }
                                     }
                                 }
                                 // set state to untriggered

@@ -144,7 +144,7 @@ static void display(tpacket3_hdr *ppd)
         getnameinfo((sockaddr *) &sd, sizeof(sd),
                 dbuff, sizeof(dbuff), NULL, 0, NI_NUMERICHOST);
 
-        if( packets_total % 1000 == 0 ) printf("packet %u; bytes read: %u; %s -> %s\n", packets_total, bytes_total, sbuff, dbuff);
+        if( packets_total % 1000 == 0 ) printf("packet %lu; bytes read: %lu; %s -> %s\n", packets_total, bytes_total, sbuff, dbuff);
     }
 
     //printf("rxhash: 0x%x\n", ppd->hv1.tp_rxhash);
