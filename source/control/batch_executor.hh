@@ -12,7 +12,6 @@
 #include "cancelable.hh"
 #include "concurrent_queue.hh"
 #include "param.hh"
-#include "param_array.hh"
 
 // dripline
 #include "message.hh"

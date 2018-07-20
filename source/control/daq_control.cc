@@ -41,7 +41,7 @@ namespace psyllid
             f_activation_condition(),
             f_daq_mutex(),
             f_node_manager( a_mgr ),
-            f_daq_config( new param_node() ),
+            f_daq_config(),
             f_midge_pkg(),
             f_node_bindings( nullptr ),
             f_run_stopper(),
@@ -56,10 +56,10 @@ namespace psyllid
         // DAQ config is optional; defaults will work just fine
         if( a_master_config.has( "daq" ) )
         {
-            f_daq_config.reset( new param_node( a_master_config.node_at( "daq" ) ) );
+            f_daq_config.merge( a_master_config.node_at( "daq" )  );
         }
 
-        set_run_duration( f_daq_config->get_value( "duration", get_run_duration() ) );
+        set_run_duration( f_daq_config.get_value( "duration", get_run_duration() ) );
     }
 
     daq_control::~daq_control()
@@ -68,7 +68,7 @@ namespace psyllid
 
     void daq_control::initialize()
     {
-        butterfly_house::get_instance()->prepare_files( *f_daq_config );
+        butterfly_house::get_instance()->prepare_files( f_daq_config );
         return;
     }
 
@@ -76,7 +76,7 @@ namespace psyllid
     {
         // if we're supposed to activate on startup, we'll call activate asynchronously
         std::future< void > t_activation_return;
-        if( f_daq_config->get_value< bool >( "activate-at-startup", false ) )
+        if( f_daq_config.get_value( "activate-at-startup", false ) )
         {
             LDEBUG( plog, "Will activate DAQ control asynchronously" );
             t_activation_return = std::async( std::launch::async,
