@@ -33,7 +33,7 @@ namespace psyllid
     }
 
     batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
-        f_batch_commands( a_master_config.node_at( "batch-commands" ) ),
+        f_batch_commands( a_master_config[ "batch-commands" ].as_node() ),
         f_request_receiver( a_request_receiver ),
         f_action_queue(),
         f_condition_actions()
@@ -41,7 +41,7 @@ namespace psyllid
         if ( a_master_config.has( "on-startup" ) )
         {
             LINFO( plog, "have an initial action array" );
-            add_to_queue( a_master_config.array_at( "on-startup" ) );
+            add_to_queue( a_master_config["on-startup"].as_array() );
         }
         else
         {
@@ -88,7 +88,7 @@ namespace psyllid
     {
         if ( f_batch_commands.has( a_batch_command_name ) )
         {
-            add_to_queue( f_batch_commands.array_at( a_batch_command_name ) );
+            add_to_queue( f_batch_commands[a_batch_command_name].as_array() );
         }
         else
         {
@@ -183,11 +183,11 @@ namespace psyllid
         // wait until daq status is no longer "running"
         if ( t_action.f_is_custom_action )
         {
-            daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server").value_at("status-value").as_uint());
+            daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload["server"]["status-value"]().as_uint() );
             while ( t_status == daq_control::status::running )
             {
                 t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
-                t_status = daq_control::uint_to_status( t_request_reply_info.f_payload.node_at("server").value_at("status-value").as_uint());
+                t_status = daq_control::uint_to_status( t_request_reply_info.f_payload["server"]["status-value"]().as_uint() );
                 std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
             }
         }
@@ -215,14 +215,14 @@ namespace psyllid
         action_info t_action_info;
         std::string t_rks;
         dripline::op_t t_msg_op;
-        if ( ! a_action.node_at( "payload" ).is_node() )
+        if ( ! a_action["payload"].is_node() )
         {
             LERROR( plog, "payload must be a param_node" );
             throw psyllid::error() << "batch action payload must be a node";
         }
         try
         {
-            t_rks = a_action.get_value( "rks");
+            t_rks = a_action["rks" ]().as_string();
             t_action_info.f_sleep_duration_ms = std::stoi( a_action.get_value( "sleep-for", "500" ) );
             t_action_info.f_is_custom_action = false;
         }
@@ -233,12 +233,12 @@ namespace psyllid
         }
         try
         {
-            t_msg_op = dripline::to_op_t( a_action.get_value( "type" ) );
+            t_msg_op = dripline::to_op_t( a_action["type"]().as_string() );
         }
         catch( dripline::dripline_error )
         {
             LDEBUG( plog, "got a dripline error parsing request type" );
-            if ( a_action.get_value( "type" ) == "wait-for" && t_rks == "daq-status" )
+            if ( a_action["type"]().as_string() == "wait-for" && t_rks == "daq-status" )
             {
                 LDEBUG( plog, "action is poll on run status" );
                 t_msg_op = dripline::op_t::get;
@@ -250,7 +250,7 @@ namespace psyllid
 
         // put it together into a request
         t_action_info.f_request_ptr = dripline::msg_request::create(
-                                            a_action.node_at( "payload" ),
+                                            a_action["payload"].as_node(),
                                             t_msg_op,
                                             std::string(),
                                             std::string() );// reply-to is empty because no reply for batch requests
