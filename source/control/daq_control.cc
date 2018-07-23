@@ -56,7 +56,7 @@ namespace psyllid
         // DAQ config is optional; defaults will work just fine
         if( a_master_config.has( "daq" ) )
         {
-            f_daq_config.merge( a_master_config.node_at( "daq" )  );
+            f_daq_config.merge( a_master_config["daq"].as_node() );
         }
 
         set_run_duration( f_daq_config.get_value( "duration", get_run_duration() ) );
@@ -610,24 +610,24 @@ namespace psyllid
     {
         try
         {
-            if( a_request->payload().has( "filename" ) ) set_filename( a_request->payload().get_value( "filename" ), 0 );
+            if( a_request->payload().has( "filename" ) ) set_filename( a_request->payload()["filename"]().as_string(), 0 );
             //TODO BUG here, if filenames exists but is not an array (only case i tried), this causes a seg fault which is not handled below
             if( a_request->payload().has( "filenames" ) )
             {
-                const scarab::param_array t_filenames = a_request->payload().array_at( "filenames" );
+                const scarab::param_array t_filenames = a_request->payload()["filenames"].as_array();
                 for( unsigned i_fn = 0; i_fn < t_filenames.size(); ++i_fn )
                 {
-                    set_filename( t_filenames.get_value( i_fn ), i_fn );
+                    set_filename( t_filenames[i_fn]().as_string(), i_fn );
                 }
             }
 
-            if( a_request->payload().has( "description" ) ) set_description( a_request->payload().get_value( "description" ), 0 );
+            if( a_request->payload().has( "description" ) ) set_description( a_request->payload()["description"]().as_string(), 0 );
             if( a_request->payload().has( "descriptions" ) )
             {
-                const scarab::param_array t_descriptions = a_request->payload().array_at( "descriptions" );
+                const scarab::param_array t_descriptions = a_request->payload()["descriptions"].as_array();
                 for( unsigned i_fn = 0; i_fn < t_descriptions.size(); ++i_fn )
                 {
-                    set_description( t_descriptions.get_value( i_fn ), i_fn );
+                    set_description( t_descriptions[i_fn]().as_string(), i_fn );
                 }
             }
 
@@ -702,7 +702,7 @@ namespace psyllid
             }
             scarab::param_array t_values_array;
             if ( a_request->payload().has("values") ) {
-                t_values_array.append( a_request->payload().array_at( "values" ) );
+                t_values_array.append( a_request->payload()["values"].as_array() );
             }
             if( t_values_array.empty() || ! t_values_array[0].is_value() )
             {
@@ -771,7 +771,7 @@ namespace psyllid
                 {
                     return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get active-node parameter: cannot find parameter <" + t_param_to_get + ">" );
                 }
-                a_reply_pkg.f_payload.add( t_param_to_get, t_param_dump.value_at( t_param_to_get ) );
+                a_reply_pkg.f_payload.add( t_param_to_get, t_param_dump[t_param_to_get]() );
             }
             catch( std::exception& e )
             {
@@ -809,7 +809,7 @@ namespace psyllid
         {
             t_return = run_command( t_target_node, t_command, t_args_node );
             a_reply_pkg.f_payload.merge( t_args_node );
-            a_reply_pkg.f_payload.add( "command", scarab::param_value( t_command ) );
+            a_reply_pkg.f_payload.add( "command", t_command );
         }
         catch( std::exception& e )
         {
@@ -838,7 +838,7 @@ namespace psyllid
                 t_file_num = std::stoi( a_request->parsed_rks().front() );
             }
 
-            std::string t_filename =  a_request->payload().array_at( "values" ).get_value( 0 );
+            std::string t_filename =  a_request->payload()["values"][0]().as_string();
             LDEBUG( plog, "Setting filename for file <" << t_file_num << "> to <" << t_filename << ">" );
             set_filename( t_filename, t_file_num );
             return a_reply_pkg.send_reply( retcode_t::success, "Filename set" );
@@ -859,7 +859,7 @@ namespace psyllid
                 t_file_num = std::stoi( a_request->parsed_rks().front() );
             }
 
-            std::string t_description =  a_request->payload().array_at( "values" ).get_value( 0 );
+            std::string t_description =  a_request->payload()["values"][0]().as_string();
             LDEBUG( plog, "Setting description for file <" << t_file_num << "> to <" << t_description << ">" );
             set_filename( t_description, t_file_num );
 
@@ -875,7 +875,7 @@ namespace psyllid
     {
         try
         {
-            unsigned t_new_duration = a_request->payload().array_at( "values" ).get_value< unsigned >( 0 );
+            unsigned t_new_duration = a_request->payload()["values"][0]().as_uint();
             if( t_new_duration == 0 )
             {
                 throw error() << "Invalid duration: " << t_new_duration;
@@ -895,7 +895,7 @@ namespace psyllid
     {
         try
         {
-            f_use_monarch =  a_request->payload().array_at( "values" ).get_value< bool >( 0 );
+            f_use_monarch =  a_request->payload()["values"][0]().as_bool();
             LDEBUG( plog, "Use-monarch set to <" << f_use_monarch << ">" );
             return a_reply_pkg.send_reply( retcode_t::success, "Use Monarch set" );
         }
