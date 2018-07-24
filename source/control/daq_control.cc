@@ -907,7 +907,7 @@ namespace psyllid
 
     dripline::reply_info daq_control::handle_get_status_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
-        param_node t_server_node = param_node();
+        param_node t_server_node;
         t_server_node.add( "status", param_value( interpret_status( get_status() ) ) );
         t_server_node.add( "status-value", param_value( status_to_uint( get_status() ) ) );
 
@@ -929,7 +929,7 @@ namespace psyllid
                 t_file_num = std::stoi( a_request->parsed_rks().front() );
             }
 
-            param_array t_values_array = param_array();
+            param_array t_values_array;
             t_values_array.push_back( param_value( get_filename( t_file_num ) ) );
             a_reply_pkg.f_payload.add( "values", t_values_array );
             return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
@@ -950,7 +950,7 @@ namespace psyllid
                 t_file_num = std::stoi( a_request->parsed_rks().front() );
             }
 
-            param_array t_values_array = param_array();
+            param_array t_values_array;
             t_values_array.push_back( param_value( get_description( t_file_num ) ) );
             a_reply_pkg.f_payload.add( "values", t_values_array );
             return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
@@ -963,7 +963,7 @@ namespace psyllid
 
     dripline::reply_info daq_control::handle_get_duration_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
-        param_array t_values_array = param_array();
+        param_array t_values_array;
         t_values_array.push_back( param_value( f_run_duration ) );
 
         a_reply_pkg.f_payload.add( "values", t_values_array );
@@ -973,7 +973,7 @@ namespace psyllid
 
     dripline::reply_info daq_control::handle_get_use_monarch_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
-        param_array t_values_array = param_array();
+        param_array t_values_array;
         t_values_array.push_back( param_value( f_use_monarch ) );
 
         a_reply_pkg.f_payload.add( "values", t_values_array );
