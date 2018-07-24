@@ -147,12 +147,12 @@ namespace psyllid
     void frequency_mask_trigger::set_mask_parameters_from_node( const scarab::param_node& a_mask_and_data_values )
     {
         // set n-points
-        f_n_packets_for_mask = a_mask_and_data_values.value_at( "n-packets" ).as_uint();
+        f_n_packets_for_mask = a_mask_and_data_values["n-packets"]().as_uint();
         // grab the new arrays
-        const scarab::param_array t_new_mask = a_mask_and_data_values.array_at( "mask" );
-        const scarab::param_array t_new_mask2 = a_mask_and_data_values.array_at( "mask2" );
-        const scarab::param_array t_new_data_mean = a_mask_and_data_values.array_at( "data-mean" );
-        const scarab::param_array t_new_data_variance = a_mask_and_data_values.array_at( "data-variance" );
+        const scarab::param_array t_new_mask = a_mask_and_data_values["mask"].as_array();
+        const scarab::param_array t_new_mask2 = a_mask_and_data_values["mask2"].as_array();
+        const scarab::param_array t_new_data_mean = a_mask_and_data_values["data-mean"].as_array();
+        const scarab::param_array t_new_data_variance = a_mask_and_data_values["data-variance"].as_array();
         LDEBUG( plog, "Finished reading mask" );
         // prep the data members
         f_mask.clear();
@@ -167,9 +167,9 @@ namespace psyllid
         // assign new values
         for( unsigned i_bin = 0; i_bin < t_new_mask.size(); ++i_bin )
         {
-            f_mask[ i_bin ] = t_new_mask.value_at( i_bin ).as_double();
-            f_average_data[ i_bin ] = t_new_data_mean.value_at( i_bin ).as_double();
-            f_variance_data[ i_bin ] = t_new_data_variance.value_at( i_bin ).as_double();
+            f_mask[ i_bin ] = t_new_mask[i_bin]().as_double();
+            f_average_data[ i_bin ] = t_new_data_mean[i_bin]().as_double();
+            f_variance_data[ i_bin ] = t_new_data_variance[i_bin]().as_double();
         }
         //TODO what case are we covering here, and what should we do?
         //if ( t_new_mask2 != nullptr )
@@ -179,7 +179,7 @@ namespace psyllid
         f_mask2.resize( t_new_mask2.size() );
         for( unsigned i_bin = 0; i_bin < t_new_mask2.size(); ++i_bin )
         {
-            f_mask2[ i_bin ] = t_new_mask2.value_at( i_bin ).as_double();
+            f_mask2[ i_bin ] = t_new_mask2[i_bin]().as_double();
         }
         //}
     }
@@ -864,39 +864,39 @@ namespace psyllid
 
         if( a_config.has( "threshold-ampl-snr" ) )
         {
-            a_node->set_threshold_ampl_snr( a_config.get_value< double >( "threshold-ampl-snr" ) );
+            a_node->set_threshold_ampl_snr( a_config["threshold-ampl-snr"]().as_double() );
         }
         if( a_config.has( "threshold-power-snr" ) )
         {
-            a_node->set_threshold_snr( a_config.get_value< double >( "threshold-power-snr" ) );
+            a_node->set_threshold_snr( a_config["threshold-power-snr"]().as_double() );
         }
         if( a_config.has( "threshold-power-snr-high" ) )
         {
-            a_node->set_threshold_snr_high( a_config.get_value< double >( "threshold-power-snr-high" ) );
+            a_node->set_threshold_snr_high( a_config["threshold-power-snr-high"]().as_double() );
         }
         if( a_config.has( "threshold-power-sigma" ) )
         {
-            a_node->set_threshold_sigma( a_config.get_value< double >( "threshold-power-sigma" ) );
+            a_node->set_threshold_sigma( a_config["threshold-power-sigma"]().as_double() );
         }
         if( a_config.has( "threshold-power-sigma-high" ) )
         {
-            a_node->set_threshold_sigma_high( a_config.get_value< double >( "threshold-power-sigma-high" ) );
+            a_node->set_threshold_sigma_high( a_config["threshold-power-sigma-high"]().as_double() );
         }
         if( a_config.has( "threshold-db" ) )
         {
-            a_node->set_threshold_dB( a_config.get_value< double >( "threshold-db" ) );
+            a_node->set_threshold_dB( a_config["threshold-db"]().as_double() );
         }
         if( a_config.has( "trigger-mode" ) )
         {
-            a_node->set_trigger_mode( a_config.get_value< std::string >( "trigger-mode" ) );
+            a_node->set_trigger_mode( a_config["trigger-mode"]().as_string() );
         }
         if( a_config.has( "threshold-type" ) )
         {
-            a_node->set_threshold_type( a_config.get_value< std::string >( "threshold-type" ) );
+            a_node->set_threshold_type( a_config["threshold-type"]().as_string() );
         }
         if( a_config.has( "mask-configuration" ) )
         {
-            const scarab::param t_mask_config = a_config.at( "mask-configuration" );
+            const scarab::param t_mask_config = a_config["mask-configuration"];
             if ( t_mask_config.is_value() )
             {
                 scarab::param_translator t_param_translator = scarab::param_translator();
@@ -927,21 +927,21 @@ namespace psyllid
     void frequency_mask_trigger_binding::do_dump_config( const frequency_mask_trigger* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for frequency_mask_trigger" );
-        a_config.add( "n-packets-for-mask", scarab::param_value( a_node->get_n_packets_for_mask() ) );
-        a_config.add( "n-spline-points", scarab::param_value( a_node->get_n_spline_points() ) );
-        a_config.add( "length", scarab::param_value( a_node->get_length() ) );
-        a_config.add( "trigger-mode", scarab::param_value( a_node->get_trigger_mode_str() ) );
-        a_config.add( "threshold-type", scarab::param_value( a_node->get_threshold_type_str() ) );
+        a_config.add( "n-packets-for-mask", a_node->get_n_packets_for_mask() );
+        a_config.add( "n-spline-points", a_node->get_n_spline_points() );
+        a_config.add( "length", a_node->get_length() );
+        a_config.add( "trigger-mode", a_node->get_trigger_mode_str() );
+        a_config.add( "threshold-type", a_node->get_threshold_type_str() );
         // get threshold values corresponding only to the configured threshold type
         switch ( a_node->get_threshold_type() )
         {
             case frequency_mask_trigger::threshold_t::snr:
-                a_config.add( "threshold-power-snr", scarab::param_value( a_node->get_threshold_snr() ) );
-                a_config.add( "threshold-power-snr-high", scarab::param_value( a_node->get_threshold_snr_high() ) );
+                a_config.add( "threshold-power-snr", a_node->get_threshold_snr() );
+                a_config.add( "threshold-power-snr-high", a_node->get_threshold_snr_high() );
                 break;
             case frequency_mask_trigger::threshold_t::sigma:
-                a_config.add( "threshold-power-sigma", scarab::param_value( a_node->get_threshold_sigma() ) );
-                a_config.add( "threshold-power-sigma-high", scarab::param_value( a_node->get_threshold_sigma_high() ) );
+                a_config.add( "threshold-power-sigma", a_node->get_threshold_sigma() );
+                a_config.add( "threshold-power-sigma-high", a_node->get_threshold_sigma_high() );
                 break;
         }
         //TODO the vectors of average and variance data are large, should add logic to export them to a file
