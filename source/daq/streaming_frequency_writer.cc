@@ -228,7 +228,7 @@ namespace psyllid
         a_node->set_file_num( a_config.get_value( "file-num", a_node->get_file_num() ) );
         if ( a_config.has( "device" ) )
         {
-            const scarab::param_node t_dev_config = a_config.node_at( "device" );
+            const scarab::param_node t_dev_config = a_config["device"].as_node();
             a_node->set_bit_depth( t_dev_config.get_value( "bit-depth", a_node->get_bit_depth() ) );
             a_node->set_data_type_size( t_dev_config.get_value( "data-type-size", a_node->get_data_type_size() ) );
             a_node->set_sample_size( t_dev_config.get_value( "sample-size", a_node->get_sample_size() ) );
@@ -247,19 +247,17 @@ namespace psyllid
         LDEBUG( plog, "Dumping configuration for streaming_frequency_writer" );
         a_config.add( "file-num", scarab::param_value( a_node->get_file_num() ) );
         scarab::param_node t_dev_node = scarab::param_node();
-        t_dev_node.add( "bit-depth", scarab::param_value( a_node->get_bit_depth() ) );
-        t_dev_node.add( "data-type-size", scarab::param_value( a_node->get_data_type_size() ) );
-        t_dev_node.add( "sample-size", scarab::param_value( a_node->get_sample_size() ) );
-        t_dev_node.add( "record-size", scarab::param_value( a_node->get_record_size() ) );
-        t_dev_node.add( "acq-rate", scarab::param_value( a_node->get_acq_rate() ) );
-        t_dev_node.add( "v-offset", scarab::param_value( a_node->get_v_offset() ) );
-        t_dev_node.add( "v-range", scarab::param_value( a_node->get_v_range() ) );
+        t_dev_node.add( "bit-depth", a_node->get_bit_depth() );
+        t_dev_node.add( "data-type-size", a_node->get_data_type_size() );
+        t_dev_node.add( "sample-size", a_node->get_sample_size() );
+        t_dev_node.add( "record-size", a_node->get_record_size() );
+        t_dev_node.add( "acq-rate", a_node->get_acq_rate() );
+        t_dev_node.add( "v-offset", a_node->get_v_offset() );
+        t_dev_node.add( "v-range", a_node->get_v_range() );
         a_config.add( "device", t_dev_node );
-        a_config.add( "center-freq", scarab::param_value( a_node->get_center_freq() ) );
-        a_config.add( "freq-range", scarab::param_value( a_node->get_freq_range() ) );
+        a_config.add( "center-freq", a_node->get_center_freq() );
+        a_config.add( "freq-range", a_node->get_freq_range() );
         return;
     }
-
-
 
 } /* namespace psyllid */
