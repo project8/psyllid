@@ -41,7 +41,7 @@ namespace psyllid
         if ( a_master_config.has( "on-startup" ) )
         {
             LINFO( plog, "have an initial action array" );
-            add_to_queue( a_master_config.array_at( "batch-actions" ) );
+            add_to_queue( a_master_config.array_at( "on-startup" ) );
         }
         else
         {
