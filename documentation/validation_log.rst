@@ -73,6 +73,7 @@ Fixes:
 ''''''
 
 * corrected compiler warnings related to use of '%u' vs '%lu' for long unsigned ints in testing
+* modified tk_spline (external) spline::set_boundary to be inline (it was triggering gcc warnings because it is unused)
 
 
 Version 1.7.1:
