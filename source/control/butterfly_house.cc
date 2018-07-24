@@ -37,21 +37,21 @@ namespace psyllid
     }
 
 
-    void butterfly_house::prepare_files( const scarab::param_node* a_daq_config )
+    void butterfly_house::prepare_files( const scarab::param_node& a_daq_config )
     {
         std::unique_lock< std::mutex > t_lock( f_house_mutex );
 
         // default is 1 file
         f_file_infos.clear();
 
-        if( a_daq_config == nullptr )
+        if( a_daq_config.empty() )
         {
             f_file_infos.resize( 1 );
         }
         else
         {
-            f_file_infos.resize( a_daq_config->get_value( "n-files", 1U ) );
-            set_max_file_size_mb( a_daq_config->get_value( "max-file-size-mb", get_max_file_size_mb() ) );
+            f_file_infos.resize( a_daq_config.get_value( "n-files", 1U ) );
+            set_max_file_size_mb( a_daq_config.get_value( "max-file-size-mb", get_max_file_size_mb() ) );
         }
 
         for( file_infos_it fi_it = f_file_infos.begin(); fi_it != f_file_infos.end(); ++fi_it )

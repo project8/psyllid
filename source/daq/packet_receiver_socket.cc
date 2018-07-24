@@ -246,10 +246,10 @@ namespace psyllid
     void packet_receiver_socket_binding::do_dump_config( const packet_receiver_socket* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for packet_receiver_socket" );
-        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
-        a_config.add( "port", new scarab::param_value( a_node->get_port() ) );
-        a_config.add( "ip", new scarab::param_value( a_node->ip() ) );
-        a_config.add( "timeout-sec", new scarab::param_value( a_node->get_timeout_sec() ) );
+        a_config.add( "length", scarab::param_value( a_node->get_length() ) );
+        a_config.add( "port", scarab::param_value( a_node->get_port() ) );
+        a_config.add( "ip", scarab::param_value( a_node->ip() ) );
+        a_config.add( "timeout-sec", scarab::param_value( a_node->get_timeout_sec() ) );
         return;
     }
 

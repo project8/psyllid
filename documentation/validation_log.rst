@@ -67,11 +67,14 @@ New Features:
     * run_server's thread execution logic changed to account for the above changes to batch_executor's execute()
     * the 'batch-actions' top-level node name is changed to 'on-startup' to be more clear
     * tested by running psyllid in insectarium and confirming execution of stop run both on `cmd broadcast.set_condition 0` and `cmd psyllid_queue.hard-abort`.
+* updating scarab dependency to version v2.1.1
+    * tested by running psyllid in insectarium in batch mode
 
 Fixes:
 ''''''
 
 * corrected compiler warnings related to use of '%u' vs '%lu' for long unsigned ints in testing
+* modified tk_spline (external) spline::set_boundary to be inline (it was triggering gcc warnings because it is unused)
 
 
 Version 1.7.1:

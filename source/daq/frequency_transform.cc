@@ -289,12 +289,12 @@ namespace psyllid
     void frequency_transform_binding::do_dump_config( const frequency_transform* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping frequency_transform configuration" );
-        a_config.add( "time-length", new scarab::param_value( a_node->get_time_length() ) );
-        a_config.add( "freq-length", new scarab::param_value( a_node->get_freq_length() ) );
-        a_config.add( "fft-size", new scarab::param_value( a_node->get_fft_size() ) );
-        a_config.add( "transform-flag", new scarab::param_value( a_node->get_transform_flag() ) );
-        a_config.add( "use-wisdom", new scarab::param_value( a_node->get_use_wisdom() ) );
-        a_config.add( "wisdom-filename", new scarab::param_value( a_node->get_wisdom_filename() ) );
+        a_config.add( "time-length", scarab::param_value( a_node->get_time_length() ) );
+        a_config.add( "freq-length", scarab::param_value( a_node->get_freq_length() ) );
+        a_config.add( "fft-size", scarab::param_value( a_node->get_fft_size() ) );
+        a_config.add( "transform-flag", scarab::param_value( a_node->get_transform_flag() ) );
+        a_config.add( "use-wisdom", scarab::param_value( a_node->get_use_wisdom() ) );
+        a_config.add( "wisdom-filename", scarab::param_value( a_node->get_wisdom_filename() ) );
         return;
     }
 

@@ -457,13 +457,13 @@ namespace psyllid
     void packet_receiver_fpa_binding::do_dump_config( const packet_receiver_fpa* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for packet_receiver_fpa" );
-        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
-        a_config.add( "port", new scarab::param_value( a_node->get_port() ) );
-        a_config.add( "interface", new scarab::param_value( a_node->interface() ) );
-        a_config.add( "timeout-sec", new scarab::param_value( a_node->get_timeout_sec() ) );
-        a_config.add( "n-blocks", new scarab::param_value( a_node->get_n_blocks() ) );
-        a_config.add( "block-size", new scarab::param_value( a_node->get_block_size() ) );
-        a_config.add( "frame-size", new scarab::param_value( a_node->get_frame_size() ) );
+        a_config.add( "length", scarab::param_value( a_node->get_length() ) );
+        a_config.add( "port", scarab::param_value( a_node->get_port() ) );
+        a_config.add( "interface", scarab::param_value( a_node->interface() ) );
+        a_config.add( "timeout-sec", scarab::param_value( a_node->get_timeout_sec() ) );
+        a_config.add( "n-blocks", scarab::param_value( a_node->get_n_blocks() ) );
+        a_config.add( "block-size", scarab::param_value( a_node->get_block_size() ) );
+        a_config.add( "frame-size", scarab::param_value( a_node->get_frame_size() ) );
         return;
     }
 

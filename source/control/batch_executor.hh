@@ -62,11 +62,11 @@ namespace psyllid
 
         public:
             void clear_queue();
-            void add_to_queue( const scarab::param_node* an_action );
-            void add_to_queue( const scarab::param_array* actions_array );
+            void add_to_queue( const scarab::param_node& an_action );
+            void add_to_queue( const scarab::param_array& actions_array );
             void add_to_queue( const std::string& a_batch_command_name );
-            void replace_queue( const scarab::param_node* an_action );
-            void replace_queue( const scarab::param_array* actions_array );
+            void replace_queue( const scarab::param_node& an_action );
+            void replace_queue( const scarab::param_array& actions_array );
             void replace_queue( const std::string& a_batch_command_name );
 
             dripline::reply_info do_batch_cmd_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
@@ -82,7 +82,7 @@ namespace psyllid
             void do_an_action();
 
             virtual void do_cancellation();
-            static action_info parse_action( const scarab::param_node* a_action );
+            static action_info parse_action( const scarab::param_node& a_action );
 
     };
 

@@ -60,13 +60,6 @@ namespace psyllid
         // configuration manager
         //config_manager t_config_mgr( f_config, &t_dev_mgr );
 
-        const param_node* t_daq_node = f_config.node_at( "daq" );
-        if( t_daq_node == nullptr )
-        {
-            LERROR( plog, "No DAQ node present in the master config" );
-            return;
-        }
-
         std::unique_lock< std::mutex > t_lock( f_component_mutex );
 
         std::thread t_msg_relay_thread;
@@ -75,8 +68,8 @@ namespace psyllid
             // dripline relayer
             try
             {
-                message_relayer* t_msg_relay = message_relayer::create_instance( f_config.node_at( "amqp" ) );
-                if( f_config.get_value< bool >( "post-to-slack" ) )
+                message_relayer* t_msg_relay = message_relayer::create_instance( f_config["amqp"].as_node() );
+                if( f_config["post-to-slack"]().as_bool() )
                 {
                     LDEBUG( plog, "Starting message relayer thread" );
                     t_msg_relay_thread = std::thread( &message_relayer::execute_relayer, t_msg_relay );
@@ -99,9 +92,9 @@ namespace psyllid
             control_access::set_daq_control( f_daq_control );
             f_daq_control->initialize();
 
-            if( f_config.has( "streams" ) && f_config.at( "streams" )->is_node() )
+            if( f_config.has( "streams" ) && f_config["streams"].is_node() )
             {
-                if( ! f_stream_manager->initialize( *f_config.node_at( "streams" ) ) )
+                if( ! f_stream_manager->initialize( f_config["streams"].as_node() ) )
                 {
                     throw error() << "Unable to initialize the stream manager";
                 }

@@ -37,7 +37,7 @@ int main( int argc, char** argv )
     try
     {
         server_config t_sc;
-        scarab::configurator t_configurator( argc, argv, &t_sc );
+        scarab::configurator t_configurator( argc, argv, t_sc );
         //scarab::global_config::get_instance()->set_config( t_configurator.config() );
 
         // Run the server

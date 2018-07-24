@@ -73,7 +73,7 @@ namespace psyllid
             bool initialize( const scarab::param_node& a_config );
 
         public:
-            bool add_stream( const std::string& a_name, const scarab::param_node* a_node );
+            bool add_stream( const std::string& a_name, const scarab::param_node& a_node );
             const stream_template* get_stream( const std::string& a_name ) const;
             void remove_stream( const std::string& a_name );
 
@@ -103,8 +103,8 @@ namespace psyllid
             dripline::reply_info handle_get_stream_node_list_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
         private:
-            void _add_stream( const std::string& a_name, const scarab::param_node* a_node );
-            void _add_stream( const std::string& a_name, const std::string& a_type, const scarab::param_node* a_node );
+            void _add_stream( const std::string& a_name, const scarab::param_node& a_node );
+            void _add_stream( const std::string& a_name, const std::string& a_type, const scarab::param_node& a_node );
             void _remove_stream( const std::string& a_name );
 
             void _configure_node( const std::string& a_stream_name, const std::string& a_node_name, const scarab::param_node& a_config );

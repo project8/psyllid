@@ -52,11 +52,11 @@ int main( int argc, char** argv )
     try
     {
         scarab::param_node t_default_config;
-        t_default_config.add( "ip", new scarab::param_value( "127.0.0.1" ) );
-        t_default_config.add( "port", new scarab::param_value( 23530 ) );
-        t_default_config.add( "interface", new scarab::param_value( "eth1" ) );
+        t_default_config.add( "ip", scarab::param_value( "127.0.0.1" ) );
+        t_default_config.add( "port", scarab::param_value( 23530 ) );
+        t_default_config.add( "interface", scarab::param_value( "eth1" ) );
 
-        scarab::configurator t_configurator( argc, argv, &t_default_config );
+        scarab::configurator t_configurator( argc, argv, t_default_config );
 
         std::string t_ip( t_configurator.get< std::string >( "ip" ) );
         unsigned t_port = t_configurator.get< unsigned >( "port" );

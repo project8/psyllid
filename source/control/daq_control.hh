@@ -134,7 +134,7 @@ namespace psyllid
 
             std::shared_ptr< stream_manager > f_node_manager;
 
-            std::unique_ptr< scarab::param_node > f_daq_config;
+            scarab::param_node  f_daq_config;
 
             midge_package f_midge_pkg;
             active_node_bindings* f_node_bindings;
