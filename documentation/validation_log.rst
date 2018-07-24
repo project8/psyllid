@@ -60,6 +60,7 @@ New Features:
     * server_config now defines condition 10 and 12, both call the cmd 'hard-abort'
     * server_config now defines a top-level node 'batch-commands' with an entry for 'hard-abort' which calls 'stop-run'
     * request_receiver stores the above map (configurable in config file as top-level node 'set-conditions'); responds to set-condition commands by calling the mapped rks as an OP_CMD with empty message body
+      * this had a bug which is now fixed, it checked for the new name but populated by the old one
     * batch_executor stores the batch-commands map (each entry in the node is an array of commands following the same syntax as those run when the system starts
     * batch_executor's constructor binds request-receiver commands for each key in the above map to do_batch_cmd_request, which adds the configured array of actions to the batch queue. This is called as `agent cmd <queue>.<key>`.
     * batch_executor's execute() method now has an infinite loop option which always tries to empty a concurrent_queue of actions (there are now utility methods plus the above which can populate that queue.
