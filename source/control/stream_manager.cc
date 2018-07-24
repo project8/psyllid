@@ -176,7 +176,7 @@ namespace psyllid
             {
                 throw error() << "No preset specified";
             }
-            const scarab::param& t_preset_param = a_node.at( "preset" );
+            const scarab::param& t_preset_param = a_node["preset"];
 
             if( t_preset_param.is_node() )
             {
@@ -187,11 +187,11 @@ namespace psyllid
                 }
 
                 // "name" is guaranteed to be there by the successful completion of runtime_stream_preset::add_preset
-                return _add_stream( a_name, t_preset_param_node.get_value( "type" ), a_node );
+                return _add_stream( a_name, t_preset_param_node["type"]().as_string(), a_node );
             }
             else if( t_preset_param.is_value() )
             {
-                return _add_stream( a_name, t_preset_param.as_value().as_string(), a_node );
+                return _add_stream( a_name, t_preset_param().as_string(), a_node );
             }
             else
             {
@@ -249,9 +249,9 @@ namespace psyllid
             // setup the node config
             scarab::param_node t_node_config;
             // first get the node-specific config, if present (refer to it by its original name, not t_node_name)
-            if( a_node.has( t_node_it->first ) ) t_node_config.merge( a_node.node_at( t_node_it->first ) );
+            if( a_node.has( t_node_it->first ) ) t_node_config.merge( a_node[t_node_it->first].as_node() );
             // add stream-wide config data to the node config
-            if( a_node.has( "device" ) ) t_node_config.add( "device", a_node.node_at( "device" ) );
+            if( a_node.has( "device" ) ) t_node_config.add( "device", a_node["device"].as_node() );
             // pass the configuration to the builder
             t_builder->configure_builder( t_node_config );
 
@@ -429,14 +429,14 @@ namespace psyllid
 
         try
         {
-            add_stream( a_request->payload().get_value( "name" ), a_request->payload().node_at( "config" ) );
+            add_stream( a_request->payload()["name"]().as_string(), a_request->payload()["config"].as_node() );
         }
         catch( std::exception& e )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::warning_no_action_taken, e.what() );
         }
 
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + a_request->payload().get_value( "name" ) + " has been added" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + a_request->payload()["name"]().as_string() + " has been added" );
     }
 
     dripline::reply_info stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
@@ -445,22 +445,26 @@ namespace psyllid
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: values array is missing" );
         }
-        const scarab::param_array* t_values_array = &a_request->payload().array_at( "values" );
-        if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
+        if( ! a_request->payload()["values"].is_array() )
+        {
+            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: values must be an array" );
+        }
+        const scarab::param_array t_values_array = a_request->payload()["values"].as_array();
+        if( t_values_array.empty() || ! t_values_array[0].is_value() )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
         }
 
         try
         {
-            _remove_stream( t_values_array->get_value( 0 ) );
+            _remove_stream( t_values_array[0]().as_string() );
         }
         catch( error& e )
         {
             return a_reply_pkg.send_reply( dripline::retcode_t::warning_no_action_taken, e.what() );
         }
 
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + t_values_array->get_value( 0 ) + " has been removed" );
+        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + t_values_array[0]().as_string() + " has been removed" );
     }
 
     dripline::reply_info stream_manager::handle_configure_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
@@ -507,14 +511,18 @@ namespace psyllid
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): values array is missing" );
             }
-            const scarab::param_array* t_values_array = &a_request->payload().array_at( "values" );
-            if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
+            if( ! a_request->payload()["values"].is_array() )
+            {
+                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): values entry is not an array" );
+            }
+            const scarab::param_array t_values_array = a_request->payload()["values"].as_array();
+            if( t_values_array.empty() || ! t_values_array[0]().is_value() )
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
             }
 
             scarab::param_node t_param_to_set;
-            t_param_to_set.add( a_request->parsed_rks().front(), scarab::param_value( t_values_array[0].as_value() ) );
+            t_param_to_set.add( a_request->parsed_rks().front(), scarab::param_value( t_values_array[0]() ) );
 
             try
             {
@@ -575,7 +583,7 @@ namespace psyllid
                 {
                     return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get node parameter: cannot find parameter <" + t_param_to_get + ">" );
                 }
-                a_reply_pkg.f_payload.add( t_param_to_get, scarab::param_value( t_param_dump.value_at( t_param_to_get ) ) );
+                a_reply_pkg.f_payload.add( t_param_to_get, scarab::param_value( t_param_dump[t_param_to_get]() ) );
             }
             catch( std::exception& e )
             {
@@ -594,7 +602,7 @@ namespace psyllid
             return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-config.[stream]" );
         }
 
-        scarab::param_array t_streams_list = scarab::param_array();
+        scarab::param_array t_streams_list;
         LDEBUG( plog, "Getting list of streams from the stream handler" );
         try
         {

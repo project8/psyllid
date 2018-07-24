@@ -120,7 +120,7 @@ namespace psyllid
             LERROR( plog, "Preset must have a type.  Preset config:\n" << a_preset_node );
             return false;
         }
-        std::string t_preset_type = a_preset_node.get_value( "type" );
+        std::string t_preset_type = a_preset_node["type"]().as_string();
 
         LDEBUG( plog, "Adding preset of type <" << t_preset_type << ">" );
 
@@ -129,7 +129,7 @@ namespace psyllid
             LERROR( plog, "No \"nodes\" configuration was present for preset <" << t_preset_type << ">" );
             return false;
         }
-        const scarab::param_array& t_nodes_array = a_preset_node.array_at( "nodes" );
+        const scarab::param_array& t_nodes_array = a_preset_node["nodes"].as_array();
 
         std::unique_lock< std::mutex >( s_runtime_presets_mutex );
 
@@ -171,7 +171,7 @@ namespace psyllid
         }
         else
         {
-            const scarab::param_array& t_conn_array = a_preset_node.array_at( "connections" );
+            const scarab::param_array& t_conn_array = a_preset_node["connections"].as_array();
             for( scarab::param_array::const_iterator t_conn_it = t_conn_array.begin(); t_conn_it != t_conn_array.end(); ++t_conn_it )
             {
                 if( ! t_conn_it->is_value() )
