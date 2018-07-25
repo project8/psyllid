@@ -174,12 +174,14 @@ namespace psyllid
             LDEBUG( plog, "there are no actions in the queue" );
             return;
         }
+        LDEBUG( plog, "doing next action: " << *(t_action.f_request_ptr) );
         dripline::reply_info t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
         if ( ! t_request_reply_info )
         {
             LWARN( plog, "failed submitting action request" );
             throw psyllid::error() << "error while submitting command";
         }
+        LDEBUG( plog, "action done, sleeping and/or looping" );
         // wait until daq status is no longer "running"
         if ( t_action.f_is_custom_action )
         {
@@ -202,6 +204,7 @@ namespace psyllid
                                    t_request_reply_info.f_return_code << "]: \"" <<
                                    t_request_reply_info.f_return_msg << "\"";
         }
+        LDEBUG( plog, "action complete" );
     }
 
     void batch_executor::do_cancellation()
