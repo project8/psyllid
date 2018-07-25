@@ -157,6 +157,7 @@ namespace psyllid
         std::exception_ptr t_dc_ex_ptr;
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
         // batch execution to do initial calls (AMQP consume hasn't started yet)
+        std::this_thread::sleep_for( std::chrono::milliseconds( 500 ) );
         std::thread t_executor_thread_initial( &batch_executor::execute, f_batch_executor.get(), false );
         t_executor_thread_initial.join();
         LDEBUG( plog, "initial batch executions complete" );
