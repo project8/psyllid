@@ -72,7 +72,7 @@ namespace psyllid
         return;
     }
 
-    void daq_control::execute()
+    void daq_control::execute( std::condition_variable& a_ready_condition_variable )
     {
         // if we're supposed to activate on startup, we'll call activate asynchronously
         std::future< void > t_activation_return;
@@ -137,8 +137,11 @@ namespace psyllid
 
                 // set midge's running callback
                 f_midge_pkg->set_running_callback(
+                        //TODO the next line needs to be `[this, &a_cv]() {`, assuming execute takes std::cv& a_cv
                         [this]() {
                             set_status( status::activated );
+                            //TODO this line should notify on a local cv
+                            //a_daq_ready_cv.notify_all();
                             return;
                         }
                 );
@@ -151,7 +154,6 @@ namespace psyllid
                 {
                     std::string t_run_string( f_node_manager->get_node_run_str() );
                     LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
-                    set_status( status::activated );
                     t_e_ptr = f_midge_pkg->run( t_run_string );
                     LINFO( plog, "DAQ control is shutting down after midge exited" );
                 }

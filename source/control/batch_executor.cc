@@ -152,7 +152,7 @@ namespace psyllid
             duration: 200
             filenames: '["/tmp/foo_t.yaml", "/tmp/foo_f.yaml"]'
     */
-    void batch_executor::execute( bool run_forever )
+    void batch_executor::execute( std::condition_variable& a_daq_control_ready_cv, bool run_forever )
     {
         while ( run_forever || f_action_queue.size() )
         {

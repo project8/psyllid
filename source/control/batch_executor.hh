@@ -17,6 +17,8 @@
 #include "message.hh"
 #include "reply_package.hh"
 
+#include <condition_variable>
+
 namespace psyllid
 {
     /*!
@@ -72,7 +74,7 @@ namespace psyllid
             dripline::reply_info do_batch_cmd_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
             dripline::reply_info do_replace_actions_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
 
-            void execute( bool run_forever = false );
+            void execute( std::condition_variable& a_daq_control_ready_cv, bool run_forever = false );
 
         private:
             std::shared_ptr<request_receiver> f_request_receiver;

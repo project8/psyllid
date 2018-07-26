@@ -11,6 +11,7 @@
 #include "cancelable.hh"
 
 #include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <memory>
 
@@ -35,7 +36,7 @@ namespace psyllid
             request_receiver( const scarab::param_node& a_master_config );
             virtual ~request_receiver();
 
-            void execute();
+            void execute( std::condition_variable& a_daq_control_ready_cv );
 
             mv_referrable_const( scarab::param_node, set_conditions );
         private:
