@@ -66,7 +66,7 @@ namespace psyllid
             void initialize();
 
             /// Run the DAQ control thread
-            void execute( std::condition_variable& a_ready_condition_variable );
+            void execute( std::condition_variable& a_ready_condition_variable, std::mutex& a_ready_mutex );
 
             /// Start the DAQ into the activated state
             /// Can throw daq_control::status_error; daq_control will still be usable
@@ -80,6 +80,8 @@ namespace psyllid
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void deactivate();
+
+            bool is_ready() const;
 
             /// Start a run
             /// Can throw daq_control::run_error or status_error; daq_control will still be usable

@@ -36,7 +36,7 @@ namespace psyllid
             request_receiver( const scarab::param_node& a_master_config );
             virtual ~request_receiver();
 
-            void execute( std::condition_variable& a_daq_control_ready_cv );
+            void execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex );
 
             mv_referrable_const( scarab::param_node, set_conditions );
         private:

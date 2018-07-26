@@ -72,7 +72,7 @@ namespace psyllid
         return;
     }
 
-    void daq_control::execute( std::condition_variable& a_ready_condition_variable )
+    void daq_control::execute( std::condition_variable& a_ready_condition_variable, std::mutex& a_ready_mutex )
     {
         // if we're supposed to activate on startup, we'll call activate asynchronously
         std::future< void > t_activation_return;
@@ -316,6 +316,11 @@ namespace psyllid
         }
 
         return;
+    }
+
+    bool daq_control::is_ready() const
+    {
+        return f_daq_config["activate-at-startup"]().as_bool() ? (f_status == status::activated) : (f_status == status::activated || f_status == status::deactivated);
     }
 
     void daq_control::start_run()

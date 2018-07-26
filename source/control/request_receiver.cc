@@ -37,7 +37,7 @@ namespace psyllid
     {
     }
 
-    void request_receiver::execute( std::condition_variable& a_daq_control_ready_cv )
+    void request_receiver::execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex )
     {
         set_status( k_starting );
 
