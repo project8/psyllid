@@ -137,11 +137,10 @@ namespace psyllid
 
                 // set midge's running callback
                 f_midge_pkg->set_running_callback(
-                        //TODO the next line needs to be `[this, &a_cv]() {`, assuming execute takes std::cv& a_cv
-                        [this]() {
+                        [this, &a_ready_condition_variable, &a_ready_mutex]() {
                             set_status( status::activated );
-                            //TODO this line should notify on a local cv
-                            //a_daq_ready_cv.notify_all();
+                            std::lock_guard<std::mutex> ready_lock(a_ready_mutex);
+                            a_ready_condition_variable.notify_all();
                             return;
                         }
                 );
