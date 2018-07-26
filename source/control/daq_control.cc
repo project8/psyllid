@@ -135,6 +135,14 @@ namespace psyllid
                     continue;
                 }
 
+                // set midge's running callback
+                f_midge_pkg->set_running_callback(
+                        [this]() {
+                            set_status( status::activated );
+                            return;
+                        }
+                );
+
                 f_node_bindings = f_node_manager->get_node_bindings();
 
                 std::exception_ptr t_e_ptr;
