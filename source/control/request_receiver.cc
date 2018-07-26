@@ -1,4 +1,5 @@
 
+#include "daq_control.hh"
 #include "request_receiver.hh"
 #include "dripline_constants.hh"
 
@@ -25,11 +26,12 @@ namespace psyllid
 
     LOGGER( plog, "request_receiver" );
 
-    request_receiver::request_receiver( const param_node& a_master_config ) :
+    request_receiver::request_receiver( const param_node& a_master_config, std::shared_ptr<psyllid::daq_control> a_daq_control ) :
             hub( a_master_config["amqp"].as_node() ),
             scarab::cancelable(),
             f_set_conditions( a_master_config["set-conditions"].as_node() ),
-            f_status( k_initialized )
+            f_status( k_initialized ),
+            f_daq_control_ptr( a_daq_control )
     {
     }
 
@@ -49,6 +51,11 @@ namespace psyllid
             return;
         }
 
+        while ( ! f_daq_control_ptr->is_ready() && ! cancelable::is_canceled() )
+        {
+            std::unique_lock<std::mutex> t_daq_control_lock( a_daq_control_ready_mutex );
+            a_daq_control_ready_cv.wait_for( t_daq_control_lock, std::chrono::milliseconds( 500 ) );
+        }
 
         if ( f_make_connection ) {
             LINFO( plog, "Waiting for incoming messages" );

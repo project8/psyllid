@@ -18,6 +18,7 @@
 namespace psyllid
 {
     class run_server;
+    class daq_control;
     /*!
      @class request_receiver
      @author N. S. Oblath
@@ -33,7 +34,7 @@ namespace psyllid
     class request_receiver : public dripline::hub, public scarab::cancelable
     {
         public:
-            request_receiver( const scarab::param_node& a_master_config );
+            request_receiver( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::daq_control> a_daq_control );
             virtual ~request_receiver();
 
             void execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex );
@@ -60,6 +61,7 @@ namespace psyllid
 
         private:
             std::atomic< status > f_status;
+            std::shared_ptr<daq_control> f_daq_control_ptr;
             virtual dripline::reply_info __do_handle_set_condition_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
     };

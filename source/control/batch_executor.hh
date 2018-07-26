@@ -44,6 +44,7 @@ namespace psyllid
 
     // forward declarations
     class request_receiver;
+    class daq_control;
 
     struct action_info
     {
@@ -57,7 +58,7 @@ namespace psyllid
     {
         public:
             batch_executor();
-            batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver );
+            batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver, std::shared_ptr<psyllid::daq_control> a_daq_control_ptr );
             virtual ~batch_executor();
 
             mv_referrable_const( scarab::param_node, batch_commands );
@@ -78,6 +79,7 @@ namespace psyllid
 
         private:
             std::shared_ptr<request_receiver> f_request_receiver;
+            std::shared_ptr<daq_control> f_daq_control_ptr;
             scarab::concurrent_queue< action_info > f_action_queue;
             scarab::param_node f_condition_actions;
 

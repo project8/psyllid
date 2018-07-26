@@ -27,14 +27,16 @@ namespace psyllid
     batch_executor::batch_executor() :
         f_batch_commands(),
         f_request_receiver(),
+        f_daq_control_ptr(),
         f_action_queue(),
         f_condition_actions()
     {
     }
 
-    batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
+    batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver, std::shared_ptr<psyllid::daq_control> a_daq_control ) :
         f_batch_commands( a_master_config[ "batch-commands" ].as_node() ),
         f_request_receiver( a_request_receiver ),
+        f_daq_control_ptr( a_daq_control ),
         f_action_queue(),
         f_condition_actions()
     {
@@ -154,6 +156,12 @@ namespace psyllid
     */
     void batch_executor::execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex, bool run_forever )
     {
+        while ( ! f_daq_control_ptr->is_ready() && ! is_canceled() )
+        {
+            std::unique_lock<std::mutex> t_daq_control_lock( a_daq_control_ready_mutex );
+            a_daq_control_ready_cv.wait_for( t_daq_control_lock, std::chrono::milliseconds( 500 ) );
+        }
+
         while ( run_forever || f_action_queue.size() )
         {
             if ( is_canceled() ) break;
