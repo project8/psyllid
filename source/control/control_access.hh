@@ -26,6 +26,9 @@ namespace psyllid
     class control_access
     {
         public:
+            typedef std::shared_ptr< daq_control > dc_ptr_t;
+
+        public:
             control_access();
             virtual ~control_access();
 
@@ -34,7 +37,7 @@ namespace psyllid
         protected:
             static std::weak_ptr< daq_control > f_daq_control;
 
-            std::shared_ptr< daq_control > use_daq_control() {return control_access::f_daq_control.lock();}
+            dc_ptr_t use_daq_control() {return control_access::f_daq_control.lock();}
 
             bool daq_control_expired() {return control_access::f_daq_control.expired();}
     };

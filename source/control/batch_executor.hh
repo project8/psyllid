@@ -8,6 +8,8 @@
 #ifndef PSYLLID_BATCH_EXECUTOR_HH_
 #define PSYLLID_BATCH_EXECUTOR_HH_
 
+#include "control_access.hh"
+
 // scarab includes
 #include "cancelable.hh"
 #include "concurrent_queue.hh"
@@ -54,11 +56,11 @@ namespace psyllid
     };
 
     // local content
-    class batch_executor : public scarab::cancelable
+    class batch_executor : public control_access, public scarab::cancelable
     {
         public:
             batch_executor();
-            batch_executor( const scarab::param_node& a_master_config, std::shared_ptr< request_receiver > a_request_receiver, std::shared_ptr< daq_control > a_daq_control_ptr );
+            batch_executor( const scarab::param_node& a_master_config, std::shared_ptr< request_receiver > a_request_receiver );
             virtual ~batch_executor();
 
             mv_referrable_const( scarab::param_node, batch_commands );
@@ -79,7 +81,6 @@ namespace psyllid
 
         private:
             std::shared_ptr<request_receiver> f_request_receiver;
-            std::shared_ptr<daq_control> f_daq_control_ptr;
             scarab::concurrent_queue< action_info > f_action_queue;
             scarab::param_node f_condition_actions;
 

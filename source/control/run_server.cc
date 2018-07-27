@@ -103,10 +103,10 @@ namespace psyllid
 
             // request receiver
             LDEBUG( plog, "Creating request receiver" );
-            f_request_receiver.reset( new request_receiver( f_config, f_daq_control ) );
+            f_request_receiver.reset( new request_receiver( f_config ) );
             // batch executor
             LDEBUG( plog, "Creating batch executor" );
-            f_batch_executor.reset( new batch_executor( f_config, f_request_receiver, f_daq_control ) );
+            f_batch_executor.reset( new batch_executor( f_config, f_request_receiver ) );
 
         }
         catch( std::exception& e )
