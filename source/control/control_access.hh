@@ -15,16 +15,19 @@ namespace psyllid
     class daq_control;
 
     /*!
-	 @class control_access
-	 @author N. S. Oblath
+     @class control_access
+     @author N. S. Oblath
 
-	 @brief Gives other classes access to daq_control.
+     @brief Gives other classes access to daq_control.
 
-	 @details
-	 Used for example by butterfly_house to get the run name and description from daq_control.
-	 */
+     @details
+     Used for example by butterfly_house to get the run name and description from daq_control.
+     */
     class control_access
     {
+        public:
+            typedef std::shared_ptr< daq_control > dc_ptr_t;
+
         public:
             control_access();
             virtual ~control_access();
@@ -34,7 +37,7 @@ namespace psyllid
         protected:
             static std::weak_ptr< daq_control > f_daq_control;
 
-            std::shared_ptr< daq_control > use_daq_control() {return control_access::f_daq_control.lock();}
+            dc_ptr_t use_daq_control() {return control_access::f_daq_control.lock();}
 
             bool daq_control_expired() {return control_access::f_daq_control.expired();}
     };

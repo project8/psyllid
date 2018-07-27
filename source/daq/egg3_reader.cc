@@ -218,11 +218,11 @@ namespace psyllid
     void egg3_reader_binding::do_dump_config( const egg3_reader* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for egg3_reader" );
-        a_config.add( "egg-path", new scarab::param_value( a_node->get_egg_path() ) );
-        a_config.add( "read-n-records", new scarab::param_value( a_node->get_read_n_records() ) );
-        a_config.add( "repeat-egg", new scarab::param_value( a_node->get_repeat_egg() ) );
-        a_config.add( "length", new scarab::param_value( a_node->get_length() ) );
-        a_config.add( "start-paused", new scarab::param_value( a_node->get_length() ) );
+        a_config.add( "egg-path", scarab::param_value( a_node->get_egg_path() ) );
+        a_config.add( "read-n-records", scarab::param_value( a_node->get_read_n_records() ) );
+        a_config.add( "repeat-egg", scarab::param_value( a_node->get_repeat_egg() ) );
+        a_config.add( "length", scarab::param_value( a_node->get_length() ) );
+        a_config.add( "start-paused", scarab::param_value( a_node->get_length() ) );
         return;
     }
 

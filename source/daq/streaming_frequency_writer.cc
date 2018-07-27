@@ -96,7 +96,7 @@ namespace psyllid
             stream_wrap_ptr t_swrap_ptr;
 
             uint64_t t_bytes_per_record = f_record_size * f_sample_size * f_data_type_size;
-            scarab::time_nsec_type t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)f_acq_rate * 1.e3 );
+            uint64_t t_record_length_nsec = llrint( (double)(PAYLOAD_SIZE / 2) / (double)f_acq_rate * 1.e3 );
 
             uint64_t t_first_pkt_in_run = 0;
 
@@ -226,16 +226,16 @@ namespace psyllid
     {
         LDEBUG( plog, "Configuring streaming_frequency_writer with:\n" << a_config );
         a_node->set_file_num( a_config.get_value( "file-num", a_node->get_file_num() ) );
-        const scarab::param_node *t_dev_config = a_config.node_at( "device" );
-        if( t_dev_config != nullptr )
+        if ( a_config.has( "device" ) )
         {
-            a_node->set_bit_depth( t_dev_config->get_value( "bit-depth", a_node->get_bit_depth() ) );
-            a_node->set_data_type_size( t_dev_config->get_value( "data-type-size", a_node->get_data_type_size() ) );
-            a_node->set_sample_size( t_dev_config->get_value( "sample-size", a_node->get_sample_size() ) );
-            a_node->set_record_size( t_dev_config->get_value( "record-size", a_node->get_record_size() ) );
-            a_node->set_acq_rate( t_dev_config->get_value( "acq-rate", a_node->get_acq_rate() ) );
-            a_node->set_v_offset( t_dev_config->get_value( "v-offset", a_node->get_v_offset() ) );
-            a_node->set_v_range( t_dev_config->get_value( "v-range", a_node->get_v_range() ) );
+            const scarab::param_node t_dev_config = a_config["device"].as_node();
+            a_node->set_bit_depth( t_dev_config.get_value( "bit-depth", a_node->get_bit_depth() ) );
+            a_node->set_data_type_size( t_dev_config.get_value( "data-type-size", a_node->get_data_type_size() ) );
+            a_node->set_sample_size( t_dev_config.get_value( "sample-size", a_node->get_sample_size() ) );
+            a_node->set_record_size( t_dev_config.get_value( "record-size", a_node->get_record_size() ) );
+            a_node->set_acq_rate( t_dev_config.get_value( "acq-rate", a_node->get_acq_rate() ) );
+            a_node->set_v_offset( t_dev_config.get_value( "v-offset", a_node->get_v_offset() ) );
+            a_node->set_v_range( t_dev_config.get_value( "v-range", a_node->get_v_range() ) );
         }
         a_node->set_center_freq( a_config.get_value( "center-freq", a_node->get_center_freq() ) );
         a_node->set_freq_range( a_config.get_value( "freq-range", a_node->get_freq_range() ) );
@@ -245,21 +245,19 @@ namespace psyllid
     void streaming_frequency_writer_binding::do_dump_config( const streaming_frequency_writer* a_node, scarab::param_node& a_config ) const
     {
         LDEBUG( plog, "Dumping configuration for streaming_frequency_writer" );
-        a_config.add( "file-num", new scarab::param_value( a_node->get_file_num() ) );
-        scarab::param_node* t_dev_node = new scarab::param_node();
-        t_dev_node->add( "bit-depth", new scarab::param_value( a_node->get_bit_depth() ) );
-        t_dev_node->add( "data-type-size", new scarab::param_value( a_node->get_data_type_size() ) );
-        t_dev_node->add( "sample-size", new scarab::param_value( a_node->get_sample_size() ) );
-        t_dev_node->add( "record-size", new scarab::param_value( a_node->get_record_size() ) );
-        t_dev_node->add( "acq-rate", new scarab::param_value( a_node->get_acq_rate() ) );
-        t_dev_node->add( "v-offset", new scarab::param_value( a_node->get_v_offset() ) );
-        t_dev_node->add( "v-range", new scarab::param_value( a_node->get_v_range() ) );
+        a_config.add( "file-num", scarab::param_value( a_node->get_file_num() ) );
+        scarab::param_node t_dev_node = scarab::param_node();
+        t_dev_node.add( "bit-depth", a_node->get_bit_depth() );
+        t_dev_node.add( "data-type-size", a_node->get_data_type_size() );
+        t_dev_node.add( "sample-size", a_node->get_sample_size() );
+        t_dev_node.add( "record-size", a_node->get_record_size() );
+        t_dev_node.add( "acq-rate", a_node->get_acq_rate() );
+        t_dev_node.add( "v-offset", a_node->get_v_offset() );
+        t_dev_node.add( "v-range", a_node->get_v_range() );
         a_config.add( "device", t_dev_node );
-        a_config.add( "center-freq", new scarab::param_value( a_node->get_center_freq() ) );
-        a_config.add( "freq-range", new scarab::param_value( a_node->get_freq_range() ) );
+        a_config.add( "center-freq", a_node->get_center_freq() );
+        a_config.add( "freq-range", a_node->get_freq_range() );
         return;
     }
-
-
 
 } /* namespace psyllid */

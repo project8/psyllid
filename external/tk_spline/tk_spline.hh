@@ -105,7 +105,7 @@ public:
     }
 
     // optional, but if called it has to come be before set_points()
-    void set_boundary(bd_type left, double left_value,
+    inline void set_boundary(bd_type left, double left_value,
                       bd_type right, double right_value,
                       bool force_linear_extrapolation=false);
     void set_points(const std::vector<double>& x,
@@ -268,7 +268,7 @@ std::vector<double> band_matrix::lu_solve(const std::vector<double>& b,
 // spline implementation
 // -----------------------
 
-void spline::set_boundary(spline::bd_type left, double left_value,
+inline void spline::set_boundary(spline::bd_type left, double left_value,
                           spline::bd_type right, double right_value,
                           bool force_linear_extrapolation)
 {

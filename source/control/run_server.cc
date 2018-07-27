@@ -17,6 +17,7 @@
 
 #include "logger.hh"
 
+#include <condition_variable>
 #include <signal.h> // for raise()
 #include <thread>
 
@@ -60,13 +61,6 @@ namespace psyllid
         // configuration manager
         //config_manager t_config_mgr( f_config, &t_dev_mgr );
 
-        const param_node* t_daq_node = f_config.node_at( "daq" );
-        if( t_daq_node == nullptr )
-        {
-            LERROR( plog, "No DAQ node present in the master config" );
-            return;
-        }
-
         std::unique_lock< std::mutex > t_lock( f_component_mutex );
 
         std::thread t_msg_relay_thread;
@@ -75,8 +69,8 @@ namespace psyllid
             // dripline relayer
             try
             {
-                message_relayer* t_msg_relay = message_relayer::create_instance( f_config.node_at( "amqp" ) );
-                if( f_config.get_value< bool >( "post-to-slack" ) )
+                message_relayer* t_msg_relay = message_relayer::create_instance( f_config["amqp"].as_node() );
+                if( f_config["post-to-slack"]().as_bool() )
                 {
                     LDEBUG( plog, "Starting message relayer thread" );
                     t_msg_relay_thread = std::thread( &message_relayer::execute_relayer, t_msg_relay );
@@ -99,9 +93,9 @@ namespace psyllid
             control_access::set_daq_control( f_daq_control );
             f_daq_control->initialize();
 
-            if( f_config.has( "streams" ) && f_config.at( "streams" )->is_node() )
+            if( f_config.has( "streams" ) && f_config["streams"].is_node() )
             {
-                if( ! f_stream_manager->initialize( *f_config.node_at( "streams" ) ) )
+                if( ! f_stream_manager->initialize( f_config["streams"].as_node() ) )
                 {
                     throw error() << "Unable to initialize the stream manager";
                 }
@@ -159,28 +153,37 @@ namespace psyllid
         f_request_receiver->register_cmd_handler( "deactivate-daq", std::bind( &daq_control::handle_deactivate_daq_control, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1, _2 ) );
 
+        std::condition_variable t_daq_control_ready_cv;
+        std::mutex t_daq_control_ready_mutex;
+
         // start threads
         LPROG( plog, "Starting threads" );
         std::exception_ptr t_dc_ex_ptr;
-        std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
-        std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
+        std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex) );
+        // batch execution to do initial calls (AMQP consume hasn't started yet)
+        std::thread t_executor_thread_initial( &batch_executor::execute, f_batch_executor.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex), false );
+        t_executor_thread_initial.join();
+        LDEBUG( plog, "initial batch executions complete" );
+        // now execute the request receiver to start consuming
+        //     and start the batch executor in infinite mode so that more command sets may be staged later
+        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex), true );
+        std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex) );
 
         t_lock.unlock();
 
         set_status( k_running );
         LPROG( plog, "Running..." );
 
-        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get() );
-        t_executor_thread.join();
-        LDEBUG( plog, "batch executions complete" );
-
         t_receiver_thread.join();
         LPROG( plog, "Receiver thread has ended" );
+        // if make_connection is false, we need to actually call cancel:
         if ( ! f_request_receiver.get()->get_make_connection() )
         {
             LINFO( plog, "request receiver not making connections, canceling run server" );
             this->cancel();
         }
+        // and then wait for the controllers to finish up...
+        t_executor_thread.join();
         t_daq_control_thread.join();
         LPROG( plog, "DAQ control thread has ended" );
 

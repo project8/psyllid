@@ -13,7 +13,7 @@
 
 namespace psyllid
 {
-	/*!
+    /*!
      @class egg_writer
      @author N. S. Oblath
 
