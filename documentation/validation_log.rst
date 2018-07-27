@@ -43,11 +43,11 @@ Fixes:
 Log
 ---
 
-Version <upcoming>
+Version 1.8.0
 ~~~~~~~~~~~~~~~~~~
 
-Release Date: <TBD>
-'''''''''''''''''''
+Release Date: July 27, 2018
+'''''''''''''''''''''''''''
 
 New Features:
 '''''''''''''
