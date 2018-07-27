@@ -34,7 +34,7 @@ namespace psyllid
     class request_receiver : public dripline::hub, public scarab::cancelable
     {
         public:
-            request_receiver( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::daq_control> a_daq_control );
+            request_receiver( const scarab::param_node& a_master_config, std::shared_ptr< daq_control > a_daq_control );
             virtual ~request_receiver();
 
             void execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex );

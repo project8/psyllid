@@ -26,7 +26,7 @@ namespace psyllid
 
     LOGGER( plog, "request_receiver" );
 
-    request_receiver::request_receiver( const param_node& a_master_config, std::shared_ptr<psyllid::daq_control> a_daq_control ) :
+    request_receiver::request_receiver( const param_node& a_master_config, std::shared_ptr< daq_control > a_daq_control ) :
             hub( a_master_config["amqp"].as_node() ),
             scarab::cancelable(),
             f_set_conditions( a_master_config["set-conditions"].as_node() ),
@@ -51,13 +51,13 @@ namespace psyllid
             return;
         }
 
-        while ( ! f_daq_control_ptr->is_ready() && ! cancelable::is_canceled() )
+        while ( ! f_daq_control_ptr->is_ready_at_startup() && ! cancelable::is_canceled() )
         {
-            std::unique_lock<std::mutex> t_daq_control_lock( a_daq_control_ready_mutex );
-            a_daq_control_ready_cv.wait_for( t_daq_control_lock, std::chrono::milliseconds( 500 ) );
+            std::unique_lock< std::mutex > t_daq_control_lock( a_daq_control_ready_mutex );
+            a_daq_control_ready_cv.wait_for( t_daq_control_lock, std::chrono::seconds(1) );
         }
 
-        if ( f_make_connection ) {
+        if ( f_make_connection && ! cancelable::is_canceled() ) {
             LINFO( plog, "Waiting for incoming messages" );
 
             set_status( k_listening );

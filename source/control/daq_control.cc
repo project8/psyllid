@@ -317,7 +317,7 @@ namespace psyllid
         return;
     }
 
-    bool daq_control::is_ready() const
+    bool daq_control::is_ready_at_startup() const
     {
         return f_daq_config["activate-at-startup"]().as_bool() ? (f_status == status::activated) : (f_status == status::activated || f_status == status::deactivated);
     }
