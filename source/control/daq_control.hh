@@ -36,11 +36,26 @@ namespace psyllid
      Handles all requests received via request_receiver that don't affect the stream setup directly.
      It switches between daq-states, starts and stops runs by un-pausing and pausing midge and forwards run-daq-commands.
 
-     Settings that can be applied:
-     - "duration": the duration of the next run in ms
-     - "filename": the complete path of the egg files
-     - "description": a run description
-     - "use-monarch": when false no data will be written to egg files
+     DAQ states:
+     - Deactivated: initial state and state when Midge is not running.
+     - Activating: an instruction to activate has been received, and the DAQ control is in the process of getting things going.
+     - Activated: Midge is running; the DAQ is ready to go.
+     - Deactivating: an instruction to deactivate has been received, and the DAQ control is in the process of stopping things.
+     - Canceled: the DAQ control has received an instruction from on high to exit immediately, and is in the process of doing so.
+     - Do Restart: Midge experienced a non-fatal error.  The DAQ should be restarted and things will be fine.
+     - Done: the DAQ control has completed operation and is ready for Psyllid to exit.
+     - Error: something went wrong; Psyllid should be restarted.
+
+     Startup readiness: whether the DAQ control is ready for use after startup depends on whether
+     it was told to activate on startup or not:
+     - YES, activate on startup: DAQ control must be in the "activated" state to be ready
+     - NO, wait to activate: DAQ control can be in the "deactivate," "activating,", or "activated" states to be ready
+
+     Settings that can be applied in the "daq" section of the master config:
+     - "duration" (integer): the duration of the next run in ms
+     - "activate-at-startup" (boolean): whether or not the DAQ control is activated immediately on startup
+     - "n-files" (integer): number of files that will be written in parallel
+     - "max-file-size-mb" (float): maximum egg file size; writing will switch to a new file after that is reached
      */
     class daq_control : public scarab::cancelable, public control_access
     {
@@ -66,7 +81,7 @@ namespace psyllid
             void initialize();
 
             /// Run the DAQ control thread
-            void execute();
+            void execute( std::condition_variable& a_ready_condition_variable, std::mutex& a_ready_mutex );
 
             /// Start the DAQ into the activated state
             /// Can throw daq_control::status_error; daq_control will still be usable
@@ -80,6 +95,8 @@ namespace psyllid
             /// Can throw daq_control::status_error; daq_control will still be usable
             /// Can throw psyllid::error; daq_control will NOT be usable
             void deactivate();
+
+            bool is_ready_at_startup() const;
 
             /// Start a run
             /// Can throw daq_control::run_error or status_error; daq_control will still be usable

@@ -17,6 +17,7 @@
 
 //external includes
 #include <chrono>
+#include <signal.h>
 #include <thread>
 
 namespace psyllid
@@ -25,18 +26,22 @@ namespace psyllid
     LOGGER( plog, "batch_executor" );
 
     batch_executor::batch_executor() :
-        f_batch_commands(),
-        f_request_receiver(),
-        f_action_queue(),
-        f_condition_actions()
+            control_access(),
+            scarab::cancelable(),
+            f_batch_commands(),
+            f_request_receiver(),
+            f_action_queue(),
+            f_condition_actions()
     {
     }
 
-    batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver ) :
-        f_batch_commands( a_master_config[ "batch-commands" ].as_node() ),
-        f_request_receiver( a_request_receiver ),
-        f_action_queue(),
-        f_condition_actions()
+    batch_executor::batch_executor( const scarab::param_node& a_master_config, std::shared_ptr< request_receiver > a_request_receiver ) :
+            control_access(),
+            scarab::cancelable(),
+            f_batch_commands( a_master_config[ "batch-commands" ].as_node() ),
+            f_request_receiver( a_request_receiver ),
+            f_action_queue(),
+            f_condition_actions()
     {
         if ( a_master_config.has( "on-startup" ) )
         {
@@ -152,11 +157,24 @@ namespace psyllid
             duration: 200
             filenames: '["/tmp/foo_t.yaml", "/tmp/foo_f.yaml"]'
     */
-    void batch_executor::execute( bool run_forever )
+    void batch_executor::execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex, bool run_forever )
     {
-        while ( run_forever || f_action_queue.size() )
+        if( daq_control_expired() )
         {
-            if ( is_canceled() ) break;
+            LERROR( plog, "Unable to get access to the DAQ control" );
+            raise( SIGINT );
+            return;
+        }
+        dc_ptr_t t_daq_control_ptr = use_daq_control();
+
+        while ( ! t_daq_control_ptr->is_ready_at_startup() && ! is_canceled() )
+        {
+            std::unique_lock< std::mutex > t_daq_control_lock( a_daq_control_ready_mutex );
+            a_daq_control_ready_cv.wait_for( t_daq_control_lock, std::chrono::seconds(1) );
+        }
+
+        while ( ( run_forever || f_action_queue.size() ) && ! is_canceled() )
+        {
             if ( f_action_queue.size() )
             {
                 do_an_action();

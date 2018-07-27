@@ -8,6 +8,8 @@
 #ifndef PSYLLID_BATCH_EXECUTOR_HH_
 #define PSYLLID_BATCH_EXECUTOR_HH_
 
+#include "control_access.hh"
+
 // scarab includes
 #include "cancelable.hh"
 #include "concurrent_queue.hh"
@@ -16,6 +18,8 @@
 // dripline
 #include "message.hh"
 #include "reply_package.hh"
+
+#include <condition_variable>
 
 namespace psyllid
 {
@@ -42,6 +46,7 @@ namespace psyllid
 
     // forward declarations
     class request_receiver;
+    class daq_control;
 
     struct action_info
     {
@@ -51,11 +56,11 @@ namespace psyllid
     };
 
     // local content
-    class batch_executor : public scarab::cancelable
+    class batch_executor : public control_access, public scarab::cancelable
     {
         public:
             batch_executor();
-            batch_executor( const scarab::param_node& a_master_config, std::shared_ptr<psyllid::request_receiver> a_request_receiver );
+            batch_executor( const scarab::param_node& a_master_config, std::shared_ptr< request_receiver > a_request_receiver );
             virtual ~batch_executor();
 
             mv_referrable_const( scarab::param_node, batch_commands );
@@ -72,7 +77,7 @@ namespace psyllid
             dripline::reply_info do_batch_cmd_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
             dripline::reply_info do_replace_actions_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
 
-            void execute( bool run_forever = false );
+            void execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex, bool run_forever = false );
 
         private:
             std::shared_ptr<request_receiver> f_request_receiver;

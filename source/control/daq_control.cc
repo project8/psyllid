@@ -72,7 +72,7 @@ namespace psyllid
         return;
     }
 
-    void daq_control::execute()
+    void daq_control::execute( std::condition_variable& a_ready_condition_variable, std::mutex& a_ready_mutex )
     {
         // if we're supposed to activate on startup, we'll call activate asynchronously
         std::future< void > t_activation_return;
@@ -135,6 +135,16 @@ namespace psyllid
                     continue;
                 }
 
+                // set midge's running callback
+                f_midge_pkg->set_running_callback(
+                        [this, &a_ready_condition_variable, &a_ready_mutex]() {
+                            set_status( status::activated );
+                            std::lock_guard<std::mutex> ready_lock(a_ready_mutex);
+                            a_ready_condition_variable.notify_all();
+                            return;
+                        }
+                );
+
                 f_node_bindings = f_node_manager->get_node_bindings();
 
                 std::exception_ptr t_e_ptr;
@@ -143,7 +153,6 @@ namespace psyllid
                 {
                     std::string t_run_string( f_node_manager->get_node_run_str() );
                     LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
-                    set_status( status::activated );
                     t_e_ptr = f_midge_pkg->run( t_run_string );
                     LINFO( plog, "DAQ control is shutting down after midge exited" );
                 }
@@ -306,6 +315,11 @@ namespace psyllid
         }
 
         return;
+    }
+
+    bool daq_control::is_ready_at_startup() const
+    {
+        return f_daq_config["activate-at-startup"]().as_bool() ? (f_status == status::activated) : (f_status == status::activated || f_status == status::deactivated);
     }
 
     void daq_control::start_run()

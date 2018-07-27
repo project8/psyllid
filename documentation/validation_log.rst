@@ -69,6 +69,8 @@ New Features:
     * tested by running psyllid in insectarium and confirming execution of stop run both on `cmd broadcast.set_condition 0` and `cmd psyllid_queue.hard-abort`.
 * updating scarab dependency to version v2.1.1
     * tested by running psyllid in insectarium in batch mode
+* adding condition_variable notice from daq_control to indicate to request_receiver and batch_executor when the nodes are ready
+    * tested by having batch executor use on-start commands that need to talk to nodes (this previously resulted in crashing)
 
 Fixes:
 ''''''

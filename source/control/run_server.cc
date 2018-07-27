@@ -17,6 +17,7 @@
 
 #include "logger.hh"
 
+#include <condition_variable>
 #include <signal.h> // for raise()
 #include <thread>
 
@@ -152,18 +153,21 @@ namespace psyllid
         f_request_receiver->register_cmd_handler( "deactivate-daq", std::bind( &daq_control::handle_deactivate_daq_control, f_daq_control, _1, _2 ) );
         f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1, _2 ) );
 
+        std::condition_variable t_daq_control_ready_cv;
+        std::mutex t_daq_control_ready_mutex;
+
         // start threads
         LPROG( plog, "Starting threads" );
         std::exception_ptr t_dc_ex_ptr;
-        std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get() );
+        std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex) );
         // batch execution to do initial calls (AMQP consume hasn't started yet)
-        std::thread t_executor_thread_initial( &batch_executor::execute, f_batch_executor.get(), false );
+        std::thread t_executor_thread_initial( &batch_executor::execute, f_batch_executor.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex), false );
         t_executor_thread_initial.join();
         LDEBUG( plog, "initial batch executions complete" );
         // now execute the request receiver to start consuming
         //     and start the batch executor in infinite mode so that more command sets may be staged later
-        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get(), true );
-        std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get() );
+        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex), true );
+        std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex) );
 
         t_lock.unlock();
 
