@@ -41,7 +41,7 @@ namespace psyllid
             f_activation_condition(),
             f_daq_mutex(),
             f_node_manager( a_mgr ),
-            f_daq_config( new param_node() ),
+            f_daq_config(),
             f_midge_pkg(),
             f_node_bindings( nullptr ),
             f_run_stopper(),
@@ -54,14 +54,12 @@ namespace psyllid
             f_status( status::deactivated )
     {
         // DAQ config is optional; defaults will work just fine
-        const scarab::param_node* t_daq_config = a_master_config.node_at( "daq" );
-
-        if( t_daq_config != nullptr )
+        if( a_master_config.has( "daq" ) )
         {
-            f_daq_config.reset( new param_node( *t_daq_config ) );
+            f_daq_config.merge( a_master_config["daq"].as_node() );
         }
 
-        set_run_duration( f_daq_config->get_value( "duration", get_run_duration() ) );
+        set_run_duration( f_daq_config.get_value( "duration", get_run_duration() ) );
     }
 
     daq_control::~daq_control()
@@ -70,15 +68,15 @@ namespace psyllid
 
     void daq_control::initialize()
     {
-        butterfly_house::get_instance()->prepare_files( f_daq_config.get() );
+        butterfly_house::get_instance()->prepare_files( f_daq_config );
         return;
     }
 
-    void daq_control::execute()
+    void daq_control::execute( std::condition_variable& a_ready_condition_variable, std::mutex& a_ready_mutex )
     {
         // if we're supposed to activate on startup, we'll call activate asynchronously
         std::future< void > t_activation_return;
-        if( f_daq_config->get_value< bool >( "activate-at-startup", false ) )
+        if( f_daq_config.get_value( "activate-at-startup", false ) )
         {
             LDEBUG( plog, "Will activate DAQ control asynchronously" );
             t_activation_return = std::async( std::launch::async,
@@ -137,6 +135,16 @@ namespace psyllid
                     continue;
                 }
 
+                // set midge's running callback
+                f_midge_pkg->set_running_callback(
+                        [this, &a_ready_condition_variable, &a_ready_mutex]() {
+                            set_status( status::activated );
+                            std::lock_guard<std::mutex> ready_lock(a_ready_mutex);
+                            a_ready_condition_variable.notify_all();
+                            return;
+                        }
+                );
+
                 f_node_bindings = f_node_manager->get_node_bindings();
 
                 std::exception_ptr t_e_ptr;
@@ -145,7 +153,6 @@ namespace psyllid
                 {
                     std::string t_run_string( f_node_manager->get_node_run_str() );
                     LDEBUG( plog, "Starting midge with run string <" << t_run_string << ">" );
-                    set_status( status::activated );
                     t_e_ptr = f_midge_pkg->run( t_run_string );
                     LINFO( plog, "DAQ control is shutting down after midge exited" );
                 }
@@ -308,6 +315,11 @@ namespace psyllid
         }
 
         return;
+    }
+
+    bool daq_control::is_ready_at_startup() const
+    {
+        return f_daq_config["activate-at-startup"]().as_bool() ? (f_status == status::activated) : (f_status == status::activated || f_status == status::deactivated);
     }
 
     void daq_control::start_run()
@@ -612,28 +624,28 @@ namespace psyllid
     {
         try
         {
-            if( a_request->get_payload().has( "filename" ) ) set_filename( a_request->get_payload().get_value( "filename" ), 0 );
+            if( a_request->payload().has( "filename" ) ) set_filename( a_request->payload()["filename"]().as_string(), 0 );
             //TODO BUG here, if filenames exists but is not an array (only case i tried), this causes a seg fault which is not handled below
-            if( a_request->get_payload().has( "filenames" ) )
+            if( a_request->payload().has( "filenames" ) )
             {
-                const scarab::param_array* t_filenames = a_request->get_payload().array_at( "filenames" );
-                for( unsigned i_fn = 0; i_fn < t_filenames->size(); ++i_fn )
+                const scarab::param_array t_filenames = a_request->payload()["filenames"].as_array();
+                for( unsigned i_fn = 0; i_fn < t_filenames.size(); ++i_fn )
                 {
-                    set_filename( t_filenames->get_value( i_fn ), i_fn );
+                    set_filename( t_filenames[i_fn]().as_string(), i_fn );
                 }
             }
 
-            if( a_request->get_payload().has( "description" ) ) set_description( a_request->get_payload().get_value( "description" ), 0 );
-            if( a_request->get_payload().has( "descriptions" ) )
+            if( a_request->payload().has( "description" ) ) set_description( a_request->payload()["description"]().as_string(), 0 );
+            if( a_request->payload().has( "descriptions" ) )
             {
-                const scarab::param_array* t_descriptions = a_request->get_payload().array_at( "descriptions" );
-                for( unsigned i_fn = 0; i_fn < t_descriptions->size(); ++i_fn )
+                const scarab::param_array t_descriptions = a_request->payload()["descriptions"].as_array();
+                for( unsigned i_fn = 0; i_fn < t_descriptions.size(); ++i_fn )
                 {
-                    set_description( t_descriptions->get_value( i_fn ), i_fn );
+                    set_description( t_descriptions[i_fn]().as_string(), i_fn );
                 }
             }
 
-            f_run_duration = a_request->get_payload().get_value( "duration", f_run_duration );
+            f_run_duration = a_request->payload().get_value( "duration", f_run_duration );
 
             start_run();
             return a_reply_pkg.send_reply( retcode_t::success, "Run started" );
@@ -678,15 +690,15 @@ namespace psyllid
             // payload should be a map of all parameters to be set
             LDEBUG( plog, "Performing config for multiple values in active node <" << t_target_node << ">" );
 
-            if( a_request->get_payload().empty() )
+            if( a_request->payload().empty() )
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config request: payload is empty" );
             }
 
             try
             {
-                apply_config( t_target_node, a_request->get_payload() );
-                a_reply_pkg.f_payload.merge( a_request->get_payload() );
+                apply_config( t_target_node, a_request->payload() );
+                a_reply_pkg.f_payload.merge( a_request->payload() );
             }
             catch( std::exception& e )
             {
@@ -698,18 +710,21 @@ namespace psyllid
             // payload should be values array with a single entry for the particular parameter to be set
             LDEBUG( plog, "Performing node config for a single value in active node <" << t_target_node << ">" );
 
-            if( ! a_request->get_payload().has( "values" ) )
+            if( ! a_request->payload().has( "values" ) )
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): values array is missing" );
             }
-            const scarab::param_array* t_values_array = a_request->get_payload().array_at( "values" );
-            if( t_values_array == nullptr || t_values_array->empty() || ! (*t_values_array)[0].is_value() )
+            scarab::param_array t_values_array;
+            if ( a_request->payload().has("values") ) {
+                t_values_array.append( a_request->payload()["values"].as_array() );
+            }
+            if( t_values_array.empty() || ! t_values_array[0].is_value() )
             {
                 return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
             }
 
             scarab::param_node t_param_to_set;
-            t_param_to_set.add( a_request->parsed_rks().front(), new scarab::param_value( (*t_values_array)[0].as_value() ) );
+            t_param_to_set.add( a_request->parsed_rks().front(), scarab::param_value( t_values_array[0].as_value() ) );
 
             try
             {
@@ -770,7 +785,7 @@ namespace psyllid
                 {
                     return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get active-node parameter: cannot find parameter <" + t_param_to_get + ">" );
                 }
-                a_reply_pkg.f_payload.add( t_param_to_get, new scarab::param_value( *t_param_dump.value_at( t_param_to_get ) ) );
+                a_reply_pkg.f_payload.add( t_param_to_get, t_param_dump[t_param_to_get]() );
             }
             catch( std::exception& e )
             {
@@ -797,7 +812,7 @@ namespace psyllid
         std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
         a_request->parsed_rks().pop_front();
 
-        scarab::param_node t_args_node( a_request->get_payload() );
+        scarab::param_node t_args_node( a_request->payload() );
         std::string t_command( a_request->parsed_rks().front() );
         a_request->parsed_rks().pop_front();
 
@@ -808,7 +823,7 @@ namespace psyllid
         {
             t_return = run_command( t_target_node, t_command, t_args_node );
             a_reply_pkg.f_payload.merge( t_args_node );
-            a_reply_pkg.f_payload.add( "command", new scarab::param_value( t_command ) );
+            a_reply_pkg.f_payload.add( "command", t_command );
         }
         catch( std::exception& e )
         {
@@ -837,7 +852,7 @@ namespace psyllid
                 t_file_num = std::stoi( a_request->parsed_rks().front() );
             }
 
-            std::string t_filename =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            std::string t_filename =  a_request->payload()["values"][0]().as_string();
             LDEBUG( plog, "Setting filename for file <" << t_file_num << "> to <" << t_filename << ">" );
             set_filename( t_filename, t_file_num );
             return a_reply_pkg.send_reply( retcode_t::success, "Filename set" );
@@ -858,9 +873,10 @@ namespace psyllid
                 t_file_num = std::stoi( a_request->parsed_rks().front() );
             }
 
-            std::string t_description =  a_request->get_payload().array_at( "values" )->get_value( 0 );
+            std::string t_description =  a_request->payload()["values"][0]().as_string();
             LDEBUG( plog, "Setting description for file <" << t_file_num << "> to <" << t_description << ">" );
             set_filename( t_description, t_file_num );
+
             return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
         }
         catch( std::exception& e )
@@ -873,12 +889,13 @@ namespace psyllid
     {
         try
         {
-            unsigned t_new_duration = a_request->get_payload().array_at( "values" )->get_value< unsigned >( 0 );
+            unsigned t_new_duration = a_request->payload()["values"][0]().as_uint();
             if( t_new_duration == 0 )
             {
                 throw error() << "Invalid duration: " << t_new_duration;
             }
             f_run_duration =  t_new_duration;
+
             LDEBUG( plog, "Duration set to <" << f_run_duration << "> ms" );
             return a_reply_pkg.send_reply( retcode_t::success, "Duration set" );
         }
@@ -892,7 +909,7 @@ namespace psyllid
     {
         try
         {
-            f_use_monarch =  a_request->get_payload().array_at( "values" )->get_value< bool >( 0 );
+            f_use_monarch =  a_request->payload()["values"][0]().as_bool();
             LDEBUG( plog, "Use-monarch set to <" << f_use_monarch << ">" );
             return a_reply_pkg.send_reply( retcode_t::success, "Use Monarch set" );
         }
@@ -904,9 +921,9 @@ namespace psyllid
 
     dripline::reply_info daq_control::handle_get_status_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
-        param_node* t_server_node = new param_node();
-        t_server_node->add( "status", new param_value( interpret_status( get_status() ) ) );
-        t_server_node->add( "status-value", new param_value( status_to_uint( get_status() ) ) );
+        param_node t_server_node;
+        t_server_node.add( "status", param_value( interpret_status( get_status() ) ) );
+        t_server_node.add( "status-value", param_value( status_to_uint( get_status() ) ) );
 
         // TODO: add status of nodes
 
@@ -926,8 +943,8 @@ namespace psyllid
                 t_file_num = std::stoi( a_request->parsed_rks().front() );
             }
 
-            param_array* t_values_array = new param_array();
-            t_values_array->push_back( new param_value( get_filename( t_file_num ) ) );
+            param_array t_values_array;
+            t_values_array.push_back( param_value( get_filename( t_file_num ) ) );
             a_reply_pkg.f_payload.add( "values", t_values_array );
             return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
         }
@@ -947,8 +964,8 @@ namespace psyllid
                 t_file_num = std::stoi( a_request->parsed_rks().front() );
             }
 
-            param_array* t_values_array = new param_array();
-            t_values_array->push_back( new param_value( get_description( t_file_num ) ) );
+            param_array t_values_array;
+            t_values_array.push_back( param_value( get_description( t_file_num ) ) );
             a_reply_pkg.f_payload.add( "values", t_values_array );
             return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
         }
@@ -960,8 +977,8 @@ namespace psyllid
 
     dripline::reply_info daq_control::handle_get_duration_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
-        param_array* t_values_array = new param_array();
-        t_values_array->push_back( new param_value( f_run_duration ) );
+        param_array t_values_array;
+        t_values_array.push_back( param_value( f_run_duration ) );
 
         a_reply_pkg.f_payload.add( "values", t_values_array );
 
@@ -970,8 +987,8 @@ namespace psyllid
 
     dripline::reply_info daq_control::handle_get_use_monarch_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
     {
-        param_array* t_values_array = new param_array();
-        t_values_array->push_back( new param_value( f_use_monarch ) );
+        param_array t_values_array;
+        t_values_array.push_back( param_value( f_use_monarch ) );
 
         a_reply_pkg.f_payload.add( "values", t_values_array );
 

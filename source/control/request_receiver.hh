@@ -1,19 +1,26 @@
 #ifndef PSYLLID_REQUEST_RECEIVER_HH_
 #define PSYLLID_REQUEST_RECEIVER_HH_
 
+#include "control_access.hh"
+
+// dripline
 #include "hub.hh"
+#include "message.hh"
+#include "reply_package.hh"
 
 #include "param.hh"
 
 #include "cancelable.hh"
 
 #include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <memory>
 
 namespace psyllid
 {
     class run_server;
+    class daq_control;
     /*!
      @class request_receiver
      @author N. S. Oblath
@@ -26,14 +33,15 @@ namespace psyllid
      When a request is received the handle_function registered with this request gets called.
      The registration of requests and functions is done in dripline::hub.
      */
-    class request_receiver : public dripline::hub, public scarab::cancelable
+    class request_receiver : public dripline::hub, public control_access, public scarab::cancelable
     {
         public:
             request_receiver( const scarab::param_node& a_master_config );
             virtual ~request_receiver();
 
-            void execute();
+            void execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex );
 
+            mv_referrable_const( scarab::param_node, set_conditions );
         private:
             virtual void do_cancellation();
 
@@ -55,6 +63,8 @@ namespace psyllid
 
         private:
             std::atomic< status > f_status;
+
+            virtual dripline::reply_info __do_handle_set_condition_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
 
     };
 

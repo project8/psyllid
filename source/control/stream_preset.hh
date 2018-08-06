@@ -63,7 +63,7 @@ namespace psyllid
             runtime_stream_preset& operator=( const runtime_stream_preset& a_rhs );
 
         public:
-            static bool add_preset( const scarab::param_node* a_preset_node );
+            static bool add_preset( const scarab::param_node& a_preset_node );
 
         protected:
             struct rsp_creator
