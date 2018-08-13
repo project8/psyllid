@@ -69,7 +69,7 @@ namespace psyllid
             public midge::_transformer< event_builder, typelist_1( trigger_flag ), typelist_1( trigger_flag ) >
     {
         public:
-            typedef boost::circular_buffer< uint64_t > pretrigger_buffer_t;
+            typedef boost::circular_buffer< uint64_t > packet_id_buffer_buffer_t;
 
         public:
             event_builder();
@@ -78,8 +78,9 @@ namespace psyllid
         public:
 
             mv_accessible( uint64_t, length );
-            mv_accessible( uint64_t, pretrigger );
-            mv_accessible( uint64_t, skip_tolerance );
+            mv_accessible( uint64_t, pre_trigger_buffer_size );
+            mv_accessible( uint64_t, event_buffer_size );
+            mv_accessible( uint64_t, post_trigger_buffer_size );
             mv_accessible( uint64_t, n_triggers );
 
 
@@ -91,19 +92,22 @@ namespace psyllid
         public:
             bool is_triggered() const;
 
-            const pretrigger_buffer_t& pretrigger_buffer() const;
-            const pretrigger_buffer_t& skip_buffer() const;
+            const packet_id_buffer_buffer_t& pre_trigger_buffer() const;
+            const packet_id_buffer_buffer_t& event_buffer() const;
+            const packet_id_buffer_buffer_t& post_trigger_buffer() const;
 
         private:
-            bool write_output_from_ptbuff_front( bool a_flag, trigger_flag* a_data );
-            bool write_output_from_skipbuff_front( bool a_flag, trigger_flag* a_data );
+            bool write_output_from_prebuff_front( bool a_flag, trigger_flag* a_data );
+            bool write_output_from_ebuff_front( bool a_flag, trigger_flag* a_data );
+            bool write_output_from_postbuff_front( bool a_flag, trigger_flag* a_data );
             void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
 
-            enum class state_t { untriggered, triggered, skipping, collecting_triggers };
+            enum class state_t { untriggered, possibly_triggered, triggered, post_triggered };
             state_t f_state;
 
-            pretrigger_buffer_t f_pretrigger_buffer;
-            pretrigger_buffer_t f_skip_buffer;
+            packet_id_buffer_buffer_t f_pre_trigger_buffer;
+            packet_id_buffer_buffer_t f_event_buffer;
+            packet_id_buffer_buffer_t f_post_trigger_buffer;
 
     };
 
@@ -113,18 +117,22 @@ namespace psyllid
         return f_state == state_t::triggered;
     }
 
-    inline const event_builder::pretrigger_buffer_t& event_builder::pretrigger_buffer() const
+    inline const event_builder::packet_id_buffer_buffer_t& event_builder::pre_trigger_buffer() const
     {
-        return f_pretrigger_buffer;
+        return f_pre_trigger_buffer;
     }
-    inline const event_builder::pretrigger_buffer_t& event_builder::skip_buffer() const
+    inline const event_builder::packet_id_buffer_buffer_t& event_builder::event_buffer() const
     {
-        return f_skip_buffer;
+        return f_event_buffer;
+    }
+    inline const event_builder::packet_id_buffer_buffer_t& event_builder::post_trigger_buffer() const
+    {
+        return f_post_trigger_buffer;
     }
 
-    inline bool event_builder::write_output_from_ptbuff_front( bool a_flag, trigger_flag* a_data )
+    inline bool event_builder::write_output_from_prebuff_front( bool a_flag, trigger_flag* a_data )
     {
-        a_data->set_id( f_pretrigger_buffer.front() );
+        a_data->set_id( f_pre_trigger_buffer.front() );
         a_data->set_flag( a_flag );
         LTRACE( eblog_hdr, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
         if( ! out_stream< 0 >().set( midge::stream::s_run ) )
@@ -132,13 +140,12 @@ namespace psyllid
             LERROR( eblog_hdr, "Exiting due to stream error" );
             return false;
         }
-        f_pretrigger_buffer.pop_front();
+        f_pre_trigger_buffer.pop_front();
         return true;
     }
-
-    inline bool event_builder::write_output_from_skipbuff_front( bool a_flag, trigger_flag* a_data )
+    inline bool event_builder::write_output_from_ebuff_front( bool a_flag, trigger_flag* a_data )
     {
-        a_data->set_id( f_skip_buffer.front() );
+        a_data->set_id( f_event_buffer.front() );
         a_data->set_flag( a_flag );
         LTRACE( eblog_hdr, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
         if( ! out_stream< 0 >().set( midge::stream::s_run ) )
@@ -146,7 +153,20 @@ namespace psyllid
             LERROR( eblog_hdr, "Exiting due to stream error" );
             return false;
         }
-        f_skip_buffer.pop_front();
+        f_event_buffer.pop_front();
+        return true;
+    }
+    inline bool event_builder::write_output_from_postbuff_front( bool a_flag, trigger_flag* a_data )
+    {
+        a_data->set_id( f_post_trigger_buffer.front() );
+        a_data->set_flag( a_flag );
+        LTRACE( eblog_hdr, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
+        if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+        {
+            LERROR( eblog_hdr, "Exiting due to stream error" );
+            return false;
+        }
+        f_post_trigger_buffer.pop_front();
         return true;
     }
 
