@@ -264,64 +264,33 @@ namespace psyllid
                     LDEBUG( plog, "Event builder is exiting at stream index " << out_stream< 0 >().get_current_index() );
                     LDEBUG( plog, "Flushing buffers as untriggered" );
 
-                    while( ! f_pretrigger_buffer.empty() and !f_skip_buffer.empty() )
+                    // empty buffers
+                    while( ! f_pre_trigger_buffer.empty() )
                     {
-                        if( f_pretrigger_buffer.front() == f_skip_buffer.front() )
+                        if( ! write_output_from_prebuff_front( false, t_write_flag ) )
                         {
-                            LTRACE( plog, "Skip id "<<f_skip_buffer.front() );
-                            if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
-                            {   
-                                goto exit_outer_loop;
-                            }
-                            t_write_flag = out_stream< 0 >().data();
-                            f_pretrigger_buffer.pop_front();
+                            goto exit_outer_loop;
                         }
-                        else if( f_pretrigger_buffer.front() < f_skip_buffer.front() )
-                        {
-                            LTRACE( plog, "Pretrigger id "<<f_pretrigger_buffer.front() );
-                            if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
-                            {   
-                                goto exit_outer_loop;
-                            }
-                            t_write_flag = out_stream< 0 >().data();
-                        }
-                        else
-                        {
-                            LTRACE( plog, "Skip id "<<f_skip_buffer.front() );
-                            if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
-                            {   
-                                goto exit_outer_loop;
-                            }
-                            t_write_flag = out_stream< 0 >().data();
-                        }
+                        // advance our output data pointer to the next in the stream
+                        t_write_flag = out_stream< 0 >().data();
                     }
-                    if( f_skip_buffer.empty())
+                    while( ! f_event_buffer.empty())
                     {
-                        LTRACE( plog, "Skip buffer is empty" );
-                        while( !f_pretrigger_buffer.empty())
+                        if( ! write_output_from_ebuff_front( false, t_write_flag ) )
                         {
-                            LTRACE( plog, "Pretrigger id "<<f_pretrigger_buffer.front() );
-                            if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
-                            {
-                                goto exit_outer_loop;
-                            }
-                            // advance our output data pointer to the next in the stream
-                            t_write_flag = out_stream< 0 >().data();
+                            goto exit_outer_loop;
                         }
+                        // advance our output data pointer to the next in the stream
+                        t_write_flag = out_stream< 0 >().data();
                     }
-                    else if( f_pretrigger_buffer.empty() )
+                    while( ! f_post_trigger_buffer.empty() )
                     {
-                        LTRACE( plog, "Pretrigger buffer is empty" );
-                        while( !f_skip_buffer.empty() )
+                        if( ! write_output_from_postbuff_front( false, t_write_flag ) )
                         {
-                            LTRACE( plog, "Skip id "<<f_skip_buffer.front() );
-                            if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
-                            {
-                                goto exit_outer_loop;
-                            }
-                            // advance our output data pointer to the next in the stream
-                            t_write_flag = out_stream< 0 >().data();
+                            goto exit_outer_loop;
                         }
+                        // advance our output data pointer to the next in the stream
+                        t_write_flag = out_stream< 0 >().data();
                     }
 
                     f_state = state_t::untriggered;
@@ -376,9 +345,9 @@ exit_outer_loop:
     {
         LDEBUG( plog, "Configuring event_builder with:\n" << a_config );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
-        a_node->set_pretrigger( a_config.get_value( "pretrigger", a_node->get_pretrigger() ) );
-        a_node->set_skip_tolerance( a_config.get_value( "skip-tolerance", a_node->get_skip_tolerance() ) );
-        a_node->set_n_triggers( a_config.get_value( "n-triggers", a_node->get_n_triggers() ) );
+        a_node->set_pre_trigger_buffer_size( a_config.get_value( "pret-rigger", a_node->get_pre_trigger_buffer_size() ) );
+        a_node->set_event_buffer_size( a_config.get_value( "event-length", a_node->get_event_buffer_size() ) );
+        a_node->set_post_trigger_buffer_size( a_config.get_value( "post-trigger", a_node->get_post_trigger_buffer_size() ) );
         return;
     }
 
@@ -386,8 +355,9 @@ exit_outer_loop:
     {
         LDEBUG( plog, "Dumping configuration for event_builder" );
         a_config.add( "length", scarab::param_value( a_node->get_length() ) );
-        a_config.add( "pretrigger", scarab::param_value( a_node->get_pretrigger() ) );
-        a_config.add( "skip-tolerance", scarab::param_value( a_node->get_skip_tolerance() ) );
+        a_config.add( "pre-trigger", scarab::param_value( a_node->get_pre_trigger_buffer_size() ) );
+        a_config.add( "event-length", scarab::param_value( a_node->get_event_buffer_size() ) );
+        a_config.add( "post-trigger", scarab::param_value( a_node->get_post_trigger_buffer_size() ) );
         a_config.add( "n-triggers", scarab::param_value( a_node->get_n_triggers() ) );
         return;
     }
