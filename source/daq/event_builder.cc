@@ -19,12 +19,14 @@ namespace psyllid
 
     event_builder::event_builder() :
             f_length( 10 ),
-            f_pretrigger( 0 ),
-            f_skip_tolerance( 0 ),
+            f_pre_trigger_buffer_size( 0 ),
+            f_event_buffer_size( 0 ),
+            f_post_trigger_buffer_size( 0 ),
             f_n_triggers( 1 ),
             f_state( state_t::untriggered ),
-            f_pretrigger_buffer(),
-            f_skip_buffer()
+            f_pre_trigger_buffer(),
+            f_event_buffer(),
+            f_post_trigger_buffer()
     {
     }
 
@@ -34,8 +36,9 @@ namespace psyllid
 
     void event_builder::initialize()
     {
-        f_pretrigger_buffer.resize( f_pretrigger + 1 );
-        f_skip_buffer.resize( f_skip_tolerance + 1);
+        f_pre_trigger_buffer.resize( f_pre_trigger_buffer_size + 1 );
+        f_event_buffer.resize( f_event_buffer_size + 1);
+        f_post_trigger_buffer.resize( f_post_trigger_buffer_size + 1 );
         out_buffer< 0 >().initialize( f_length );
         return;
     }
@@ -44,27 +47,37 @@ namespace psyllid
     {
         try
         {
-            f_pretrigger_buffer.clear();
-            f_skip_buffer.clear();
+            f_pre_trigger_buffer.clear();
+            f_event_buffer.clear();
+            f_post_trigger_buffer.clear();
             f_state = state_t::untriggered;
 
+            // 1 in_command for every state
             midge::enum_t t_in_command = stream::s_none;
-            trigger_flag* t_trigger_flag = nullptr;
+
+            trigger_flag* t_minor_trigger_flag = nullptr;
+            trigger_flag* t_major_trigger_flag = nullptr;
+            trigger_flag* t_triggered_flag = nullptr;
+            trigger_flag* t_post_trigger_flag = nullptr;
             trigger_flag* t_write_flag = nullptr;
             unsigned t_trigger_count = 0;
 
-            bool t_current_trig_flag = false;
-            bool t_current_trig_high_thr = false;
+            bool t_trig_flag = false;
+            bool t_major_trig_flag = false;
+            bool t_post_trig_flag = false;
 
             while( ! is_canceled() )
             {
                 t_in_command = in_stream< 0 >().get();
+
                 if( t_in_command == stream::s_none ) continue;
                 if( t_in_command == stream::s_error ) break;
 
                 LTRACE( plog, "Event builder reading stream at index " << in_stream< 0 >().get_current_index() );
 
-                t_trigger_flag = in_stream< 0 >().data();
+                t_minor_trigger_flag = in_stream< 0 >().data();
+                t_major_trigger_flag = in_stream< 1 >().data();
+                t_post_trigger_flag = in_stream< 2 >().data();
                 t_write_flag = out_stream< 0 >().data();
 
                 if( t_in_command == stream::s_start )
@@ -76,28 +89,40 @@ namespace psyllid
 
                 if( t_in_command == stream::s_run )
                 {
-                    t_current_trig_flag = t_trigger_flag->get_flag();
-                    t_current_trig_high_thr = t_trigger_flag->get_high_threshold();
 
-                    LTRACE( plog, "Event builder received id <" << t_trigger_flag->get_id() << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
+
+                    LTRACE( plog, "Event builder received id <" << t_minor_trigger_flag->get_id() << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
 
                     // if currently untriggered, fill pretrigger buffer
                     if( f_state == state_t::untriggered )
                     {
-                        f_pretrigger_buffer.push_back(t_trigger_flag->get_id());
-                        LTRACE( plog, "new id in pt buffer: " << f_pretrigger_buffer.back() );
+                        // read relevant flags
+
+
+                        t_trig_flag = t_minor_trigger_flag->get_flag();
+                        t_major_trig_flag = t_major_trigger_flag->get_flag();
+
+                        f_pre_trigger_buffer.push_back(t_minor_trigger_flag->get_id());
+                        LTRACE( plog, "new id in pt buffer: " << f_pre_trigger_buffer.back() );
 
                     }
-                    else if( f_state == state_t::collecting_triggers )
+                    else if( f_state == state_t::possibly_triggered )
                     {
-                        f_skip_buffer.push_back( t_trigger_flag->get_id());
-                        LTRACE( plog, "new id in skip buffer: " << f_skip_buffer.back() );
+                        t_major_trig_flag = t_major_trigger_flag->get_flag();
+
+                        f_event_buffer.push_back( t_major_trigger_flag->get_id());
+                        LTRACE( plog, "new id in skip buffer: " << f_event_buffer.back() );
                     }
                     // if state is skipping or triggered fill both buffers
+                    else if( f_state == state_t::triggered )
+                    {
+                        t_post_trig_flag = t_post_trigger_flag->get_flag();
+                        f_post_trigger_buffer.push_back( t_post_trigger_flag->get_id());
+                    }
                     else
                     {
-                        f_skip_buffer.push_back( t_trigger_flag->get_id());
-                        f_pretrigger_buffer.push_back( t_trigger_flag->get_id());
+                        t_post_trig_flag = t_post_trigger_flag->get_flag();
+                        f_post_trigger_buffer.push_back( t_post_trigger_flag->get_id());
                     }
 
                     if( f_state == state_t::untriggered )
