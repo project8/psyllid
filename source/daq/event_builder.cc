@@ -86,9 +86,6 @@ namespace psyllid
 
                 if( t_in_command == stream::s_run )
                 {
-
-                    LTRACE( plog, "Event builder received id <" << t_minor_trigger_flag->get_id() << "> with flag value <" << t_trigger_flag->get_flag() << ">" );
-
                     // fill buffers and set flags depending on state
                     if( f_state == state_t::untriggered )
                     {
@@ -112,7 +109,7 @@ namespace psyllid
                         f_post_trigger_buffer.push_back( t_post_trigger_flag->get_id());
                     }
 
-                    // states
+                    // now do stuff
                     if( f_state == state_t::untriggered )
                     {
                         LTRACE( plog, "Untriggered state" );
@@ -157,59 +154,10 @@ namespace psyllid
                             // set state to untriggered
                             f_state = state_t::untriggered;
                             LDEBUG( plog, "Next state is untriggered" );
-                            if (f_event_buffer.size() >= f_pre_trigger_buffer.capacity())
-                            {
-                                while( ! f_pre_trigger_buffer.empty() )
-                                {
-                                    LTRACE( plog, "Next state untriggered. Writing id "<<f_pre_trigger_buffer.front()<<" as false");
-                                    if( ! write_output_from_prebuff_front( false, t_write_flag ) )
-                                    {
-                                        goto exit_outer_loop;
-                                    }
-                                    // advance our output data pointer to the next in the stream
-                                    t_write_flag = out_stream< 0 >().data();
-                                }
-                                // empty skip buffer, write as false and fill pretrigger buffer
-                                while( f_event_buffer.size() >= f_pre_trigger_buffer.capacity() )
-                                {
-                                    LTRACE( plog, "Next state untriggered. Writing id "<<f_event_buffer.front()<<" as false");
-                                    if( ! write_output_from_ebuff_front( false, t_write_flag ) )
-                                    {
-                                        goto exit_outer_loop;
-                                    }
-                                    // advance our output data pointer to the next in the stream
-                                    t_write_flag = out_stream< 0 >().data();
-                                }
-                                //
-                                while( ! f_event_buffer.empty())
-                                {
-                                    LTRACE(plog, "Writing event buffer front: "<<f_event_buffer.front());
-                                    f_pre_trigger_buffer.push_back(f_event_buffer.front());
-                                    LTRACE(plog, "to pt buffer back: "<<f_pre_trigger_buffer.back());
-                                    f_event_buffer.pop_front();
-                                }
-                                LTRACE( plog, "Finished moving IDs. Capacities and sizes are (pre/skip): "<<f_pre_trigger_buffer.capacity()<<"/"<<f_pre_trigger_buffer.size()<<" "<<f_event_buffer.capacity()<<"/"<<f_event_buffer.size());
-                            }
-                            else
-                            {
-                                while( f_pre_trigger_buffer.capacity() <= f_event_buffer.size() + f_pre_trigger_buffer.size() )
-                                {
-                                    if( ! write_output_from_ebuff_front( false, t_write_flag ) )
-                                    {
-                                        goto exit_outer_loop;
-                                    }
-                                    // advance our output data pointer to the next in the stream
-                                    t_write_flag = out_stream< 0 >().data();
-                                }
-                                while( !f_event_buffer.empty() )
-                                {
-                                    f_pre_trigger_buffer.push_back(f_event_buffer.front());
-                                    f_event_buffer.pop_front();
-                                }
-                            }
+                            this->move_buffer_content_to_pretrigger( f_event_buffer, false, t_write_flag );
                         }
                     }
-                    else if( f_state == state_t::post_triggered )
+                    else //if( f_state == state_t::post_triggered )
                     {
                         LTRACE( plog, "Currently in post_triggered state" );
 
@@ -223,39 +171,10 @@ namespace psyllid
                             {
                                 f_state = state_t::untriggered;
                                 LINFO( plog, "Skip_tolerance reached. Continuing as untriggered");
-                                // if skip buffer is not bigger than pretrigger buffer, write out ids as true
-                                if ( f_post_trigger_buffer.capacity() <= f_pre_trigger_buffer.capacity() )
-                                {
-                                    while( ! f_post_trigger_buffer.empty() )
-                                    {
-                                        if( ! write_output_from_postbuff_front( true, t_write_flag ) )
-                                        {
-                                            goto exit_outer_loop;
-                                        }
-                                        // advance our output data pointer to the next in the stream
-                                        t_write_flag = out_stream< 0 >().data();
-                                    }
-                                    // now all buffers are empty
-                                }
-                                // else only write out what doesn't fit into pre_trigger_buffer
-                                else
-                                {
-                                    while( f_post_trigger_buffer.size() >= f_pre_trigger_buffer.capacity() )
-                                    {
-                                        if( ! write_output_from_postbuff_front( true, t_write_flag ) )
-                                        {
-                                            goto exit_outer_loop;
-                                        }
-                                        // advance our output data pointer to the next in the stream
-                                        t_write_flag = out_stream< 0 >().data();
-                                    }
-                                    while( ! f_post_trigger_buffer.empty() )
-                                    {
-                                        f_pre_trigger_buffer.push_back(f_post_trigger_buffer.front());
-                                        f_post_trigger_buffer.pop_front();
-                                    }
-                                    // now post_trigger_buffer is empty and pre_trigger_buffer has space for one id
-                                }
+
+                                this->move_buffer_content_to_pretrigger( f_post_trigger_buffer, true, t_write_flag );
+                                // now post_trigger_buffer is empty and pre_trigger_buffer has space for one id
+
                             }
                         }
                     }
@@ -301,65 +220,33 @@ namespace psyllid
                     LDEBUG( plog, "Event builder is stopping at stream index " << out_stream< 0 >().get_current_index() );
                     LDEBUG( plog, "Flushing buffers as untriggered" );
 
-                    while( ! f_pretrigger_buffer.empty() and ! f_skip_buffer.empty() )
+                    // empty buffers
+                    while( ! f_pre_trigger_buffer.empty() )
                     {
-                        if( f_pretrigger_buffer.front() == f_skip_buffer.front() )
+                        if( ! write_output_from_prebuff_front( false, t_write_flag ) )
                         {
-                            LTRACE( plog, "Skip id " << f_skip_buffer.front() );
-                            if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
-                            {
-                                goto exit_outer_loop;
-                            }
-                            t_write_flag = out_stream< 0 >().data();
-                            f_pretrigger_buffer.pop_front();
+                            goto exit_outer_loop;
                         }
-                        else if( f_pretrigger_buffer.front() < f_skip_buffer.front() )
-                        {
-                            LTRACE( plog, "Pretrigger id "<<f_pretrigger_buffer.front());
-                            if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
-                            {
-                                goto exit_outer_loop;
-                            }
-                            t_write_flag = out_stream< 0 >().data();
-                        }
-                        else
-                        {
-                            LTRACE( plog, "Skip id "<<f_skip_buffer.front() );
-                            if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
-                            {
-                                goto exit_outer_loop;
-                            }
-                            t_write_flag = out_stream< 0 >().data();
-                        }
+                        // advance our output data pointer to the next in the stream
+                        t_write_flag = out_stream< 0 >().data();
                     }
-
-                    if( f_skip_buffer.empty() )
+                    while( ! f_event_buffer.empty())
                     {
-                        LDEBUG( plog, "Skip buffer is empty" );
-                        while( ! f_pretrigger_buffer.empty() )
+                        if( ! write_output_from_ebuff_front( false, t_write_flag ) )
                         {
-                            LTRACE( plog, "Pretrigger id " << f_pretrigger_buffer.front() );
-                            if( ! write_output_from_ptbuff_front( false, t_write_flag ) )
-                            {   
-                                goto exit_outer_loop;
-                            }
-                            // advance our output data pointer to the next in the stream
-                            t_write_flag = out_stream< 0 >().data();
+                            goto exit_outer_loop;
                         }
+                        // advance our output data pointer to the next in the stream
+                        t_write_flag = out_stream< 0 >().data();
                     }
-                    else if (f_pretrigger_buffer.empty() )
+                    while( ! f_post_trigger_buffer.empty() )
                     {
-                        LDEBUG( plog, "Pretrigger buffer is empty");
-                        while( ! f_skip_buffer.empty() )
+                        if( ! write_output_from_postbuff_front( false, t_write_flag ) )
                         {
-                            LTRACE( plog, "Skip id "<<f_skip_buffer.front() );
-                            if( ! write_output_from_skipbuff_front( false, t_write_flag ) )
-                            {   
-                                goto exit_outer_loop;
-                            }
-                            // advance our output data pointer to the next in the stream
-                            t_write_flag = out_stream< 0 >().data();
+                            goto exit_outer_loop;
                         }
+                        // advance our output data pointer to the next in the stream
+                        t_write_flag = out_stream< 0 >().data();
                     }
 
                     f_state = state_t::untriggered;
@@ -460,14 +347,14 @@ exit_outer_loop:
         }
     }
 
-    void event_builder::advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag )
+    /*void event_builder::advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag )
     {
          a_write_flag->set_id( a_id );
          a_write_flag->set_flag( a_trig_flag );
          LDEBUG( plog, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
          out_stream< 0 >().set( midge::stream::s_run );
          return;
-    }
+    }*/
 
     void event_builder::finalize()
     {

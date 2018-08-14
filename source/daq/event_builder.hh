@@ -100,7 +100,10 @@ namespace psyllid
             bool write_output_from_prebuff_front( bool a_flag, trigger_flag* a_data );
             bool write_output_from_ebuff_front( bool a_flag, trigger_flag* a_data );
             bool write_output_from_postbuff_front( bool a_flag, trigger_flag* a_data );
-            void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
+            //void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
+
+            bool write_output_from_buff_front( packet_id_buffer_buffer_t& buffer, bool a_flag, trigger_flag* a_data );
+            bool move_buffer_content_to_pretrigger( packet_id_buffer_buffer_t& full_buffer, bool surplus_id_flags, trigger_flag* a_data );
 
             enum class state_t { untriggered, possibly_triggered, triggered, post_triggered };
             state_t f_state;
@@ -167,6 +170,71 @@ namespace psyllid
             return false;
         }
         f_post_trigger_buffer.pop_front();
+        return true;
+    }
+
+    inline bool event_builder::write_output_from_buff_front( packet_id_buffer_buffer_t& buffer, bool a_flag, trigger_flag* a_data )
+    {
+        a_data->set_id( buffer.front() );
+        a_data->set_flag( a_flag );
+        LTRACE( eblog_hdr, "Event builder writing data to the output stream at index " << out_stream< 0 >().get_current_index() );
+        if( ! out_stream< 0 >().set( midge::stream::s_run ) )
+        {
+            LERROR( eblog_hdr, "Exiting due to stream error" );
+            return false;
+        }
+        buffer.pop_front();
+        return true;
+    }
+
+    inline bool event_builder::move_buffer_content_to_pretrigger( packet_id_buffer_buffer_t& full_buffer, bool surplus_id_flag, trigger_flag* t_write_flag )
+    {
+        if (full_buffer.size() >= f_pre_trigger_buffer.capacity())
+        {
+            while( ! f_pre_trigger_buffer.empty() )
+            {
+                if( ! event_builder::write_output_from_buff_front( f_pre_trigger_buffer, false, t_write_flag ) )
+                {
+                    goto exit_outer_loop;
+                }
+                // advance our output data pointer to the next in the stream
+                t_write_flag = out_stream< 0 >().data();
+            }
+            // empty skip buffer, write as false and fill pretrigger buffer
+            while( full_buffer.size() >= f_pre_trigger_buffer.capacity() )
+            {
+                LTRACE( plog, "Next state untriggered. Writing id "<<f_event_buffer.front()<<" as false");
+                if( ! write_output_from_buff_front( full_buffer, surplus_id_flag, t_write_flag ) )
+                {
+                    goto exit_outer_loop;
+                }
+                // advance our output data pointer to the next in the stream
+                t_write_flag = out_stream< 0 >().data();
+            }
+            //
+            while( ! full_buffer.empty())
+            {
+                f_pre_trigger_buffer.push_back(full_buffer.front());
+                full_buffer.pop_front();
+            }
+        }
+        else
+        {
+            while( f_pre_trigger_buffer.capacity() <= full_buffer.size() + f_pre_trigger_buffer.size() )
+            {
+                if( ! write_output_from_buff_front( f_pre_trigger_buffer, false, t_write_flag ) )
+                {
+                    goto exit_outer_loop;
+                }
+                // advance our output data pointer to the next in the stream
+                t_write_flag = out_stream< 0 >().data();
+            }
+            while( !f_event_buffer.empty() )
+            {
+                f_pre_trigger_buffer.push_back(full_buffer.front());
+                full_buffer.pop_front();
+            }
+        }
         return true;
     }
 
