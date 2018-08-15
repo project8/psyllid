@@ -35,32 +35,32 @@ namespace psyllid
 
      When going from untriggered to triggered, adds some number of pretrigger packets.
 
-     Includes a skip tolerance for untriggered packets between two triggered packets.
+     Includes buffers for untriggered packets between triggered packets.
 
-     In untriggered state, the flag and the high_threshold variables of the trigger flags are checked.
-     Only if both are true the event builder switches state.
-     If f_n_triggers > 1 the next state is collecting_triggers, otherwise triggered.
-     In collecting_triggers state the event builder counts the incomming trigger flags with flag =  true.
-     Only if this count == f_n_triggers the state is switched to triggered.
+     In untriggered state, two incoming flags are checked.
+     If flag from in_stream<1> is true the next state it triggerd.
+     If flag from in_stream<0> is true the next state it possibly_triggerd.
+     In possibly_triggers state the event builder checks flags on in_stream<1>.
 
-     Events are built by switching some untriggered packets to triggered packets according to the pretrigger and skip-tolerance parameters.
      Contiguous sequences of triggered packets constitute events.
 
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
-     The cofigurable value "time-length" in the tf_roach_receiver must be set to a value greater than "pretrigger" and "skip-tolerance" (+5 is advised).
+     The configurable value "time-length" in the tf_roach_receiver must be set to a value greater than the individual buffer sizes in the event builder (+5 is advised).
      Otherwise the time domain buffer gets filled and blocks further packet processing.
 
      Node type: "packet-receiver-socket"
 
      Available configuration values:
      - "length": uint -- The size of the output buffer
-     - "pretrigger": uint -- Number of packets to include in the event before the first triggered packet
-     - "skip-tolerance": uint -- Number of untriggered packets to include in the event between two triggered
-     - "n-triggers": uint -- Number of trigger flags with flag == true required before switching to triggered state
+     - "pre_trigger": uint -- Number of packets to include in the event before the first triggered packet
+     - "event-length": uint -- Number of untriggered packets to include in the event between minor and major trigger
+     - "post-trigger": uint -- Number of untriggered packets to include in the event between major and re-trigger
 
      Input Streams:
+     - 0: trigger_flag
      - 1: trigger_flag
+     - 2: trigger_flag
 
      Output Streams:
      - 0: trigger_flag
@@ -81,7 +81,6 @@ namespace psyllid
             mv_accessible( uint64_t, pre_trigger_buffer_size );
             mv_accessible( uint64_t, event_buffer_size );
             mv_accessible( uint64_t, post_trigger_buffer_size );
-            mv_accessible( uint64_t, n_triggers );
 
 
         public:
@@ -97,9 +96,9 @@ namespace psyllid
             const packet_id_buffer_buffer_t& post_trigger_buffer() const;
 
         private:
-            bool write_output_from_prebuff_front( bool a_flag, trigger_flag* a_data );
-            bool write_output_from_ebuff_front( bool a_flag, trigger_flag* a_data );
-            bool write_output_from_postbuff_front( bool a_flag, trigger_flag* a_data );
+            //bool write_output_from_prebuff_front( bool a_flag, trigger_flag* a_data );
+            //bool write_output_from_ebuff_front( bool a_flag, trigger_flag* a_data );
+            //bool write_output_from_postbuff_front( bool a_flag, trigger_flag* a_data );
             //void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
 
             bool write_output_from_buff_front( packet_id_buffer_buffer_t& buffer, bool a_flag, trigger_flag* a_data );
@@ -132,7 +131,7 @@ namespace psyllid
     {
         return f_post_trigger_buffer;
     }
-
+/*
     inline bool event_builder::write_output_from_prebuff_front( bool a_flag, trigger_flag* a_data )
     {
         a_data->set_id( f_pre_trigger_buffer.front() );
@@ -172,7 +171,7 @@ namespace psyllid
         f_post_trigger_buffer.pop_front();
         return true;
     }
-
+*/
     inline bool event_builder::write_output_from_buff_front( packet_id_buffer_buffer_t& buffer, bool a_flag, trigger_flag* a_data )
     {
         a_data->set_id( buffer.front() );
@@ -229,7 +228,7 @@ namespace psyllid
                 // advance our output data pointer to the next in the stream
                 t_write_flag = out_stream< 0 >().data();
             }
-            while( !f_event_buffer.empty() )
+            while( !full_buffer.empty() )
             {
                 f_pre_trigger_buffer.push_back(full_buffer.front());
                 full_buffer.pop_front();

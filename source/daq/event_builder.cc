@@ -22,7 +22,6 @@ namespace psyllid
             f_pre_trigger_buffer_size( 0 ),
             f_event_buffer_size( 0 ),
             f_post_trigger_buffer_size( 0 ),
-            f_n_triggers( 1 ),
             f_state( state_t::untriggered ),
             f_pre_trigger_buffer(),
             f_event_buffer(),
@@ -133,7 +132,7 @@ namespace psyllid
                             if( f_pre_trigger_buffer.full() )
                             {
                                 LTRACE( plog, "Current state untriggered. Writing id "<<f_pre_trigger_buffer.front()<<" as false");
-                                if( ! write_output_from_prebuff_front( false, t_write_flag ) )
+                                if( ! write_output_from_buff_front( f_pre_trigger_buffer, false, t_write_flag ) )
                                 {
                                     goto exit_outer_loop;
                                 }
@@ -183,7 +182,7 @@ namespace psyllid
                         // empty buffers
                         while( ! f_pre_trigger_buffer.empty() )
                         {
-                            if( ! write_output_from_prebuff_front( true, t_write_flag ) )
+                            if( ! write_output_from_buff_front( f_pre_trigger_buffer, true, t_write_flag ) )
                             {
                                 goto exit_outer_loop;
                             }
@@ -192,7 +191,7 @@ namespace psyllid
                         }
                         while( ! f_event_buffer.empty())
                         {
-                            if( ! write_output_from_ebuff_front( true, t_write_flag ) )
+                            if( ! write_output_from_buff_front( f_event_buffer, true, t_write_flag ) )
                             {
                                 goto exit_outer_loop;
                             }
@@ -201,7 +200,7 @@ namespace psyllid
                         }
                         while( ! f_post_trigger_buffer.empty() )
                         {
-                            if( ! write_output_from_postbuff_front( true, t_write_flag ) )
+                            if( ! write_output_from_buff_front( f_post_trigger_buffer, true, t_write_flag ) )
                             {
                                 goto exit_outer_loop;
                             }
@@ -223,7 +222,7 @@ namespace psyllid
                     // empty buffers
                     while( ! f_pre_trigger_buffer.empty() )
                     {
-                        if( ! write_output_from_prebuff_front( false, t_write_flag ) )
+                        if( ! write_output_from_buff_front( f_pre_trigger_buffer, false, t_write_flag ) )
                         {
                             goto exit_outer_loop;
                         }
@@ -232,7 +231,7 @@ namespace psyllid
                     }
                     while( ! f_event_buffer.empty())
                     {
-                        if( ! write_output_from_ebuff_front( false, t_write_flag ) )
+                        if( ! write_output_from_buff_front( f_event_buffer, false, t_write_flag ) )
                         {
                             goto exit_outer_loop;
                         }
@@ -241,7 +240,7 @@ namespace psyllid
                     }
                     while( ! f_post_trigger_buffer.empty() )
                     {
-                        if( ! write_output_from_postbuff_front( false, t_write_flag ) )
+                        if( ! write_output_from_buff_front( f_post_trigger_buffer, false, t_write_flag ) )
                         {
                             goto exit_outer_loop;
                         }
@@ -267,7 +266,7 @@ namespace psyllid
                     // empty buffers
                     while( ! f_pre_trigger_buffer.empty() )
                     {
-                        if( ! write_output_from_prebuff_front( false, t_write_flag ) )
+                        if( ! write_output_from_buff_front( f_pre_trigger_buffer, false, t_write_flag ) )
                         {
                             goto exit_outer_loop;
                         }
@@ -276,7 +275,7 @@ namespace psyllid
                     }
                     while( ! f_event_buffer.empty())
                     {
-                        if( ! write_output_from_ebuff_front( false, t_write_flag ) )
+                        if( ! write_output_from_buff_front( f_event_buffer, false, t_write_flag ) )
                         {
                             goto exit_outer_loop;
                         }
@@ -285,7 +284,7 @@ namespace psyllid
                     }
                     while( ! f_post_trigger_buffer.empty() )
                     {
-                        if( ! write_output_from_postbuff_front( false, t_write_flag ) )
+                        if( ! write_output_from_buff_front( f_post_trigger_buffer, false, t_write_flag ) )
                         {
                             goto exit_outer_loop;
                         }
@@ -345,7 +344,7 @@ exit_outer_loop:
     {
         LDEBUG( plog, "Configuring event_builder with:\n" << a_config );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
-        a_node->set_pre_trigger_buffer_size( a_config.get_value( "pret-rigger", a_node->get_pre_trigger_buffer_size() ) );
+        a_node->set_pre_trigger_buffer_size( a_config.get_value( "pre-trigger", a_node->get_pre_trigger_buffer_size() ) );
         a_node->set_event_buffer_size( a_config.get_value( "event-length", a_node->get_event_buffer_size() ) );
         a_node->set_post_trigger_buffer_size( a_config.get_value( "post-trigger", a_node->get_post_trigger_buffer_size() ) );
         return;
@@ -358,7 +357,7 @@ exit_outer_loop:
         a_config.add( "pre-trigger", scarab::param_value( a_node->get_pre_trigger_buffer_size() ) );
         a_config.add( "event-length", scarab::param_value( a_node->get_event_buffer_size() ) );
         a_config.add( "post-trigger", scarab::param_value( a_node->get_post_trigger_buffer_size() ) );
-        a_config.add( "n-triggers", scarab::param_value( a_node->get_n_triggers() ) );
+
         return;
     }
 
