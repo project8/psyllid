@@ -51,8 +51,9 @@ int main()
 
         event_builder* t_eb = new event_builder();
         t_eb->set_name( "eb" );
-        t_eb->set_pretrigger( 1 );
-        t_eb->set_skip_tolerance( 0 );
+        t_eb->set_pre_trigger_buffer_size( 1 );
+        t_eb->set_event_buffer_size( 1 );
+        t_eb->set_post_trigger_buffer_size( 0 );
         t_root->add( t_eb );
 
         triggered_writer* t_ew = new triggered_writer();

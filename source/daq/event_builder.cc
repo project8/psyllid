@@ -53,6 +53,8 @@ namespace psyllid
 
             // 1 in_command for every state
             midge::enum_t t_in_command = stream::s_none;
+            //midge::enum_t t_in_command_1 = stream::s_none;
+            //midge::enum_t t_in_command_2 = stream::s_none;
 
             trigger_flag* t_minor_trigger_flag = nullptr;
             trigger_flag* t_major_trigger_flag = nullptr;
@@ -65,6 +67,8 @@ namespace psyllid
             while( ! is_canceled() )
             {
                 t_in_command = in_stream< 0 >().get();
+                //t_in_command_1 = in_stream< 1 >().get();
+                //t_in_command_2 = in_stream< 2 >().get();
 
                 if( t_in_command == stream::s_none ) continue;
                 if( t_in_command == stream::s_error ) break;
@@ -74,7 +78,7 @@ namespace psyllid
                 t_minor_trigger_flag = in_stream< 0 >().data();
                 t_major_trigger_flag = in_stream< 1 >().data();
                 t_post_trigger_flag = in_stream< 2 >().data();
-                t_write_flag = out_stream< 3 >().data();
+                t_write_flag = out_stream< 0 >().data();
 
                 if( t_in_command == stream::s_start )
                 {
@@ -361,5 +365,65 @@ exit_outer_loop:
         return;
     }
 
+    inline void event_builder::move_buffer_content_to_pretrigger( packet_id_buffer_buffer_t& full_buffer, bool surplus_id_flag, trigger_flag* t_write_flag )
+    {
+        if (full_buffer.size() >= f_pre_trigger_buffer.capacity())
+        {
+            while( ! f_pre_trigger_buffer.empty() )
+            {
+                if( ! event_builder::write_output_from_buff_front( f_pre_trigger_buffer, false, t_write_flag ) )
+                {
+                    LDEBUG( plog, "Stopping output stream" );
+                    if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
 
+                    LDEBUG( plog, "Exiting output stream" );
+                    out_stream< 0 >().set( stream::s_exit );
+                }
+                // advance our output data pointer to the next in the stream
+                t_write_flag = out_stream< 0 >().data();
+            }
+            // empty skip buffer, write as false and fill pretrigger buffer
+            while( full_buffer.size() >= f_pre_trigger_buffer.capacity() )
+            {
+                if( ! write_output_from_buff_front( full_buffer, surplus_id_flag, t_write_flag ) )
+                {
+                    LDEBUG( plog, "Stopping output stream" );
+                    if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+
+                    LDEBUG( plog, "Exiting output stream" );
+                    out_stream< 0 >().set( stream::s_exit );
+                }
+                // advance our output data pointer to the next in the stream
+                t_write_flag = out_stream< 0 >().data();
+            }
+            //
+            while( ! full_buffer.empty())
+            {
+                f_pre_trigger_buffer.push_back(full_buffer.front());
+                full_buffer.pop_front();
+            }
+        }
+        else
+        {
+            while( f_pre_trigger_buffer.capacity() <= full_buffer.size() + f_pre_trigger_buffer.size() )
+            {
+                if( ! write_output_from_buff_front( f_pre_trigger_buffer, false, t_write_flag ) )
+                {
+                    LDEBUG( plog, "Stopping output stream" );
+                    if( ! out_stream< 0 >().set( stream::s_stop ) ) return;
+
+                    LDEBUG( plog, "Exiting output stream" );
+                    out_stream< 0 >().set( stream::s_exit );
+                }
+                // advance our output data pointer to the next in the stream
+                t_write_flag = out_stream< 0 >().data();
+            }
+            while( !full_buffer.empty() )
+            {
+                f_pre_trigger_buffer.push_back(full_buffer.front());
+                full_buffer.pop_front();
+            }
+        }
+        return;
+    }
 } /* namespace psyllid */

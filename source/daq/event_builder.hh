@@ -25,7 +25,7 @@ namespace psyllid
 
     /*!
      @class event_builder
-     @author N. S. Oblath
+     @author N. S. Oblath, C. Claessens
 
      @brief A transformer that considers a sequence of triggered packets and decides what constitutes a contiguous event
 
@@ -66,7 +66,7 @@ namespace psyllid
      - 0: trigger_flag
     */
     class event_builder :
-            public midge::_transformer< event_builder, typelist_1( trigger_flag ), typelist_1( trigger_flag ) >
+            public midge::_transformer< event_builder, typelist_3( trigger_flag, trigger_flag, trigger_flag ), typelist_1( trigger_flag ) >
     {
         public:
             typedef boost::circular_buffer< uint64_t > packet_id_buffer_buffer_t;
@@ -102,7 +102,7 @@ namespace psyllid
             //void advance_output_stream( trigger_flag* a_write_flag, uint64_t a_id, bool a_trig_flag );
 
             bool write_output_from_buff_front( packet_id_buffer_buffer_t& buffer, bool a_flag, trigger_flag* a_data );
-            bool move_buffer_content_to_pretrigger( packet_id_buffer_buffer_t& full_buffer, bool surplus_id_flags, trigger_flag* a_data );
+            void move_buffer_content_to_pretrigger( packet_id_buffer_buffer_t& full_buffer, bool surplus_id_flags, trigger_flag* a_data );
 
             enum class state_t { untriggered, possibly_triggered, triggered, post_triggered };
             state_t f_state;
@@ -186,56 +186,7 @@ namespace psyllid
         return true;
     }
 
-    inline bool event_builder::move_buffer_content_to_pretrigger( packet_id_buffer_buffer_t& full_buffer, bool surplus_id_flag, trigger_flag* t_write_flag )
-    {
-        if (full_buffer.size() >= f_pre_trigger_buffer.capacity())
-        {
-            while( ! f_pre_trigger_buffer.empty() )
-            {
-                if( ! event_builder::write_output_from_buff_front( f_pre_trigger_buffer, false, t_write_flag ) )
-                {
-                    goto exit_outer_loop;
-                }
-                // advance our output data pointer to the next in the stream
-                t_write_flag = out_stream< 0 >().data();
-            }
-            // empty skip buffer, write as false and fill pretrigger buffer
-            while( full_buffer.size() >= f_pre_trigger_buffer.capacity() )
-            {
-                LTRACE( plog, "Next state untriggered. Writing id "<<f_event_buffer.front()<<" as false");
-                if( ! write_output_from_buff_front( full_buffer, surplus_id_flag, t_write_flag ) )
-                {
-                    goto exit_outer_loop;
-                }
-                // advance our output data pointer to the next in the stream
-                t_write_flag = out_stream< 0 >().data();
-            }
-            //
-            while( ! full_buffer.empty())
-            {
-                f_pre_trigger_buffer.push_back(full_buffer.front());
-                full_buffer.pop_front();
-            }
-        }
-        else
-        {
-            while( f_pre_trigger_buffer.capacity() <= full_buffer.size() + f_pre_trigger_buffer.size() )
-            {
-                if( ! write_output_from_buff_front( f_pre_trigger_buffer, false, t_write_flag ) )
-                {
-                    goto exit_outer_loop;
-                }
-                // advance our output data pointer to the next in the stream
-                t_write_flag = out_stream< 0 >().data();
-            }
-            while( !full_buffer.empty() )
-            {
-                f_pre_trigger_buffer.push_back(full_buffer.front());
-                full_buffer.pop_front();
-            }
-        }
-        return true;
-    }
+
 
     class event_builder_binding : public _node_binding< event_builder, event_builder_binding >
     {
