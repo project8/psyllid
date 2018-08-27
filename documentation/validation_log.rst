@@ -43,6 +43,20 @@ Fixes:
 Log
 ---
 
+Version: 1.8.3
+~~~~~~~~~~~~~~
+
+Release Date: August 27, 2018
+'''''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Midge update to v3.6.3
+    * Missing include fixed
+    * Validation: Build now works on Ubuntu system where it failed before
+
+
 Version 1.8.0
 ~~~~~~~~~~~~~~~~~~
 
