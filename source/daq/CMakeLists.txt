@@ -7,6 +7,7 @@ set( headers
     #single_value_trigger.hh
     frequency_mask_trigger.hh
     frequency_transform.hh
+    or.hh
     packet_receiver_socket.hh
     roach_config.hh
     streaming_writer.hh
@@ -22,6 +23,7 @@ set( sources
     #single_value_trigger.cc
     frequency_mask_trigger.cc
     frequency_transform.cc
+    or.cc
     packet_receiver_socket.cc
     roach_config.cc
     streaming_writer.cc
