@@ -53,8 +53,8 @@ namespace psyllid
 
             // 1 in_command for every state
             midge::enum_t t_in_command = stream::s_none;
-            //midge::enum_t t_in_command_1 = stream::s_none;
-            //midge::enum_t t_in_command_2 = stream::s_none;
+            midge::enum_t t_in_command_1 = stream::s_none;
+            midge::enum_t t_in_command_2 = stream::s_none;
 
             trigger_flag* t_minor_trigger_flag = nullptr;
             trigger_flag* t_major_trigger_flag = nullptr;
@@ -67,8 +67,8 @@ namespace psyllid
             while( ! is_canceled() )
             {
                 t_in_command = in_stream< 0 >().get();
-                //t_in_command_1 = in_stream< 1 >().get();
-                //t_in_command_2 = in_stream< 2 >().get();
+                t_in_command_1 = in_stream< 1 >().get();
+                t_in_command_2 = in_stream< 2 >().get();
 
                 if( t_in_command == stream::s_none ) continue;
                 if( t_in_command == stream::s_error ) break;
@@ -89,6 +89,25 @@ namespace psyllid
 
                 if( t_in_command == stream::s_run )
                 {
+                    if( ( t_in_command_1 == stream::s_none ) or ( t_in_command_1 == stream::s_error ) or ( t_in_command_1 == stream::s_exit ))
+                    {
+                        LERROR( plog, "Rececived "<< t_in_command_1 << " from in_stream<1> while running" );
+                        goto exit_outer_loop;
+                    }
+                    if( ( t_in_command_2 == stream::s_none ) or ( t_in_command_2 == stream::s_error ) or ( t_in_command_2 == stream::s_exit ))
+                    {
+                        LERROR( plog, "Rececived "<< t_in_command_2 << " from in_stream<2> while running" );
+                        goto exit_outer_loop;
+                    }
+
+                    uint64_t t_trig_id_0 = t_minor_trigger_flag->get_id();
+                    uint64_t t_trig_id_1 = t_major_trigger_flag->get_id();
+                    uint64_t t_trig_id_2 = t_post_trigger_flag->get_id();
+                    if( (t_trig_id_0 != t_trig_id_1) or (t_trig_id_0 != t_trig_id_2) )
+                    {
+                        LERROR( plog, "Mismatch between id 0<" << t_trig_id_0 << "> and id 1 <" << t_trig_id_1 << ">" << " or id 2 <" << t_trig_id_2 << ">" );
+                        throw midge::node_nonfatal_error() << "Unable to match time and trigger streams";
+                    }
                     // fill buffers and set flags depending on state
                     if( f_state == state_t::untriggered )
                     {
