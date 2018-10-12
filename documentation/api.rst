@@ -39,6 +39,7 @@ OP_CMD
 
 .. toggle-header::
     :header: ``lock``
+
     Requests that the server lockout be enabled. Nothing is done if already locked.
 
     *Reply Payload*
@@ -48,6 +49,7 @@ OP_CMD
 
 .. toggle-header::
     :header: ``unlock``
+
     Requests that the server lockout be disabled.
 
     *Payload*
@@ -56,10 +58,12 @@ OP_CMD
 
 .. toggle-header::
     :header: ``ping``
+
     Check that the server receives requests and sends replies. No other action is taken.
 
 .. toggle-header::
     :header: ``set_condition``
+
     Cause the server to move to some defined state as quickly as possible; Psyllid implements conditions 10 and 12, both of which stop any ongoing run.
     _Note:_ set_condition is expected to be a broadcast command (routing key target is `broadcast` not `<psyllid-queue>`).
 
@@ -101,6 +105,7 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``daq-status``
+
     Returns the current acquisition configuration.
 
     *Reply Payload*
@@ -110,6 +115,7 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``node-config.[stream].[node]``
+
     Returns the configuration of the node requested.
 
     *Reply Payload*
@@ -118,6 +124,7 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``node-config.[stream].[node].[parameter]``
+
     Returns the configuration value requested from the node requested.
 
     *Reply Payload*
@@ -126,6 +133,7 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``active-config.[stream].[node]``
+
     Returns the configuration of the active DAQ node requested.
 
     *Reply Payload*
@@ -134,6 +142,7 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``active-config.[stream].[node].[parameter]``
+
     Returns the configuration value requested from the active DAQ node requested.  
     Please note that this action will not necessarily return the value in use (e.g. if a parameter that is only used once during initialization has been changed since then), and is not necessarily thread-safe.
 
@@ -143,6 +152,7 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``stream-list``
+
     Returns a list of all streams in the psyllid instance
 
     *Reply Payload*
@@ -151,14 +161,16 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``node-list.[stream]``
+
     Returns a list of all the nodes in the indicated stream
 
     *Reply Payload*
 
-- ``nodes: [[node_name (string)]]`` -- array of names of the nodes
+    - ``nodes: [[node_name (string)]]`` -- array of names of the nodes
 
 .. toggle-header::
     :header: ``filename.[file_number (optional)]``
+
     Returns the filename that will be written to by writters registered to ``file_number``.  Default for ``file_number`` is 0.
 
     *Reply Payload*
@@ -167,6 +179,7 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``description.[file_number (optional)]``
+
     Returns the description that will be written to the file header for file corresponding to ``file_number``.  Default for ``file_number`` is 0.
 
     *Reply Payload*
@@ -175,6 +188,7 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``duration``
+
     Returns the run duration (in ms).
 
     *Reply Payload*
@@ -183,6 +197,7 @@ No `get` requests are lockable.
 
 .. toggle-header::
     :header: ``use-monarch``
+
     Returns the use-monarch flag.
 
     *Reply Payload*
@@ -199,6 +214,7 @@ All `set` requests are lockable.
 
 .. toggle-header::
     :header: ``node-config.[stream].[node]``
+
     Configures one or more parameters within a node.  Takes effect next time the DAQ is activated.
 
     *Payload*
@@ -211,6 +227,7 @@ All `set` requests are lockable.
 
 .. toggle-header::
     :header: ``node-config.[stream].[node].[parameter]``
+
     Configure a single parameter in a node.  Takes effect next time the DAQ is activated.
 
     *Payload*
@@ -219,18 +236,20 @@ All `set` requests are lockable.
 
 .. toggle-header::
     :header: ``active-config.[stream].[node]``
+
     Configures one or more parameters within an active DAQ node.  Takes effect immediately.  
 
     *Payload*
 
     - ``[node configuration (dictionary)]`` -- Parameters to set in the node
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``[the parameters that were set (dictionary)]`` -- Parameter name:value pairs that were set
+    - ``[the parameters that were set (dictionary)]`` -- Parameter name:value pairs that were set
 
 .. toggle-header::
     :header: ``active-config.[stream].[node].[parameter]``
+
     Configure a single parameter in an active DAQ node.  Takes effect immediately.  
     Please note that this action will not necessarily be useful for all node parameters (e.g. if a parameter is used once during initialization), and is not necessarily thread-safe.
 
@@ -248,6 +267,7 @@ All `set` requests are lockable.
 
 .. toggle-header::
     :header: ``description.[file_number (optional)]``
+
     Sets the description that will be written to the file header for the file corresponding to ``file_number``.  Default for ``file_number`` is 0.  Takes effect for the next run.
 
     *Payload*
@@ -260,6 +280,7 @@ All `set` requests are lockable.
 
 .. toggle-header::
     :header: ``duration``
+
     Sets the run duration in ms. Takes effect for the next run.
 
     *Payload*
@@ -268,6 +289,7 @@ All `set` requests are lockable.
 
 .. toggle-header::
     :header: ``use-monarch``
+
     Sets the use-monarch flag. Takes effect for the next run.
 
     *Payload*
@@ -284,6 +306,7 @@ All `command` requests are lockable.
 
 .. toggle-header::
     :header: ``add-stream``
+
     Adds a stream to the DAQ configuration.  Takes effect next time the DAQ is activated.
 
     *Payload*
@@ -293,6 +316,7 @@ All `command` requests are lockable.
 
 .. toggle-header::
     :header: ``remove-stream``
+
     Remove a stream from the DAQ configuration.  Takes effect next time the DAQ is activated.
 
     *Payload*
@@ -301,6 +325,7 @@ All `command` requests are lockable.
 
 .. toggle-header::
     :header: ``run-daq-cmd.[stream].[node].[cmd]``
+
     Instruct an active DAQ node to execute a particular command.  Please note that this action is not necessarily thread-safe.
 
     *Payload*
@@ -313,24 +338,30 @@ All `command` requests are lockable.
 
 .. toggle-header::
     :header: ``stop-run``
+
     Stop a run that's currently going on.
 
 .. toggle-header::
     :header: ``start-run``
+
     Same as the OP_RUN command above.
 
 .. toggle-header::
     :header: ``activate-daq``
+
     Put the DAQ in its actiavated state to be ready to take data.  Psyllid must be in its deactivated state before this call.
 
 .. toggle-header::
     :header: ``reactivate-daq``
+
     Deactivate, then reactivate the DAQ; it will end in its activated state, ready to take data.  Psyllid must be in its activated state before this call.
 
 .. toggle-header::
     :header: ``deactivate-daq``
+
     Put in its deactivated state, in which it is not immediately ready to take data.  Psyllid must be in its activated state before this call.
 
 .. toggle-header::
     :header: ``quit-psyllid``
+    
     Instruct the Psyllid executable to exit.
