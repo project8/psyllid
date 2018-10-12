@@ -81,22 +81,68 @@ This is how a configuration file for running psyllid in streaming mode could loo
             strw:
     file-num: 0
 
-In this example the broker is running on localhost and a queue will be set up with the name `psyllid`.
+In this example the broker is running on localhost and a queue will be set up with the name `psyllid`. If no path to the broker-authentication file is provided, Psyllid will look for *~/.project8_authentications.json*.
 The *post-to-slack* option, allows psyllid to post some messages (like "psyllid is starting up" or "Run is commencing") to a slack channel. Under *daq*, some general settings are configured. For example the maximum file size is set to 500 MB which means that psyllid will continue to write in a new egg file once the size of the last egg file has reached this size.
-In the *streams* section one stream with the name *ch0* is configured. In this stream the nodes are connected according to the preset `str-1ch-fpa`_. The configurations of the individual nodes from this stream is specified withing the *stream* block. In theory, psyllid can be run with multiple streams, each of which could be set up with a different node configuration. In practice though, psyllid is mostly used with only one stream set up and in case data should be read from multiple ports, multiple instances of psyllid are run in parallel.
+In the *streams* section one stream with the name *ch0* is configured. In this stream the nodes are connected according to the preset *str-1ch-fpa*. The configurations of the individual nodes from this stream is specified withing the *stream* block. In theory, psyllid can be run with multiple streams, each of which could be set up with a different node configuration. In practice though, psyllid is mostly used with only one stream set up and in case data should be read from multiple ports, multiple instances of psyllid are run in parallel.
 
 
-Presets
-^^^^^^^^^
+Node connections and presets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Which nodes will be set up and how they will be connected can be specified either by using a preset as in the example above or manually in the configuration file. This is how the same node configuration as above could be achieved manually:
+
+::
+
+    preset:
+        type: reader-stream
+        nodes:
+          - type: packet-receiver-fpa
+            name: prf
+          - type: tf-roach-receiver
+            name: tfrr
+          - type: streaming-writer
+            name: strw
+          - type: term-freq-data
+            name: term
+        connections:
+          - "prf.out_0:tfrr.in_0"
+          - "tfrr.out_0:strw.in_0"
+          - "tfrr.out_1:term.in_0"
+
+The available presets can be found here_.
+
+.. _here: https://psyllid.readthedocs.io/en/latest/node_configurations.html#stream-presets
 
 
 
-Batch mode
-^^^^^^^^^^^^^^
+on-startup
+^^^^^^^^^^^^^
 
-Instead of reading data packets that were received via a port, psyllid has the option to read the content from an egg file.
-By using the *egg-reader* node and configuring this node with the path to the file that it should read from, psyllid will perfrom the exact same operations as it would in normal operation on the content of a file.
-By defining a list of start-up commands in the configuration file, psyllid will 
+A *on-startup* block can be added to the configuration file with a list of requests that psyllid will process and act upon right after starting-up. This is especially convenient when using psyllid to read data from a file instead of from a port (see `egg-reader`_ for more on this). In this case psyllid will only start the the *run-server* for receiving commands from a user after executing all the on-startup commands. Here is an example for a *on-startup* command block:
+
+::
+
+    amqp:
+        broker: rabbit_broker
+        queue: psyllid
+        make-connection: false
+
+    on-startup:
+      - type: get
+        rks: daq-status
+        payload: {}
+        sleep-for: 0
+      - type: wait-for
+        rks: daq-status
+        payload: {}
+        sleep-for: 1000
+      - type: wait-for
+        rks: daq-status
+        payload: {}
+        sleep-for: 100
+
+In this example, the psyllid will not try to connect to the broker and as a result it will exit after processing the *on-startup* requests. The first 
+
 
 
 
@@ -104,6 +150,25 @@ Node configurations
 ---------------------
 
 Nodes are held and connected by Midge_.
+
+.. _egg-reader:
+
+Batch mode
+^^^^^^^^^^^^^^
+
+Instead of reading data packets that were received via a port, psyllid has the option to read the content from an egg file.
+By using the *egg-reader* node and configuring this node with the path to the file that it should read from, psyllid will perfrom the exact same operations as it would in normal operation on the content of a file.
+By defining a list of start-up commands in the configuration file, psyllid will perform all of them and then exit once the preocessing of the file content was completed.
+
+Here is an example for an egg-reader configuraion:
+
+::
+
+    e3r:
+        length: 1000
+        egg-path: /a_test_file.egg
+        read-n-records: 0
+
 
 
 .. _ROACH2: https://casper.berkeley.edu/wiki/ROACH-2_Revision_2
