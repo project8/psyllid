@@ -4,7 +4,7 @@ DAQ Status
 The status can be queried by doing a GET of ``daq-status``.  The payload will include the status name as a string with key ``status``, and the value with key ``status-value``.
 
 ============ ===== =========================================================================
-Status       Value Descriptoin
+Status       Value Description
 ============ ===== =========================================================================
 Deactivated  0     Psyllid is in the idle state and needs to be activated to run
 Activating   2     DAQ spinning up
