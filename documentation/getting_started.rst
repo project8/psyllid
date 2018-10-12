@@ -17,7 +17,7 @@ The classes in the *control* layer control the *daq* layer and allow a user to i
 Psyllid knows different states: deactivated, activating, activated, running, canceled, do_restart, done and error.
 Data is only being taken in *running* state.
 
-For more information read the section on `How psyllid works`_.
+For more information read the sections `How psyllid works`_ and `DAQ Status`_.
 
 
 **A note on data rates and starting runs**
@@ -259,5 +259,5 @@ Here is an example for an egg-reader configuraion:
 .. _available presets: https://psyllid.readthedocs.io/en/latest/node_configurations.html#stream-presets
 .. _how psyllid works: https://psyllid.readthedocs.io/en/latest/how_psyllid_works.html
 .. _Psyllid API: https://psyllid.readthedocs.io/en/latest/api.html
-
+.. _DAQ Status: https://psyllid.readthedocs.io/en/latest/status_definitions.html
 
