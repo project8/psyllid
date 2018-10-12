@@ -18,8 +18,8 @@ These add one or more commands to the batch_executor queue; the return code indi
 The command ``hard-abort`` is defined in the default server_config to execute ``stop-run``.
 
 
-Dripline API
-============
+Dripline Requests
+=================
 
 OP_GET
 ^^^^^^
@@ -72,8 +72,8 @@ OP_CMD
     - ``values=[condition (int)]`` -- the integer condition
 
 
-Psyllid API
-===========
+Psyllid Requests
+================
 
 OP_RUN
 ^^^^^^
@@ -363,5 +363,5 @@ All `command` requests are lockable.
 
 .. toggle-header::
     :header: ``quit-psyllid``
-    
+
     Instruct the Psyllid executable to exit.
