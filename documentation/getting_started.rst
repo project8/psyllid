@@ -43,10 +43,13 @@ Running psyllid does not mean start a psyllid run. Psyllid starts in deactivated
 Running requirements
 ^^^^^^^^^^^^^^^^^^^^
 
-
-
 - rabbit broker
 - broker authentication file
+
+If you don't have a rabbitmq-broker available you can go to broker-in-docker_ and run `docker-compose up`_.
+A broker will be started inside a docker container and the host ports are forwarded to this container. Copy the *project8_authentications.json* file to */your-home/.project8_authentications.json*. This way psyllid can connect to it and set up a queue from anywhere on the host machine.
+
+For adding a dripline or dragonfly container, look for examples on how to do that in insectarium_.
 
 
 Start psyllid
@@ -178,7 +181,7 @@ A *on-startup* block can be added to the configuration file with a list of reque
 In this example, the psyllid instance will not try to connect to the broker and as a result it will exit after processing the *on-startup* requests.
 
 
-Inteacting with psyllid
+Interacting with psyllid
 -------------------------
 
 As mentioned a few times above, it is possible to send dripline_ requests via a rabbitmq broker to a running psyllid instance. There is a detailed list of which requests can be received and processed in `Psyllid API`_.
@@ -260,4 +263,7 @@ Here is an example for an egg-reader configuraion:
 .. _how psyllid works: https://psyllid.readthedocs.io/en/latest/how_psyllid_works.html
 .. _Psyllid API: https://psyllid.readthedocs.io/en/latest/api.html
 .. _DAQ Status: https://psyllid.readthedocs.io/en/latest/status_definitions.html
+.. _docker-compose up: https://docs.docker.com/compose/reference/up/
+.. _broker-in-docker: https://github.com/project8/psyllid/tree/feature/broker-and-dragonfly-with-docker-compose/broker-in-docker
+.. _insectarium: https://github.com/project8/insectarium
 
