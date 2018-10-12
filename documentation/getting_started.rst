@@ -182,49 +182,50 @@ Interacting with psyllid
 -------------------------
 
 As mentioned a few times above, it is possible to send dripline_ requests via a rabbitmq broker to a running psyllid instance. There is a detailed list of which requests can be received and processed in `Psyllid API`_.
-Here are some examples:
+
+Assuming you have dragonfly_ installed, here are some examples for how to interact with psyllid from the command line:
 
 
 * If you have a psyllid instance running (and it was configured to have "psyllid" as queue name), you can for example send a request to ask what state psyllid is in by running:
   ::
 
-    dripline get psyllid.daq-status -b rabbit_broker
+    dragonfly get psyllid.daq-status -b rabbit_broker
 
   Deactivate and activate psyllid:
   ::
 
-    dripline cmd psyllid.activate-daq -b rabbit_broker
+    dragonfly cmd psyllid.activate-daq -b rabbit_broker
 
-    dripline cmd psyllid.deactivate-daq -b rabbit_broker
+    dragonfly cmd psyllid.deactivate-daq -b rabbit_broker
 
 
 * Make psyllid exit:
   ::
 
-    dripline cmd psyllid.quit-psyllid -b rabbit_broker
+    dragonfly cmd psyllid.quit-psyllid -b rabbit_broker
 
 * To start a 500ms run:
   ::
 
-    dripline cmd psyllid.start-run duration=500 filename=a_test.egg -b rabbit_broker
+    dragonfly cmd psyllid.start-run duration=500 filename=a_test.egg -b rabbit_broker
 
 
 * Node configurations can also be changed by sending the relevant request.
   If you are running psyllid using the *event_builder_1ch_fpa* preset you can set the snr trigger level of the frequency mask trigger node to 20 with:
   ::
 
-    dripline set psyllid.active-config.ch0.fmt.threshold-power-snr 20 -b rabbit_broker
+    dragonfly set psyllid.active-config.ch0.fmt.threshold-power-snr 20 -b rabbit_broker
 
   Check the threshold setting with:
   ::
 
-    dripline get psyllid.active-config.ch0.fmt.threshold-power-snr -b rabbit_broker
+    dragonfly get psyllid.active-config.ch0.fmt.threshold-power-snr -b rabbit_broker
 
 
 * Changing the buffer size of a node at run time, will only re applied after psyllid reactivates (because buffers are initialized when nodes are activated). 
   ::
 
-    dripline cmd psyllid.reactivate-daq -b rabbit_broker
+    dragonfly cmd psyllid.reactivate-daq -b rabbit_broker
 
 
 
@@ -260,4 +261,5 @@ Here is an example for an egg-reader configuration:
 .. _how psyllid works: https://psyllid.readthedocs.io/en/latest/how_psyllid_works.html
 .. _Psyllid API: https://psyllid.readthedocs.io/en/latest/api.html
 .. _DAQ Status: https://psyllid.readthedocs.io/en/latest/status_definitions.html
+.. _dragonfly: https://p8-dragonfly.readthedocs.io/en/stable/
 
