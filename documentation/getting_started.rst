@@ -99,7 +99,9 @@ psyllid will be set up according to whatever is specified in the file and overwr
 
 In this example the broker is running on localhost and a queue will be set up with the name `psyllid`. If no path to the broker-authentication file is provided, psyllid will look for *~/.project8_authentications.json*.
 The *post-to-slack* option, allows psyllid to post some messages (like "psyllid is starting up" or "Run is commencing") to a slack channel. Under *daq*, some general settings are configured. For example the maximum file size is set to 500 MB which means that psyllid will continue to write to a new egg file once the size of the last egg file has reached this size.
-In the *streams* section one stream with the name *ch0* is configured. In this stream the nodes are connected according to the preset *str-1ch-fpa*. The configurations of the individual nodes from this stream must be specified within the *stream* block. In theory, psyllid can be run with multiple streams, each of which could be set up with a different node configuration. In practice though, psyllid is mostly used with only one stream set up and in case data should be read from multiple ports, multiple instances of psyllid are run in parallel.
+In the *streams* section one stream with the name *ch0* is configured. In this stream the nodes are connected according to the preset *str-1ch-fpa*. The configurations of the individual nodes from this stream must be specified within the *stream* block. Here the *prf* (packet-receiver-fpa) is the node that recieves and distributes the incoming packets. It is configured with the interface name and the port to which the ROACH2 is streaming the packets to. The *length* in node configurations always refers to a buffer size. Generally, the buffers of nodes should be larger than the buffer sizes downstream, to prevent that the data processing gets blocked if one of the nodes is falling behind.
+
+In theory, psyllid can be run with multiple streams, each of which could be set up with a different node configuration. In practice though, psyllid is mostly used with only one stream set up and in case data should be read from multiple ports, multiple instances of psyllid are run in parallel.
 
 
 Node connections and presets
@@ -127,6 +129,8 @@ Which nodes will be set up and how they will be connected can be specified eithe
 
 The available presets_ can be found in `node configurations`_.
 
+If you want to use psyllid to process ROACH2 packets and write all the content to files use the *str-1ch-fpa* preset.
+If you want to take triggered data use *events-1ch-fpa*.
 
 
 .. _on-startup:
@@ -159,41 +163,60 @@ A *on-startup* block can be added to the configuration file with a list of reque
 
 In this example, the psyllid instance will not try to connect to the broker and as a result it will exit after processing the *on-startup* requests.
 
+
 Inteacting with psyllid
 -------------------------
 
 As mentioned a few times above, it is possible to send dripline_ requests via a rabbitmq broker to a running psyllid instance. There is a detailed list of which requests can be received and processed in `Psyllid API`_.
+Here are some examples:
 
 
-If you have a psyllid instance running (and it was configured to have "psyllid" as queue name), you can for example send a request to ask what state psyllid is in by running:
-::
+* If you have a psyllid instance running (and it was configured to have "psyllid" as queue name), you can for example send a request to ask what state psyllid is in by running:
+   ::
 
-  dripline get psyllid.daq-status -b rabbit_broker
-  
-Make psyllid exit:
-::
+      dripline get psyllid.daq-status -b rabbit_broker
 
-  dripline cmd psyllid.quit-psyllid -b rabbit_broker
+    Deactivate and activate psyllid:
 
-To start a 500ms run:
-::
+      dripline cmd psyllid.activate-daq -b rabbit_broker
 
-  dripline cmd psyllid.start-run duration=500 filename=a_test.egg -b rabbit_broker
+      dripline cmd psyllid.deactivate-daq -b rabbit_broker
 
 
+* Make psyllid exit:
+    ::
+
+      dripline cmd psyllid.quit-psyllid -b rabbit_broker
+
+* To start a 500ms run:
+    ::
+
+      dripline cmd psyllid.start-run duration=500 filename=a_test.egg -b rabbit_broker
 
 
+* Node configurations can also be changed by sending the relevant request.
+  If you are running psyllid using the *event_builder_1ch_fpa* preset you can set the snr trigger level of the frequency mask trigger node to 20 with:
+  ::
+
+    dripline set psyllid.active-config.ch0.fmt.threshold-power-snr 20 -b rabbit_broker
+
+  Check the threshold setting with:
+  ::
+
+    dripline get psyllid.active-config.ch0.fmt.threshold-power-snr -b rabbit_broker
 
 
-Node configurations
----------------------
+* Changing the buffer size of a node at run time, will only re applied after psyllid reactivates (because buffers are initialized when nodes are activated). 
+  ::
 
-Nodes are held and connected by Midge_.
+    dripline cmd psyllid.reactivate-daq -b rabbit_broker
+
+
 
 .. _egg-reader:
 
 Egg reader
-^^^^^^^^^^^^^^
+-------------
 
 Instead of reading data packets that were received via a port, psyllid has the option to read the content from an egg file.
 By using the *egg-reader* node and configuring this node with the path to the file that it should read from, psyllid will perfrom the exact same operations as it would in normal operation on the content of a file.
