@@ -1,3 +1,5 @@
+..server-api-label:
+
 ##########
 Server API
 ##########

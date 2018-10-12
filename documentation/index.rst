@@ -7,6 +7,7 @@ Contents:
    :maxdepth: 2
 
    Getting Started <getting_started>
+   How Psyllid Works <how_psyllid_works>
    Node Configurations <node_configurations>
    Roach Packets <roach_packets>
    Server API <server_api>
