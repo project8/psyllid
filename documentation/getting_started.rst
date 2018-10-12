@@ -67,7 +67,7 @@ Configuration files
 By using the command line option *-c* and specifying the path to a configuration file in YAML-format
 ::
 
- bin/psyllid -c config=/path-to-config/config.yaml
+ bin/psyllid config=/path-to-config/config.yaml
 
 psyllid will be set up according to whatever is specified in the file and overwrite its default settings. Here is how a configuration file for running psyllid in streaming mode could look like:
 
