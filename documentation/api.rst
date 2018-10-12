@@ -38,7 +38,7 @@ OP_CMD
 ^^^^^^
 
 .. toggle-header::
-    ``lock``
+    :header: ``lock``
     Requests that the server lockout be enabled. Nothing is done if already locked.
 
     *Reply Payload*
@@ -47,7 +47,7 @@ OP_CMD
     - ``tag=[lockout tag (object)]`` -- information about the client that requested that the lock be enabled
 
 .. toggle-header::
-    ``unlock``
+    :header: ``unlock``
     Requests that the server lockout be disabled.
 
     *Payload*
@@ -55,11 +55,11 @@ OP_CMD
     - ``force=[true (bool)]`` -- *(optional)* Disables the lockout without a key.
 
 .. toggle-header::
-    ``ping``
+    :header: ``ping``
     Check that the server receives requests and sends replies. No other action is taken.
 
 .. toggle-header::
-    ``set_condition``
+    :header: ``set_condition``
     Cause the server to move to some defined state as quickly as possible; Psyllid implements conditions 10 and 12, both of which stop any ongoing run.
     _Note:_ set_condition is expected to be a broadcast command (routing key target is `broadcast` not `<psyllid-queue>`).
 
@@ -76,20 +76,20 @@ OP_RUN
 
 The `run` message type is used to start a run.
 
-.. toggle-header::
-
-
 All `run` requests are lockable.
 
-There are no Routing Key Specifiers for *run* requests.
+.. toggle-header::
+    :header: Details
 
-*Payload*
+    There are no Routing Key Specifiers for *run* requests.
 
-- ``filename: [filename (string)]`` -- *(optional)* Filename for ``file_number`` 0.
-- ``filenames: [array of filenames (string)]`` -- *(optional)* Filenames for all files specified. Overrides ``filename``.
-- ``description: [description (string)]`` -- *(optional)* Text description for ``file_number`` 0; saved in the file header.
-- ``descriptions: [array of descriptions (string)]`` -- *(optional)* Text descriptions for all files specified.  Overrides ``description``.
-- ``duration: [ms (unsigned int)]`` -- *(optional)* Duration of the run in ms.
+    *Payload*
+
+    - ``filename: [filename (string)]`` -- *(optional)* Filename for ``file_number`` 0.
+    - ``filenames: [array of filenames (string)]`` -- *(optional)* Filenames for all files specified. Overrides ``filename``.
+    - ``description: [description (string)]`` -- *(optional)* Text description for ``file_number`` 0; saved in the file header.
+    - ``descriptions: [array of descriptions (string)]`` -- *(optional)* Text descriptions for all files specified.  Overrides ``description``.
+    - ``duration: [ms (unsigned int)]`` -- *(optional)* Duration of the run in ms.
 
 
 OP_GET
@@ -100,105 +100,94 @@ The `get` message is used to request information from the server.
 No `get` requests are lockable.
 
 .. toggle-header::
-``daq-status``
---------------
-Returns the current acquisition configuration.
+    :header: ``daq-status``
+    Returns the current acquisition configuration.
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``status: [status (string)]`` -- human-readable status message
-- ``status-value: [status code (unsigned int)]`` -- machine-redable status message
-
-.. toggle-header::
-``node-config.[stream].[node]``
--------------------------------
-Returns the configuration of the node requested.
-
-*Reply Payload*
-
-- ``[Full node configuration]``
+    - ``status: [status (string)]`` -- human-readable status message
+    - ``status-value: [status code (unsigned int)]`` -- machine-redable status message
 
 .. toggle-header::
-``node-config.[stream].[node].[parameter]``
--------------------------------------------
-Returns the configuration value requested from the node requested.
+    :header: ``node-config.[stream].[node]``
+    Returns the configuration of the node requested.
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``[parameter name]: [value]`` -- Parameter name and value
-
-.. toggle-header::
-``active-config.[stream].[node]``
--------------------------------
-Returns the configuration of the active DAQ node requested.
-
-*Reply Payload*
-
-- ``[Full node configuration]``
+    - ``[Full node configuration]``
 
 .. toggle-header::
-``active-config.[stream].[node].[parameter]``
--------------------------------------------
-Returns the configuration value requested from the active DAQ node requested.  
-Please note that this action will not necessarily return the value in use (e.g. if a parameter that is only used once during initialization has been changed since then), and is not necessarily thread-safe.
+    :header: ``node-config.[stream].[node].[parameter]``
+    Returns the configuration value requested from the node requested.
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``[parameter name]: [value]`` -- Parameter name and value
+    - ``[parameter name]: [value]`` -- Parameter name and value
 
 .. toggle-header::
-``stream-list``
----------------
-Returns a list of all streams in the psyllid instance
+    :header: ``active-config.[stream].[node]``
+    Returns the configuration of the active DAQ node requested.
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``streams: [[stream_name (string)]]`` -- array of names of the streams
+    - ``[Full node configuration]``
 
 .. toggle-header::
-``node-list.[stream]``
-----------------------
-Returns a list of all the nodes in the indicated stream
+    :header: ``active-config.[stream].[node].[parameter]``
+    Returns the configuration value requested from the active DAQ node requested.  
+    Please note that this action will not necessarily return the value in use (e.g. if a parameter that is only used once during initialization has been changed since then), and is not necessarily thread-safe.
 
-*Reply Payload*
+    *Reply Payload*
+
+    - ``[parameter name]: [value]`` -- Parameter name and value
+
+.. toggle-header::
+    :header: ``stream-list``
+    Returns a list of all streams in the psyllid instance
+
+    *Reply Payload*
+
+    - ``streams: [[stream_name (string)]]`` -- array of names of the streams
+
+.. toggle-header::
+    :header: ``node-list.[stream]``
+    Returns a list of all the nodes in the indicated stream
+
+    *Reply Payload*
 
 - ``nodes: [[node_name (string)]]`` -- array of names of the nodes
 
 .. toggle-header::
-``filename.[file_number (optional)]``
-------------
-Returns the filename that will be written to by writters registered to ``file_number``.  Default for ``file_number`` is 0.
+    :header: ``filename.[file_number (optional)]``
+    Returns the filename that will be written to by writters registered to ``file_number``.  Default for ``file_number`` is 0.
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``values: [[filename (string)]]`` -- Filename as the first element of the ``values`` array
-
-.. toggle-header::
-``description.[file_number (optional)]``
----------------
-Returns the description that will be written to the file header for file corresponding to ``file_number``.  Default for ``file_number`` is 0.
-
-*Reply Payload*
-
-- ``values: [[description (string)]]`` -- Description as the first element of the ``values`` array
+    - ``values: [[filename (string)]]`` -- Filename as the first element of the ``values`` array
 
 .. toggle-header::
-``duration``
-------------
-Returns the run duration (in ms).
+    :header: ``description.[file_number (optional)]``
+    Returns the description that will be written to the file header for file corresponding to ``file_number``.  Default for ``file_number`` is 0.
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``values: [[duration (unsigned int)]]`` -- Duration in ms as the first element of the ``values`` array
+    - ``values: [[description (string)]]`` -- Description as the first element of the ``values`` array
 
 .. toggle-header::
-``use-monarch``
----------------
-Returns the use-monarch flag.
+    :header: ``duration``
+    Returns the run duration (in ms).
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``values: [[flag (bool)]]`` -- Use-monarch flag as the first element of the ``values`` array
+    - ``values: [[duration (unsigned int)]]`` -- Duration in ms as the first element of the ``values`` array
+
+.. toggle-header::
+    :header: ``use-monarch``
+    Returns the use-monarch flag.
+
+    *Reply Payload*
+
+    - ``values: [[flag (bool)]]`` -- Use-monarch flag as the first element of the ``values`` array
 
 
 OP_SET
@@ -209,89 +198,81 @@ The `set` message type is used to set a value to a parameter in the configuratio
 All `set` requests are lockable.
 
 .. toggle-header::
-``node-config.[stream].[node]``
--------------------------------
-Configures one or more parameters within a node.  Takes effect next time the DAQ is activated.
+    :header: ``node-config.[stream].[node]``
+    Configures one or more parameters within a node.  Takes effect next time the DAQ is activated.
 
-*Payload*
+    *Payload*
 
-- ``[node configuration (dictionary)]`` -- Parameters to set in the node
+    - ``[node configuration (dictionary)]`` -- Parameters to set in the node
+
+    *Reply Payload*
+
+    - ``[the parameters that were set (dictionary)]`` -- Parameter name:value pairs that were set
+
+.. toggle-header::
+    :header: ``node-config.[stream].[node].[parameter]``
+    Configure a single parameter in a node.  Takes effect next time the DAQ is activated.
+
+    *Payload*
+
+    - ``values: [[value]]`` -- Parameter value to be set as the first element of the ``values`` array.
+
+.. toggle-header::
+    :header: ``active-config.[stream].[node]``
+    Configures one or more parameters within an active DAQ node.  Takes effect immediately.  
+
+    *Payload*
+
+    - ``[node configuration (dictionary)]`` -- Parameters to set in the node
 
 *Reply Payload*
 
 - ``[the parameters that were set (dictionary)]`` -- Parameter name:value pairs that were set
 
 .. toggle-header::
-``node-config.[stream].[node].[parameter]``
--------------------------------------------
-Configure a single parameter in a node.  Takes effect next time the DAQ is activated.
+    :header: ``active-config.[stream].[node].[parameter]``
+    Configure a single parameter in an active DAQ node.  Takes effect immediately.  
+    Please note that this action will not necessarily be useful for all node parameters (e.g. if a parameter is used once during initialization), and is not necessarily thread-safe.
 
-*Payload*
+    *Payload*
 
-- ``values: [[value]]`` -- Parameter value to be set as the first element of the ``values`` array.
-
-.. toggle-header::
-``active-config.[stream].[node]``
--------------------------------
-Configures one or more parameters within an active DAQ node.  Takes effect immediately.  
-
-*Payload*
-
-- ``[node configuration (dictionary)]`` -- Parameters to set in the node
-
-*Reply Payload*
-
-- ``[the parameters that were set (dictionary)]`` -- Parameter name:value pairs that were set
+    - ``values: [[value]]`` -- Parameter value to be set as the first element of the ``values`` array.
 
 .. toggle-header::
-``active-config.[stream].[node].[parameter]``
--------------------------------------------
-Configure a single parameter in an active DAQ node.  Takes effect immediately.  
-Please note that this action will not necessarily be useful for all node parameters (e.g. if a parameter is used once during initialization), and is not necessarily thread-safe.
+    :header: ``filename.[file_number (optional)]``
+    Sets the filename (relative or absolute) that will be written to by the writers register to ``file_number``.  Default for ``file_number`` is 0.  Takes effect for the next run.
 
-*Payload*
+    *Payload*
 
-- ``values: [[value]]`` -- Parameter value to be set as the first element of the ``values`` array.
+    - ``values: [[filename (string)]]`` -- Filename
 
 .. toggle-header::
-``filename.[file_number (optional)]``
-------------
-Sets the filename (relative or absolute) that will be written to by the writers register to ``file_number``.  Default for ``file_number`` is 0.  Takes effect for the next run.
+    :header: ``description.[file_number (optional)]``
+    Sets the description that will be written to the file header for the file corresponding to ``file_number``.  Default for ``file_number`` is 0.  Takes effect for the next run.
 
-*Payload*
+    *Payload*
 
-- ``values: [[filename (string)]]`` -- Filename
+    - ``values: [[description (string)]]`` -- Description
 
-.. toggle-header::
-``description.[file_number (optional)]``
----------------
-Sets the description that will be written to the file header for the file corresponding to ``file_number``.  Default for ``file_number`` is 0.  Takes effect for the next run.
+    *Reply Payload*
 
-*Payload*
-
-- ``values: [[description (string)]]`` -- Description
-
-*Reply Payload*
-
-- ``[the parameter that was set as a dictionary]`` -- Parameter name:value pair that was set
+    - ``[the parameter that was set as a dictionary]`` -- Parameter name:value pair that was set
 
 .. toggle-header::
-``duration``
-------------
-Sets the run duration in ms. Takes effect for the next run.
+    :header: ``duration``
+    Sets the run duration in ms. Takes effect for the next run.
 
-*Payload*
+    *Payload*
 
-- ``values: [[duration (unsigned int)]]`` -- Duration in ms
+    - ``values: [[duration (unsigned int)]]`` -- Duration in ms
 
 .. toggle-header::
-``use-monarch``
----------------
-Sets the use-monarch flag. Takes effect for the next run.
+    :header: ``use-monarch``
+    Sets the use-monarch flag. Takes effect for the next run.
 
-*Payload*
+    *Payload*
 
-- ``values: [[flag (bool)]]`` -- Flag value (true, false, 0, 1)
+    - ``values: [[flag (bool)]]`` -- Flag value (true, false, 0, 1)
 
 
 OP_CMD
@@ -302,63 +283,54 @@ The `cmd` message type is used to run a variety of different command instruction
 All `command` requests are lockable.
 
 .. toggle-header::
-``add-stream``
---------------
-Adds a stream to the DAQ configuration.  Takes effect next time the DAQ is activated.
+    :header: ``add-stream``
+    Adds a stream to the DAQ configuration.  Takes effect next time the DAQ is activated.
 
-*Payload*
+    *Payload*
 
-- ``name: [stream name (string)]`` -- Unique name for the stream.
-- ``config: [stream configuration (dictionary)]`` -- Configuration for the stream
-
-.. toggle-header::
-``remove-stream``
------------------
-Remove a stream from the DAQ configuration.  Takes effect next time the DAQ is activated.
-
-*Payload*
-
-- ``values: [[stream name (string)]]`` -- Name of the stream to remove as the first element of the ``values`` array
+    - ``name: [stream name (string)]`` -- Unique name for the stream.
+    - ``config: [stream configuration (dictionary)]`` -- Configuration for the stream
 
 .. toggle-header::
-``run-daq-cmd.[stream].[node].[cmd]``
--------------------------------------
-Instruct an active DAQ node to execute a particular command.  Please note that this action is not necessarily thread-safe.
+    :header: ``remove-stream``
+    Remove a stream from the DAQ configuration.  Takes effect next time the DAQ is activated.
 
-*Payload*
+    *Payload*
 
-- ``[command arguments (dictionary)]`` -- Any arguments needed for the execution of the command.
-
-*Reply Payload*
-
-- ``[the command configuration given to the node (dictionary)]`` -- Repeating what the node was told to do
+    - ``values: [[stream name (string)]]`` -- Name of the stream to remove as the first element of the ``values`` array
 
 .. toggle-header::
-``stop-run``
-------------
-Stop a run that's currently going on.
+    :header: ``run-daq-cmd.[stream].[node].[cmd]``
+    Instruct an active DAQ node to execute a particular command.  Please note that this action is not necessarily thread-safe.
+
+    *Payload*
+
+    - ``[command arguments (dictionary)]`` -- Any arguments needed for the execution of the command.
+
+    *Reply Payload*
+
+    - ``[the command configuration given to the node (dictionary)]`` -- Repeating what the node was told to do
 
 .. toggle-header::
-``start-run``
--------------
-Same as the OP_RUN command above.
+    :header: ``stop-run``
+    Stop a run that's currently going on.
 
 .. toggle-header::
-``activate-daq``
-----------------
-Put the DAQ in its actiavated state to be ready to take data.  Psyllid must be in its deactivated state before this call.
+    :header: ``start-run``
+    Same as the OP_RUN command above.
 
 .. toggle-header::
-``reactivate-daq``
-------------------
-Deactivate, then reactivate the DAQ; it will end in its activated state, ready to take data.  Psyllid must be in its activated state before this call.
+    :header: ``activate-daq``
+    Put the DAQ in its actiavated state to be ready to take data.  Psyllid must be in its deactivated state before this call.
 
 .. toggle-header::
-``deactivate-daq``
-------------------
-Put in its deactivated state, in which it is not immediately ready to take data.  Psyllid must be in its activated state before this call.
+    :header: ``reactivate-daq``
+    Deactivate, then reactivate the DAQ; it will end in its activated state, ready to take data.  Psyllid must be in its activated state before this call.
 
 .. toggle-header::
-``quit-psyllid``
-----------------
-Instruct the Psyllid executable to exit.
+    :header: ``deactivate-daq``
+    Put in its deactivated state, in which it is not immediately ready to take data.  Psyllid must be in its activated state before this call.
+
+.. toggle-header::
+    :header: ``quit-psyllid``
+    Instruct the Psyllid executable to exit.
