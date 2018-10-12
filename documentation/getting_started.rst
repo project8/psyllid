@@ -17,7 +17,7 @@ The classes in the *control* layer control the *daq* layer and allow a user to i
 Psyllid knows different states: deactivated, activating, activated, running, canceled, do_restart, done and error.
 Data is only being taken in *running* state.
 
-For more information read the section on `How psyllid works`_.
+For more information read the sections `How psyllid works`_ and `DAQ Status`_.
 
 
 **A note on data rates and starting runs**
@@ -34,10 +34,16 @@ And in case of emergency: *Control-C*
 Running psyllid
 -----------------
 
+For installation instructions go here_
+
+.. _here: https://psyllid.readthedocs.io/en/latest/installation.html
+
 Running psyllid does not mean start a psyllid run. Psyllid starts in deactivated or activated status.
 
 Running requirements
 ^^^^^^^^^^^^^^^^^^^^
+
+
 
 - rabbit broker
 - broker authentication file
@@ -47,6 +53,12 @@ Start psyllid
 ^^^^^^^^^^^^^^
 
 The psyllid executable can be found in */path_to_build/bin/*. Running the executabel ``/path_to_build/bin/psyllid`` will result in a psyllid instance being created. Once started, psyllid will initialize its control classes, connect to the broker and start the pre-configured daq nodes. If psyllid cannot connect to a broker, it will exit.
+
+
+Permissions
+^^^^^^^^^^^^
+
+Generally, psyllid can be run without sudo permissions. However, they are required for using the *packet-receiver-fpa*. This node can shortcut the port and is therefore faster at reading the incoming packets. If you don't have sudo permissions you can only use the presets_ using the *packet-receiver-socker* node instead which cannot keep up with the ROACH2 packet rate.
 
 
 Configuration files
@@ -104,6 +116,8 @@ In the *streams* section one stream with the name *ch0* is configured. In this s
 In theory, psyllid can be run with multiple streams, each of which could be set up with a different node configuration. In practice though, psyllid is mostly used with only one stream set up and in case data should be read from multiple ports, multiple instances of psyllid are run in parallel.
 
 
+.. _presets:
+
 Node connections and presets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -127,7 +141,7 @@ Which nodes will be set up and how they will be connected can be specified eithe
           - "tfrr.out_0:strw.in_0"
           - "tfrr.out_1:term.in_0"
 
-The available presets_ can be found in `node configurations`_.
+The `available presets`_ can be found in `node configurations`_.
 
 If you want to use psyllid to process ROACH2 packets and write all the content to files use the *str-1ch-fpa* preset.
 If you want to take triggered data use *events-1ch-fpa*.
@@ -172,26 +186,27 @@ Here are some examples:
 
 
 * If you have a psyllid instance running (and it was configured to have "psyllid" as queue name), you can for example send a request to ask what state psyllid is in by running:
-   ::
+  ::
 
-      dripline get psyllid.daq-status -b rabbit_broker
+    dripline get psyllid.daq-status -b rabbit_broker
 
-    Deactivate and activate psyllid:
+  Deactivate and activate psyllid:
+  ::
 
-      dripline cmd psyllid.activate-daq -b rabbit_broker
+    dripline cmd psyllid.activate-daq -b rabbit_broker
 
-      dripline cmd psyllid.deactivate-daq -b rabbit_broker
+    dripline cmd psyllid.deactivate-daq -b rabbit_broker
 
 
 * Make psyllid exit:
-    ::
+  ::
 
-      dripline cmd psyllid.quit-psyllid -b rabbit_broker
+    dripline cmd psyllid.quit-psyllid -b rabbit_broker
 
 * To start a 500ms run:
-    ::
+  ::
 
-      dripline cmd psyllid.start-run duration=500 filename=a_test.egg -b rabbit_broker
+    dripline cmd psyllid.start-run duration=500 filename=a_test.egg -b rabbit_broker
 
 
 * Node configurations can also be changed by sending the relevant request.
@@ -241,8 +256,8 @@ Here is an example for an egg-reader configuraion:
 .. _Monarch: https://monarch.readthedocs.io/en/stable/index.html
 .. _Midge: https://midge.readthedocs.io/en/latest/
 .. _Dripline: https://dripline.readthedocs.io/en/latest/
-.. _presets: https://psyllid.readthedocs.io/en/latest/node_configurations.html#stream-presets
+.. _available presets: https://psyllid.readthedocs.io/en/latest/node_configurations.html#stream-presets
 .. _how psyllid works: https://psyllid.readthedocs.io/en/latest/how_psyllid_works.html
 .. _Psyllid API: https://psyllid.readthedocs.io/en/latest/api.html
-
+.. _DAQ Status: https://psyllid.readthedocs.io/en/latest/status_definitions.html
 
