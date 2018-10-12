@@ -2,8 +2,8 @@
 Installation Guide
 ===================
 
-Installation
--------------
+Requirements
+------------
 
 Operating Systems
 ^^^^^^^^^^^^^^^^^
@@ -28,8 +28,8 @@ Submodules
 * dripline-cpp
 * monarch
 
-Basic Installation Guide
-^^^^^^^^^^^^^^^^^^^^^^^^
+Basic Installation
+------------------
 
 1. Ensure the dependencies are installed.
 2. Clone::
@@ -65,7 +65,7 @@ Make sure to also pull the submodules by navigating to the cloned directory and 
 ``git submodule update --init --recursive``
 
 Commonly Used Build Options
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 - ``CMAKE_INSTALL_PREFIX``: the default is the build directory; change to wherever you want your libraries and binaries installed
 - ``CMAKE_BUILD_TYPE``: the default is ``DEBUG``; set to ``RELEASE`` for the fastest performance and less verbosity
