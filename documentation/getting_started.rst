@@ -5,11 +5,11 @@ Getting started
 Introduction
 -------------
 
-Psyllid is a data acquisition package developed by the Project 9 collaboration and it's purpose is to receive UDP packets via a port, unpack and analyze them in real-time and write data to egg-files_ using Monarch_.
+Psyllid is a data acquisition package developed by the Project 8 collaboration and it's purpose is to receive UDP packets via a port, unpack and analyze them in real-time and write data to egg-files_ using Monarch_.
 
 
-Currently, the Project 8 experiment uses a ROACH2_ board to continuesly digitize and packetize a mixed down RF-signal (for more details on the packet structure and content see RoachPackets_). The ROACH2 streams UDP packets at a rate of 24kHz via 3 channels to a server. In order to keep up with an incoming packet rate of 24kHz, Psyllid is written multi-threaded and the packet processing and data analysis is done in parallel by various nodes_.
-By running psyllid with different node-condigurations, psyllid can be used to serve different purposes. It can for example continously write the entire incoming data to files or examine the packet content and decide based on some pre-defined criteria whether or not to write out the conten.
+Currently, the Project 8 experiment uses a ROACH2_ board to continuosly digitize and packetize a mixed down RF-signal (for more details on the packet structure and content see RoachPackets_). The ROACH2 streams UDP packets at a rate of 24kHz via 3 10GBe connections to a server. In order to keep up with such a high rate of incoming packets, Psyllid is written multi-threaded and the packet processing and data analysis is done in parallel by various nodes_.
+By running psyllid with different `node configurations`_, psyllid can be used to serve different purposes. It can for example continously write the entire incoming data to files or examine the packet content and decide based on some pre-defined criteria whether or not to write out the content.
 
 
 
@@ -81,7 +81,15 @@ This is how a configuration file for running psyllid in streaming mode could loo
             strw:
     file-num: 0
 
-Fore more details on node configurations see the `node configurations`_ section.
+In this example the broker is running on localhost and a queue will be set up with the name `psyllid`.
+The *post-to-slack* option, allows psyllid to post some messages (like "psyllid is starting up" or "Run is commencing") to a slack channel. Under *daq*, some general settings are configured. For example the maximum file size is set to 500 MB which means that psyllid will continue to write in a new egg file once the size of the last egg file has reached this size.
+In the *streams* section one stream with the name *ch0* is configured. In this stream the nodes are connected according to the preset `str-1ch-fpa`_. The configurations of the individual nodes from this stream is specified withing the *stream* block. In theory, psyllid can be run with multiple streams, each of which could be set up with a different node configuration. In practice though, psyllid is mostly used with only one stream set up and in case data should be read from multiple ports, multiple instances of psyllid are run in parallel.
+
+
+Presets
+^^^^^^^^^
+
+
 
 Batch mode
 ^^^^^^^^^^^^^^
