@@ -1,16 +1,16 @@
-..server-api-label:
+.. _api-label:
 
 ##########
-Server API
+API
 ##########
 
-The server communicates with `dripline-standard <https://github.com/project8/dripline>`_ AMQP messages.
+Users interact with Psyllid using with `Dripline-standard <https://github.com/project8/dripline>`_ requests.
 
-The API documentation below is organized by message type.
+The API documentation below is organized into requests that are part of the Dripline standard, and those that are Psyllid-specific.  They are further divided by request type: RUN, GET, SET, and CMD.
 
 The routing key should consist of the server queue name, followed by the Routing Key Specifier (RKS): `[queue].[RKS]`.
 
-For each message type, the API includes the allowed RKS, Payload options, and contents of the Reply Payload.
+For each request type, the API includes the allowed RKS, Payload options, and contents of the Reply Payload.
 
 
 Dripline API
@@ -19,8 +19,9 @@ Dripline API
 OP_GET
 ^^^^^^
 
-``is-locked``
--------------
+.. toggle-header::
+:header: ``is-locked``
+----------------------
 Returns whether or not the server is locked out.
 
 *Reply Payload*

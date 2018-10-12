@@ -78,4 +78,4 @@ During Execution
 
 User interaction with Psyllid during execution is performed via the dripline protocol.   Psyllid uses the ``dripline-cpp`` library to enable that interface.  The ``request_receiver`` class (a ``dripline::hub``) ties dripline commands to particular functions in the ``stream_manager``, ``daq_control``, and ``run_server`` classes.  
 
-See the :ref:`server-api-label` page for more information about the dripline API for Psyllid.
+See the :ref:`api-label` page for more information about the dripline API for Psyllid.
