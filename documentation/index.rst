@@ -10,6 +10,7 @@ Contents:
    How Psyllid Works <how_psyllid_works>
    Psyllid API <api>
    Node Configurations <node_configurations>
+   DAQ Status <status_definitions>
    Roach Packets <roach_packets>
    Validation Log <validation_log>
    Installation <installation>

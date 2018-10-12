@@ -12,6 +12,11 @@ The routing key should consist of the server queue name, followed by the Routing
 
 For each request type, the API includes the allowed RKS, Payload options, and contents of the Reply Payload.
 
+**<batch-command-key>**
+All keys listed in the `batch-commands` node of the configuration are bound as command names and may be called.
+These add one or more commands to the batch_executor queue; the return code indicates only that the actions were queued, nothing about their execution status.
+The command ``hard-abort`` is defined in the default server_config to execute ``stop-run``.
+
 
 Dripline API
 ============
@@ -19,50 +24,48 @@ Dripline API
 OP_GET
 ^^^^^^
 
-``is-locked``
--------------
 .. toggle-header::
-    :header: Details:
-Returns whether or not the server is locked out.
+    :header: ``is-locked``
 
-*Reply Payload*
+    Returns whether or not the server is locked out.
 
-- ``is-locked=[true/false (bool)]``
+    *Reply Payload*
+
+    - ``is-locked=[true/false (bool)]``
 
 
 OP_CMD
 ^^^^^^
 
-``lock``
---------
-Requests that the server lockout be enabled. Nothing is done if already locked.
+.. toggle-header::
+    ``lock``
+    Requests that the server lockout be enabled. Nothing is done if already locked.
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``key=[UUID (string)]`` -- lockout key required for any lockable requests as long as the lock remains enabled
-- ``tag=[lockout tag (object)]`` -- information about the client that requested that the lock be enabled
+    - ``key=[UUID (string)]`` -- lockout key required for any lockable requests as long as the lock remains enabled
+    - ``tag=[lockout tag (object)]`` -- information about the client that requested that the lock be enabled
 
-``unlock``
-----------
-Requests that the server lockout be disabled.
+.. toggle-header::
+    ``unlock``
+    Requests that the server lockout be disabled.
 
-*Payload*
+    *Payload*
 
-- ``force=[true (bool)]`` -- *(optional)* Disables the lockout without a key.
+    - ``force=[true (bool)]`` -- *(optional)* Disables the lockout without a key.
 
-``ping``
---------
-Check that the server receives requests and sends replies. No other action is taken.
+.. toggle-header::
+    ``ping``
+    Check that the server receives requests and sends replies. No other action is taken.
 
-``set_condition``
------------------
-Cause the server to move to some defined state as quickly as possible; Psyllid implements conditions 10 and 12, both of which stop any ongoing run.
-_Note:_ set_condition is expected to be a broadcast command (routing key target is `broadcast` not `<psyllid-queue>`).
+.. toggle-header::
+    ``set_condition``
+    Cause the server to move to some defined state as quickly as possible; Psyllid implements conditions 10 and 12, both of which stop any ongoing run.
+    _Note:_ set_condition is expected to be a broadcast command (routing key target is `broadcast` not `<psyllid-queue>`).
 
+    *Payload*
 
-*Payload*
-
-- ``values=[condition (int)]`` -- the integer condition
+    - ``values=[condition (int)]`` -- the integer condition
 
 
 Psyllid API
@@ -72,6 +75,9 @@ OP_RUN
 ^^^^^^
 
 The `run` message type is used to start a run.
+
+.. toggle-header::
+
 
 All `run` requests are lockable.
 
@@ -93,6 +99,7 @@ The `get` message is used to request information from the server.
 
 No `get` requests are lockable.
 
+.. toggle-header::
 ``daq-status``
 --------------
 Returns the current acquisition configuration.
@@ -102,6 +109,7 @@ Returns the current acquisition configuration.
 - ``status: [status (string)]`` -- human-readable status message
 - ``status-value: [status code (unsigned int)]`` -- machine-redable status message
 
+.. toggle-header::
 ``node-config.[stream].[node]``
 -------------------------------
 Returns the configuration of the node requested.
@@ -110,6 +118,7 @@ Returns the configuration of the node requested.
 
 - ``[Full node configuration]``
 
+.. toggle-header::
 ``node-config.[stream].[node].[parameter]``
 -------------------------------------------
 Returns the configuration value requested from the node requested.
@@ -118,6 +127,7 @@ Returns the configuration value requested from the node requested.
 
 - ``[parameter name]: [value]`` -- Parameter name and value
 
+.. toggle-header::
 ``active-config.[stream].[node]``
 -------------------------------
 Returns the configuration of the active DAQ node requested.
@@ -126,6 +136,7 @@ Returns the configuration of the active DAQ node requested.
 
 - ``[Full node configuration]``
 
+.. toggle-header::
 ``active-config.[stream].[node].[parameter]``
 -------------------------------------------
 Returns the configuration value requested from the active DAQ node requested.  
@@ -135,6 +146,7 @@ Please note that this action will not necessarily return the value in use (e.g. 
 
 - ``[parameter name]: [value]`` -- Parameter name and value
 
+.. toggle-header::
 ``stream-list``
 ---------------
 Returns a list of all streams in the psyllid instance
@@ -143,6 +155,7 @@ Returns a list of all streams in the psyllid instance
 
 - ``streams: [[stream_name (string)]]`` -- array of names of the streams
 
+.. toggle-header::
 ``node-list.[stream]``
 ----------------------
 Returns a list of all the nodes in the indicated stream
@@ -151,6 +164,7 @@ Returns a list of all the nodes in the indicated stream
 
 - ``nodes: [[node_name (string)]]`` -- array of names of the nodes
 
+.. toggle-header::
 ``filename.[file_number (optional)]``
 ------------
 Returns the filename that will be written to by writters registered to ``file_number``.  Default for ``file_number`` is 0.
@@ -159,6 +173,7 @@ Returns the filename that will be written to by writters registered to ``file_nu
 
 - ``values: [[filename (string)]]`` -- Filename as the first element of the ``values`` array
 
+.. toggle-header::
 ``description.[file_number (optional)]``
 ---------------
 Returns the description that will be written to the file header for file corresponding to ``file_number``.  Default for ``file_number`` is 0.
@@ -167,6 +182,7 @@ Returns the description that will be written to the file header for file corresp
 
 - ``values: [[description (string)]]`` -- Description as the first element of the ``values`` array
 
+.. toggle-header::
 ``duration``
 ------------
 Returns the run duration (in ms).
@@ -175,6 +191,7 @@ Returns the run duration (in ms).
 
 - ``values: [[duration (unsigned int)]]`` -- Duration in ms as the first element of the ``values`` array
 
+.. toggle-header::
 ``use-monarch``
 ---------------
 Returns the use-monarch flag.
@@ -191,6 +208,7 @@ The `set` message type is used to set a value to a parameter in the configuratio
 
 All `set` requests are lockable.
 
+.. toggle-header::
 ``node-config.[stream].[node]``
 -------------------------------
 Configures one or more parameters within a node.  Takes effect next time the DAQ is activated.
@@ -203,6 +221,7 @@ Configures one or more parameters within a node.  Takes effect next time the DAQ
 
 - ``[the parameters that were set (dictionary)]`` -- Parameter name:value pairs that were set
 
+.. toggle-header::
 ``node-config.[stream].[node].[parameter]``
 -------------------------------------------
 Configure a single parameter in a node.  Takes effect next time the DAQ is activated.
@@ -211,6 +230,7 @@ Configure a single parameter in a node.  Takes effect next time the DAQ is activ
 
 - ``values: [[value]]`` -- Parameter value to be set as the first element of the ``values`` array.
 
+.. toggle-header::
 ``active-config.[stream].[node]``
 -------------------------------
 Configures one or more parameters within an active DAQ node.  Takes effect immediately.  
@@ -223,6 +243,7 @@ Configures one or more parameters within an active DAQ node.  Takes effect immed
 
 - ``[the parameters that were set (dictionary)]`` -- Parameter name:value pairs that were set
 
+.. toggle-header::
 ``active-config.[stream].[node].[parameter]``
 -------------------------------------------
 Configure a single parameter in an active DAQ node.  Takes effect immediately.  
@@ -232,6 +253,7 @@ Please note that this action will not necessarily be useful for all node paramet
 
 - ``values: [[value]]`` -- Parameter value to be set as the first element of the ``values`` array.
 
+.. toggle-header::
 ``filename.[file_number (optional)]``
 ------------
 Sets the filename (relative or absolute) that will be written to by the writers register to ``file_number``.  Default for ``file_number`` is 0.  Takes effect for the next run.
@@ -240,6 +262,7 @@ Sets the filename (relative or absolute) that will be written to by the writers 
 
 - ``values: [[filename (string)]]`` -- Filename
 
+.. toggle-header::
 ``description.[file_number (optional)]``
 ---------------
 Sets the description that will be written to the file header for the file corresponding to ``file_number``.  Default for ``file_number`` is 0.  Takes effect for the next run.
@@ -252,6 +275,7 @@ Sets the description that will be written to the file header for the file corres
 
 - ``[the parameter that was set as a dictionary]`` -- Parameter name:value pair that was set
 
+.. toggle-header::
 ``duration``
 ------------
 Sets the run duration in ms. Takes effect for the next run.
@@ -260,6 +284,7 @@ Sets the run duration in ms. Takes effect for the next run.
 
 - ``values: [[duration (unsigned int)]]`` -- Duration in ms
 
+.. toggle-header::
 ``use-monarch``
 ---------------
 Sets the use-monarch flag. Takes effect for the next run.
@@ -276,6 +301,7 @@ The `cmd` message type is used to run a variety of different command instruction
 
 All `command` requests are lockable.
 
+.. toggle-header::
 ``add-stream``
 --------------
 Adds a stream to the DAQ configuration.  Takes effect next time the DAQ is activated.
@@ -285,6 +311,7 @@ Adds a stream to the DAQ configuration.  Takes effect next time the DAQ is activ
 - ``name: [stream name (string)]`` -- Unique name for the stream.
 - ``config: [stream configuration (dictionary)]`` -- Configuration for the stream
 
+.. toggle-header::
 ``remove-stream``
 -----------------
 Remove a stream from the DAQ configuration.  Takes effect next time the DAQ is activated.
@@ -293,6 +320,7 @@ Remove a stream from the DAQ configuration.  Takes effect next time the DAQ is a
 
 - ``values: [[stream name (string)]]`` -- Name of the stream to remove as the first element of the ``values`` array
 
+.. toggle-header::
 ``run-daq-cmd.[stream].[node].[cmd]``
 -------------------------------------
 Instruct an active DAQ node to execute a particular command.  Please note that this action is not necessarily thread-safe.
@@ -305,32 +333,32 @@ Instruct an active DAQ node to execute a particular command.  Please note that t
 
 - ``[the command configuration given to the node (dictionary)]`` -- Repeating what the node was told to do
 
+.. toggle-header::
 ``stop-run``
 ------------
 Stop a run that's currently going on.
 
+.. toggle-header::
 ``start-run``
 -------------
 Same as the OP_RUN command above.
 
+.. toggle-header::
 ``activate-daq``
 ----------------
 Put the DAQ in its actiavated state to be ready to take data.  Psyllid must be in its deactivated state before this call.
 
+.. toggle-header::
 ``reactivate-daq``
 ------------------
 Deactivate, then reactivate the DAQ; it will end in its activated state, ready to take data.  Psyllid must be in its activated state before this call.
 
+.. toggle-header::
 ``deactivate-daq``
 ------------------
 Put in its deactivated state, in which it is not immediately ready to take data.  Psyllid must be in its activated state before this call.
 
+.. toggle-header::
 ``quit-psyllid``
 ----------------
 Instruct the Psyllid executable to exit.
-
-<batch-command-key>
--------------------
-All keys listed in the `batch-commands` node of the configuration are bound as command names and may be called.
-These add one or more commands to the batch_executor queue; the return code indicates only that the actions were queued, nothing about their execution status.
-The command `hard-abort` is defined in the default server_config to execute `stop-run`.
