@@ -6,6 +6,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   Getting Started <getting_started>
    Node Configurations <node_configurations>
    Roach Packets <roach_packets>
    Server API <server_api>
