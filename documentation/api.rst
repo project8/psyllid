@@ -23,11 +23,12 @@ OP_GET
 -------------
 .. toggle-header::
     :header: Details:
-Returns whether or not the server is locked out.
+    
+    Returns whether or not the server is locked out.
 
-*Reply Payload*
+    *Reply Payload*
 
-- ``is-locked=[true/false (bool)]``
+    - ``is-locked=[true/false (bool)]``
 
 
 OP_CMD
