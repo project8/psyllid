@@ -6,6 +6,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   Installation <installation>
    Getting Started <getting_started>
    How Psyllid Works <how_psyllid_works>
    Psyllid API <api>
@@ -13,7 +14,6 @@ Contents:
    DAQ Status <status_definitions>
    Roach Packets <roach_packets>
    Validation Log <validation_log>
-   Installation <installation>
 
 .. end of toc
 .. (you must not remove or modify the above comment line, it is required by the API Doc generation)
