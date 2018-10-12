@@ -3,6 +3,8 @@ Psyllid
 
 DAQ software for the Project 8 experiment.
 
+Documentation can be found at https://psyllid.readthedocs.io.
+
 Requirements
 ------------
 
