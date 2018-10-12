@@ -8,9 +8,9 @@ Contents:
 
    Getting Started <getting_started>
    How Psyllid Works <how_psyllid_works>
+   Psyllid API <api>
    Node Configurations <node_configurations>
    Roach Packets <roach_packets>
-   Server API <server_api>
    Validation Log <validation_log>
    Installation <installation>
 
