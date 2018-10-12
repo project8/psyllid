@@ -191,7 +191,7 @@ Assuming you have dragonfly_ installed, here are some examples for how to intera
 
     dragonfly get psyllid.daq-status -b rabbit_broker
 
-  Deactivate and activate psyllid:
+* Deactivate and activate psyllid:
   ::
 
     dragonfly cmd psyllid.activate-daq -b rabbit_broker
