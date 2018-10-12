@@ -162,7 +162,7 @@ In this example, the psyllid instance will not try to connect to the broker and 
 Inteacting with psyllid
 -------------------------
 
-As mentioned a few times above, it is possible to send dripline_ requests via a rabbitmq broker to a running psyllid instance. There is a detailed list of which requests can be received and processed in `Server API`_.
+As mentioned a few times above, it is possible to send dripline_ requests via a rabbitmq broker to a running psyllid instance. There is a detailed list of which requests can be received and processed in `Psyllid API`_.
 
 
 If you have a psyllid instance running (and it was configured to have "psyllid" as queue name), you can for example send a request to ask what state psyllid is in by running:
@@ -220,6 +220,6 @@ Here is an example for an egg-reader configuraion:
 .. _Dripline: https://dripline.readthedocs.io/en/latest/
 .. _presets: https://psyllid.readthedocs.io/en/latest/node_configurations.html#stream-presets
 .. _how psyllid works: https://psyllid.readthedocs.io/en/latest/how_psyllid_works.html
-.. _Server API: https://psyllid.readthedocs.io/en/latest/server_api.html
+.. _Psyllid API: https://psyllid.readthedocs.io/en/latest/api.html
 
 
