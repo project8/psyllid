@@ -12,6 +12,23 @@ Currently, the Project 8 experiment uses a ROACH2_ board to continuosly digitize
 By running psyllid with different `node configurations`_, psyllid can be used to serve different purposes. It can for example continously write the entire incoming data to files or examine the packet content and decide based on some pre-defined criteria whether or not to write out the content.
 
 
+Psyllid's internal structure basically consists of 2 layers: the *control* layer and the *daq* layer.
+The classes in the *control* layer control the *daq* classes and allow a user to interact with psyllid. Dripline_ commands are received by the *run-server* and are forwarded to their destination node-binding. Upon request, an instance of the *daq-control* class tells Midge_ to deactivate or activate the daq-nodes and to start or stop a run. 
+Psyllid knows different states: deactivated, activating, activated, running, canceled, do_restart, done and error.
+Data is only being taken in *running* state.
+
+For more information read the sections on `control` and `activation cycle`.
+
+
+**A note on data rates and starting runs**
+
+
+Psyllid will only go to *running* state if told by the user via a `on-startup`_ command or by sending the *start-run* a dripline_ request. When a writer node is configured psyllid will write data to files in this state.
+In `streaming-mode` the data rate is about 200MB/s. So be careful with run durations. The default run-duration is 1s. If you start a run without specifying a run duration or a filepath it will result in a 200MB file in the directory in which you ran the psyllid executable.
+In all other states no data is being taken/written. So as long as you don't tell psyllid to start-running you don't need to worry about accidently taking data without noticing.
+In case of emergency: *Control-C*
+
+
 
 
 Running psyllid
@@ -31,17 +48,15 @@ Start psyllid
 The psyllid executable can be found in */path_to_build/bin/*. Running the exectuabel ``/path_to_build/bin/psyllid`` will result in a psyllid instance being created. Once started, psyllid will initialize it's control classes, connect to the broker and start the pre-configured daq nodes. If psyllid cannot connect to a broker, it will exit.
 
 
-Configuration file
-^^^^^^^^^^^^^^^^^^^
+Configuration files
+---------------------
 
 By using the command line option *-c* and specifying the path to a configuration file in YAML-format
 ::
 
  bin/psyllid -c config=/path-to-config/config.yaml
 
-psyllid's node connections and node configurations can be set during start-up.
-
-This is how a configuration file for running psyllid in streaming mode could look like:
+psyllid's will be set up according to whatever is specified in the file and overwrite its default settings. This is how a configuration file for running psyllid in streaming mode could look like:
 
 ::
 
@@ -82,8 +97,8 @@ This is how a configuration file for running psyllid in streaming mode could loo
     file-num: 0
 
 In this example the broker is running on localhost and a queue will be set up with the name `psyllid`. If no path to the broker-authentication file is provided, Psyllid will look for *~/.project8_authentications.json*.
-The *post-to-slack* option, allows psyllid to post some messages (like "psyllid is starting up" or "Run is commencing") to a slack channel. Under *daq*, some general settings are configured. For example the maximum file size is set to 500 MB which means that psyllid will continue to write in a new egg file once the size of the last egg file has reached this size.
-In the *streams* section one stream with the name *ch0* is configured. In this stream the nodes are connected according to the preset *str-1ch-fpa*. The configurations of the individual nodes from this stream is specified withing the *stream* block. In theory, psyllid can be run with multiple streams, each of which could be set up with a different node configuration. In practice though, psyllid is mostly used with only one stream set up and in case data should be read from multiple ports, multiple instances of psyllid are run in parallel.
+The *post-to-slack* option, allows psyllid to post some messages (like "psyllid is starting up" or "Run is commencing") to a slack channel. Under *daq*, some general settings are configured. For example the maximum file size is set to 500 MB which means that psyllid will continue to write to a new egg file once the size of the last egg file has reached this size.
+In the *streams* section one stream with the name *ch0* is configured. In this stream the nodes are connected according to the preset *str-1ch-fpa*. The configurations of the individual nodes from this stream must be specified withing the *stream* block. In theory, psyllid can be run with multiple streams, each of which could be set up with a different node configuration. In practice though, psyllid is mostly used with only one stream set up and in case data should be read from multiple ports, multiple instances of psyllid are run in parallel.
 
 
 Node connections and presets
@@ -109,11 +124,11 @@ Which nodes will be set up and how they will be connected can be specified eithe
           - "tfrr.out_0:strw.in_0"
           - "tfrr.out_1:term.in_0"
 
-The available presets can be found here_.
-
-.. _here: https://psyllid.readthedocs.io/en/latest/node_configurations.html#stream-presets
+The available presets_ can be found in `node configurations`_.
 
 
+
+.. _on-startup:
 
 on-startup
 ^^^^^^^^^^^^^
@@ -178,6 +193,7 @@ Here is an example for an egg-reader configuraion:
 .. _egg-files: https://monarch.readthedocs.io/en/stable/EggStandard.v3.2.0.html
 .. _Monarch: https://monarch.readthedocs.io/en/stable/index.html
 .. _Midge: https://midge.readthedocs.io/en/latest/
-
+.. _Dripline: https://dripline.readthedocs.io/en/latest/
+.. _presets: https://psyllid.readthedocs.io/en/latest/node_configurations.html#stream-presets
 
 
