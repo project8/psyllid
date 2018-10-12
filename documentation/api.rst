@@ -21,7 +21,7 @@ OP_GET
 
 .. toggle-header::
     :header: ``is-locked``
---------------------------
+    ----------------------
 
     Returns whether or not the server is locked out.
 
