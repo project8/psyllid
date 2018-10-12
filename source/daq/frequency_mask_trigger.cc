@@ -69,7 +69,8 @@ namespace psyllid
             f_threshold_type( threshold_t::sigma ),
             f_n_spline_points( 20 ),
             f_status( status_t::mask_update ),
-            f_trigger_mode (trigger_mode_t::single_level ),
+            f_trigger_mode(trigger_mode_t::single_level ),
+            f_n_excluded_bins( 0 ),
             f_exe_func( &frequency_mask_trigger::exe_apply_threshold ),
             f_mask(),
             f_mask2(),
@@ -540,6 +541,8 @@ namespace psyllid
             trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0., t_power_amp = 0.;
             unsigned t_array_size = 0;
+            unsigned t_loop_lower_limit = 0;
+            unsigned t_loop_upper_limit = 0;
 
             f_mask_mutex.lock();
             std::vector< double > t_mask_buffer( f_mask );
@@ -580,6 +583,10 @@ namespace psyllid
                     try
                     {
                         t_array_size = t_freq_data->get_array_size();
+                        t_loop_lower_limit = f_n_excluded_bins;
+                        t_loop_upper_limit = t_array_size - f_n_excluded_bins;
+                        LDEBUG( plog, "Array size: "<<t_array_size );
+                        LDEBUG( plog, "Looping from "<<t_loop_lower_limit<<" to "<<t_loop_upper_limit-1 );
 
                         if( a_ctx.f_first_packet_after_start )
                         {
@@ -594,7 +601,7 @@ namespace psyllid
                         t_trigger_flag->set_high_threshold( false );
                         t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
-                        for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                        for( unsigned i_bin = t_loop_lower_limit; i_bin < t_loop_upper_limit; ++i_bin )
                         {
                             t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
@@ -686,6 +693,8 @@ namespace psyllid
             trigger_flag* t_trigger_flag = nullptr;
             double t_real = 0., t_imag = 0., t_power_amp = 0.;
             unsigned t_array_size = 0;
+            unsigned t_loop_lower_limit = 0;
+            unsigned t_loop_upper_limit = 0;
 
 
             f_mask_mutex.lock();
@@ -697,6 +706,7 @@ namespace psyllid
             f_mask_mutex.unlock();
 
             LDEBUG( plog, "Entering apply-two-thresholds loop" );
+
             while( ! is_canceled() && ! f_break_exe_func.load() )
             {
                 // the stream::get function is called at the end of the loop so
@@ -731,6 +741,10 @@ namespace psyllid
                     try
                     {
                         t_array_size = t_freq_data->get_array_size();
+                        t_loop_lower_limit = f_n_excluded_bins;
+                        t_loop_upper_limit = t_array_size - f_n_excluded_bins;
+                        LDEBUG( plog, "Array size: "<<t_array_size );
+                        LDEBUG( plog, "Looping from "<<t_loop_lower_limit<<" to "<<t_loop_upper_limit-1 );
 
                         if( a_ctx.f_first_packet_after_start )
                         {
@@ -749,7 +763,7 @@ namespace psyllid
                         t_trigger_flag->set_high_threshold( false );
                         t_trigger_flag->set_id( t_freq_data->get_pkt_in_session() );
 
-                        for( unsigned i_bin = 0; i_bin < t_array_size; ++i_bin )
+                        for( unsigned i_bin = t_loop_lower_limit; i_bin < t_loop_upper_limit; ++i_bin )
                         {
                             t_real = t_freq_data->get_array()[ i_bin ][ 0 ];
                             t_imag = t_freq_data->get_array()[ i_bin ][ 1 ];
@@ -894,6 +908,10 @@ namespace psyllid
         {
             a_node->set_threshold_type( a_config["threshold-type"]().as_string() );
         }
+        if( a_config.has( "n-excluded-bins" ))
+        {
+            a_node->set_n_excluded_bins( a_config.get_value< unsigned >( "n-excluded-bins" ) );
+        }
         if( a_config.has( "mask-configuration" ) )
         {
             const scarab::param t_mask_config = a_config["mask-configuration"];
@@ -932,6 +950,8 @@ namespace psyllid
         a_config.add( "length", a_node->get_length() );
         a_config.add( "trigger-mode", a_node->get_trigger_mode_str() );
         a_config.add( "threshold-type", a_node->get_threshold_type_str() );
+        a_config.add( "n-excluded-bins", a_node->get_n_excluded_bins() );
+
         // get threshold values corresponding only to the configured threshold type
         switch ( a_node->get_threshold_type() )
         {
