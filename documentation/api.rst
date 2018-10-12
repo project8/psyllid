@@ -19,11 +19,10 @@ Dripline API
 OP_GET
 ^^^^^^
 
-``is-locked``
--------------
 .. toggle-header::
-    :header: Details:
-    
+    :header: ``is-locked``
+--------------------------
+
     Returns whether or not the server is locked out.
 
     *Reply Payload*
