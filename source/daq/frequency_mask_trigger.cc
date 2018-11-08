@@ -910,7 +910,7 @@ namespace psyllid
         }
         if( a_config.has( "n-excluded-bins" ))
         {
-            a_node->set_n_excluded_bins( a_config.get_value< unsigned >( "n-excluded-bins" ) );
+            a_node->set_n_excluded_bins( a_config["n-excluded-bins"]().as_uint() );
         }
         if( a_config.has( "mask-configuration" ) )
         {
