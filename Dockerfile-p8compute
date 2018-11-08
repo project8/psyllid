@@ -1,6 +1,6 @@
 FROM project8/p8compute_dependencies:v0.2.0_psyllid as psyllid_common
 
-ENV PSYLLID_TAG=v1.9.0
+ENV PSYLLID_TAG=v1.9.1
 ENV PSYLLID_BUILD_PREFIX=/usr/local/p8/katydid/$PSYLLID_TAG
 
 RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
@@ -23,7 +23,7 @@ RUN source $PSYLLID_BUILD_PREFIX/setup.sh &&\
     git clone https://github.com/project8/psyllid &&\
     cd psyllid &&\
     git fetch && git fetch --tags &&\
-    git checkout hotfix/dl_hf &&\
+    git checkout $PSYLLID_TAG &&\
     git submodule update --init --recursive &&\
     mkdir build &&\
     cd build &&\
@@ -31,8 +31,6 @@ RUN source $PSYLLID_BUILD_PREFIX/setup.sh &&\
     cmake -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX -D Psyllid_ENABLE_FPA=FALSE .. &&\
     make -j3 install &&\
     /bin/true
-
-#    git checkout $PSYLLID_TAG &&\
 
 ########################
 FROM psyllid_common
