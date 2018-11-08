@@ -23,7 +23,7 @@ RUN source $PSYLLID_BUILD_PREFIX/setup.sh &&\
     git clone https://github.com/project8/psyllid &&\
     cd psyllid &&\
     git fetch && git fetch --tags &&\
-    git checkout $PSYLLID_TAG &&\
+    git checkout hotfix/dl_hf &&\
     git submodule update --init --recursive &&\
     mkdir build &&\
     cd build &&\
@@ -31,6 +31,8 @@ RUN source $PSYLLID_BUILD_PREFIX/setup.sh &&\
     cmake -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX .. &&\
     make -j3 install &&\
     /bin/true
+
+#    git checkout $PSYLLID_TAG &&\
 
 ########################
 FROM psyllid_common
