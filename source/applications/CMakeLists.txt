@@ -7,20 +7,20 @@ if( Psyllid_ENABLE_EXECUTABLES )
     set( lib_dependencies
         PsyllidUtility
         PsyllidData
-        PsyllidDAQ
+        #PsyllidDAQ
         PsyllidControl
     )
 
     set( programs
-        grab_packet
+        #grab_packet
         psyllid
     )
 
     if( Psyllid_BUILD_FPA )
         set( programs
              ${programs}
-             roach_daq_1chan
-             roach_daq_streaming_1chan
+             #roach_daq_1chan
+             #roach_daq_streaming_1chan
         )
     endif( Psyllid_BUILD_FPA )
 

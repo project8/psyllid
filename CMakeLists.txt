@@ -98,7 +98,6 @@ include_directories( BEFORE ${PROJECT_SOURCE_DIR}/external/tk_spline )
 include_directories( BEFORE
     source/control
     source/data
-    source/daq
     source/utility
 )
 
@@ -106,7 +105,6 @@ include_directories( BEFORE
 # build this project
 add_subdirectory( source/utility )
 add_subdirectory( source/data )
-add_subdirectory( source/daq )
 add_subdirectory( source/control )
 
 add_subdirectory( source/applications )
