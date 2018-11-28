@@ -111,3 +111,5 @@ add_subdirectory( source/control )
 
 add_subdirectory( source/applications )
 add_subdirectory( source/test )
+
+pbuilder_variables_for_parent()
