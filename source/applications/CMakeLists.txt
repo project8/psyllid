@@ -8,13 +8,6 @@ if( Psyllid_ENABLE_EXECUTABLES )
     message( STATUS "%%%%% Psyllid executables library dependencies: ${all_libs}" )
     message( STATUS "      midge_LIBRARIES: ${Midge_EXE_LIBRARIES}" )
 
-    set( lib_dependencies
-        PsyllidUtility
-        PsyllidData
-        #PsyllidDAQ
-        PsyllidControl
-    )
-
     set( programs
         #grab_packet
         psyllid
@@ -28,6 +21,6 @@ if( Psyllid_ENABLE_EXECUTABLES )
         )
     endif( Psyllid_BUILD_FPA )
 
-    pbuilder_executables( programs lib_dependencies )
+    pbuilder_executables( programs all_libs )
 
 endif( Psyllid_ENABLE_EXECUTABLES )
