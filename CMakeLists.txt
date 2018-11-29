@@ -11,6 +11,9 @@ include( PackageBuilder )
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/cmake )
 include( MidgeUtility )
 
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+include( Psyllid )
+
 pbuilder_prepare_project()
 
 
@@ -98,7 +101,6 @@ include_directories( BEFORE ${PROJECT_SOURCE_DIR}/external/tk_spline )
 include_directories( BEFORE
     source/control
     source/data
-    source/daq
     source/utility
 )
 
@@ -106,8 +108,9 @@ include_directories( BEFORE
 # build this project
 add_subdirectory( source/utility )
 add_subdirectory( source/data )
-add_subdirectory( source/daq )
 add_subdirectory( source/control )
 
-add_subdirectory( source/applications )
+#add_subdirectory( source/applications )
 add_subdirectory( source/test )
+
+pbuilder_variables_for_parent()
