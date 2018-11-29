@@ -5,8 +5,6 @@
 if( Psyllid_ENABLE_EXECUTABLES )
 
     get_property( all_libs GLOBAL PROPERTY ${PROJECT_NAME}_LIBRARIES )
-    message( STATUS "%%%%% Psyllid executables library dependencies: ${all_libs}" )
-    message( STATUS "      midge_LIBRARIES: ${Midge_EXE_LIBRARIES}" )
 
     set( programs
         #grab_packet
