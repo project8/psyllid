@@ -10,6 +10,7 @@ include( PackageBuilder )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/cmake )
 include( MidgeUtility )
+
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 include( Psyllid )
 
@@ -109,7 +110,7 @@ add_subdirectory( source/utility )
 add_subdirectory( source/data )
 add_subdirectory( source/control )
 
-add_subdirectory( source/applications )
+#add_subdirectory( source/applications )
 add_subdirectory( source/test )
 
 pbuilder_variables_for_parent()
