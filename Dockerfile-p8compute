@@ -1,7 +1,7 @@
 FROM project8/p8compute_dependencies:v0.2.0_psyllid as psyllid_common
 
 ENV PSYLLID_TAG=v1.9.1
-ENV PSYLLID_BUILD_PREFIX=/usr/local/p8/katydid/$PSYLLID_TAG
+ENV PSYLLID_BUILD_PREFIX=/usr/local/p8/psyllid/$PSYLLID_TAG
 
 RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
     cd $PSYLLID_BUILD_PREFIX &&\
