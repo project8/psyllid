@@ -360,7 +360,7 @@ namespace psyllid
 
 #define REGISTER_NODE_AND_BUILDER( node_class, node_name, node_binding ) \
     static ::scarab::registrar< ::midge::node, node_class > s_node_##node_class##_registrar( node_name ); \
-    static ::scarab::registrar< ::psyllid::node_builder, _node_builder< node_class, node_binding > > s_node_builder_##node_class##_registrar( node_name );
+    static ::scarab::registrar< ::psyllid::node_builder, ::psyllid::_node_builder< node_class, node_binding > > s_node_builder_##node_class##_registrar( node_name );
 
 
 } /* namespace psyllid */
