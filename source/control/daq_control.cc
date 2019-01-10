@@ -875,7 +875,7 @@ namespace psyllid
 
             std::string t_description =  a_request->payload()["values"][0]().as_string();
             LDEBUG( plog, "Setting description for file <" << t_file_num << "> to <" << t_description << ">" );
-            set_filename( t_description, t_file_num );
+            set_description( t_description, t_file_num );
 
             return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
         }
