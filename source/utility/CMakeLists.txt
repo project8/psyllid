@@ -4,6 +4,7 @@
 
 set( headers
     byte_swap.hh
+    global_config.hh
     locked_resource.hh
     message_relayer.hh
     psyllid_constants.hh
@@ -12,6 +13,7 @@ set( headers
     signal_handler.hh
 )
 set( sources
+    global_config.cc
     message_relayer.cc
     psyllid_error.cc
     signal_handler.cc
