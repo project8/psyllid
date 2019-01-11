@@ -43,6 +43,18 @@ Fixes:
 Log
 ---
 
+Version: 1.9.2
+~~~~~~~~~~~~~~
+
+Release Date: January 10, 2019
+''''''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Fixed setting of the run description via dripline
+
+
 Version: 1.8.3
 ~~~~~~~~~~~~~~
 
