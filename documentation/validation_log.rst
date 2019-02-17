@@ -43,6 +43,18 @@ Fixes:
 Log
 ---
 
+Version: 1.9.3
+~~~~~~~~~~~~~~
+
+Release Date: February 17, 2019
+'''''''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Fixed missing ampersand in the FMT binding
+
+
 Version: 1.9.2
 ~~~~~~~~~~~~~~
 
