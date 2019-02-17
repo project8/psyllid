@@ -914,7 +914,7 @@ namespace psyllid
         }
         if( a_config.has( "mask-configuration" ) )
         {
-            const scarab::param t_mask_config = a_config["mask-configuration"];
+            const scarab::param& t_mask_config = a_config["mask-configuration"];
             if ( t_mask_config.is_value() )
             {
                 scarab::param_translator t_param_translator = scarab::param_translator();
