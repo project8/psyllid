@@ -9,6 +9,7 @@
 
 #include "psyllid_constants.hh"
 #include "daq_control.hh"
+#include "global_config.hh"
 #include "message_relayer.hh"
 #include "request_receiver.hh"
 #include "signal_handler.hh"
@@ -43,6 +44,8 @@ namespace psyllid
             f_component_mutex(),
             f_status( k_initialized )
     {
+        global_config* t_global_config = global_config::create_instance( );
+        t_global_config->set_config( f_config );
     }
 
     run_server::~run_server()
