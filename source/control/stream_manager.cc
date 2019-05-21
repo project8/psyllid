@@ -529,7 +529,7 @@ namespace psyllid
             try
             {
                 _configure_node( t_target_stream, t_target_node, t_param_to_set );
-                a_reply_pkg.f_payload.merge( t_param_to_set );
+                t_payload.merge( t_param_to_set );
             }
             catch( std::exception& e )
             {
@@ -643,6 +643,8 @@ namespace psyllid
         stream_manager::stream_template::nodes_t* t_these_nodes = &(f_streams[ t_target_stream ].f_nodes);
 
         LDEBUG( plog, "Getting list of nodes from the stream handler" );
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
         try
         {
             scarab::param_array t_node_list;
@@ -650,7 +652,7 @@ namespace psyllid
             {
                 t_node_list.push_back( scarab::param_value( t_nodes_it->first ) );
             }
-            a_reply_pkg.f_payload.add( "nodes", t_node_list );
+            t_payload.add( "nodes", t_node_list );
         }
         catch( std::exception& e )
         {
