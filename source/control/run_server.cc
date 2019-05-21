@@ -120,38 +120,38 @@ namespace psyllid
         using namespace std::placeholders;
 
         // set the run request handler
-        f_request_receiver->set_run_handler( std::bind( &daq_control::handle_start_run_request, f_daq_control, _1, _2 ) );
+        f_request_receiver->set_run_handler( std::bind( &daq_control::handle_start_run_request, f_daq_control, _1 ) );
 
         // add get request handlers
-        //f_request_receiver->register_get_handler( "server-status", std::bind( &run_server::handle_get_server_status_request, this, _1, _2 ) );
-        f_request_receiver->register_get_handler( "node-config", std::bind( &stream_manager::handle_dump_config_node_request, f_stream_manager, _1, _2 ) );
-        f_request_receiver->register_get_handler( "active-config", std::bind( &daq_control::handle_dump_config_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_get_handler( "daq-status", std::bind( &daq_control::handle_get_status_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_get_handler( "filename", std::bind( &daq_control::handle_get_filename_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_get_handler( "description", std::bind( &daq_control::handle_get_description_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_get_handler( "duration", std::bind( &daq_control::handle_get_duration_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_get_handler( "use-monarch", std::bind( &daq_control::handle_get_use_monarch_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_get_handler( "stream-list", std::bind( &stream_manager::handle_get_stream_list_request, f_stream_manager, _1, _2 ) );
-        f_request_receiver->register_get_handler( "node-list", std::bind( &stream_manager::handle_get_stream_node_list_request, f_stream_manager, _1, _2 ) );
+        //f_request_receiver->register_get_handler( "server-status", std::bind( &run_server::handle_get_server_status_request, this, _1 ) );
+        f_request_receiver->register_get_handler( "node-config", std::bind( &stream_manager::handle_dump_config_node_request, f_stream_manager, _1 ) );
+        f_request_receiver->register_get_handler( "active-config", std::bind( &daq_control::handle_dump_config_request, f_daq_control, _1 ) );
+        f_request_receiver->register_get_handler( "daq-status", std::bind( &daq_control::handle_get_status_request, f_daq_control, _1 ) );
+        f_request_receiver->register_get_handler( "filename", std::bind( &daq_control::handle_get_filename_request, f_daq_control, _1 ) );
+        f_request_receiver->register_get_handler( "description", std::bind( &daq_control::handle_get_description_request, f_daq_control, _1 ) );
+        f_request_receiver->register_get_handler( "duration", std::bind( &daq_control::handle_get_duration_request, f_daq_control, _1 ) );
+        f_request_receiver->register_get_handler( "use-monarch", std::bind( &daq_control::handle_get_use_monarch_request, f_daq_control, _1 ) );
+        f_request_receiver->register_get_handler( "stream-list", std::bind( &stream_manager::handle_get_stream_list_request, f_stream_manager, _1 ) );
+        f_request_receiver->register_get_handler( "node-list", std::bind( &stream_manager::handle_get_stream_node_list_request, f_stream_manager, _1 ) );
 
         // add set request handlers
-        f_request_receiver->register_set_handler( "node-config", std::bind( &stream_manager::handle_configure_node_request, f_stream_manager, _1, _2 ) );
-        f_request_receiver->register_set_handler( "active-config", std::bind( &daq_control::handle_apply_config_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_set_handler( "filename", std::bind( &daq_control::handle_set_filename_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_set_handler( "description", std::bind( &daq_control::handle_set_description_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_set_handler( "duration", std::bind( &daq_control::handle_set_duration_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_set_handler( "use-monarch", std::bind( &daq_control::handle_set_use_monarch_request, f_daq_control, _1, _2 ) );
+        f_request_receiver->register_set_handler( "node-config", std::bind( &stream_manager::handle_configure_node_request, f_stream_manager, _1 ) );
+        f_request_receiver->register_set_handler( "active-config", std::bind( &daq_control::handle_apply_config_request, f_daq_control, _1 ) );
+        f_request_receiver->register_set_handler( "filename", std::bind( &daq_control::handle_set_filename_request, f_daq_control, _1 ) );
+        f_request_receiver->register_set_handler( "description", std::bind( &daq_control::handle_set_description_request, f_daq_control, _1 ) );
+        f_request_receiver->register_set_handler( "duration", std::bind( &daq_control::handle_set_duration_request, f_daq_control, _1 ) );
+        f_request_receiver->register_set_handler( "use-monarch", std::bind( &daq_control::handle_set_use_monarch_request, f_daq_control, _1 ) );
 
         // add cmd request handlers
-        f_request_receiver->register_cmd_handler( "add-stream", std::bind( &stream_manager::handle_add_stream_request, f_stream_manager, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "remove-stream", std::bind( &stream_manager::handle_remove_stream_request, f_stream_manager, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "run-daq-cmd", std::bind( &daq_control::handle_run_command_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "stop-run", std::bind( &daq_control::handle_stop_run_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "start-run", std::bind( &daq_control::handle_start_run_request, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "activate-daq", std::bind( &daq_control::handle_activate_daq_control, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "reactivate-daq", std::bind( &daq_control::handle_reactivate_daq_control, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "deactivate-daq", std::bind( &daq_control::handle_deactivate_daq_control, f_daq_control, _1, _2 ) );
-        f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1, _2 ) );
+        f_request_receiver->register_cmd_handler( "add-stream", std::bind( &stream_manager::handle_add_stream_request, f_stream_manager, _1 ) );
+        f_request_receiver->register_cmd_handler( "remove-stream", std::bind( &stream_manager::handle_remove_stream_request, f_stream_manager, _1 ) );
+        f_request_receiver->register_cmd_handler( "run-daq-cmd", std::bind( &daq_control::handle_run_command_request, f_daq_control, _1 ) );
+        f_request_receiver->register_cmd_handler( "stop-run", std::bind( &daq_control::handle_stop_run_request, f_daq_control, _1 ) );
+        f_request_receiver->register_cmd_handler( "start-run", std::bind( &daq_control::handle_start_run_request, f_daq_control, _1 ) );
+        f_request_receiver->register_cmd_handler( "activate-daq", std::bind( &daq_control::handle_activate_daq_control, f_daq_control, _1 ) );
+        f_request_receiver->register_cmd_handler( "reactivate-daq", std::bind( &daq_control::handle_reactivate_daq_control, f_daq_control, _1 ) );
+        f_request_receiver->register_cmd_handler( "deactivate-daq", std::bind( &daq_control::handle_deactivate_daq_control, f_daq_control, _1 ) );
+        f_request_receiver->register_cmd_handler( "quit-psyllid", std::bind( &run_server::handle_quit_server_request, this, _1 ) );
 
         std::condition_variable t_daq_control_ready_cv;
         std::mutex t_daq_control_ready_mutex;
@@ -222,7 +222,7 @@ namespace psyllid
     }
 
 
-    dripline::reply_info run_server::handle_get_server_status_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t run_server::handle_get_server_status_request( const dripline::request_ptr_t a_request )
     {
         /*
         param_node* t_server_node = new param_node();
@@ -254,14 +254,14 @@ namespace psyllid
 
         a_reply_pkg.f_payload.add( "server", t_server_node );
 
-        return a_reply_pkg.send_reply( retcode_t::success, "Server status request succeeded" );
+        return a_reply_pkg.send_reply( dripline::dl_success(), "Server status request succeeded" );
         */
-        return a_reply_pkg.send_reply( retcode_t::message_error_invalid_method, "Server status request not yet supported" );
+        return a_request->reply( dripline::dl_message_error_invalid_method(), "Server status request not yet supported" );
     }
 
-    dripline::reply_info run_server::handle_quit_server_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t run_server::handle_quit_server_request( const dripline::request_ptr_t a_request )
     {
-        dripline::reply_info t_return = a_reply_pkg.send_reply( retcode_t::success, "Server-quit command processed" );
+        dripline::reply_info t_return = a_request->reply( dripline::dl_success(), "Server-quit command processed" );
         quit_server();
         return t_return;
     }
