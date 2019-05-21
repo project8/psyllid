@@ -58,10 +58,10 @@ namespace psyllid
 
             const scarab::param_node& get_config() const;
 
-            dripline::reply_info handle_get_server_status_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_get_server_status_request( const dripline::request_ptr_t a_request );
 
-            dripline::reply_info handle_stop_all_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_quit_server_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_stop_all_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_quit_server_request( const dripline::request_ptr_t a_request );
 
         private:
             virtual void do_cancellation();

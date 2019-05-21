@@ -17,7 +17,6 @@
 
 // dripline
 #include "message.hh"
-#include "reply_package.hh"
 
 #include <condition_variable>
 
@@ -74,8 +73,8 @@ namespace psyllid
             void replace_queue( const scarab::param_array& actions_array );
             void replace_queue( const std::string& a_batch_command_name );
 
-            dripline::reply_info do_batch_cmd_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
-            dripline::reply_info do_replace_actions_request( const std::string&, const dripline::request_ptr_t, dripline::reply_package& );
+            dripline::reply_ptr_t do_batch_cmd_request( const std::string& a_command, const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t do_replace_actions_request( const std::string& a_command, const dripline::request_ptr_t a_request );
 
             void execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex, bool run_forever = false );
 
