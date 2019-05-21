@@ -686,7 +686,7 @@ namespace psyllid
         std::string t_target_node = t_target_stream + "_" + a_request->parsed_specifier().front();
         a_request->parsed_specifier().pop_front();
 
-        param_ptr_t t_payload_ptr;
+        param_ptr_t t_payload_ptr( new param_node() );
         param_node& t_payload = t_payload_ptr->as_node();
 
         if( a_request->parsed_specifier().empty() )
@@ -724,7 +724,7 @@ namespace psyllid
             }
             if( t_values_array.empty() || ! t_values_array[0].is_value() )
             {
-                return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform active-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
+                return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform active-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value", std::move(t_payload_ptr) );
             }
 
             scarab::param_node t_param_to_set;
@@ -737,7 +737,7 @@ namespace psyllid
             }
             catch( std::exception& e )
             {
-                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform active-config request (single value): ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform active-config request (single value): ") + e.what(), std::move(t_payload_ptr) );
             }
         }
 
@@ -747,31 +747,34 @@ namespace psyllid
 
     dripline::reply_ptr_t daq_control::handle_dump_config_request( const dripline::request_ptr_t a_request )
     {
-        if( a_request->parsed_rks().size() < 2 )
+        if( a_request->parsed_specifier().size() < 2 )
         {
-            return a_request->reply( dripline::dl_message_error_invalid_key(), "RKS is improperly formatted: [queue].active-config.[stream].[node] or [queue].active-config.[stream].[node].[parameter]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "Specifier is improperly formatted: active-config.[stream].[node] or active-config.[stream].[node].[parameter]" );
         }
 
         //size_t t_rks_size = a_request->parsed_rks().size();
 
-        std::string t_target_stream = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_stream = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        if( a_request->parsed_rks().empty() )
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
+
+        if( a_request->parsed_specifier().empty() )
         {
             // getting full node configuration
             LDEBUG( plog, "Getting node config for active node <" << t_target_node << ">" );
 
             try
             {
-                dump_config( t_target_node, a_reply_pkg.f_payload );
+                dump_config( t_target_node, t_payload );
             }
             catch( std::exception& e )
             {
-                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform get-active-config request: ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform get-active-config request: ") + e.what(), std::move(t_payload_ptr) );
             }
         }
         else
@@ -779,7 +782,7 @@ namespace psyllid
             // getting value for a single parameter
             LDEBUG( plog, "Getting value for a single parameter in active node <" << t_target_node << ">" );
 
-            std::string t_param_to_get = a_request->parsed_rks().front();
+            std::string t_param_to_get = a_request->parsed_specifier().front();
 
             try
             {
@@ -789,11 +792,11 @@ namespace psyllid
                 {
                     return a_request->reply( dripline::dl_message_error_invalid_key(), "Unable to get active-node parameter: cannot find parameter <" + t_param_to_get + ">" );
                 }
-                a_reply_pkg.f_payload.add( t_param_to_get, t_param_dump[t_param_to_get]() );
+                t_payload.add( t_param_to_get, t_param_dump[t_param_to_get]() );
             }
             catch( std::exception& e )
             {
-                return a_request->reply( dripline::dl_device_error(), std::string("Unable to get active-node parameter (single value): ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to get active-node parameter (single value): ") + e.what(), std::move(t_payload_ptr) );
             }
         }
 
@@ -803,46 +806,49 @@ namespace psyllid
 
     dripline::reply_ptr_t daq_control::handle_run_command_request( const dripline::request_ptr_t a_request )
     {
-        if( a_request->parsed_rks().size() < 2 )
+        if( a_request->parsed_specifier().size() < 2 )
         {
-            return a_request->reply( dripline::dl_message_error_invalid_key(), "RKS is improperly formatted: [queue].run-command.[stream].[node].[command]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "RKS is improperly formatted: run-command.[stream].[node].[command]" );
         }
 
         //size_t t_rks_size = a_request->parsed_rks().size();
 
-        std::string t_target_stream = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_stream = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
         scarab::param_node t_args_node( a_request->payload() );
-        std::string t_command( a_request->parsed_rks().front() );
-        a_request->parsed_rks().pop_front();
+        std::string t_command( a_request->parsed_specifier().front() );
+        a_request->parsed_specifier().pop_front();
 
         LDEBUG( plog, "Performing run-command <" << t_command << "> for active node <" << t_target_node << ">; args:\n" << t_args_node );
+
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
 
         bool t_return = false;
         try
         {
             t_return = run_command( t_target_node, t_command, t_args_node );
-            a_reply_pkg.f_payload.merge( t_args_node );
-            a_reply_pkg.f_payload.add( "command", t_command );
+            t_payload.merge( t_args_node );
+            t_payload.add( "command", t_command );
         }
         catch( std::exception& e )
         {
-            return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform run-command request: ") + e.what() );
+            return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform run-command request: ") + e.what(), std::move(t_payload_ptr) );
         }
 
         if( t_return )
         {
             LDEBUG( plog, "Active run-command execution was successful" );
-            return a_request->reply( dripline::dl_success(), "Performed active run-command execution" );
+            return a_request->reply( dripline::dl_success(), "Performed active run-command execution", std::move(t_payload_ptr) );
         }
         else
         {
             LWARN( plog, "Active run-command execution failed" );
-            return a_request->reply( dripline::retcode_t::message_error_invalid_method, "Command was not recognized" );
+            return a_request->reply( dripline::dl_message_error_invalid_method(), "Command was not recognized", std::move(t_payload_ptr) );
         }
     }
 
@@ -851,9 +857,9 @@ namespace psyllid
         try
         {
             unsigned t_file_num = 0;
-            if( a_request->parsed_rks().size() > 0)
+            if( a_request->parsed_specifier().size() > 0)
             {
-                t_file_num = std::stoi( a_request->parsed_rks().front() );
+                t_file_num = std::stoi( a_request->parsed_specifier().front() );
             }
 
             std::string t_filename =  a_request->payload()["values"][0]().as_string();
@@ -872,9 +878,9 @@ namespace psyllid
         try
         {
             unsigned t_file_num = 0;
-            if( a_request->parsed_rks().size() > 0)
+            if( a_request->parsed_specifier().size() > 0)
             {
-                t_file_num = std::stoi( a_request->parsed_rks().front() );
+                t_file_num = std::stoi( a_request->parsed_specifier().front() );
             }
 
             std::string t_description =  a_request->payload()["values"][0]().as_string();
@@ -931,9 +937,10 @@ namespace psyllid
 
         // TODO: add status of nodes
 
-        a_reply_pkg.f_payload.add( "server", t_server_node );
+        param_ptr_t t_payload_ptr( new param_node() );
+        t_payload_ptr->as_node().add( "server", t_server_node );
 
-        return a_request->reply( dripline::dl_success(), "DAQ status request succeeded" );
+        return a_request->reply( dripline::dl_success(), "DAQ status request succeeded", std::move(t_payload_ptr) );
 
     }
 
@@ -949,8 +956,9 @@ namespace psyllid
 
             param_array t_values_array;
             t_values_array.push_back( param_value( get_filename( t_file_num ) ) );
-            a_reply_pkg.f_payload.add( "values", t_values_array );
-            return a_request->reply( dripline::dl_success(), "Filename request completed" );
+            param_ptr_t t_payload_ptr( new param_node() );
+            t_payload_ptr->as_node().add( "values", t_values_array );
+            return a_request->reply( dripline::dl_success(), "Filename request completed", std::move(t_payload_ptr) );
         }
         catch( scarab::error& e )
         {
@@ -963,15 +971,16 @@ namespace psyllid
         try
         {
             unsigned t_file_num = 0;
-            if( a_request->parsed_rks().size() > 0)
+            if( a_request->parsed_specifier().size() > 0)
             {
-                t_file_num = std::stoi( a_request->parsed_rks().front() );
+                t_file_num = std::stoi( a_request->parsed_specifier().front() );
             }
 
             param_array t_values_array;
             t_values_array.push_back( param_value( get_description( t_file_num ) ) );
-            a_reply_pkg.f_payload.add( "values", t_values_array );
-            return a_request->reply( dripline::dl_success(), "Description request completed" );
+            param_ptr_t t_payload_ptr( new param_node() );
+            t_payload_ptr->as_node().add( "values", t_values_array );
+            return a_request->reply( dripline::dl_success(), "Description request completed", std::move(t_payload_ptr) );
         }
         catch( scarab::error& e )
         {
@@ -984,7 +993,8 @@ namespace psyllid
         param_array t_values_array;
         t_values_array.push_back( param_value( f_run_duration ) );
 
-        a_reply_pkg.f_payload.add( "values", t_values_array );
+        param_ptr_t t_payload_ptr( new param_node() );
+        t_payload_ptr->as_node().add( "values", t_values_array );
 
         return a_request->reply( dripline::dl_success(), "Duration request completed" );
     }
@@ -994,7 +1004,8 @@ namespace psyllid
         param_array t_values_array;
         t_values_array.push_back( param_value( f_use_monarch ) );
 
-        a_reply_pkg.f_payload.add( "values", t_values_array );
+        param_ptr_t t_payload_ptr( new param_node() );
+        t_payload_ptr->as_node().add( "values", t_values_array );
 
         return a_request->reply( dripline::dl_success(), "Use Monarch request completed" );
     }
