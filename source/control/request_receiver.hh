@@ -63,7 +63,7 @@ namespace psyllid
         private:
             std::atomic< status > f_status;
 
-            virtual dripline::reply_ptr_t __do_handle_set_condition_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            virtual dripline::reply_ptr_t __do_handle_set_condition_request( const dripline::request_ptr_t a_request );
 
     };
 
