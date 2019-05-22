@@ -49,8 +49,8 @@ int main( int argc, char** argv )
         the_main.add_config_option< std::string >( "-e,--exchange", "amqp.exchange", "Set the exchange to send message on" );
         the_main.add_config_option< std::string >( "-a,--auth-file", "amqp.auth-file", "Set the authentication file path" );
         the_main.add_config_option< std::string >( "-s,--slack-queue", "amqp.slack-queue", "Set the queue name for Slack messages" );
-        the_main.add_config_option< bool >( "--post-to-slack", "post-to-slack", "Flag for en/disabling posting to Slack" );
-        the_main.add_config_option< bool >( "--activate-at-startup", "daq.activate-at-startup", "Flag to make Psyllid activate on startup" );
+        the_main.add_config_flag< bool >( "--post-to-slack", "post-to-slack", "Flag for en/disabling posting to Slack" );
+        the_main.add_config_flag< bool >( "--activate-at-startup", "daq.activate-at-startup", "Flag to make Psyllid activate on startup" );
         the_main.add_config_option< unsigned >( "-n,--n-files", "daq.n-files", "Number of files to be written in parallel" );
         the_main.add_config_option< unsigned >( "-d,--duration", "daq.duration", "Run duration in ms" );
         the_main.add_config_option< double >( "-m,--max-file-size-mb", "daq.max-file-size-mb", "Maximum file size in MB" );
