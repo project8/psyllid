@@ -705,7 +705,7 @@ namespace psyllid
             try
             {
                 apply_config( t_target_node, a_request->payload().as_node() );
-                t_payload.merge( a_request->payload() );
+                t_payload.merge( a_request->payload().as_node() );
             }
             catch( std::exception& e )
             {
@@ -822,7 +822,9 @@ namespace psyllid
         std::string t_target_node = t_target_stream + "_" + a_request->parsed_specifier().front();
         a_request->parsed_specifier().pop_front();
 
-        scarab::param_node t_args_node( a_request->payload() );
+        scarab::param_node t_args_node;
+        if( a_request->payload().is_node() ) t_args_node = a_request->payload().as_node();
+
         std::string t_command( a_request->parsed_specifier().front() );
         a_request->parsed_specifier().pop_front();
 
@@ -952,9 +954,9 @@ namespace psyllid
         try
         {
             unsigned t_file_num = 0;
-            if( a_request->parsed_rks().size() > 0)
+            if( a_request->parsed_specifier().size() > 0)
             {
-                t_file_num = std::stoi( a_request->parsed_rks().front() );
+                t_file_num = std::stoi( a_request->parsed_specifier().front() );
             }
 
             param_array t_values_array;
