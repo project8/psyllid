@@ -120,7 +120,7 @@ namespace psyllid
     }
 
     // this method should be bound in the request receiver to be called with a command name, the request_ptr_t is not used
-    dripline::reply_info batch_executor::do_batch_cmd_request( const std::string& a_command, const dripline::request_ptr_t a_request )
+    dripline::reply_ptr_t batch_executor::do_batch_cmd_request( const std::string& a_command, const dripline::request_ptr_t a_request )
     {
         try
         {
@@ -134,7 +134,7 @@ namespace psyllid
     }
 
     // this method should be bound in the request receiver to be called with a command name, the request_ptr_t is not used
-    dripline::reply_info batch_executor::do_replace_actions_request( const std::string& a_command, const dripline::request_ptr_t a_request )
+    dripline::reply_ptr_t batch_executor::do_replace_actions_request( const std::string& a_command, const dripline::request_ptr_t a_request )
     {
         try
         {
@@ -192,8 +192,8 @@ namespace psyllid
             LDEBUG( plog, "there are no actions in the queue" );
             return;
         }
-        dripline::reply_info t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
-        if ( ! t_request_reply_info )
+        dripline::reply_ptr_t t_request_reply = f_request_receiver->submit_request_message( t_action.f_request_ptr );
+        if ( ! t_request_reply )
         {
             LWARN( plog, "failed submitting action request" );
             throw psyllid::error() << "error while submitting command";
@@ -201,11 +201,11 @@ namespace psyllid
         // wait until daq status is no longer "running"
         if ( t_action.f_is_custom_action )
         {
-            daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload["server"]["status-value"]().as_uint() );
+            daq_control::status t_status = daq_control::uint_to_status( t_request_reply->f_payload["server"]["status-value"]().as_uint() );
             while ( t_status == daq_control::status::running )
             {
-                t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
-                t_status = daq_control::uint_to_status( t_request_reply_info.f_payload["server"]["status-value"]().as_uint() );
+                t_request_reply = f_request_receiver->submit_request_message( t_action.f_request_ptr );
+                t_status = daq_control::uint_to_status( t_request_reply->f_payload["server"]["status-value"]().as_uint() );
                 std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
             }
         }
@@ -213,12 +213,12 @@ namespace psyllid
         {
             std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
         }
-        if ( dripline::to_uint(t_request_reply_info.f_return_code) >= 100 )
+        if ( dripline::to_uint(t_request_reply->f_return_code) >= 100 )
         {
             LWARN( plog, "batch action received an error-level return code; exiting" );
             throw psyllid::error() << "error completing batch action, received code [" <<
-                                   t_request_reply_info.f_return_code << "]: \"" <<
-                                   t_request_reply_info.f_return_msg << "\"";
+                                   t_request_reply->f_return_code << "]: \"" <<
+                                   t_request_reply->f_return_msg << "\"";
         }
     }
 
