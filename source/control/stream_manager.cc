@@ -19,6 +19,12 @@
 
 #include <utility>
 
+using scarab::param_ptr_t;
+using scarab::param;
+using scarab::param_array;
+using scarab::param_node;
+using scarab::param_value;
+
 namespace psyllid
 {
     LOGGER( plog, "stream_manager" );
@@ -47,9 +53,9 @@ namespace psyllid
         clear_node_bindings();
     }
 
-    bool stream_manager::initialize( const scarab::param_node& a_config )
+    bool stream_manager::initialize( const param_node& a_config )
     {
-        for( scarab::param_node::const_iterator t_str_conf_it = a_config.begin(); t_str_conf_it != a_config.end(); ++t_str_conf_it )
+        for( param_node::const_iterator t_str_conf_it = a_config.begin(); t_str_conf_it != a_config.end(); ++t_str_conf_it )
         {
             if( ! t_str_conf_it->is_node() )
             {
@@ -65,7 +71,7 @@ namespace psyllid
         return true;
     }
 
-    bool stream_manager::add_stream( const std::string& a_name, const scarab::param_node& a_node )
+    bool stream_manager::add_stream( const std::string& a_name, const param_node& a_node )
     {
         // do not need to lock the mutex here because we're not doing anything to the stream_manager until inside _add_stream()
         try
@@ -94,7 +100,7 @@ namespace psyllid
         }
     }
 
-    bool stream_manager::configure_node( const std::string& a_stream_name, const std::string& a_node_name, const scarab::param_node& a_config )
+    bool stream_manager::configure_node( const std::string& a_stream_name, const std::string& a_node_name, const param_node& a_config )
     {
         try
         {
@@ -108,7 +114,7 @@ namespace psyllid
         }
     }
 
-    bool stream_manager::dump_node_config( const std::string& a_stream_name, const std::string& a_node_name, scarab::param_node& a_config ) const
+    bool stream_manager::dump_node_config( const std::string& a_stream_name, const std::string& a_node_name, param_node& a_config ) const
     {
         try
         {
@@ -122,7 +128,7 @@ namespace psyllid
         }
     }
 
-    void stream_manager::_configure_node( const std::string& a_stream_name, const std::string& a_node_name, const scarab::param_node& a_config )
+    void stream_manager::_configure_node( const std::string& a_stream_name, const std::string& a_node_name, const param_node& a_config )
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
 
@@ -143,7 +149,7 @@ namespace psyllid
         return;
     }
 
-    void stream_manager::_dump_node_config( const std::string& a_stream_name, const std::string& a_node_name, scarab::param_node& a_config ) const
+    void stream_manager::_dump_node_config( const std::string& a_stream_name, const std::string& a_node_name, param_node& a_config ) const
     {
         std::unique_lock< std::mutex > t_lock( f_manager_mutex );
 
@@ -166,7 +172,7 @@ namespace psyllid
     }
 
 
-    void stream_manager::_add_stream( const std::string& a_name, const scarab::param_node& a_node )
+    void stream_manager::_add_stream( const std::string& a_name, const param_node& a_node )
     {
         // do not need to lock the mutex here because we're not doing anything to the stream_manager until inside _add_stream( string, param_node )
 
@@ -176,11 +182,11 @@ namespace psyllid
             {
                 throw error() << "No preset specified";
             }
-            const scarab::param& t_preset_param = a_node["preset"];
+            const param& t_preset_param = a_node["preset"];
 
             if( t_preset_param.is_node() )
             {
-                const scarab::param_node& t_preset_param_node = t_preset_param.as_node();
+                const param_node& t_preset_param_node = t_preset_param.as_node();
                 if( ! runtime_stream_preset::add_preset( t_preset_param_node ) )
                 {
                     throw error() << "Runtime preset could not be added";
@@ -204,7 +210,7 @@ namespace psyllid
         }
     }
 
-    void stream_manager::_add_stream( const std::string& a_name, const std::string& a_type, const scarab::param_node& a_node )
+    void stream_manager::_add_stream( const std::string& a_name, const std::string& a_type, const param_node& a_node )
     {
         // do not need to lock the mutex here because we're not doing anything to the stream_manager until later
 
@@ -247,7 +253,7 @@ namespace psyllid
             t_builder->name() = t_node_name;
 
             // setup the node config
-            scarab::param_node t_node_config;
+            param_node t_node_config;
             // first get the node-specific config, if present (refer to it by its original name, not t_node_name)
             if( a_node.has( t_node_it->first ) ) t_node_config.merge( a_node[t_node_it->first].as_node() );
             // add stream-wide config data to the node config
@@ -420,11 +426,11 @@ namespace psyllid
         return;
     }
 
-    dripline::reply_info stream_manager::handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t stream_manager::handle_add_stream_request( const dripline::request_ptr_t a_request )
     {
-        if( ! a_request->payload().has( "name" ) || ! a_request->payload().has( "config" ) )
+        if( ! a_request->payload().is_node() || ! a_request->payload().as_node().has( "name" ) || ! a_request->payload().as_node().has( "config" ) )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Add-stream request is missing either \"name\" or \"config\"" );
+            return a_request->reply( dripline::dl_message_error_bad_payload(), "Add-stream request is missing either \"name\" or \"config\"" );
         }
 
         try
@@ -433,26 +439,26 @@ namespace psyllid
         }
         catch( std::exception& e )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::warning_no_action_taken, e.what() );
+            return a_request->reply( dripline::dl_warning_no_action_taken(), e.what() );
         }
 
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + a_request->payload()["name"]().as_string() + " has been added" );
+        return a_request->reply( dripline::dl_success(), "Stream " + a_request->payload()["name"]().as_string() + " has been added" );
     }
 
-    dripline::reply_info stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request )
     {
-        if( ! a_request->payload().has( "values" ) )
+        if( ! a_request->payload().is_node() || ! a_request->payload().as_node().has( "values" ) )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: values array is missing" );
+            return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform remove-stream: values array is missing" );
         }
         if( ! a_request->payload()["values"].is_array() )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: values must be an array" );
+            return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform remove-stream: values must be an array" );
         }
-        const scarab::param_array t_values_array = a_request->payload()["values"].as_array();
+        const param_array t_values_array = a_request->payload()["values"].as_array();
         if( t_values_array.empty() || ! t_values_array[0].is_value() )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform remove-stream: \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
+            return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform remove-stream: \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
         }
 
         try
@@ -461,45 +467,50 @@ namespace psyllid
         }
         catch( error& e )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::warning_no_action_taken, e.what() );
+            return a_request->reply( dripline::dl_warning_no_action_taken(), e.what() );
         }
 
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Stream " + t_values_array[0]().as_string() + " has been removed" );
+        return a_request->reply( dripline::dl_success(), "Stream " + t_values_array[0]().as_string() + " has been removed" );
     }
 
-    dripline::reply_info stream_manager::handle_configure_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t stream_manager::handle_configure_node_request( const dripline::request_ptr_t a_request )
     {
-        if( a_request->parsed_rks().size() < 2 )
+        if( a_request->parsed_specifier().size() < 2 )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-config.[stream].[node] or [queue].node-config.[stream].[node].[parameter]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "Specifier is improperly formatted: node-config.[stream].[node] or node-config.[stream].[node].[parameter]" );
         }
 
         //size_t t_rks_size = a_request->parsed_rks().size();
 
-        std::string t_target_stream = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_stream = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        std::string t_target_node = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_node = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        if( a_request->parsed_rks().empty() )
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
+
+        if( a_request->parsed_specifier().empty() )
         {
             // payload should be a map of all parameters to be set
             LDEBUG( plog, "Performing node config for multiple values in stream <" << t_target_stream << "> and node <" << t_target_node << ">" );
 
-            if( a_request->payload().empty() )
+            if( ! a_request->payload().is_node() || a_request->payload().as_node().empty() )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config request: payload is empty" );
+                return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform node-config request: payload is empty" );
             }
+
+            param_node& t_req_payload = a_request->payload().as_node();
 
             try
             {
-                _configure_node( t_target_stream, t_target_node, a_request->payload() );
-                a_reply_pkg.f_payload.merge( a_request->payload() );
+                _configure_node( t_target_stream, t_target_node, t_req_payload );
+                t_payload.merge( t_req_payload );
             }
             catch( std::exception& e )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform node-config request: ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform node-config request: ") + e.what() );
             }
         }
         else
@@ -507,65 +518,70 @@ namespace psyllid
             // payload should be values array with a single entry for the particular parameter to be set
             LDEBUG( plog, "Performing node config for a single value in stream <" << t_target_stream << "> and node <" << t_target_node << ">" );
 
-            if( ! a_request->payload().has( "values" ) )
+            if( ! a_request->payload().is_node() || ! a_request->payload().as_node().has( "values" ) )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): values array is missing" );
-            }
-            if( ! a_request->payload()["values"].is_array() )
-            {
-                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): values entry is not an array" );
-            }
-            const scarab::param_array t_values_array = a_request->payload()["values"].as_array();
-            if( t_values_array.empty() || ! t_values_array[0]().is_value() )
-            {
-                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform node-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
+                return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform node-config (single value): values array is missing" );
             }
 
-            scarab::param_node t_param_to_set;
-            t_param_to_set.add( a_request->parsed_rks().front(), scarab::param_value( t_values_array[0]() ) );
+            param_node& t_req_payload = a_request->payload().as_node();
+
+            if( ! t_req_payload["values"].is_array() )
+            {
+                return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform node-config (single value): values entry is not an array" );
+            }
+            const param_array t_values_array = t_req_payload["values"].as_array();
+            if( t_values_array.empty() || ! t_values_array[0]().is_value() )
+            {
+                return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform node-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
+            }
+
+            param_node t_param_to_set;
+            t_param_to_set.add( a_request->parsed_specifier().front(), param_value( t_values_array[0]() ) );
 
             try
             {
                 _configure_node( t_target_stream, t_target_node, t_param_to_set );
-                a_reply_pkg.f_payload.merge( t_param_to_set );
+                t_payload.merge( t_param_to_set );
             }
             catch( std::exception& e )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform node-config request (single value): ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform node-config request (single value): ") + e.what() );
             }
         }
 
         LDEBUG( plog, "Node-config was successful" );
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed node-config" );
+        return a_request->reply( dripline::dl_success(), "Performed node-config", std::move( t_payload_ptr ) );
     }
 
-    dripline::reply_info stream_manager::handle_dump_config_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t stream_manager::handle_dump_config_node_request( const dripline::request_ptr_t a_request )
     {
-        if( a_request->parsed_rks().size() < 2 )
+        if( a_request->parsed_specifier().size() < 2 )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-config.[stream].[node] or [queue].node-config.[stream].[node].[parameter]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "RKS is improperly formatted: [queue].node-config.[stream].[node] or [queue].node-config.[stream].[node].[parameter]" );
         }
 
         //size_t t_rks_size = a_request->parsed_rks().size();
 
-        std::string t_target_stream = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_stream = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        std::string t_target_node = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_node = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        if( a_request->parsed_rks().empty() )
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
+        if( a_request->parsed_specifier().empty() )
         {
             // getting full node configuration
             LDEBUG( plog, "Getting full node config for stream <" << t_target_stream << "> and node <" << t_target_node << ">" );
 
             try
             {
-                _dump_node_config( t_target_stream, t_target_node, a_reply_pkg.f_payload );
+                _dump_node_config( t_target_stream, t_target_node, t_payload );
             }
             catch( std::exception& e )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform get-node-config request: ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform get-node-config request: ") + e.what() );
             }
         }
         else
@@ -573,85 +589,89 @@ namespace psyllid
             // getting value for a single parameter
             LDEBUG( plog, "Getting value for a single parameter in stream <" << t_target_stream << "> and node <" << t_target_node << ">" );
 
-            std::string t_param_to_get = a_request->parsed_rks().front();
+            std::string t_param_to_get = a_request->parsed_specifier().front();
 
             try
             {
-                scarab::param_node t_param_dump;
+                param_node t_param_dump;
                 _dump_node_config( t_target_stream, t_target_node, t_param_dump );
                 if( ! t_param_dump.has( t_param_to_get ) )
                 {
-                    return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get node parameter: cannot find parameter <" + t_param_to_get + ">" );
+                    return a_request->reply( dripline::dl_message_error_invalid_key(), "Unable to get node parameter: cannot find parameter <" + t_param_to_get + ">" );
                 }
-                a_reply_pkg.f_payload.add( t_param_to_get, scarab::param_value( t_param_dump[t_param_to_get]() ) );
+                t_payload.add( t_param_to_get, param_value( t_param_dump[t_param_to_get]() ) );
             }
             catch( std::exception& e )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to get node parameter (single value): ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to get node parameter (single value): ") + e.what() );
             }
         }
 
         LDEBUG( plog, "Get-node-config was successful" );
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-node-config" );
+        return a_request->reply( dripline::dl_success(), "Performed get-node-config", std::move( t_payload_ptr ) );
     }
 
-    dripline::reply_info stream_manager::handle_get_stream_list_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t stream_manager::handle_get_stream_list_request( const dripline::request_ptr_t a_request )
     {
-        if( a_request->parsed_rks().size() > 1 )
+        if( a_request->parsed_specifier().size() > 1 )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-config.[stream]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "Specifier is improperly formatted: node-config.[stream]" );
         }
 
-        scarab::param_array t_streams_list;
+        param_array t_streams_list;
         LDEBUG( plog, "Getting list of streams from the stream handler" );
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
         try
         {
             for ( streams_t::iterator t_stream_it = f_streams.begin(); t_stream_it != f_streams.end(); ++t_stream_it )
             {
-                t_streams_list.push_back( scarab::param_value( t_stream_it->first ) );
+                t_streams_list.push_back( param_value( t_stream_it->first ) );
             }
-            a_reply_pkg.f_payload.add( "streams", t_streams_list );
+            t_payload.add( "streams", t_streams_list );
         }
         catch( std::exception& e )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform get-stream-list request: ") + e.what() );
+            return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform get-stream-list request: ") + e.what() );
         }
         LDEBUG( plog, "Get-stream-list was successful" );
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-stream-list" );
+        return a_request->reply( dripline::dl_success(), "Performed get-stream-list", std::move( t_payload_ptr ) );
     }
 
-    dripline::reply_info stream_manager::handle_get_stream_node_list_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t stream_manager::handle_get_stream_node_list_request( const dripline::request_ptr_t a_request )
     {
-        if( a_request->parsed_rks().size() < 1 )
+        if( a_request->parsed_specifier().size() < 1 )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-config.[stream]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "Specifier is improperly formatted: node-config.[stream]" );
         }
 
-        std::string t_target_stream = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_stream = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
         if( !f_streams.count( t_target_stream ) )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].node-list.[stream]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "Specifier is improperly formatted: node-list.[stream]" );
         }
         stream_manager::stream_template::nodes_t* t_these_nodes = &(f_streams[ t_target_stream ].f_nodes);
 
         LDEBUG( plog, "Getting list of nodes from the stream handler" );
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
         try
         {
-            scarab::param_array t_node_list;
+            param_array t_node_list;
             for ( stream_manager::stream_template::nodes_t::iterator t_nodes_it = t_these_nodes->begin(); t_nodes_it != t_these_nodes->end(); ++t_nodes_it )
             {
-                t_node_list.push_back( scarab::param_value( t_nodes_it->first ) );
+                t_node_list.push_back( param_value( t_nodes_it->first ) );
             }
-            a_reply_pkg.f_payload.add( "nodes", t_node_list );
+            t_payload.add( "nodes", t_node_list );
         }
         catch( std::exception& e )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform get-stream-node-list request: ") + e.what() );
+            return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform get-stream-node-list request: ") + e.what() );
         }
         LDEBUG( plog, "Get-stream-node-list was successful" );
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-stream-node-list" );
+        return a_request->reply( dripline::dl_success(), "Performed get-stream-node-list" );
     }
 
 } /* namespace psyllid */

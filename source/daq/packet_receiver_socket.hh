@@ -46,7 +46,7 @@ namespace psyllid
      Output Streams:
      - 0: memory_block
     */
-    class packet_receiver_socket : public midge::_producer< packet_receiver_socket, typelist_1( memory_block ) >
+    class packet_receiver_socket : public midge::_producer< midge::type_list< memory_block > >
     {
         public:
             packet_receiver_socket();

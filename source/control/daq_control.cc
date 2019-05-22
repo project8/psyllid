@@ -25,9 +25,9 @@
 using scarab::param_array;
 using scarab::param_node;
 using scarab::param_value;
+using scarab::param_ptr_t;
 
 using dripline::request_ptr_t;
-using dripline::retcode_t;
 
 using std::string;
 
@@ -581,128 +581,135 @@ namespace psyllid
     }
 
 
-    dripline::reply_info daq_control::handle_activate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_activate_daq_control( const dripline::request_ptr_t a_request )
     {
         try
         {
             activate();
-            return a_reply_pkg.send_reply( retcode_t::success, "DAQ control activated" );
+            return a_request->reply( dripline::dl_success(), "DAQ control activated" );
         }
         catch( error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to activate DAQ control: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to activate DAQ control: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_reactivate_daq_control( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_reactivate_daq_control( const dripline::request_ptr_t a_request )
     {
         try
         {
             reactivate();
-            return a_reply_pkg.send_reply( retcode_t::success, "DAQ control reactivated" );
+            return a_request->reply( dripline::dl_success(), "DAQ control reactivated" );
         }
         catch( error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to reactivate DAQ control: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to reactivate DAQ control: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_deactivate_daq_control( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_deactivate_daq_control( const dripline::request_ptr_t a_request )
     {
         try
         {
             deactivate();
-            return a_reply_pkg.send_reply( retcode_t::success, "DAQ control deactivated" );
+            return a_request->reply( dripline::dl_success(), "DAQ control deactivated" );
         }
         catch( error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to deactivate DAQ control: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to deactivate DAQ control: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_start_run_request( const request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_start_run_request( const dripline::request_ptr_t a_request )
     {
         try
         {
-            if( a_request->payload().has( "filename" ) ) set_filename( a_request->payload()["filename"]().as_string(), 0 );
-            //TODO BUG here, if filenames exists but is not an array (only case i tried), this causes a seg fault which is not handled below
-            if( a_request->payload().has( "filenames" ) )
+            if( a_request->payload().is_node() )
             {
-                const scarab::param_array t_filenames = a_request->payload()["filenames"].as_array();
-                for( unsigned i_fn = 0; i_fn < t_filenames.size(); ++i_fn )
+                param_node& t_payload = a_request->payload().as_node();
+                if( t_payload.has( "filename" ) ) set_filename( t_payload["filename"]().as_string(), 0 );
+                //TODO BUG here, if filenames exists but is not an array (only case i tried), this causes a seg fault which is not handled below
+                if( t_payload.as_node().has( "filenames" ) )
                 {
-                    set_filename( t_filenames[i_fn]().as_string(), i_fn );
+                    const scarab::param_array t_filenames = t_payload["filenames"].as_array();
+                    for( unsigned i_fn = 0; i_fn < t_filenames.size(); ++i_fn )
+                    {
+                        set_filename( t_filenames[i_fn]().as_string(), i_fn );
+                    }
                 }
-            }
 
-            if( a_request->payload().has( "description" ) ) set_description( a_request->payload()["description"]().as_string(), 0 );
-            if( a_request->payload().has( "descriptions" ) )
-            {
-                const scarab::param_array t_descriptions = a_request->payload()["descriptions"].as_array();
-                for( unsigned i_fn = 0; i_fn < t_descriptions.size(); ++i_fn )
+                if( t_payload.has( "description" ) ) set_description( t_payload["description"]().as_string(), 0 );
+                if( t_payload.has( "descriptions" ) )
                 {
-                    set_description( t_descriptions[i_fn]().as_string(), i_fn );
+                    const scarab::param_array t_descriptions = t_payload["descriptions"].as_array();
+                    for( unsigned i_fn = 0; i_fn < t_descriptions.size(); ++i_fn )
+                    {
+                        set_description( t_descriptions[i_fn]().as_string(), i_fn );
+                    }
                 }
-            }
 
-            f_run_duration = a_request->payload().get_value( "duration", f_run_duration );
+                f_run_duration = a_request->payload().get_value( "duration", f_run_duration );
+            }
 
             start_run();
-            return a_reply_pkg.send_reply( retcode_t::success, "Run started" );
+            return a_request->reply( dripline::dl_success(), "Run started" );
         }
         catch( std::exception& e )
         {
             LWARN( plog, "there was an error starting a run" );
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to start run: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to start run: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_stop_run_request( const request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_stop_run_request( const dripline::request_ptr_t a_request )
     {
         try
         {
             stop_run();
-            return a_reply_pkg.send_reply( retcode_t::success, "Run stopped" );
+            return a_request->reply( dripline::dl_success(), "Run stopped" );
         }
         catch( error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to stop run: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to stop run: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_apply_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_apply_config_request( const dripline::request_ptr_t a_request )
     {
-        if( a_request->parsed_rks().size() < 2 )
+        if( a_request->parsed_specifier().size() < 2 )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].active-config.[stream].[node] or [queue].node-config.[stream].[node].[parameter]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "Specifier is improperly formatted: active-config.[stream].[node] or node-config.[stream].[node].[parameter]" );
         }
 
         //size_t t_rks_size = a_request->parsed_rks().size();
 
-        std::string t_target_stream = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_stream = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        if( a_request->parsed_rks().empty() )
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
+
+        if( a_request->parsed_specifier().empty() )
         {
             // payload should be a map of all parameters to be set
             LDEBUG( plog, "Performing config for multiple values in active node <" << t_target_node << ">" );
 
-            if( a_request->payload().empty() )
+            if( ! a_request->payload().is_node() || a_request->payload().as_node().empty() )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config request: payload is empty" );
+                return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform active-config request: payload is empty" );
             }
 
             try
             {
-                apply_config( t_target_node, a_request->payload() );
-                a_reply_pkg.f_payload.merge( a_request->payload() );
+                apply_config( t_target_node, a_request->payload().as_node() );
+                t_payload.merge( a_request->payload().as_node() );
             }
             catch( std::exception& e )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform node-config request: ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform node-config request: ") + e.what() );
             }
         }
         else
@@ -710,64 +717,67 @@ namespace psyllid
             // payload should be values array with a single entry for the particular parameter to be set
             LDEBUG( plog, "Performing node config for a single value in active node <" << t_target_node << ">" );
 
-            if( ! a_request->payload().has( "values" ) )
+            if( ! a_request->payload().is_node() || ! a_request->payload().as_node().has( "values" ) )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): values array is missing" );
+                return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform active-config (single value): values array is missing" );
             }
             scarab::param_array t_values_array;
-            if ( a_request->payload().has("values") ) {
+            if ( a_request->payload().as_node().has("values") ) {
                 t_values_array.append( a_request->payload()["values"].as_array() );
             }
             if( t_values_array.empty() || ! t_values_array[0].is_value() )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::message_error_bad_payload, "Unable to perform active-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
+                return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform active-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value", std::move(t_payload_ptr) );
             }
 
             scarab::param_node t_param_to_set;
-            t_param_to_set.add( a_request->parsed_rks().front(), scarab::param_value( t_values_array[0].as_value() ) );
+            t_param_to_set.add( a_request->parsed_specifier().front(), scarab::param_value( t_values_array[0].as_value() ) );
 
             try
             {
                 apply_config( t_target_node, t_param_to_set );
-                a_reply_pkg.f_payload.merge( t_param_to_set );
+                t_payload.merge( t_param_to_set );
             }
             catch( std::exception& e )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform active-config request (single value): ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform active-config request (single value): ") + e.what(), std::move(t_payload_ptr) );
             }
         }
 
         LDEBUG( plog, "Node-config was successful" );
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed node-config" );
+        return a_request->reply( dripline::dl_success(), "Performed node-config", std::move(t_payload_ptr) );
     }
 
-    dripline::reply_info daq_control::handle_dump_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_dump_config_request( const dripline::request_ptr_t a_request )
     {
-        if( a_request->parsed_rks().size() < 2 )
+        if( a_request->parsed_specifier().size() < 2 )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].active-config.[stream].[node] or [queue].active-config.[stream].[node].[parameter]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "Specifier is improperly formatted: active-config.[stream].[node] or active-config.[stream].[node].[parameter]" );
         }
 
         //size_t t_rks_size = a_request->parsed_rks().size();
 
-        std::string t_target_stream = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_stream = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        if( a_request->parsed_rks().empty() )
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
+
+        if( a_request->parsed_specifier().empty() )
         {
             // getting full node configuration
             LDEBUG( plog, "Getting node config for active node <" << t_target_node << ">" );
 
             try
             {
-                dump_config( t_target_node, a_reply_pkg.f_payload );
+                dump_config( t_target_node, t_payload );
             }
             catch( std::exception& e )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform get-active-config request: ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform get-active-config request: ") + e.what(), std::move(t_payload_ptr) );
             }
         }
         else
@@ -775,7 +785,7 @@ namespace psyllid
             // getting value for a single parameter
             LDEBUG( plog, "Getting value for a single parameter in active node <" << t_target_node << ">" );
 
-            std::string t_param_to_get = a_request->parsed_rks().front();
+            std::string t_param_to_get = a_request->parsed_specifier().front();
 
             try
             {
@@ -783,109 +793,114 @@ namespace psyllid
                 dump_config( t_target_node, t_param_dump );
                 if( ! t_param_dump.has( t_param_to_get ) )
                 {
-                    return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "Unable to get active-node parameter: cannot find parameter <" + t_param_to_get + ">" );
+                    return a_request->reply( dripline::dl_message_error_invalid_key(), "Unable to get active-node parameter: cannot find parameter <" + t_param_to_get + ">" );
                 }
-                a_reply_pkg.f_payload.add( t_param_to_get, t_param_dump[t_param_to_get]() );
+                t_payload.add( t_param_to_get, t_param_dump[t_param_to_get]() );
             }
             catch( std::exception& e )
             {
-                return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to get active-node parameter (single value): ") + e.what() );
+                return a_request->reply( dripline::dl_device_error(), std::string("Unable to get active-node parameter (single value): ") + e.what(), std::move(t_payload_ptr) );
             }
         }
 
         LDEBUG( plog, "Get-active-node-config was successful" );
-        return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed get-active-node-config" );
+        return a_request->reply( dripline::dl_success(), "Performed get-active-node-config" );
     }
 
-    dripline::reply_info daq_control::handle_run_command_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_run_command_request( const dripline::request_ptr_t a_request )
     {
-        if( a_request->parsed_rks().size() < 2 )
+        if( a_request->parsed_specifier().size() < 2 )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_key, "RKS is improperly formatted: [queue].run-command.[stream].[node].[command]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "RKS is improperly formatted: run-command.[stream].[node].[command]" );
         }
 
         //size_t t_rks_size = a_request->parsed_rks().size();
 
-        std::string t_target_stream = a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_stream = a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        std::string t_target_node = t_target_stream + "_" + a_request->parsed_rks().front();
-        a_request->parsed_rks().pop_front();
+        std::string t_target_node = t_target_stream + "_" + a_request->parsed_specifier().front();
+        a_request->parsed_specifier().pop_front();
 
-        scarab::param_node t_args_node( a_request->payload() );
-        std::string t_command( a_request->parsed_rks().front() );
-        a_request->parsed_rks().pop_front();
+        scarab::param_node t_args_node;
+        if( a_request->payload().is_node() ) t_args_node = a_request->payload().as_node();
+
+        std::string t_command( a_request->parsed_specifier().front() );
+        a_request->parsed_specifier().pop_front();
 
         LDEBUG( plog, "Performing run-command <" << t_command << "> for active node <" << t_target_node << ">; args:\n" << t_args_node );
+
+        param_ptr_t t_payload_ptr( new param_node() );
+        param_node& t_payload = t_payload_ptr->as_node();
 
         bool t_return = false;
         try
         {
             t_return = run_command( t_target_node, t_command, t_args_node );
-            a_reply_pkg.f_payload.merge( t_args_node );
-            a_reply_pkg.f_payload.add( "command", t_command );
+            t_payload.merge( t_args_node );
+            t_payload.add( "command", t_command );
         }
         catch( std::exception& e )
         {
-            return a_reply_pkg.send_reply( dripline::retcode_t::device_error, std::string("Unable to perform run-command request: ") + e.what() );
+            return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform run-command request: ") + e.what(), std::move(t_payload_ptr) );
         }
 
         if( t_return )
         {
             LDEBUG( plog, "Active run-command execution was successful" );
-            return a_reply_pkg.send_reply( dripline::retcode_t::success, "Performed active run-command execution" );
+            return a_request->reply( dripline::dl_success(), "Performed active run-command execution", std::move(t_payload_ptr) );
         }
         else
         {
             LWARN( plog, "Active run-command execution failed" );
-            return a_reply_pkg.send_reply( dripline::retcode_t::message_error_invalid_method, "Command was not recognized" );
+            return a_request->reply( dripline::dl_message_error_invalid_method(), "Command was not recognized", std::move(t_payload_ptr) );
         }
     }
 
-    dripline::reply_info daq_control::handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_set_filename_request( const dripline::request_ptr_t a_request )
     {
         try
         {
             unsigned t_file_num = 0;
-            if( a_request->parsed_rks().size() > 0)
+            if( a_request->parsed_specifier().size() > 0)
             {
-                t_file_num = std::stoi( a_request->parsed_rks().front() );
+                t_file_num = std::stoi( a_request->parsed_specifier().front() );
             }
 
             std::string t_filename =  a_request->payload()["values"][0]().as_string();
             LDEBUG( plog, "Setting filename for file <" << t_file_num << "> to <" << t_filename << ">" );
             set_filename( t_filename, t_file_num );
-            return a_reply_pkg.send_reply( retcode_t::success, "Filename set" );
+            return a_request->reply( dripline::dl_success(), "Filename set" );
         }
         catch( std::exception& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set filename: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to set filename: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_set_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_set_description_request( const dripline::request_ptr_t a_request )
     {
         try
         {
             unsigned t_file_num = 0;
-            if( a_request->parsed_rks().size() > 0)
+            if( a_request->parsed_specifier().size() > 0)
             {
-                t_file_num = std::stoi( a_request->parsed_rks().front() );
+                t_file_num = std::stoi( a_request->parsed_specifier().front() );
             }
 
             std::string t_description =  a_request->payload()["values"][0]().as_string();
             LDEBUG( plog, "Setting description for file <" << t_file_num << "> to <" << t_description << ">" );
             set_description( t_description, t_file_num );
 
-            return a_reply_pkg.send_reply( retcode_t::success, "Description set" );
+            return a_request->reply( dripline::dl_success(), "Description set" );
         }
         catch( std::exception& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set description: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to set description: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_set_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_set_duration_request( const dripline::request_ptr_t a_request )
     {
         try
         {
@@ -897,29 +912,29 @@ namespace psyllid
             f_run_duration =  t_new_duration;
 
             LDEBUG( plog, "Duration set to <" << f_run_duration << "> ms" );
-            return a_reply_pkg.send_reply( retcode_t::success, "Duration set" );
+            return a_request->reply( dripline::dl_success(), "Duration set" );
         }
         catch( std::exception& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set duration: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to set duration: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_set_use_monarch_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_set_use_monarch_request( const dripline::request_ptr_t a_request )
     {
         try
         {
             f_use_monarch =  a_request->payload()["values"][0]().as_bool();
             LDEBUG( plog, "Use-monarch set to <" << f_use_monarch << ">" );
-            return a_reply_pkg.send_reply( retcode_t::success, "Use Monarch set" );
+            return a_request->reply( dripline::dl_success(), "Use Monarch set" );
         }
         catch( std::exception& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to set use-monarch: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to set use-monarch: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_get_status_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_get_status_request( const dripline::request_ptr_t a_request )
     {
         param_node t_server_node;
         t_server_node.add( "status", param_value( interpret_status( get_status() ) ) );
@@ -927,72 +942,77 @@ namespace psyllid
 
         // TODO: add status of nodes
 
-        a_reply_pkg.f_payload.add( "server", t_server_node );
+        param_ptr_t t_payload_ptr( new param_node() );
+        t_payload_ptr->as_node().add( "server", t_server_node );
 
-        return a_reply_pkg.send_reply( retcode_t::success, "DAQ status request succeeded" );
+        return a_request->reply( dripline::dl_success(), "DAQ status request succeeded", std::move(t_payload_ptr) );
 
     }
 
-    dripline::reply_info daq_control::handle_get_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_get_filename_request( const dripline::request_ptr_t a_request )
     {
         try
         {
             unsigned t_file_num = 0;
-            if( a_request->parsed_rks().size() > 0)
+            if( a_request->parsed_specifier().size() > 0)
             {
-                t_file_num = std::stoi( a_request->parsed_rks().front() );
+                t_file_num = std::stoi( a_request->parsed_specifier().front() );
             }
 
             param_array t_values_array;
             t_values_array.push_back( param_value( get_filename( t_file_num ) ) );
-            a_reply_pkg.f_payload.add( "values", t_values_array );
-            return a_reply_pkg.send_reply( retcode_t::success, "Filename request completed" );
+            param_ptr_t t_payload_ptr( new param_node() );
+            t_payload_ptr->as_node().add( "values", t_values_array );
+            return a_request->reply( dripline::dl_success(), "Filename request completed", std::move(t_payload_ptr) );
         }
         catch( scarab::error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to get description: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to get description: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_get_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_get_description_request( const dripline::request_ptr_t a_request )
     {
         try
         {
             unsigned t_file_num = 0;
-            if( a_request->parsed_rks().size() > 0)
+            if( a_request->parsed_specifier().size() > 0)
             {
-                t_file_num = std::stoi( a_request->parsed_rks().front() );
+                t_file_num = std::stoi( a_request->parsed_specifier().front() );
             }
 
             param_array t_values_array;
             t_values_array.push_back( param_value( get_description( t_file_num ) ) );
-            a_reply_pkg.f_payload.add( "values", t_values_array );
-            return a_reply_pkg.send_reply( retcode_t::success, "Description request completed" );
+            param_ptr_t t_payload_ptr( new param_node() );
+            t_payload_ptr->as_node().add( "values", t_values_array );
+            return a_request->reply( dripline::dl_success(), "Description request completed", std::move(t_payload_ptr) );
         }
         catch( scarab::error& e )
         {
-            return a_reply_pkg.send_reply( retcode_t::device_error, string( "Unable to get description: " ) + e.what() );
+            return a_request->reply( dripline::dl_device_error(), string( "Unable to get description: " ) + e.what() );
         }
     }
 
-    dripline::reply_info daq_control::handle_get_duration_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_get_duration_request( const dripline::request_ptr_t a_request )
     {
         param_array t_values_array;
         t_values_array.push_back( param_value( f_run_duration ) );
 
-        a_reply_pkg.f_payload.add( "values", t_values_array );
+        param_ptr_t t_payload_ptr( new param_node() );
+        t_payload_ptr->as_node().add( "values", t_values_array );
 
-        return a_reply_pkg.send_reply( retcode_t::success, "Duration request completed" );
+        return a_request->reply( dripline::dl_success(), "Duration request completed" );
     }
 
-    dripline::reply_info daq_control::handle_get_use_monarch_request( const dripline::request_ptr_t, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t daq_control::handle_get_use_monarch_request( const dripline::request_ptr_t a_request )
     {
         param_array t_values_array;
         t_values_array.push_back( param_value( f_use_monarch ) );
 
-        a_reply_pkg.f_payload.add( "values", t_values_array );
+        param_ptr_t t_payload_ptr( new param_node() );
+        t_payload_ptr->as_node().add( "values", t_values_array );
 
-        return a_reply_pkg.send_reply( retcode_t::success, "Use Monarch request completed" );
+        return a_request->reply( dripline::dl_success(), "Use Monarch request completed" );
     }
 
 

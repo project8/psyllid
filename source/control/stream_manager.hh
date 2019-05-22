@@ -94,13 +94,13 @@ namespace psyllid
             bool is_in_use() const;
 
         public:
-            dripline::reply_info handle_add_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_remove_stream_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_add_stream_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_remove_stream_request( const dripline::request_ptr_t a_request );
 
-            dripline::reply_info handle_configure_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_dump_config_node_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_get_stream_list_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_get_stream_node_list_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_configure_node_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_dump_config_node_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_get_stream_list_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_get_stream_node_list_request( const dripline::request_ptr_t a_request );
 
         private:
             void _add_stream( const std::string& a_name, const scarab::param_node& a_node );

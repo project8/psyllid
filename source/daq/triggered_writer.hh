@@ -52,7 +52,7 @@ namespace psyllid
      Output Streams: (none)
     */
     class triggered_writer :
-            public midge::_consumer< triggered_writer, typelist_2( time_data, trigger_flag ) >,
+            public midge::_consumer< midge::type_list< time_data, trigger_flag > >,
             public egg_writer
     {
         public:
