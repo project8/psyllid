@@ -162,26 +162,30 @@ namespace psyllid
         LDEBUG( plog, "Waiting for the batch executor to finish" );
         t_executor_thread_initial.join();
         LDEBUG( plog, "Initial batch executions complete" );
-        // now execute the request receiver to start consuming
-        //     and start the batch executor in infinite mode so that more command sets may be staged later
-        std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex), true );
-        std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex) );
 
-        t_lock.unlock();
-
-        set_status( k_running );
-        LPROG( plog, "Running..." );
-
-        t_receiver_thread.join();
-        LPROG( plog, "Receiver thread has ended" );
-        // if make_connection is false, we need to actually call cancel:
-        if ( ! f_request_receiver.get()->get_make_connection() )
+        if( ! is_canceled() )
         {
-            LINFO( plog, "request receiver not making connections, canceling run server" );
-            this->cancel();
+            // now execute the request receiver to start consuming
+            //     and start the batch executor in infinite mode so that more command sets may be staged later
+            std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex), true );
+            std::thread t_receiver_thread( &request_receiver::execute, f_request_receiver.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex) );
+
+            t_lock.unlock();
+
+            set_status( k_running );
+            LPROG( plog, "Running..." );
+
+            t_receiver_thread.join();
+            LPROG( plog, "Receiver thread has ended" );
+            // if make_connection is false, we need to actually call cancel:
+            if ( ! f_request_receiver.get()->get_make_connection() )
+            {
+                LINFO( plog, "Request receiver not making connections, canceling run server" );
+                this->cancel();
+            }
+            // and then wait for the controllers to finish up...
+            t_executor_thread.join();
         }
-        // and then wait for the controllers to finish up...
-        t_executor_thread.join();
         t_daq_control_thread.join();
         LPROG( plog, "DAQ control thread has ended" );
 
@@ -196,7 +200,6 @@ namespace psyllid
 
         f_return = RETURN_SUCCESS;
 
-        LDEBUG( plog, "last print before end of execute" );
         return;
     }
 
