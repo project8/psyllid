@@ -201,11 +201,11 @@ namespace psyllid
         // wait until daq status is no longer "running"
         if ( t_action.f_is_custom_action )
         {
-            daq_control::status t_status = daq_control::uint_to_status( t_request_reply->f_payload["server"]["status-value"]().as_uint() );
+            daq_control::status t_status = daq_control::uint_to_status( t_request_reply->payload()["server"]["status-value"]().as_uint() );
             while ( t_status == daq_control::status::running )
             {
                 t_request_reply = f_request_receiver->submit_request_message( t_action.f_request_ptr );
-                t_status = daq_control::uint_to_status( t_request_reply->f_payload["server"]["status-value"]().as_uint() );
+                t_status = daq_control::uint_to_status( t_request_reply->payload()["server"]["status-value"]().as_uint() );
                 std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
             }
         }
@@ -213,12 +213,12 @@ namespace psyllid
         {
             std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
         }
-        if ( dripline::to_uint(t_request_reply->f_return_code) >= 100 )
+        if ( t_request_reply->get_return_code() >= 100 )
         {
             LWARN( plog, "batch action received an error-level return code; exiting" );
             throw psyllid::error() << "error completing batch action, received code [" <<
-                                   t_request_reply->f_return_code << "]: \"" <<
-                                   t_request_reply->f_return_msg << "\"";
+                                   t_request_reply->get_return_code() << "]: \"" <<
+                                   t_request_reply->return_msg() << "\"";
         }
     }
 
@@ -270,7 +270,7 @@ namespace psyllid
 
         // put it together into a request
         t_action_info.f_request_ptr = dripline::msg_request::create(
-                                            t_payload_ptr,
+                                            std::move(t_payload_ptr),
                                             t_msg_op,
                                             std::string() );// reply-to is empty because no reply for batch requests
         t_action_info.f_request_ptr->parsed_specifier().parse( t_rks );
