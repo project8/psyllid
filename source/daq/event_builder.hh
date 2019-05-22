@@ -66,7 +66,7 @@ namespace psyllid
      - 0: trigger_flag
     */
     class event_builder :
-            public midge::_transformer< event_builder, typelist_1( trigger_flag ), typelist_1( trigger_flag ) >
+            public midge::_transformer< midge::type_list< trigger_flag >, midge::type_list< trigger_flag > >
     {
         public:
             typedef boost::circular_buffer< uint64_t > pretrigger_buffer_t;

@@ -81,7 +81,7 @@ namespace psyllid
      - 0: trigger_flag
     */
     class frequency_mask_trigger :
-            public midge::_transformer< frequency_mask_trigger, typelist_1( freq_data ), typelist_1( trigger_flag ) >
+            public midge::_transformer< midge::type_list< freq_data >, midge::type_list< trigger_flag > >
     {
         public:
             enum class status_t

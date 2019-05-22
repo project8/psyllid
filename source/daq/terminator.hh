@@ -20,7 +20,7 @@ namespace psyllid
 {
 
 #define DEFINE_TERMINATOR( data_class ) \
-        class terminator_##data_class : public midge::_consumer< terminator_##data_class, typelist_1( data_class ) > \
+        class terminator_##data_class : public midge::_consumer< midge::type_list< data_class > > \
         { \
             public: \
                 terminator_##data_class(); \
@@ -87,7 +87,7 @@ namespace psyllid
 
 
     class terminator_time_data :
-            public midge::_consumer< terminator_time_data, typelist_1( time_data ) >
+            public midge::_consumer< midge::type_list< time_data > >
     {
         public:
             terminator_time_data();
@@ -113,7 +113,7 @@ namespace psyllid
 
 
     class terminator_freq_data :
-            public midge::_consumer< terminator_freq_data, typelist_1( freq_data ) >
+            public midge::_consumer< midge::type_list< freq_data > >
     {
         public:
             terminator_freq_data();

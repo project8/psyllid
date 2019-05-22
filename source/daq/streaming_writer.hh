@@ -50,7 +50,7 @@ namespace psyllid
      Output Streams: (none)
     */
     class streaming_writer :
-            public midge::_consumer< streaming_writer, typelist_1( time_data ) >,
+            public midge::_consumer< midge::type_list< time_data > >,
             public egg_writer
     {
         public:

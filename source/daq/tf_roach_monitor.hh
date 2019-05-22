@@ -39,7 +39,7 @@ namespace psyllid
      Output Streams: (none)
     */
     class roach_time_monitor :
-            public midge::_consumer< roach_time_monitor, typelist_1( time_data ) >
+            public midge::_consumer< midge::type_list< time_data > >
     {
         public:
             roach_time_monitor();
@@ -93,7 +93,7 @@ namespace psyllid
      Output Streams: (none)
     */
     class roach_freq_monitor :
-            public midge::_consumer< roach_freq_monitor, typelist_1( freq_data ) >
+            public midge::_consumer< midge::type_list< freq_data > >
     {
         public:
             roach_freq_monitor();
