@@ -122,19 +122,19 @@ namespace psyllid
         }
     }
 
-    dripline::reply_info request_receiver::__do_handle_set_condition_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t request_receiver::__do_handle_set_condition_request( const dripline::request_ptr_t a_request )
     {
         std::string t_condition = a_request->payload()["values"][0]().as_string();
         if ( f_set_conditions.has( t_condition ) )
         {
             std::string t_rks = f_set_conditions[t_condition]().as_string();
-            dripline::request_ptr_t t_request = dripline::msg_request::create( scarab::param_node(), dripline::op_t::cmd, std::string(), std::string() );
-            t_request->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
+            dripline::request_ptr_t t_request = dripline::msg_request::create( scarab::param_node(), dripline::op_t::cmd, a_request->routing_key(), t_rks );
+            //t_request->specifier = t_rks; //, dripline::routing_key_specifier( t_rks ) );
 
-            dripline::reply_info t_reply_info = submit_request_message( t_request );
-            return a_reply_pkg.send_reply( t_reply_info.f_return_code, t_reply_info.f_return_msg );
+            dripline::reply_ptr_t t_reply_ptr = submit_request_message( t_request );
+            return a_request->reply( t_reply_ptr.f_return_code, t_reply_ptr.f_return_msg, std::move( t_reply_ptr->payload() );
         }
-        return a_reply_pkg.send_reply( dripline::retcode_t::daq_error, "set condition not configured" );
+        return a_request->reply( dripline::dl_daq_error(), "set condition not configured" );
     }
 
 }
