@@ -21,7 +21,6 @@
 #include <signal.h> // for raise()
 #include <thread>
 
-using dripline::retcode_t;
 using dripline::request_ptr_t;
 
 using scarab::param_node;
@@ -261,7 +260,7 @@ namespace psyllid
 
     dripline::reply_ptr_t run_server::handle_quit_server_request( const dripline::request_ptr_t a_request )
     {
-        dripline::reply_info t_return = a_request->reply( dripline::dl_success(), "Server-quit command processed" );
+        dripline::reply_ptr_t t_return = a_request->reply( dripline::dl_success(), "Server-quit command processed" );
         quit_server();
         return t_return;
     }
