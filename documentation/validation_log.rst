@@ -43,6 +43,31 @@ Fixes:
 Log
 ---
 
+Version: 1.10.0
+~~~~~~~~~~~~~~~
+
+Release Date: May 22, 2019
+''''''''''''''''''''''''''
+
+New Features:
+'''''''''''''
+
+* All submodules updated
+    * Dripline-cpp v1.9.3 (now under driplineorg)
+    * Midge v3.7.1
+    * Monarch v3.5.8
+    * Scarab v2.4.7
+* New CL syntax
+    * Now using the new Scarab CLI framework
+    * Standard CL argument format
+* Using the updated Dripline-cpp interface
+* Using the new Midge template metaprogramming
+
+Fixes:
+''''''
+
+* Fixed infinite loop for the startup corner case where `activate-on-startup` is used but no streams are defined.
+
 Version: 1.9.3
 ~~~~~~~~~~~~~~
 
