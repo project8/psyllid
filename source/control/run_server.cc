@@ -30,10 +30,8 @@ namespace psyllid
 {
     LOGGER( plog, "run_server" );
 
-    run_server::run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semantic > a_version ) :
+    run_server::run_server() :
             scarab::cancelable(),
-            f_config( a_node ),
-            f_version( a_version ),
             f_return( RETURN_ERROR ),
             f_request_receiver(),
             f_batch_executor(),
@@ -48,7 +46,7 @@ namespace psyllid
     {
     }
 
-    void run_server::execute()
+    void run_server::execute( const param_node& a_config )
     {
         LPROG( plog, "Creating server objects" );
 
@@ -58,7 +56,7 @@ namespace psyllid
         t_sig_hand.add_cancelable( this );
 
         // configuration manager
-        //config_manager t_config_mgr( f_config, &t_dev_mgr );
+        //config_manager t_config_mgr( a_config, &t_dev_mgr );
 
         std::unique_lock< std::mutex > t_lock( f_component_mutex );
 
@@ -68,8 +66,8 @@ namespace psyllid
             // dripline relayer
             try
             {
-                message_relayer* t_msg_relay = message_relayer::create_instance( f_config["amqp"].as_node() );
-                if( f_config["post-to-slack"]().as_bool() )
+                message_relayer* t_msg_relay = message_relayer::create_instance( a_config["amqp"].as_node() );
+                if( a_config["post-to-slack"]().as_bool() )
                 {
                     LDEBUG( plog, "Starting message relayer thread" );
                     t_msg_relay_thread = std::thread( &message_relayer::execute_relayer, t_msg_relay );
@@ -87,14 +85,14 @@ namespace psyllid
 
             // daq control
             LDEBUG( plog, "Creating DAQ control" );
-            f_daq_control.reset( new daq_control( f_config, f_stream_manager ) );
+            f_daq_control.reset( new daq_control( a_config, f_stream_manager ) );
             // provide the pointer to the daq_control to control_access
             control_access::set_daq_control( f_daq_control );
             f_daq_control->initialize();
 
-            if( f_config.has( "streams" ) && f_config["streams"].is_node() )
+            if( a_config.has( "streams" ) && a_config["streams"].is_node() )
             {
-                if( ! f_stream_manager->initialize( f_config["streams"].as_node() ) )
+                if( ! f_stream_manager->initialize( a_config["streams"].as_node() ) )
                 {
                     throw error() << "Unable to initialize the stream manager";
                 }
@@ -102,10 +100,10 @@ namespace psyllid
 
             // request receiver
             LDEBUG( plog, "Creating request receiver" );
-            f_request_receiver.reset( new request_receiver( f_config ) );
+            f_request_receiver.reset( new request_receiver( a_config ) );
             // batch executor
             LDEBUG( plog, "Creating batch executor" );
-            f_batch_executor.reset( new batch_executor( f_config, f_request_receiver ) );
+            f_batch_executor.reset( new batch_executor( a_config, f_request_receiver ) );
 
         }
         catch( std::exception& e )
