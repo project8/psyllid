@@ -129,7 +129,7 @@ namespace psyllid
             //t_request->specifier = t_rks; //, dripline::routing_key_specifier( t_rks ) );
 
             dripline::reply_ptr_t t_reply_ptr = submit_request_message( t_request );
-            return a_request->reply( t_reply_ptr->get_return_code(), t_reply_ptr->return_msg(), std::move(t_reply_ptr->payload()) );
+            return a_request->reply( t_reply_ptr->get_return_code(), t_reply_ptr->return_msg(), param_ptr_t(new param_node(t_reply_ptr->payload().as_node())) );
         }
         return a_request->reply( dripline::dl_daq_error(), "set condition not configured" );
     }
