@@ -159,8 +159,9 @@ namespace psyllid
         std::thread t_daq_control_thread( &daq_control::execute, f_daq_control.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex) );
         // batch execution to do initial calls (AMQP consume hasn't started yet)
         std::thread t_executor_thread_initial( &batch_executor::execute, f_batch_executor.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex), false );
+        LDEBUG( plog, "Waiting for the batch executor to finish" );
         t_executor_thread_initial.join();
-        LDEBUG( plog, "initial batch executions complete" );
+        LDEBUG( plog, "Initial batch executions complete" );
         // now execute the request receiver to start consuming
         //     and start the batch executor in infinite mode so that more command sets may be staged later
         std::thread t_executor_thread( &batch_executor::execute, f_batch_executor.get(), std::ref(t_daq_control_ready_cv), std::ref(t_daq_control_ready_mutex), true );

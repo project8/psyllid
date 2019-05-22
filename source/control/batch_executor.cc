@@ -157,7 +157,7 @@ namespace psyllid
             duration: 200
             filenames: '["/tmp/foo_t.yaml", "/tmp/foo_f.yaml"]'
     */
-    void batch_executor::execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex, bool run_forever )
+    void batch_executor::execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex, bool a_run_forever )
     {
         if( daq_control_expired() )
         {
@@ -173,7 +173,7 @@ namespace psyllid
             a_daq_control_ready_cv.wait_for( t_daq_control_lock, std::chrono::seconds(1) );
         }
 
-        while ( ( run_forever || f_action_queue.size() ) && ! is_canceled() )
+        while ( ( a_run_forever || f_action_queue.size() ) && ! is_canceled() )
         {
             if ( f_action_queue.size() )
             {
