@@ -32,7 +32,7 @@ namespace psyllid
      When a request is received the handle_function registered with this request gets called.
      The registration of requests and functions is done in dripline::hub.
      */
-    class request_receiver : public dripline::hub, public control_access, public scarab::cancelable
+    class request_receiver : public dripline::hub, public control_access
     {
         public:
             request_receiver( const scarab::param_node& a_master_config );

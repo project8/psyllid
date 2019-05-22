@@ -28,7 +28,6 @@ using scarab::param_value;
 using scarab::param_ptr_t;
 
 using dripline::request_ptr_t;
-using dripline::retcode_t;
 
 using std::string;
 
@@ -625,28 +624,32 @@ namespace psyllid
     {
         try
         {
-            if( a_request->payload().has( "filename" ) ) set_filename( a_request->payload()["filename"]().as_string(), 0 );
-            //TODO BUG here, if filenames exists but is not an array (only case i tried), this causes a seg fault which is not handled below
-            if( a_request->payload().has( "filenames" ) )
+            if( a_request->payload().is_node() )
             {
-                const scarab::param_array t_filenames = a_request->payload()["filenames"].as_array();
-                for( unsigned i_fn = 0; i_fn < t_filenames.size(); ++i_fn )
+                param_node& t_payload = a_request->payload().as_node();
+                if( t_payload.has( "filename" ) ) set_filename( t_payload["filename"]().as_string(), 0 );
+                //TODO BUG here, if filenames exists but is not an array (only case i tried), this causes a seg fault which is not handled below
+                if( t_payload.as_node().has( "filenames" ) )
                 {
-                    set_filename( t_filenames[i_fn]().as_string(), i_fn );
+                    const scarab::param_array t_filenames = t_payload["filenames"].as_array();
+                    for( unsigned i_fn = 0; i_fn < t_filenames.size(); ++i_fn )
+                    {
+                        set_filename( t_filenames[i_fn]().as_string(), i_fn );
+                    }
                 }
-            }
 
-            if( a_request->payload().has( "description" ) ) set_description( a_request->payload()["description"]().as_string(), 0 );
-            if( a_request->payload().has( "descriptions" ) )
-            {
-                const scarab::param_array t_descriptions = a_request->payload()["descriptions"].as_array();
-                for( unsigned i_fn = 0; i_fn < t_descriptions.size(); ++i_fn )
+                if( t_payload.has( "description" ) ) set_description( t_payload["description"]().as_string(), 0 );
+                if( t_payload.has( "descriptions" ) )
                 {
-                    set_description( t_descriptions[i_fn]().as_string(), i_fn );
+                    const scarab::param_array t_descriptions = t_payload["descriptions"].as_array();
+                    for( unsigned i_fn = 0; i_fn < t_descriptions.size(); ++i_fn )
+                    {
+                        set_description( t_descriptions[i_fn]().as_string(), i_fn );
+                    }
                 }
-            }
 
-            f_run_duration = a_request->payload().get_value( "duration", f_run_duration );
+                f_run_duration = a_request->payload().get_value( "duration", f_run_duration );
+            }
 
             start_run();
             return a_request->reply( dripline::dl_success(), "Run started" );
@@ -694,14 +697,14 @@ namespace psyllid
             // payload should be a map of all parameters to be set
             LDEBUG( plog, "Performing config for multiple values in active node <" << t_target_node << ">" );
 
-            if( a_request->payload().empty() )
+            if( ! a_request->payload().is_node() || a_request->payload().as_node().empty() )
             {
                 return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform active-config request: payload is empty" );
             }
 
             try
             {
-                apply_config( t_target_node, a_request->payload() );
+                apply_config( t_target_node, a_request->payload().as_node() );
                 t_payload.merge( a_request->payload() );
             }
             catch( std::exception& e )
@@ -714,12 +717,12 @@ namespace psyllid
             // payload should be values array with a single entry for the particular parameter to be set
             LDEBUG( plog, "Performing node config for a single value in active node <" << t_target_node << ">" );
 
-            if( ! a_request->payload().has( "values" ) )
+            if( ! a_request->payload().is_node() || ! a_request->payload().as_node().has( "values" ) )
             {
                 return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform active-config (single value): values array is missing" );
             }
             scarab::param_array t_values_array;
-            if ( a_request->payload().has("values") ) {
+            if ( a_request->payload().as_node().has("values") ) {
                 t_values_array.append( a_request->payload()["values"].as_array() );
             }
             if( t_values_array.empty() || ! t_values_array[0].is_value() )
