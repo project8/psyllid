@@ -8,11 +8,11 @@
 #ifndef PSYLLID_EGG3_READER_HH_
 #define PSYLLID_EGG3_READER_HH_
 
+#include "producer.hh"
+
+#include "control_access.hh"
 #include "memory_block.hh"
 #include "node_builder.hh"
-
-#include "producer.hh"
-#include "control_access.hh"
 
 namespace monarch3
 {
@@ -48,7 +48,7 @@ namespace psyllid
     class time_data;
 
     // egg3_reader
-    class egg3_reader : public midge::_producer< egg3_reader, typelist_1( time_data ) >, public control_access
+    class egg3_reader : public midge::_producer< midge::type_list<time_data> >, public control_access
     {
         public:
             egg3_reader();
