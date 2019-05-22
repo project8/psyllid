@@ -56,7 +56,7 @@ namespace psyllid
         add( "post-to-slack", false );
 
         param_node t_daq_node;
-        t_daq_node.add( "activate-at-startup", true );
+        t_daq_node.add( "activate-at-startup", false );
         t_daq_node.add( "n-files", 1U );
         t_daq_node.add( "duration", 1000U );
         t_daq_node.add( "max-file-size-mb", 500.0 );

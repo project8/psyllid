@@ -55,7 +55,7 @@ namespace psyllid
      - 0: time_data
      - 1: freq_data
     */
-    class frequency_transform : public midge::_transformer< frequency_transform, typelist_1( time_data ), typelist_2( time_data, freq_data ) >
+    class frequency_transform : public midge::_transformer< midge::type_list< time_data >, midge::type_list< time_data, freq_data > >
     {
         private:
             typedef std::map< std::string, unsigned > TransformFlagMap;

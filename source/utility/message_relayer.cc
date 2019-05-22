@@ -23,33 +23,37 @@ namespace psyllid
 
     void message_relayer::slack_notice( const std::string& a_msg_text ) const
     {
-        scarab::param_node t_msg = scarab::param_node();
+        scarab::param_ptr_t t_msg_ptr( new scarab::param_node() );
+        scarab::param_node& t_msg = t_msg_ptr->as_node();
         t_msg.add( "message", scarab::param_value( a_msg_text ) );
-        dripline::relayer::send_async( dripline::msg_alert::create( t_msg, "status_message.notice.psyllid" ) );
+        dripline::relayer::send_async( dripline::msg_alert::create( std::move(t_msg_ptr), "status_message.notice.psyllid" ) );
         return;
     }
 
     void  message_relayer::slack_warn( const std::string& a_msg_text ) const
     {
-        scarab::param_node t_msg = scarab::param_node();
+        scarab::param_ptr_t t_msg_ptr( new scarab::param_node() );
+        scarab::param_node& t_msg = t_msg_ptr->as_node();
         t_msg.add( "message", scarab::param_value( a_msg_text ) );
-        send_async( dripline::msg_alert::create( t_msg, "status_message.warning.psyllid" ) );
+        send_async( dripline::msg_alert::create( std::move(t_msg_ptr), "status_message.warning.psyllid" ) );
         return;
     }
 
     void  message_relayer::slack_error( const std::string& a_msg_text ) const
     {
-        scarab::param_node t_msg = scarab::param_node();
+        scarab::param_ptr_t t_msg_ptr( new scarab::param_node() );
+        scarab::param_node& t_msg = t_msg_ptr->as_node();
         t_msg.add( "message", scarab::param_value( a_msg_text ) );
-        send_async( dripline::msg_alert::create( t_msg, "status_message.error.psyllid" ) );
+        send_async( dripline::msg_alert::create( std::move(t_msg_ptr), "status_message.error.psyllid" ) );
         return;
     }
 
     void  message_relayer::slack_critical( const std::string& a_msg_text ) const
     {
-        scarab::param_node t_msg = scarab::param_node();
+        scarab::param_ptr_t t_msg_ptr( new scarab::param_node() );
+        scarab::param_node& t_msg = t_msg_ptr->as_node();
         t_msg.add( "message", scarab::param_value( a_msg_text ) );
-        send_async( dripline::msg_alert::create( t_msg, "status_message.critical.psyllid" ) );
+        send_async( dripline::msg_alert::create( std::move(t_msg_ptr), "status_message.critical.psyllid" ) );
         return;
     }
 

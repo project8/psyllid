@@ -57,7 +57,7 @@ namespace psyllid
      - 1: freq_data (for time_and_freq mode)
      - 2: freq_data (for freq_only mode)
     */
-    class tf_roach_receiver : public midge::_transformer< tf_roach_receiver, typelist_1( memory_block ), typelist_2( time_data, freq_data ) >
+    class tf_roach_receiver : public midge::_transformer< midge::type_list< memory_block >, midge::type_list< time_data, freq_data > >
     {
         public:
             tf_roach_receiver();

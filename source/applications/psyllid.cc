@@ -11,8 +11,7 @@
 #include "run_server.hh"
 #include "server_config.hh"
 
-#include "configurator.hh"
-//#include "global_config.hh"
+#include "application.hh"
 #include "logger.hh"
 
 using namespace psyllid;
@@ -20,8 +19,6 @@ using namespace psyllid;
 using std::string;
 
 LOGGER( plog, "psyllid" );
-
-set_version( psyllid, version );
 
 int main( int argc, char** argv )
 {
@@ -36,14 +33,33 @@ int main( int argc, char** argv )
 
     try
     {
-        server_config t_sc;
-        scarab::configurator t_configurator( argc, argv, t_sc );
-        //scarab::global_config::get_instance()->set_config( t_configurator.config() );
+        // The application
+        scarab::main_app the_main;
+        run_server the_server;
 
-        // Run the server
-        run_server the_server( t_configurator.config(), std::shared_ptr< scarab::version_semantic >( new version() ) );
+        // Default configuration
+        the_main.default_config() = server_config();
 
-        the_server.execute();
+        // The main execution callback
+        the_main.callback( [&](){ the_server.execute( the_main.master_config() ); } );
+
+        // Command line options
+        the_main.add_config_option< std::string >( "-b,--broker", "amqp.broker", "Set the dripline broker address" );
+        the_main.add_config_option< unsigned >( "-p,--port", "amqp.broker-port", "Set the port for communication with the dripline broker" );
+        the_main.add_config_option< std::string >( "-e,--exchange", "amqp.exchange", "Set the exchange to send message on" );
+        the_main.add_config_option< std::string >( "-a,--auth-file", "amqp.auth-file", "Set the authentication file path" );
+        the_main.add_config_option< std::string >( "-s,--slack-queue", "amqp.slack-queue", "Set the queue name for Slack messages" );
+        the_main.add_config_flag< bool >( "--post-to-slack", "post-to-slack", "Flag for en/disabling posting to Slack" );
+        the_main.add_config_flag< bool >( "--activate-at-startup", "daq.activate-at-startup", "Flag to make Psyllid activate on startup" );
+        the_main.add_config_option< unsigned >( "-n,--n-files", "daq.n-files", "Number of files to be written in parallel" );
+        the_main.add_config_option< unsigned >( "-d,--duration", "daq.duration", "Run duration in ms" );
+        the_main.add_config_option< double >( "-m,--max-file-size-mb", "daq.max-file-size-mb", "Maximum file size in MB" );
+
+        // Package version
+        the_main.set_version( new psyllid::version() );
+
+        // Parse CL options and run the application
+        CLI11_PARSE( the_main, argc, argv );
 
         return the_server.get_return();
     }

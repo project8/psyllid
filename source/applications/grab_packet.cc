@@ -20,10 +20,13 @@
 
 #include "freq_data.hh"
 #include "time_data.hh"
+#include "psyllid_version.hh"
 
-#include "configurator.hh"
+#include "application.hh"
 #include "logger.hh"
 #include "param.hh"
+
+#include "dripline_constants.hh" // for RETURN constants
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -46,11 +49,16 @@ LOGGER( plog, "grab_packet" );
 bool ProcessUnknownPacket( uint8_t* a_buffer );
 bool ProcessROACHPacket( uint8_t* a_buffer );
 
+using namespace psyllid;
 
 int main( int argc, char** argv )
 {
     try
     {
+        // The application
+        scarab::main_app the_main;
+
+        // Default configuration
         scarab::param_node t_default_config;
         t_default_config.add( "n", scarab::param_value( 1U ) );
         t_default_config.add( "ip", scarab::param_value( "127.0.0.1" ) );
@@ -59,135 +67,147 @@ int main( int argc, char** argv )
         t_default_config.add( "timeout", scarab::param_value( 10U ) );
         t_default_config.add( "max-packet-size", scarab::param_value( 16384U ) );
         t_default_config.add( "packet-type", scarab::param_value( "roach" ) );
+        the_main.default_config() = t_default_config;
 
-        scarab::configurator t_configurator( argc, argv, t_default_config );
+        // Command line options
+        the_main.add_config_option< unsigned >( "-n,--n-packets", "n", "Number of packets to grab" );
+        the_main.add_config_option< std::string >( "--ip", "ip", "IP address from which to receive packets" );
+        the_main.add_config_option< unsigned >( "-p,--port", "port", "Port on which to receive packets" );
+        the_main.add_config_option< std::string >( "-i,--interface", "interface", "Ethernet interface to grab packets off of" );
+        the_main.add_config_option< unsigned >( "-t,--timeout", "timeout", "Timeout" );
+        the_main.add_config_option< unsigned >( "-m,--max-packet-size", "max-packet-size", "Maximum packet size" );
+        the_main.add_config_option< std::string >( "---packet-type", "packet-type", "Packet type" );
 
-        unsigned t_n_packets( t_configurator.get< unsigned >( "n" ) );
-        std::string t_ip( t_configurator.get< std::string >( "ip" ) );
-        unsigned t_port = t_configurator.get< unsigned >( "port" );
-        std::string t_interface( t_configurator.get< std::string >( "interface" ) );
-        unsigned t_timeout_sec = t_configurator.get< unsigned >( "timeout" );
-        //bool t_use_fpa( t_configurator.config().has( "fpa" ) );
-        unsigned t_max_packet_size = t_configurator.get< unsigned >( "max-packet-size" );
+        // Package version
+        the_main.set_version( new psyllid::version() );
 
-        std::string t_packet_type( t_configurator.get< std::string >( "packet-type" ) );
-        bool (*t_proc_pkt_func)( uint8_t* ) = nullptr;
-        if( t_packet_type == "roach" )
-        {
-            t_proc_pkt_func = &ProcessROACHPacket;
-            LDEBUG( plog, "Processing packets as ROACH packets" );
-        }
-        else if( t_packet_type == "unknown" )
-        {
-            t_proc_pkt_func= &ProcessUnknownPacket;
-            LDEBUG( plog, "Processing packets as unknown packets" );
-        }
-        else
-        {
-            LERROR( plog, "Unknown packet type supplied: " << t_packet_type );
-            return -1;
-        }
+        // The main execution callback
+        the_main.callback( [&]() {
+            unsigned t_n_packets( the_main.master_config()["n"]().as_uint() );
+            std::string t_ip( the_main.master_config()["ip"]().as_string() );
+            unsigned t_port = the_main.master_config()["port"]().as_uint();
+            std::string t_interface( the_main.master_config()["interface"]().as_string() );
+            unsigned t_timeout_sec = the_main.master_config()["timeout"]().as_uint();
+            //bool t_use_fpa( the_main.master_config()["fpa"]().as_bool() );
+            unsigned t_max_packet_size = the_main.master_config()["max-packet-size"]().as_uint();
+            std::string t_packet_type( the_main.master_config()["packet-type"]().as_string() );
 
-
-        LDEBUG( plog, "Opening UDP socket receiving at " << t_ip << ":" << t_port );
-
-        //initialize address
-        socklen_t t_socket_length = sizeof(sockaddr_in);
-        sockaddr_in* t_address = new sockaddr_in();
-        ::memset( t_address, 0, t_socket_length );
-
-        //prepare address
-        t_address->sin_family = AF_INET;
-        t_address->sin_addr.s_addr = inet_addr( t_ip.c_str() );
-        if( t_address->sin_addr.s_addr == INADDR_NONE )
-        {
-            LERROR( plog, "Invalid IP address\n" );
-            return -1;
-        }
-        t_address->sin_port = htons( t_port );
-
-        //MTLINFO( pmsg, "address prepared..." );
-
-        //open socket
-        int t_socket = ::socket( AF_INET, SOCK_DGRAM, 0 );
-        if( t_socket < 0 )
-        {
-            LERROR( plog, "Could not create socket:\n\t" << strerror( errno ) );
-            return-1 ;
-        }
-
-        /* setsockopt: Handy debugging trick that lets
-           * us rerun the udp_server immediately after we kill it;
-           * otherwise we have to wait about 20 secs.
-           * Eliminates "ERROR on binding: Address already in use" error.
-           */
-        int optval = 1;
-        ::setsockopt( t_socket, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
-
-        // Receive timeout
-        if( t_timeout_sec > 0 )
-        {
-            struct timeval t_timeout;
-            t_timeout.tv_sec = t_timeout_sec;
-            t_timeout.tv_usec = 0;  // Not init'ing this can cause strange errors
-            ::setsockopt( t_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&t_timeout, sizeof(struct timeval) );
-        }
-
-        //msg_normal( pmsg, "socket open..." );
-
-        //bind socket
-        if( ::bind( t_socket, (const sockaddr*) (t_address), t_socket_length ) < 0 )
-        {
-            LERROR( plog, "Could not bind socket:\n\t" << strerror( errno ) );
-            return -1;
-        }
-
-
-
-        uint8_t* t_buffer = new uint8_t [t_max_packet_size];
-
-        for( unsigned i_packet = 0; i_packet < t_n_packets; ++i_packet )
-        {
-            LINFO( plog, "Waiting for next packet" );
-            ssize_t t_size_received = 0;
-            while( t_size_received <= 0 )
+            bool (*t_proc_pkt_func)( uint8_t* ) = nullptr;
+            if( t_packet_type == "roach" )
             {
-                t_size_received = ::recv( t_socket, (void*)t_buffer, t_max_packet_size, 0 );
+                t_proc_pkt_func = &ProcessROACHPacket;
+                LDEBUG( plog, "Processing packets as ROACH packets" );
+            }
+            else if( t_packet_type == "unknown" )
+            {
+                t_proc_pkt_func= &ProcessUnknownPacket;
+                LDEBUG( plog, "Processing packets as unknown packets" );
+            }
+            else
+            {
+                throw error() << "Unknown packet type supplied: " << t_packet_type;
+            }
 
-                if( t_size_received > 0 )
+
+            LDEBUG( plog, "Opening UDP socket receiving at " << t_ip << ":" << t_port );
+
+            //initialize address
+            socklen_t t_socket_length = sizeof(sockaddr_in);
+            sockaddr_in* t_address = new sockaddr_in();
+            ::memset( t_address, 0, t_socket_length );
+
+            //prepare address
+            t_address->sin_family = AF_INET;
+            t_address->sin_addr.s_addr = inet_addr( t_ip.c_str() );
+            if( t_address->sin_addr.s_addr == INADDR_NONE )
+            {
+                throw error() << "Invalid IP address";
+            }
+            t_address->sin_port = htons( t_port );
+
+            //MTLINFO( pmsg, "address prepared..." );
+
+            //open socket
+            int t_socket = ::socket( AF_INET, SOCK_DGRAM, 0 );
+            if( t_socket < 0 )
+            {
+                throw error() << "Could not create socket:\n\t" << strerror( errno );
+            }
+
+            /* setsockopt: Handy debugging trick that lets
+               * us rerun the udp_server immediately after we kill it;
+               * otherwise we have to wait about 20 secs.
+               * Eliminates "ERROR on binding: Address already in use" error.
+               */
+            int optval = 1;
+            ::setsockopt( t_socket, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval , sizeof(int));
+
+            // Receive timeout
+            if( t_timeout_sec > 0 )
+            {
+                struct timeval t_timeout;
+                t_timeout.tv_sec = t_timeout_sec;
+                t_timeout.tv_usec = 0;  // Not init'ing this can cause strange errors
+                ::setsockopt( t_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&t_timeout, sizeof(struct timeval) );
+            }
+
+            //msg_normal( pmsg, "socket open..." );
+
+            //bind socket
+            if( ::bind( t_socket, (const sockaddr*) (t_address), t_socket_length ) < 0 )
+            {
+                throw error() << "Could not bind socket:\n\t" << strerror( errno );
+            }
+
+
+
+            uint8_t* t_buffer = new uint8_t [t_max_packet_size];
+
+            for( unsigned i_packet = 0; i_packet < t_n_packets; ++i_packet )
+            {
+                LINFO( plog, "Waiting for next packet" );
+                ssize_t t_size_received = 0;
+                while( t_size_received <= 0 )
                 {
-                    LINFO( plog, "Packet received (" << t_size_received << " bytes)" );
+                    t_size_received = ::recv( t_socket, (void*)t_buffer, t_max_packet_size, 0 );
 
-                    if( ! (*t_proc_pkt_func)( t_buffer ) )
+                    if( t_size_received > 0 )
                     {
-                        LWARN( plog, "Packet not processed correctly" );
+                        LINFO( plog, "Packet received (" << t_size_received << " bytes)" );
+
+                        if( ! (*t_proc_pkt_func)( t_buffer ) )
+                        {
+                            LWARN( plog, "Packet not processed correctly" );
+                        }
                     }
                 }
             }
-        }
 
-        //clean up udp_server address
-        if( t_address != nullptr )
-        {
-            delete t_address;
-            t_address = nullptr;
-        }
+            //clean up udp_server address
+            if( t_address != nullptr )
+            {
+                delete t_address;
+                t_address = nullptr;
+            }
 
-        //close udp_server socket
-        if( t_socket != 0 )
-        {
-            ::close( t_socket );
-            t_socket = 0;
-        }
+            //close udp_server socket
+            if( t_socket != 0 )
+            {
+                ::close( t_socket );
+                t_socket = 0;
+            }
+        } );
 
+        // Parse CL options and run the application
+        CLI11_PARSE( the_main, argc, argv );
+
+        return RETURN_SUCCESS;
     }
     catch( std::exception& e )
     {
         LERROR( plog, "Caught an exception: " << e.what() );
-        return -1;
     }
-
-    return 0;
+    return RETURN_ERROR;
 }
 
 

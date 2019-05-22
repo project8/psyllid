@@ -185,8 +185,8 @@ namespace psyllid
                         //is this the normalization we want? (is it what the ROACH does?)
                         for (size_t i_bin=0; i_bin<f_fft_size; ++i_bin)
                         {
-                            f_fftw_output[i_bin][0] *= fft_norm;
-                            f_fftw_output[i_bin][1] *= fft_norm;
+                            f_fftw_output[i_bin][0] = round(f_fftw_output[i_bin][0]*fft_norm);
+                            f_fftw_output[i_bin][1] = round(f_fftw_output[i_bin][1]*fft_norm);
                         }
                         //std::copy(&f_fftw_output[0][0], &f_fftw_output[0][0] + f_fft_size*2, &freq_data_out->get_array()[0][0]);
                         // FFT unfolding based on katydid:Source/Data/Transform/KTFrequencyTransformFFTW
