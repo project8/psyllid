@@ -428,7 +428,7 @@ namespace psyllid
 
     dripline::reply_ptr_t stream_manager::handle_add_stream_request( const dripline::request_ptr_t a_request )
     {
-        if( ! a_request->payload().has( "name" ) || ! a_request->payload().has( "config" ) )
+        if( ! a_request->payload().is_node() || ! a_request->payload().as_node().has( "name" ) || ! a_request->payload().as_node().has( "config" ) )
         {
             return a_request->reply( dripline::dl_message_error_bad_payload(), "Add-stream request is missing either \"name\" or \"config\"" );
         }
@@ -447,7 +447,7 @@ namespace psyllid
 
     dripline::reply_ptr_t stream_manager::handle_remove_stream_request( const dripline::request_ptr_t a_request )
     {
-        if( ! a_request->payload().has( "values" ) )
+        if( ! a_request->payload().is_node() || ! a_request->payload().as_node().has( "values" ) )
         {
             return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform remove-stream: values array is missing" );
         }
@@ -490,20 +490,23 @@ namespace psyllid
 
         param_ptr_t t_payload_ptr( new param_node() );
         param_node& t_payload = t_payload_ptr->as_node();
+
         if( a_request->parsed_specifier().empty() )
         {
             // payload should be a map of all parameters to be set
             LDEBUG( plog, "Performing node config for multiple values in stream <" << t_target_stream << "> and node <" << t_target_node << ">" );
 
-            if( a_request->payload().empty() )
+            if( ! a_request->payload().is_node() || a_request->payload().as_node().empty() )
             {
                 return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform node-config request: payload is empty" );
             }
 
+            param_node& t_req_payload = a_request->payload().as_node();
+
             try
             {
-                _configure_node( t_target_stream, t_target_node, a_request->payload() );
-                t_payload.merge( a_request->payload() );
+                _configure_node( t_target_stream, t_target_node, t_req_payload );
+                t_payload.merge( t_req_payload );
             }
             catch( std::exception& e )
             {
@@ -515,15 +518,18 @@ namespace psyllid
             // payload should be values array with a single entry for the particular parameter to be set
             LDEBUG( plog, "Performing node config for a single value in stream <" << t_target_stream << "> and node <" << t_target_node << ">" );
 
-            if( ! a_request->payload().has( "values" ) )
+            if( ! a_request->payload().is_node() || ! a_request->payload().as_node().has( "values" ) )
             {
                 return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform node-config (single value): values array is missing" );
             }
-            if( ! a_request->payload()["values"].is_array() )
+
+            param_node& t_req_payload = a_request->payload().as_node();
+
+            if( ! t_req_payload["values"].is_array() )
             {
                 return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform node-config (single value): values entry is not an array" );
             }
-            const param_array t_values_array = a_request->payload()["values"].as_array();
+            const param_array t_values_array = t_req_payload["values"].as_array();
             if( t_values_array.empty() || ! t_values_array[0]().is_value() )
             {
                 return a_request->reply( dripline::dl_message_error_bad_payload(), "Unable to perform node-config (single value): \"values\" is not an array, or the array is empty, or the first element in the array is not a value" );
