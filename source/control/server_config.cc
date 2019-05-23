@@ -37,12 +37,12 @@ namespace psyllid
         scarab::path t_auth_default_path = scarab::expand_path( "~/.project8_authentications.json" );
         if ( boost::filesystem::exists( t_auth_default_path ) )
         {
-            LDEBUG( plog, "default auth file found, setting that as initial value" );
-            t_amqp_node.add( "auth-file", t_auth_default_path.native() );
+            LDEBUG( plog, "default auth file found, setting that as initial value" << t_auth_default_path.string() );
+            t_amqp_node.add( "auth-file", t_auth_default_path.string() );
         }
         else
         {
-            LDEBUG( plog, "default auth file <" << t_auth_default_path.native() << "> does not exist, not setting" );
+            LDEBUG( plog, "default auth file <" << t_auth_default_path.string() << "> does not exist, not setting" );
         }
 
         // other available values

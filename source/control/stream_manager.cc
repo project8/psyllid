@@ -642,7 +642,7 @@ namespace psyllid
     {
         if( a_request->parsed_specifier().size() < 1 )
         {
-            return a_request->reply( dripline::dl_message_error_invalid_key(), "Specifier is improperly formatted: node-config.[stream]" );
+            return a_request->reply( dripline::dl_message_error_invalid_key(), "Specifier is improperly formatted: node-list.[stream]" );
         }
 
         std::string t_target_stream = a_request->parsed_specifier().front();
@@ -671,7 +671,7 @@ namespace psyllid
             return a_request->reply( dripline::dl_device_error(), std::string("Unable to perform get-stream-node-list request: ") + e.what() );
         }
         LDEBUG( plog, "Get-stream-node-list was successful" );
-        return a_request->reply( dripline::dl_success(), "Performed get-stream-node-list" );
+        return a_request->reply( dripline::dl_success(), "Performed get-stream-node-list", std::move(t_payload_ptr) );
     }
 
 } /* namespace psyllid */
