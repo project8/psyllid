@@ -43,6 +43,19 @@ Fixes:
 Log
 ---
 
+Version: 1.10.1
+~~~~~~~~~~~~~~~
+
+Release Date: May 23, 2019
+''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Fixed missing payloads.
+* Dripline-cpp updated to v1.9.2
+
+
 Version: 1.10.0
 ~~~~~~~~~~~~~~~
 
@@ -53,7 +66,7 @@ New Features:
 '''''''''''''
 
 * All submodules updated
-    * Dripline-cpp v1.9.3 (now under driplineorg)
+    * Dripline-cpp v1.9.1 (now under driplineorg)
     * Midge v3.7.1
     * Monarch v3.5.8
     * Scarab v2.4.7
@@ -67,6 +80,7 @@ Fixes:
 ''''''
 
 * Fixed infinite loop for the startup corner case where `activate-on-startup` is used but no streams are defined.
+
 
 Version: 1.9.3
 ~~~~~~~~~~~~~~
