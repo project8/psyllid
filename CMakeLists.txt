@@ -84,7 +84,7 @@ pbuilder_add_submodule( Midge midge )
 midge_process_options()
 
 # Dripline
-add_definitions( -DDRIPLINE_AUTH_FILE=.project8_authentications.json )
+add_definitions( -DDRIPLINE_AUTH_FILE=~/.project8_authentications.json )
 pbuilder_add_submodule( Dripline dripline-cpp )
 
 # Monarch
