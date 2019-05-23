@@ -804,7 +804,7 @@ namespace psyllid
         }
 
         LDEBUG( plog, "Get-active-node-config was successful" );
-        return a_request->reply( dripline::dl_success(), "Performed get-active-node-config" );
+        return a_request->reply( dripline::dl_success(), "Performed get-active-node-config", std::move(t_payload_ptr) );
     }
 
     dripline::reply_ptr_t daq_control::handle_run_command_request( const dripline::request_ptr_t a_request )
@@ -1001,7 +1001,7 @@ namespace psyllid
         param_ptr_t t_payload_ptr( new param_node() );
         t_payload_ptr->as_node().add( "values", t_values_array );
 
-        return a_request->reply( dripline::dl_success(), "Duration request completed" );
+        return a_request->reply( dripline::dl_success(), "Duration request completed", std::move(t_payload_ptr) );
     }
 
     dripline::reply_ptr_t daq_control::handle_get_use_monarch_request( const dripline::request_ptr_t a_request )
@@ -1012,7 +1012,7 @@ namespace psyllid
         param_ptr_t t_payload_ptr( new param_node() );
         t_payload_ptr->as_node().add( "values", t_values_array );
 
-        return a_request->reply( dripline::dl_success(), "Use Monarch request completed" );
+        return a_request->reply( dripline::dl_success(), "Use Monarch request completed", std::move(t_payload_ptr) );
     }
 
 

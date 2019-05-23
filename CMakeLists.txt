@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.1)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.10.0 )
+project( Psyllid VERSION 1.10.1 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
 include( PackageBuilder )
@@ -84,7 +84,7 @@ pbuilder_add_submodule( Midge midge )
 midge_process_options()
 
 # Dripline
-add_definitions( -DDRIPLINE_AUTH_FILE=.project8_authentications.json )
+add_definitions( -DDRIPLINE_AUTH_FILE=~/.project8_authentications.json )
 pbuilder_add_submodule( Dripline dripline-cpp )
 
 # Monarch
