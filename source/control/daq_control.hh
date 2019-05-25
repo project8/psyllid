@@ -118,28 +118,28 @@ namespace psyllid
             bool run_command( const std::string& a_node_name, const std::string& a_cmd, const scarab::param_node& a_args );
 
         public:
-            dripline::reply_info handle_activate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_reactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_deactivate_daq_control( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_activate_daq_control( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_reactivate_daq_control( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_deactivate_daq_control( const dripline::request_ptr_t a_request );
 
-            dripline::reply_info handle_start_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_start_run_request( const dripline::request_ptr_t a_request );
 
-            dripline::reply_info handle_stop_run_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_stop_run_request( const dripline::request_ptr_t a_request );
 
-            dripline::reply_info handle_apply_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_dump_config_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_run_command_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_apply_config_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_dump_config_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_run_command_request( const dripline::request_ptr_t a_request );
 
-            dripline::reply_info handle_set_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_set_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_set_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_set_use_monarch_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_set_filename_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_set_description_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_set_duration_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_set_use_monarch_request( const dripline::request_ptr_t a_request );
 
-            dripline::reply_info handle_get_status_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_get_filename_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_get_description_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_get_duration_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_get_use_monarch_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_get_status_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_get_filename_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_get_description_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_get_duration_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_get_use_monarch_request( const dripline::request_ptr_t a_request );
 
         private:
             void do_cancellation();
