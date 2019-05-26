@@ -42,7 +42,7 @@ namespace psyllid
 
             mv_referrable_const( scarab::param_node, set_conditions );
         private:
-            virtual void do_cancellation();
+            virtual void do_cancellation( int a_code );
 
         public:
             enum status
