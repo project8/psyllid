@@ -43,6 +43,18 @@ Fixes:
 Log
 ---
 
+Version: 1.10.2
+~~~~~~~~~~~~~~~
+
+Release Date: May 26, 2019
+''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Fixed return codes in error conditions
+
+
 Version: 1.10.1
 ~~~~~~~~~~~~~~~
 
