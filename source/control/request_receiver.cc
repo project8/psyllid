@@ -43,7 +43,7 @@ namespace psyllid
         if( daq_control_expired() )
         {
             LERROR( plog, "Unable to get access to the DAQ control" );
-            raise( SIGINT );
+            signal_handler::cancel_all( RETURN_ERROR );
             return;
         }
         dc_ptr_t t_daq_control_ptr = use_daq_control();
@@ -52,7 +52,7 @@ namespace psyllid
         if( ! start() && f_make_connection )
         {
             LERROR( plog, "Unable to start the dripline service" );
-            raise( SIGINT );
+            signal_handler::cancel_all( RETURN_ERROR );
             return;
         }
 
@@ -84,10 +84,9 @@ namespace psyllid
         return;
     }
 
-    void request_receiver::do_cancellation()
+    void request_receiver::do_cancellation( int )
     {
         LDEBUG( plog, "Canceling request receiver" );
-        scarab::cancelable::f_canceled.store( true );
         set_status( k_canceled );
         return;
     }

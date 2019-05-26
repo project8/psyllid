@@ -13,7 +13,9 @@
 //non-psyllid P8 includes
 #include "dripline_constants.hh"
 #include "dripline_error.hh"
+
 #include "logger.hh"
+#include "signal_handler.hh"
 
 //external includes
 #include <chrono>
@@ -162,7 +164,7 @@ namespace psyllid
         if( daq_control_expired() )
         {
             LERROR( plog, "Unable to get access to the DAQ control" );
-            raise( SIGINT );
+            signal_handler::cancel_all( RETURN_ERROR );
             return;
         }
         dc_ptr_t t_daq_control_ptr = use_daq_control();
@@ -220,12 +222,6 @@ namespace psyllid
                                    t_request_reply->get_return_code() << "]: \"" <<
                                    t_request_reply->return_msg() << "\"";
         }
-    }
-
-    void batch_executor::do_cancellation()
-    {
-        LDEBUG( plog, "canceling batch executor" );
-        return;
     }
 
     action_info batch_executor::parse_action( const scarab::param_node& a_action )

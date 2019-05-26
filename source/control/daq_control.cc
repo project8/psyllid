@@ -207,14 +207,14 @@ namespace psyllid
                 if( get_status() == status::running )
                 {
                     LERROR( plog, "Midge exited abnormally; error condition is unknown; canceling" );
-                    raise(SIGINT);
+                    signal_handler::cancel_all( RETURN_ERROR );
                     continue;
                 }
                 else if( get_status() == status::error )
                 {
                     LERROR( plog, "Canceling due to midge error" );
                     f_msg_relay->slack_error( "Psyllid has crashed due to an error while running.  Hopefully the details have already been reported." );
-                    raise(SIGINT);
+                    signal_handler::cancel_all( RETURN_ERROR );
                     continue;
                 }
                 else if( get_status() == status::do_restart )
@@ -256,7 +256,7 @@ namespace psyllid
             {
                 LERROR( plog, "DAQ control is in an error state" );
                 f_node_bindings = nullptr;
-                raise( SIGINT );
+                signal_handler::cancel_all( RETURN_ERROR );
                 break;
             }
         }
@@ -472,10 +472,9 @@ namespace psyllid
         return;
     }
 
-    void daq_control::do_cancellation()
+    void daq_control::do_cancellation( int a_code )
     {
         LDEBUG( plog, "Canceling DAQ control" );
-        set_status( status::canceled );
 
         if( get_status() == status::running )
         {
@@ -491,7 +490,9 @@ namespace psyllid
         }
 
         LDEBUG( plog, "Canceling midge" );
-        if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
+        if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel( a_code );
+
+        set_status( status::canceled );
 
         return;
     }
