@@ -62,7 +62,7 @@ namespace psyllid
             dripline::reply_ptr_t handle_quit_server_request( const dripline::request_ptr_t a_request );
 
         private:
-            virtual void do_cancellation();
+            virtual void do_cancellation( int a_code );
 
             int f_return;
 
