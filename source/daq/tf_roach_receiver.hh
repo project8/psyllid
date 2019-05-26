@@ -99,8 +99,6 @@ namespace psyllid
             std::mutex f_exe_func_mutex;
             std::atomic< bool > f_break_exe_func;
 
-            virtual void do_cancellation( int a_code );
-
             bool f_paused;
 
             uint64_t f_time_session_pkt_counter;

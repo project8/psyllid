@@ -51,7 +51,7 @@ namespace psyllid
 
         set_status( k_starting );
 
-        signal_handler t_sig_hand;
+        scarab::signal_handler t_sig_hand;
         t_sig_hand.add_cancelable( this );
 
         // configuration manager
@@ -181,7 +181,7 @@ namespace psyllid
             if ( ! f_request_receiver.get()->get_make_connection() )
             {
                 LINFO( plog, "Request receiver not making connections, canceling run server" );
-                signal_handler::cancel_all( RETURN_ERROR );
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
             // and then wait for the controllers to finish up...
             t_executor_thread.join();

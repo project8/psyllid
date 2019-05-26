@@ -12,6 +12,7 @@
 #include "psyllid_error.hh"
 
 #include "logger.hh"
+#include "signal_handler.hh"
 
 #include <boost/filesystem.hpp>
 
@@ -94,7 +95,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Exception caught in monarch-on-deck manager: " << e.what() );
-                signal_handler::cancel_all( RETURN_ERROR );
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
         } // end while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
 
@@ -431,7 +432,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Caught exception while switching to new file: " << e.what() );
-                signal_handler::cancel_all( RETURN_ERROR );
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
 
             f_do_switch_flag = false;

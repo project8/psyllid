@@ -15,6 +15,7 @@
 #include "midge_error.hh"
 
 #include "logger.hh"
+#include "signal_handler.hh"
 
 #include <chrono>
 #include <condition_variable>
@@ -207,14 +208,14 @@ namespace psyllid
                 if( get_status() == status::running )
                 {
                     LERROR( plog, "Midge exited abnormally; error condition is unknown; canceling" );
-                    signal_handler::cancel_all( RETURN_ERROR );
+                    scarab::signal_handler::cancel_all( RETURN_ERROR );
                     continue;
                 }
                 else if( get_status() == status::error )
                 {
                     LERROR( plog, "Canceling due to midge error" );
                     f_msg_relay->slack_error( "Psyllid has crashed due to an error while running.  Hopefully the details have already been reported." );
-                    signal_handler::cancel_all( RETURN_ERROR );
+                    scarab::signal_handler::cancel_all( RETURN_ERROR );
                     continue;
                 }
                 else if( get_status() == status::do_restart )
@@ -256,7 +257,7 @@ namespace psyllid
             {
                 LERROR( plog, "DAQ control is in an error state" );
                 f_node_bindings = nullptr;
-                signal_handler::cancel_all( RETURN_ERROR );
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
                 break;
             }
         }

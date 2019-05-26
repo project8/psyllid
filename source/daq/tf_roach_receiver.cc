@@ -480,12 +480,6 @@ namespace psyllid
         return;
     }
 
-    void tf_roach_receiver::do_cancellation()
-    {
-        return;
-    }
-
-
     tf_roach_receiver_binding::tf_roach_receiver_binding() :
             _node_binding< tf_roach_receiver, tf_roach_receiver_binding >()
     {

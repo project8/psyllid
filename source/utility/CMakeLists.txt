@@ -9,12 +9,10 @@ set( headers
     psyllid_constants.hh
     psyllid_error.hh
     psyllid_version.hh
-    signal_handler.hh
 )
 set( sources
     message_relayer.cc
     psyllid_error.cc
-    signal_handler.cc
 )
 
 configure_file( psyllid_version.cc.in ${CMAKE_CURRENT_BINARY_DIR}/psyllid_version.cc )

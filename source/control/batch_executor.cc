@@ -164,7 +164,7 @@ namespace psyllid
         if( daq_control_expired() )
         {
             LERROR( plog, "Unable to get access to the DAQ control" );
-            signal_handler::cancel_all( RETURN_ERROR );
+            scarab::signal_handler::cancel_all( RETURN_ERROR );
             return;
         }
         dc_ptr_t t_daq_control_ptr = use_daq_control();
