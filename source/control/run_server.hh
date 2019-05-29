@@ -47,27 +47,22 @@ namespace psyllid
     class run_server : public scarab::cancelable
     {
         public:
-            run_server( const scarab::param_node& a_node, std::shared_ptr< scarab::version_semantic > a_version );
+            run_server();
             virtual ~run_server();
 
-            void execute();
+            void execute( const scarab::param_node& a_config );
 
             void quit_server();
 
             int get_return() const;
 
-            const scarab::param_node& get_config() const;
+            dripline::reply_ptr_t handle_get_server_status_request( const dripline::request_ptr_t a_request );
 
-            dripline::reply_info handle_get_server_status_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-
-            dripline::reply_info handle_stop_all_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
-            dripline::reply_info handle_quit_server_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg );
+            dripline::reply_ptr_t handle_stop_all_request( const dripline::request_ptr_t a_request );
+            dripline::reply_ptr_t handle_quit_server_request( const dripline::request_ptr_t a_request );
 
         private:
             virtual void do_cancellation();
-
-            scarab::param_node f_config;
-            const std::shared_ptr< scarab::version_semantic > f_version;
 
             int f_return;
 
@@ -103,11 +98,6 @@ namespace psyllid
     inline int run_server::get_return() const
     {
         return f_return;
-    }
-
-    inline const scarab::param_node& run_server::get_config() const
-    {
-        return f_config;
     }
 
     inline run_server::status run_server::get_status() const
