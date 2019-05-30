@@ -11,7 +11,10 @@
 #include "psyllid_constants.hh"
 #include "psyllid_error.hh"
 
+#include "M3Exception.hh"
+
 #include "logger.hh"
+#include "signal_handler.hh"
 
 #include <boost/filesystem.hpp>
 
@@ -94,7 +97,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Exception caught in monarch-on-deck manager: " << e.what() );
-                raise(SIGINT);
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
         } // end while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
 
@@ -192,9 +195,24 @@ namespace psyllid
         if( f_monarch_on_deck )
         {
             std::string t_filename( f_monarch_on_deck->GetHeader()->GetFilename() );
-            f_monarch_on_deck.reset();
-            LDEBUG( plog, "On-deck file was written out to <" << t_filename << ">; now removing the file" );
-            boost::filesystem::remove( t_filename );
+            try
+            {
+                LDEBUG( plog, "Closing on-deck file <" << t_filename << ">" );
+                f_monarch_on_deck.reset();
+            }
+            catch( monarch3::M3Exception& e )
+            {
+                LWARN( plog, "File could not be closed properly: " << e.what() );
+            }
+            try
+            {
+                LDEBUG( plog, "On-deck file was written out to <" << t_filename << ">; now removing the file" );
+                boost::filesystem::remove( t_filename );
+            }
+            catch( boost::filesystem::filesystem_error& e )
+            {
+                LWARN( plog, "File could not be removed: <" << t_filename << ">\n" << e.what() );
+            }
         }
         f_od_mutex.unlock();
         return;
@@ -431,7 +449,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Caught exception while switching to new file: " << e.what() );
-                raise( SIGINT );
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
 
             f_do_switch_flag = false;

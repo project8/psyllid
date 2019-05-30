@@ -85,7 +85,6 @@ namespace psyllid
 
             void do_an_action();
 
-            virtual void do_cancellation();
             static action_info parse_action( const scarab::param_node& a_action );
 
     };

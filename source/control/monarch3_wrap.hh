@@ -206,7 +206,7 @@ namespace psyllid
         private:
             friend class monarch_on_deck_manager;
 
-            void do_cancellation();
+            void do_cancellation( int a_code );
 
             monarch_wrapper( const monarch_wrapper& ) = delete;
             monarch_wrapper& operator=( const monarch_wrapper& ) = delete;
@@ -425,9 +425,9 @@ namespace psyllid
         return;
     }
 
-    inline void monarch_wrapper::do_cancellation()
+    inline void monarch_wrapper::do_cancellation( int a_code )
     {
-        f_monarch_od_manager.cancel();
+        f_monarch_od_manager.cancel( a_code );
         return;
     }
 
