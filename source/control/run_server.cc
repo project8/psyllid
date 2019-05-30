@@ -11,14 +11,13 @@
 #include "daq_control.hh"
 #include "message_relayer.hh"
 #include "request_receiver.hh"
-#include "signal_handler.hh"
 #include "stream_manager.hh"
 #include "batch_executor.hh"
 
 #include "logger.hh"
+#include "signal_handler.hh"
 
 #include <condition_variable>
-#include <signal.h> // for raise()
 #include <thread>
 
 using dripline::request_ptr_t;
@@ -52,7 +51,7 @@ namespace psyllid
 
         set_status( k_starting );
 
-        signal_handler t_sig_hand;
+        scarab::signal_handler t_sig_hand;
         t_sig_hand.add_cancelable( this );
 
         // configuration manager
@@ -109,6 +108,7 @@ namespace psyllid
         catch( std::exception& e )
         {
             LERROR( plog, "Exception caught while creating server objects: " << e.what() );
+            f_return = RETURN_ERROR;
             return;
         }
 
@@ -181,7 +181,7 @@ namespace psyllid
             if ( ! f_request_receiver.get()->get_make_connection() )
             {
                 LINFO( plog, "Request receiver not making connections, canceling run server" );
-                this->cancel();
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
             // and then wait for the controllers to finish up...
             t_executor_thread.join();
@@ -198,19 +198,17 @@ namespace psyllid
 
         LPROG( plog, "Threads stopped" );
 
-        f_return = RETURN_SUCCESS;
-
         return;
     }
 
-    void run_server::do_cancellation()
+    void run_server::do_cancellation( int a_code )
     {
-        LDEBUG( plog, "Canceling run server" );
+        LDEBUG( plog, "Canceling run server with code <" << a_code << ">" );
         message_relayer::get_instance()->slack_notice( "Psyllid is shutting down" );
-        f_batch_executor->cancel();
-        f_request_receiver->cancel();
-        f_daq_control->cancel();
-        message_relayer::get_instance()->cancel();
+        f_batch_executor->cancel( a_code );
+        f_request_receiver->cancel( a_code );
+        f_daq_control->cancel( a_code );
+        message_relayer::get_instance()->cancel( a_code );
         //f_node_manager->cancel();
         return;
     }
@@ -218,7 +216,7 @@ namespace psyllid
     void run_server::quit_server()
     {
         LINFO( plog, "Shutting down the server" );
-        cancel();
+        cancel( f_status == k_error ? RETURN_ERROR : RETURN_SUCCESS );
         return;
     }
 
