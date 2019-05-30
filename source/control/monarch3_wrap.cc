@@ -11,6 +11,8 @@
 #include "psyllid_constants.hh"
 #include "psyllid_error.hh"
 
+#include "M3Exception.hh"
+
 #include "logger.hh"
 
 #include <boost/filesystem.hpp>
@@ -192,9 +194,24 @@ namespace psyllid
         if( f_monarch_on_deck )
         {
             std::string t_filename( f_monarch_on_deck->GetHeader()->GetFilename() );
-            f_monarch_on_deck.reset();
-            LDEBUG( plog, "On-deck file was written out to <" << t_filename << ">; now removing the file" );
-            boost::filesystem::remove( t_filename );
+            try
+            {
+                LDEBUG( plog, "Closing on-deck file <" << t_filename << ">" );
+                f_monarch_on_deck.reset();
+            }
+            catch( monarch3::M3Exception& e )
+            {
+                LWARN( plog, "File could not be closed properly: " << e.what() );
+            }
+            try
+            {
+                LDEBUG( plog, "On-deck file was written out to <" << t_filename << ">; now removing the file" );
+                boost::filesystem::remove( t_filename );
+            }
+            catch( boost::filesystem::filesystem_error& e )
+            {
+                LWARN( plog, "File could not be removed: <" << t_filename << ">\n" << e.what() );
+            }
         }
         f_od_mutex.unlock();
         return;
