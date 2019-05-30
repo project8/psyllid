@@ -142,7 +142,7 @@ namespace psyllid
             dripline::reply_ptr_t handle_get_use_monarch_request( const dripline::request_ptr_t a_request );
 
         private:
-            void do_cancellation();
+            void do_cancellation( int a_code );
 
             void do_run( unsigned a_duration );
 
