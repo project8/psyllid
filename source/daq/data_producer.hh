@@ -13,6 +13,8 @@
 
 #include "producer.hh"
 
+#include "roach_packet.hh"
+
 namespace psyllid
 {
 
@@ -23,14 +25,30 @@ namespace psyllid
             virtual ~data_producer();
 
             mv_accessible( uint64_t, length );
-            mv_accessible( uint32_t, max_packet_size );
+            mv_accessible( uint32_t, data_size );
+
+            mv_referrable( roach_packet_data, master_packet );
 
         public:
             virtual void initialize();
             virtual void execute( midge::diptera* a_midge = nullptr );
             virtual void finalize();
 
-};
+        private:
+            void initialize_block( memory_block* a_block );
+
+    };
+
+    class data_producer_binding : public _node_binding< data_producer, data_producer_binding >
+    {
+        public:
+            data_producer_binding();
+            virtual ~data_producer_binding();
+
+        private:
+            virtual void do_apply_config( data_producer* a_node, const scarab::param_node& a_config ) const;
+            virtual void do_dump_config( const data_producer* a_node, scarab::param_node& a_config ) const;
+    };
 
 } /* namespace dripline */
 

@@ -17,10 +17,14 @@ using midge::stream;
 namespace psyllid
 {
 
+    REGISTER_NODE_AND_BUILDER( data_producer, "data-producer", data_producer_binding );
+
     data_producer::data_producer() :
             f_length( 10 ),
-            f_max_packet_size( 1048576 )
+            f_data_size( 8224 ),
+            f_master_packet()
     {
+        f_master_packet.set_freq_not_time( false );
     }
 
     data_producer::~data_producer()
@@ -34,7 +38,7 @@ namespace psyllid
 
     void data_producer::execute( midge::diptera* a_midge )
     {
-        LDEBUG( plog, "Executing the packet_receiver_socket" );
+        LDEBUG( plog, "Executing the data_producer" );
 
         try
         {
@@ -46,11 +50,15 @@ namespace psyllid
 
             ssize_t t_size_received = 0;
 
-            LINFO( plog, "Starting main loop; waiting for packets" );
+            LINFO( plog, "Starting main loop; sending packets" );
+            unsigned count = 0;
             while( ! is_canceled() )
             {
                 t_block = out_stream< 0 >().data();
-                t_block->resize( f_max_packet_size );
+                if( t_block->get_n_bytes() != f_data_size )
+                {
+                    initialize_block( t_block );
+                }
 
                 t_size_received = 0;
 
@@ -91,5 +99,41 @@ namespace psyllid
         return;
     }
 
+    void data_producer::initialize_block( memory_block* a_block )
+    {
+        a_block->resize( f_data_size );
+        a_block->set_n_bytes_used( f_data_size );
+
+        roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( a_block->block() );
+        ::memcpy( t_roach_packet, &f_master_packet.packet(), f_data_size );
+
+        return;
+    }
+
+    data_producer_binding::data_producer_binding() :
+            _node_binding< data_producer, data_producer_binding >()
+    {
+    }
+
+    data_producer_binding::~data_producer_binding()
+    {
+    }
+
+    void data_producer_binding::do_apply_config( data_producer* a_node, const scarab::param_node& a_config ) const
+    {
+        LDEBUG( plog, "Configuring data_producer with:\n" << a_config );
+        a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
+        a_node->set_data_size( a_config.get_value( "data-size", a_node->get_data_size() ) );
+        return;
+    }
+
+    void data_producer_binding::do_dump_config( const data_producer* a_node, scarab::param_node& a_config ) const
+    {
+        LDEBUG( plog, "Dumping data_producer configuration" );
+        a_config.add( "length", scarab::param_value( a_node->get_length() ) );
+        a_config.add( "data-size", scarab::param_value( a_node->get_data_size() ) );
+        return;
+
+    }
 
 } /* namespace dripline */
