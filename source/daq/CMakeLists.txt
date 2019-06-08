@@ -2,6 +2,7 @@
 # daq #
 #######
 set( headers
+    data_producer.hh
     egg3_reader.hh
     event_builder.hh
     #single_value_trigger.hh
@@ -16,6 +17,7 @@ set( headers
 )
 
 set( sources
+    data_producer.cc
     egg3_reader.cc
     event_builder.cc
     #single_value_trigger.cc

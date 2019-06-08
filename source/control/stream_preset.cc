@@ -88,7 +88,7 @@ namespace psyllid
     runtime_stream_preset::runtime_stream_preset( const std::string& a_type ) :
             stream_preset( a_type )
     {
-        std::unique_lock< std::mutex > t_lock( s_runtime_presets_mutex );
+        //std::unique_lock< std::mutex > t_lock( s_runtime_presets_mutex );
         runtime_presets::const_iterator t_preset_it = s_runtime_presets.find( a_type );
         if( t_preset_it != s_runtime_presets.end() )
         {
