@@ -18,6 +18,29 @@
 namespace psyllid
 {
 
+    /*!
+     @class data_producer
+     @author N. S. Oblath
+
+     @brief A producer to use for debugging: continously outputss identical blank data
+
+     @details
+
+     The data are all output as `memory_block` objects.
+     However the underlying data that is output is time_data.
+
+     Parameter setting is not thread-safe.  Executing is thread-safe.
+
+     Node type: "data-producer"
+
+     Available configuration values:
+     - "length": uint -- The size of the output data buffer
+     - "data-size": uint -- The size of the output data objects
+
+     Output Stream:
+     - 0: memory_block
+
+    */
     class data_producer : public midge::_producer< midge::type_list< memory_block > >
     {
         public:

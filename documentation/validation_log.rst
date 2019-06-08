@@ -43,6 +43,33 @@ Fixes:
 Log
 ---
 
+Version: 
+~~~~~~~~~~~~~~~
+
+Release Date: 
+''''''''''''''''''''''''''
+
+New Features:
+''''''''''''''
+
+* Added the data-producer node
+
+Fixes:
+''''''
+
+
+Version: 1.10.3
+~~~~~~~~~~~~~~~
+
+Release Date: May 30, 2019
+''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Handle error conditions while recording data
+
+
 Version: 1.10.2
 ~~~~~~~~~~~~~~~
 
