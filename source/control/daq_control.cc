@@ -132,6 +132,7 @@ namespace psyllid
                 if( ! f_midge_pkg.have_lock() )
                 {
                     LERROR( plog, "Could not get midge resource" );
+                    f_msg_relay->slack_error( "Midge resource is locked; unable to activate the DAQ" );
                     set_status( status::error );
                     continue;
                 }
@@ -239,6 +240,7 @@ namespace psyllid
             else if( t_status == status::activated )
             {
                 LERROR( plog, "DAQ control status is activated in the outer execution loop!" );
+                f_msg_relay->slack_error( "DAQ control status is activated in the outer execution loop!" );
                 set_status( status::error );
                 continue;
             }
@@ -256,6 +258,7 @@ namespace psyllid
             else if( t_status == status::error )
             {
                 LERROR( plog, "DAQ control is in an error state" );
+                f_msg_relay->slack_error( "DAQ control is in an error state and will now exit" );
                 f_node_bindings = nullptr;
                 scarab::signal_handler::cancel_all( RETURN_ERROR );
                 break;
@@ -366,6 +369,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Unable to start files: " << e.what() );
+                f_msg_relay->slack_error( std::string("Unable to start files: ") + e.what() );
                 set_status( status::error );
                 LDEBUG( plog, "Canceling midge" );
                 if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
@@ -448,6 +452,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Unable to finish files: " << e.what() );
+                f_msg_relay->slack_error( std::string("Unable to finish files: ") + e.what() );
                 set_status( status::error );
                 LDEBUG( plog, "Canceling midge" );
                 if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
