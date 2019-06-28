@@ -43,6 +43,37 @@ Fixes:
 Log
 ---
 
+Version: 1.11.0
+~~~~~~~~~~~~~~~
+
+Release Date: June 28, 2019
+'''''''''''''''''''''''''''
+
+New Features:
+''''''''''''''
+
+* Added the data-producer node
+
+Fixes:
+''''''
+
+* Updated Dripline to v1.10.1
+* Updated Midge to v3.7.3
+* Define Psyllid-specific dripline return codes in Psyllid
+
+
+Version: 1.10.3
+~~~~~~~~~~~~~~~
+
+Release Date: May 30, 2019
+''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Handle error conditions while recording data
+
+
 Version: 1.10.2
 ~~~~~~~~~~~~~~~
 
