@@ -3,6 +3,7 @@
 #include "request_receiver.hh"
 #include "dripline_constants.hh"
 
+#include "psyllid_constants.hh"
 #include "psyllid_error.hh"
 
 #include "logger.hh"
