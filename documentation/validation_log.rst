@@ -43,11 +43,11 @@ Fixes:
 Log
 ---
 
-Version: 
+Version: 1.11.0
 ~~~~~~~~~~~~~~~
 
-Release Date: 
-''''''''''''''''''''''''''
+Release Date: June 28, 2019
+'''''''''''''''''''''''''''
 
 New Features:
 ''''''''''''''
@@ -56,6 +56,10 @@ New Features:
 
 Fixes:
 ''''''
+
+* Updated Dripline to v1.10.1
+* Updated Midge to v3.7.3
+* Define Psyllid-specific dripline return codes in Psyllid
 
 
 Version: 1.10.3
