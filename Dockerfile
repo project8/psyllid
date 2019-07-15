@@ -9,7 +9,7 @@ RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
     echo "source ${COMMON_BUILD_PREFIX}/setup.sh" > setup.sh &&\
     echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh &&\
     echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
-    echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current >> setup.sh &&\
+    echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current' >> setup.sh &&\
     echo 'export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH' >> setup.sh &&\
     echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH' >> setup.sh &&\
     /bin/true
@@ -26,9 +26,9 @@ COPY CMakeLists.txt /tmp_source/CMakeLists.txt
 COPY .git /tmp_source/.git
 
 # repeat the cmake command to get the change of install prefix to set correctly (a package_builder known issue)
+RUN mkdir -p /tmp_source/build
 RUN source $PSYLLID_BUILD_PREFIX/setup.sh &&\
-    mkdir -p /tmp_install/build &&\
-    cd /tmp_install/build &&\
+    cd /tmp_source/build &&\
     cmake .. &&\
     cmake \
       -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
