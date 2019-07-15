@@ -2,11 +2,11 @@
 # daq #
 #######
 set( headers
+    data_producer.hh
     egg3_reader.hh
     event_builder.hh
     #single_value_trigger.hh
     frequency_mask_trigger.hh
-    frequency_transform.hh
     packet_receiver_socket.hh
     roach_config.hh
     streaming_writer.hh
@@ -17,11 +17,11 @@ set( headers
 )
 
 set( sources
+    data_producer.cc
     egg3_reader.cc
     event_builder.cc
     #single_value_trigger.cc
     frequency_mask_trigger.cc
-    frequency_transform.cc
     packet_receiver_socket.cc
     roach_config.cc
     streaming_writer.cc
@@ -31,11 +31,21 @@ set( sources
     triggered_writer.cc
 )
 
-option( Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT "Flag to enable building node for streaming frequency data (inproper monarch usage)" FALSE )
-if (Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT)
-    set( headers ${sources} streaming_frequency_writer.hh)
-    set( sources ${sources} streaming_frequency_writer.cc)
-endif (Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT)
+if( Psyllid_ENABLE_FFTW )
+    set( headers
+        ${headers}
+        frequency_transform.hh
+    )
+    set( sources
+        ${sources}
+        frequency_transform.cc
+    )
+endif( Psyllid_ENABLE_FFTW )
+
+if( Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT )
+    set( headers ${sources} streaming_frequency_writer.hh )
+    set( sources ${sources} streaming_frequency_writer.cc )
+endif( Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT )
 
 if( Psyllid_BUILD_FPA )
     set( headers

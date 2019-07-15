@@ -58,7 +58,7 @@ namespace psyllid
         LDEBUG( plog, "egg header content:\n" );
         LDEBUG( plog, *t_egg_header );
         //TODO this should probably not assume single-channel mode...
-        f_record_length = t_egg_header->GetChannelHeaders()[0].GetRecordSize();
+        f_record_length = t_egg_header->ChannelHeaders()[0].GetRecordSize();
         return;
 
     }

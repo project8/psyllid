@@ -3,10 +3,11 @@
 #include "request_receiver.hh"
 #include "dripline_constants.hh"
 
+#include "psyllid_constants.hh"
 #include "psyllid_error.hh"
 
 #include "logger.hh"
-#include "parsable.hh"
+#include "signal_handler.hh"
 
 #include <cstddef>
 #include <signal.h>
@@ -14,10 +15,9 @@
 
 using std::string;
 
-using scarab::parsable;
 using scarab::param_node;
+using scarab::param_ptr_t;
 
-using dripline::retcode_t;
 using dripline::request_ptr_t;
 
 
@@ -29,7 +29,6 @@ namespace psyllid
     request_receiver::request_receiver( const param_node& a_master_config ) :
             hub( a_master_config["amqp"].as_node() ),
             control_access(),
-            scarab::cancelable(),
             f_set_conditions( a_master_config["set-conditions"].as_node() ),
             f_status( k_initialized )
     {
@@ -46,7 +45,7 @@ namespace psyllid
         if( daq_control_expired() )
         {
             LERROR( plog, "Unable to get access to the DAQ control" );
-            raise( SIGINT );
+            scarab::signal_handler::cancel_all( RETURN_ERROR );
             return;
         }
         dc_ptr_t t_daq_control_ptr = use_daq_control();
@@ -55,7 +54,7 @@ namespace psyllid
         if( ! start() && f_make_connection )
         {
             LERROR( plog, "Unable to start the dripline service" );
-            raise( SIGINT );
+            scarab::signal_handler::cancel_all( RETURN_ERROR );
             return;
         }
 
@@ -87,10 +86,9 @@ namespace psyllid
         return;
     }
 
-    void request_receiver::do_cancellation()
+    void request_receiver::do_cancellation( int )
     {
         LDEBUG( plog, "Canceling request receiver" );
-        service::f_canceled.store( true );
         set_status( k_canceled );
         return;
     }
@@ -122,19 +120,19 @@ namespace psyllid
         }
     }
 
-    dripline::reply_info request_receiver::__do_handle_set_condition_request( const dripline::request_ptr_t a_request, dripline::reply_package& a_reply_pkg )
+    dripline::reply_ptr_t request_receiver::__do_handle_set_condition_request( const dripline::request_ptr_t a_request )
     {
         std::string t_condition = a_request->payload()["values"][0]().as_string();
         if ( f_set_conditions.has( t_condition ) )
         {
             std::string t_rks = f_set_conditions[t_condition]().as_string();
-            dripline::request_ptr_t t_request = dripline::msg_request::create( scarab::param_node(), dripline::op_t::cmd, std::string(), std::string() );
-            t_request->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
+            dripline::request_ptr_t t_request = dripline::msg_request::create( param_ptr_t(new param_node()), dripline::op_t::cmd, a_request->routing_key(), t_rks );
+            //t_request->specifier = t_rks; //, dripline::routing_key_specifier( t_rks ) );
 
-            dripline::reply_info t_reply_info = submit_request_message( t_request );
-            return a_reply_pkg.send_reply( t_reply_info.f_return_code, t_reply_info.f_return_msg );
+            dripline::reply_ptr_t t_reply_ptr = submit_request_message( t_request );
+            return a_request->reply( t_reply_ptr->get_return_code(), t_reply_ptr->return_msg(), param_ptr_t(new param_node(t_reply_ptr->payload().as_node())) );
         }
-        return a_reply_pkg.send_reply( dripline::retcode_t::daq_error, "set condition not configured" );
+        return a_request->reply( dripline::dl_daq_error(), "set condition not configured" );
     }
 
 }

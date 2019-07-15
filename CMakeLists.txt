@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.1)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.9.1 )
+project( Psyllid VERSION 1.11.0 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
 include( PackageBuilder )
@@ -18,21 +18,26 @@ pbuilder_prepare_project()
 # flags #
 #########
 
+set( default__fpa_flag FALSE )
+if( UNIX AND NOT APPLE )
+    set( default__fpa_flag TRUE )
+endif( UNIX AND NOT APPLE )
+
 set_option( USE_CPP11 TRUE )
 
-# add an option to perform iterator time profiling
 option( Psyllid_ENABLE_ITERATOR_TIMING "Flag to enable iterator time profiling" FALSE )
+option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" ${default__fpa_flag} )
+option( Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT "Flag to enable building node for streaming frequency data (inproper monarch usage)" FALSE )
+option( Psyllid_ENABLE_FFTW "Flag to enable FFTW features" TRUE )
+
+# add an option to perform iterator time profiling
 if( Psyllid_ENABLE_ITERATOR_TIMING )
     add_definitions( -DENABLE_ITERATOR_TIMING )
 else( Psyllid_ENABLE_ITERATOR_TIMING )
     remove_definitions( -DENABLE_ITERATOR_TIMING )
 endif( Psyllid_ENABLE_ITERATOR_TIMING )
 
-set( default_flag FALSE )
-if( UNIX AND NOT APPLE )
-    set( default_flag TRUE )
-endif( UNIX AND NOT APPLE )
-option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" ${default_flag} )
+# FPA should only be available for a linux machine, and not apple
 if( Psyllid_ENABLE_FPA AND UNIX AND NOT APPLE )
     set( Psyllid_BUILD_FPA TRUE )
     add_definitions( -DBUILD_FPA )
@@ -46,28 +51,29 @@ endif( Psyllid_ENABLE_FPA AND UNIX AND NOT APPLE )
 ################
 
 # FFTW
-option( Psyllid_ENABLE_FFTW "Flag to enable FFTW features" TRUE )
-if (Psyllid_ENABLE_FFTW)
-    find_package(FFTW REQUIRED)
-else (Psyllid_ENABLE_FFTW)
-    set (FFTW_FOUND FALSE)
-endif (Psyllid_ENABLE_FFTW)
-if (FFTW_FOUND)
-    add_definitions(-DFFTW_FOUND)
-    pbuilder_add_ext_libraries (${FFTW_LIBRARIES})
-    if (FFTW_THREADS_FOUND)
-        set (FFTW_NTHREADS 1 CACHE STRING "Number of threads to use for FFTW processes")
-        add_definitions (-DFFTW_NTHREADS=${FFTW_NTHREADS})
-        message (STATUS "FFTW configured to use up to ${FFTW_NTHREADS} threads.")
-    else (FFTW_THREADS_FOUND)
-        remove_definitions (-DFFTW_NTHREADS=${FFTW_NTHREADS})
-    endif (FFTW_THREADS_FOUND)
-else (FFTW_FOUND)
-    message(STATUS "Building without FFTW")
-    remove_definitions(-DFFTW_FOUND)
-    remove_definitions (-DFFTW_NTHREADS=${FFTW_NTHREADS})
-endif (FFTW_FOUND)
-include_directories (${FFTW_INCLUDE_DIR})
+if( Psyllid_ENABLE_FFTW)
+    find_package( FFTW REQUIRED )
+else ( Psyllid_ENABLE_FFTW )
+    set( FFTW_FOUND FALSE )
+endif( Psyllid_ENABLE_FFTW )
+if ( FFTW_FOUND )
+    include_directories( ${FFTW_INCLUDE_DIR} )
+    add_definitions( -DFFTW_FOUND )
+    pbuilder_add_ext_libraries( ${FFTW_LIBRARIES} )
+    if( FFTW_THREADS_FOUND )
+        set( FFTW_NTHREADS 1 CACHE STRING "Number of threads to use for FFTW processes" )
+        add_definitions( -DFFTW_NTHREADS=${FFTW_NTHREADS} )
+        pbuilder_add_ext_libraries( ${FFTW_THREADS_LIBRARIES} )
+        message( STATUS "FFTW configured to use up to ${FFTW_NTHREADS} threads." )
+    else( FFTW_THREADS_FOUND )
+        remove_definitions( -DFFTW_NTHREADS=${FFTW_NTHREADS} )
+    endif( FFTW_THREADS_FOUND )
+else( FFTW_FOUND )
+    message( STATUS "Building without FFTW" )
+    set( Psyllid_ENABLE_FFTW FALSE )
+    remove_definitions( -DFFTW_FOUND )
+    remove_definitions( -DFFTW_NTHREADS=${FFTW_NTHREADS} )
+endif( FFTW_FOUND )
 
 # Boost
 # Boost (1.48 required for container; scarab minimum is 1.46)
@@ -78,7 +84,7 @@ pbuilder_add_submodule( Midge midge )
 midge_process_options()
 
 # Dripline
-add_definitions( -DDRIPLINE_AUTH_FILE=.project8_authentications.json )
+add_definitions( -DDRIPLINE_AUTH_FILE=~/.project8_authentications.json )
 pbuilder_add_submodule( Dripline dripline-cpp )
 
 # Monarch

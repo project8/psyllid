@@ -53,7 +53,7 @@ namespace psyllid
      Output Streams: (none)
     */
     class streaming_frequency_writer :
-            public midge::_consumer< streaming_frequency_writer, typelist_1( freq_data ) >,
+            public midge::_consumer< midge::type_list< freq_data > >,
             public egg_writer
     {
         public:

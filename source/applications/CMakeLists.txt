@@ -14,13 +14,13 @@ if( Psyllid_ENABLE_EXECUTABLES )
     set( programs
         grab_packet
         psyllid
+        roach_daq_streaming_1chan
     )
 
     if( Psyllid_BUILD_FPA )
         set( programs
              ${programs}
              roach_daq_1chan
-             roach_daq_streaming_1chan
         )
     endif( Psyllid_BUILD_FPA )
 

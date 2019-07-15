@@ -92,14 +92,14 @@ namespace psyllid
 
                 header_wrap_ptr t_hwrap_ptr = f_mw_ptrs[ t_file_num ]->get_header();
                 unique_lock t_header_lock( t_hwrap_ptr->get_lock() );
-                t_hwrap_ptr->header().SetDescription( f_file_infos[ t_file_num ].f_description );
+                t_hwrap_ptr->header().Description() = f_file_infos[ t_file_num ].f_description;
 
                 time_t t_raw_time = time( nullptr );
                 struct tm* t_processed_time = gmtime( &t_raw_time );
                 char t_timestamp[ 512 ];
                 strftime( t_timestamp, 512, scarab::date_time_format, t_processed_time );
                 //LWARN( plog, "raw: " << t_raw_time << "   proc'd: " << t_processed_time->tm_hour << " " << t_processed_time->tm_min << " " << t_processed_time->tm_year << "   timestamp: " << t_timestamp );
-                t_hwrap_ptr->header().SetTimestamp( t_timestamp );
+                t_hwrap_ptr->header().Timestamp() = t_timestamp;
 
                 t_hwrap_ptr->header().SetRunDuration( t_run_duration );
 

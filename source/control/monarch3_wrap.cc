@@ -11,7 +11,10 @@
 #include "psyllid_constants.hh"
 #include "psyllid_error.hh"
 
+#include "M3Exception.hh"
+
 #include "logger.hh"
+#include "signal_handler.hh"
 
 #include <boost/filesystem.hpp>
 
@@ -56,7 +59,7 @@ namespace psyllid
 
     void monarch_on_deck_manager::execute()
     {
-        LINFO( plog, "Monarch-on-deck manager for file <" << f_monarch_wrap->get_header()->header().GetFilename() << "> is starting up" );
+        LINFO( plog, "Monarch-on-deck manager for file <" << f_monarch_wrap->get_header()->header().Filename() << "> is starting up" );
 
         while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
         {
@@ -94,7 +97,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Exception caught in monarch-on-deck manager: " << e.what() );
-                raise(SIGINT);
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
         } // end while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
 
@@ -132,8 +135,8 @@ namespace psyllid
             const header_wrap_ptr t_old_header_ptr = f_monarch_wrap->get_header();
             monarch3::M3Header* t_new_header = t_new_monarch->GetHeader();
             t_new_header->CopyBasicInfo( t_old_header_ptr->header() );
-            t_new_header->SetFilename( t_new_filename );
-            t_new_header->SetDescription( t_old_header_ptr->ptr()->GetDescription() + "\nContinuation of file " + t_old_header_ptr->ptr()->GetFilename() );
+            t_new_header->Filename() = t_new_filename;
+            t_new_header->Description() = t_old_header_ptr->ptr()->Description() + "\nContinuation of file " + t_old_header_ptr->ptr()->Filename();
 
             // for each stream, create new stream in new file
             std::vector< monarch3::M3StreamHeader >* t_old_stream_headers = &t_old_header_ptr->ptr()->GetStreamHeaders();
@@ -146,7 +149,7 @@ namespace psyllid
                 unsigned n_channels = t_old_stream_header->GetNChannels();
                 if( n_channels > 1 )
                 {
-                    t_new_header->AddStream( t_old_stream_header->GetSource(), n_channels, t_old_stream_header->GetChannelFormat(),
+                    t_new_header->AddStream( t_old_stream_header->Source(), n_channels, t_old_stream_header->GetChannelFormat(),
                             t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
                             t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
                             t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment(),
@@ -154,7 +157,7 @@ namespace psyllid
                 }
                 else
                 {
-                    t_new_header->AddStream( t_old_stream_header->GetSource(),
+                    t_new_header->AddStream( t_old_stream_header->Source(),
                             t_old_stream_header->GetAcquisitionRate(), t_old_stream_header->GetRecordSize(), t_old_stream_header->GetSampleSize(),
                             t_old_stream_header->GetDataTypeSize(), t_old_stream_header->GetDataFormat(),
                             t_old_stream_header->GetBitDepth(), t_old_stream_header->GetBitAlignment(),
@@ -191,10 +194,25 @@ namespace psyllid
         f_od_mutex.lock();
         if( f_monarch_on_deck )
         {
-            std::string t_filename( f_monarch_on_deck->GetHeader()->GetFilename() );
-            f_monarch_on_deck.reset();
-            LDEBUG( plog, "On-deck file was written out to <" << t_filename << ">; now removing the file" );
-            boost::filesystem::remove( t_filename );
+            std::string t_filename( f_monarch_on_deck->GetHeader()->Filename() );
+            try
+            {
+                LDEBUG( plog, "Closing on-deck file <" << t_filename << ">" );
+                f_monarch_on_deck.reset();
+            }
+            catch( monarch3::M3Exception& e )
+            {
+                LWARN( plog, "File could not be closed properly: " << e.what() );
+            }
+            try
+            {
+                LDEBUG( plog, "On-deck file was written out to <" << t_filename << ">; now removing the file" );
+                boost::filesystem::remove( t_filename );
+            }
+            catch( boost::filesystem::filesystem_error& e )
+            {
+                LWARN( plog, "File could not be removed: <" << t_filename << ">\n" << e.what() );
+            }
         }
         f_od_mutex.unlock();
         return;
@@ -369,11 +387,11 @@ namespace psyllid
         unique_lock t_monarch_lock( f_monarch_mutex );
         unique_lock t_header_lock( f_header_wrap->get_lock() );
 
-        LDEBUG( plog, "Writing the header for file <" << f_header_wrap->header().GetFilename() );
+        LDEBUG( plog, "Writing the header for file <" << f_header_wrap->header().Filename() );
         try
         {
             f_monarch->WriteHeader();
-            LDEBUG( plog, "Header written for file <" << f_header_wrap->header().GetFilename() << ">" );
+            LDEBUG( plog, "Header written for file <" << f_header_wrap->header().Filename() << ">" );
         }
         catch( monarch3::M3Exception& e )
         {
@@ -387,11 +405,11 @@ namespace psyllid
 
         f_do_switch_flag = false;
 
-        LDEBUG( plog, "Starting the switch thread for file <" << f_header_wrap->header().GetFilename() << ">" );
+        LDEBUG( plog, "Starting the switch thread for file <" << f_header_wrap->header().Filename() << ">" );
         f_switch_thread = new std::thread( &monarch_wrapper::execute_switch_loop, this );
 
         // start the on-deck thread and assign it to the member variable for safe keeping
-        LDEBUG( plog, "Starting the on-deck thread for file <" << f_header_wrap->header().GetFilename() << ">" );
+        LDEBUG( plog, "Starting the on-deck thread for file <" << f_header_wrap->header().Filename() << ">" );
         f_od_thread = new std::thread( &monarch_on_deck_manager::execute, &f_monarch_od_manager );
 
         // let the thread start up
@@ -405,7 +423,7 @@ namespace psyllid
 
     void monarch_wrapper::execute_switch_loop()
     {
-        LINFO( plog, "Monarch's execute-switch-loop for file <" << f_header_wrap->header().GetFilename() << "> is starting up" );
+        LINFO( plog, "Monarch's execute-switch-loop for file <" << f_header_wrap->header().Filename() << "> is starting up" );
 
         while( ! is_canceled() && f_stage != monarch_stage::finished )
         {
@@ -431,7 +449,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Caught exception while switching to new file: " << e.what() );
-                raise( SIGINT );
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
 
             f_do_switch_flag = false;
@@ -440,7 +458,7 @@ namespace psyllid
 
         } // end while( ! f_monarch_od_manager.is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
 
-        LINFO( plog, "Monarch's execute-switch-loop for file <" << f_header_wrap->header().GetFilename() << "> is stopping" );
+        LINFO( plog, "Monarch's execute-switch-loop for file <" << f_header_wrap->header().Filename() << "> is stopping" );
 
         return;
     }
@@ -499,7 +517,7 @@ namespace psyllid
     {
         unique_lock t_monarch_lock( f_monarch_mutex );
 
-        std::string t_filename( f_monarch->GetHeader()->GetFilename() );
+        std::string t_filename( f_monarch->GetHeader()->Filename() );
 
         f_monarch_od_manager.finish_to_finish();
 
@@ -584,7 +602,7 @@ namespace psyllid
                 }
             }
 
-            LDEBUG( plog, "Switch to new file is complete: <" << f_header_wrap->ptr()->GetFilename() << ">" );
+            LDEBUG( plog, "Switch to new file is complete: <" << f_header_wrap->ptr()->Filename() << ">" );
 
             //f_file_switch_started = false;
 

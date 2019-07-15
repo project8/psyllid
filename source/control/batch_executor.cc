@@ -8,12 +8,15 @@
 //psyllid includes
 #include "batch_executor.hh"
 #include "daq_control.hh"
+#include "psyllid_constants.hh"
 #include "request_receiver.hh"
 
 //non-psyllid P8 includes
 #include "dripline_constants.hh"
 #include "dripline_error.hh"
+
 #include "logger.hh"
+#include "signal_handler.hh"
 
 //external includes
 #include <chrono>
@@ -57,7 +60,7 @@ namespace psyllid
         using namespace std::placeholders;
         for ( scarab::param_node::iterator command_it = f_batch_commands.begin(); command_it != f_batch_commands.end(); ++command_it )
         {
-            a_request_receiver->register_cmd_handler( command_it.name(), std::bind( &batch_executor::do_batch_cmd_request, this, command_it.name(), _1, _2 ) );
+            a_request_receiver->register_cmd_handler( command_it.name(), std::bind( &batch_executor::do_batch_cmd_request, this, command_it.name(), _1 ) );
         }
     }
 
@@ -120,7 +123,7 @@ namespace psyllid
     }
 
     // this method should be bound in the request receiver to be called with a command name, the request_ptr_t is not used
-    dripline::reply_info batch_executor::do_batch_cmd_request( const std::string& a_command, const dripline::request_ptr_t /* a_request_ptr_t */, dripline::reply_package& a_reply_package )
+    dripline::reply_ptr_t batch_executor::do_batch_cmd_request( const std::string& a_command, const dripline::request_ptr_t a_request )
     {
         try
         {
@@ -128,13 +131,13 @@ namespace psyllid
         }
         catch( dripline::dripline_error& e )
         {
-            return a_reply_package.send_reply( dripline::retcode_t::daq_error, std::string("Error processing command: ") + e.what() );
+            return a_request->reply( dripline::dl_daq_error(), std::string("Error processing command: ") + e.what() );
         }
-        return a_reply_package.send_reply( dripline::retcode_t::success, "" );
+        return a_request->reply( dripline::dl_success(), "" );
     }
 
     // this method should be bound in the request receiver to be called with a command name, the request_ptr_t is not used
-    dripline::reply_info batch_executor::do_replace_actions_request( const std::string& a_command, const dripline::request_ptr_t /* a_request_ptr_t */, dripline::reply_package& a_reply_package )
+    dripline::reply_ptr_t batch_executor::do_replace_actions_request( const std::string& a_command, const dripline::request_ptr_t a_request )
     {
         try
         {
@@ -143,9 +146,9 @@ namespace psyllid
         }
         catch( dripline::dripline_error& e )
         {
-            return a_reply_package.send_reply( dripline::retcode_t::daq_error, std::string("Error processing command: ") + e.what() );
+            return a_request->reply( dripline::dl_daq_error(), std::string("Error processing command: ") + e.what() );
         }
-        return a_reply_package.send_reply( dripline::retcode_t::success, "" );
+        return a_request->reply( dripline::dl_success(), "" );
     }
 
     /* considering yaml that looks like:
@@ -157,12 +160,12 @@ namespace psyllid
             duration: 200
             filenames: '["/tmp/foo_t.yaml", "/tmp/foo_f.yaml"]'
     */
-    void batch_executor::execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex, bool run_forever )
+    void batch_executor::execute( std::condition_variable& a_daq_control_ready_cv, std::mutex& a_daq_control_ready_mutex, bool a_run_forever )
     {
         if( daq_control_expired() )
         {
             LERROR( plog, "Unable to get access to the DAQ control" );
-            raise( SIGINT );
+            scarab::signal_handler::cancel_all( RETURN_ERROR );
             return;
         }
         dc_ptr_t t_daq_control_ptr = use_daq_control();
@@ -173,7 +176,7 @@ namespace psyllid
             a_daq_control_ready_cv.wait_for( t_daq_control_lock, std::chrono::seconds(1) );
         }
 
-        while ( ( run_forever || f_action_queue.size() ) && ! is_canceled() )
+        while ( ( a_run_forever || f_action_queue.size() ) && ! is_canceled() )
         {
             if ( f_action_queue.size() )
             {
@@ -192,8 +195,8 @@ namespace psyllid
             LDEBUG( plog, "there are no actions in the queue" );
             return;
         }
-        dripline::reply_info t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
-        if ( ! t_request_reply_info )
+        dripline::reply_ptr_t t_request_reply = f_request_receiver->submit_request_message( t_action.f_request_ptr );
+        if ( ! t_request_reply )
         {
             LWARN( plog, "failed submitting action request" );
             throw psyllid::error() << "error while submitting command";
@@ -201,11 +204,11 @@ namespace psyllid
         // wait until daq status is no longer "running"
         if ( t_action.f_is_custom_action )
         {
-            daq_control::status t_status = daq_control::uint_to_status( t_request_reply_info.f_payload["server"]["status-value"]().as_uint() );
+            daq_control::status t_status = daq_control::uint_to_status( t_request_reply->payload()["server"]["status-value"]().as_uint() );
             while ( t_status == daq_control::status::running )
             {
-                t_request_reply_info = f_request_receiver->submit_request_message( t_action.f_request_ptr );
-                t_status = daq_control::uint_to_status( t_request_reply_info.f_payload["server"]["status-value"]().as_uint() );
+                t_request_reply = f_request_receiver->submit_request_message( t_action.f_request_ptr );
+                t_status = daq_control::uint_to_status( t_request_reply->payload()["server"]["status-value"]().as_uint() );
                 std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
             }
         }
@@ -213,19 +216,13 @@ namespace psyllid
         {
             std::this_thread::sleep_for( std::chrono::milliseconds( t_action.f_sleep_duration_ms ) );
         }
-        if ( dripline::to_uint(t_request_reply_info.f_return_code) >= 100 )
+        if ( t_request_reply->get_return_code() >= 100 )
         {
             LWARN( plog, "batch action received an error-level return code; exiting" );
             throw psyllid::error() << "error completing batch action, received code [" <<
-                                   t_request_reply_info.f_return_code << "]: \"" <<
-                                   t_request_reply_info.f_return_msg << "\"";
+                                   t_request_reply->get_return_code() << "]: \"" <<
+                                   t_request_reply->return_msg() << "\"";
         }
-    }
-
-    void batch_executor::do_cancellation()
-    {
-        LDEBUG( plog, "canceling batch executor" );
-        return;
     }
 
     action_info batch_executor::parse_action( const scarab::param_node& a_action )
@@ -244,16 +241,16 @@ namespace psyllid
             t_action_info.f_sleep_duration_ms = std::stoi( a_action.get_value( "sleep-for", "500" ) );
             t_action_info.f_is_custom_action = false;
         }
-        catch( scarab::error )
+        catch( scarab::error& e )
         {
-            LERROR( plog, "error parsing action param_node, check keys and value types" );
+            LERROR( plog, "error parsing action param_node, check keys and value types: " << e.what() );
             throw;
         }
         try
         {
             t_msg_op = dripline::to_op_t( a_action["type"]().as_string() );
         }
-        catch( dripline::dripline_error )
+        catch( dripline::dripline_error& )
         {
             LDEBUG( plog, "got a dripline error parsing request type" );
             if ( a_action["type"]().as_string() == "wait-for" && t_rks == "daq-status" )
@@ -266,13 +263,14 @@ namespace psyllid
         }
         LDEBUG( plog, "build request object" );
 
+        scarab::param_ptr_t t_payload_ptr( new scarab::param_node( a_action["payload"].as_node() ) );
+
         // put it together into a request
         t_action_info.f_request_ptr = dripline::msg_request::create(
-                                            a_action["payload"].as_node(),
+                                            std::move(t_payload_ptr),
                                             t_msg_op,
-                                            std::string(),
                                             std::string() );// reply-to is empty because no reply for batch requests
-        t_action_info.f_request_ptr->set_routing_key_specifier( t_rks, dripline::routing_key_specifier( t_rks ) );
+        t_action_info.f_request_ptr->parsed_specifier().parse( t_rks );
         LINFO( plog, "next action will be " << t_action_info.f_request_ptr->payload() );
         return t_action_info;
     }

@@ -37,12 +37,12 @@ namespace psyllid
         scarab::path t_auth_default_path = scarab::expand_path( "~/.project8_authentications.json" );
         if ( boost::filesystem::exists( t_auth_default_path ) )
         {
-            LDEBUG( plog, "default auth file found, setting that as initial value" );
-            t_amqp_node.add( "auth-file", t_auth_default_path.native() );
+            LDEBUG( plog, "default auth file found, setting that as initial value" << t_auth_default_path.string() );
+            t_amqp_node.add( "auth-file", t_auth_default_path.string() );
         }
         else
         {
-            LDEBUG( plog, "default auth file <" << t_auth_default_path.native() << "> does not exist, not setting" );
+            LDEBUG( plog, "default auth file <" << t_auth_default_path.string() << "> does not exist, not setting" );
         }
 
         // other available values
@@ -56,7 +56,7 @@ namespace psyllid
         add( "post-to-slack", false );
 
         param_node t_daq_node;
-        t_daq_node.add( "activate-at-startup", true );
+        t_daq_node.add( "activate-at-startup", false );
         t_daq_node.add( "n-files", 1U );
         t_daq_node.add( "duration", 1000U );
         t_daq_node.add( "max-file-size-mb", 500.0 );

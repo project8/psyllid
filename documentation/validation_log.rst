@@ -43,6 +43,112 @@ Fixes:
 Log
 ---
 
+Version: 1.11.0
+~~~~~~~~~~~~~~~
+
+Release Date: June 28, 2019
+'''''''''''''''''''''''''''
+
+New Features:
+''''''''''''''
+
+* Added the data-producer node
+
+Fixes:
+''''''
+
+* Updated Dripline to v1.10.1
+* Updated Midge to v3.7.3
+* Define Psyllid-specific dripline return codes in Psyllid
+
+
+Version: 1.10.3
+~~~~~~~~~~~~~~~
+
+Release Date: May 30, 2019
+''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Handle error conditions while recording data
+
+
+Version: 1.10.2
+~~~~~~~~~~~~~~~
+
+Release Date: May 26, 2019
+''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Fixed return codes in error conditions
+
+
+Version: 1.10.1
+~~~~~~~~~~~~~~~
+
+Release Date: May 23, 2019
+''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Fixed missing payloads.
+* Dripline-cpp updated to v1.9.2
+
+
+Version: 1.10.0
+~~~~~~~~~~~~~~~
+
+Release Date: May 22, 2019
+''''''''''''''''''''''''''
+
+New Features:
+'''''''''''''
+
+* All submodules updated
+    * Dripline-cpp v1.9.1 (now under driplineorg)
+    * Midge v3.7.1
+    * Monarch v3.5.8
+    * Scarab v2.4.7
+* New CL syntax
+    * Now using the new Scarab CLI framework
+    * Standard CL argument format
+* Using the updated Dripline-cpp interface
+* Using the new Midge template metaprogramming
+
+Fixes:
+''''''
+
+* Fixed infinite loop for the startup corner case where `activate-on-startup` is used but no streams are defined.
+
+
+Version: 1.9.3
+~~~~~~~~~~~~~~
+
+Release Date: February 17, 2019
+'''''''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Fixed missing ampersand in the FMT binding
+
+
+Version: 1.9.2
+~~~~~~~~~~~~~~
+
+Release Date: January 10, 2019
+''''''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Fixed setting of the run description via dripline
+
+
 Version: 1.8.3
 ~~~~~~~~~~~~~~
 
