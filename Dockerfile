@@ -4,11 +4,12 @@ ENV PSYLLID_TAG=v1.9.1
 ENV PSYLLID_BUILD_PREFIX=/usr/local/p8/psyllid/$PSYLLID_TAG
 
 RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
+    chmod -R 777 $PSYLLID_BUILD_PREFIX/.. &&\
     cd $PSYLLID_BUILD_PREFIX &&\
     echo "source ${COMMON_BUILD_PREFIX}/setup.sh" > setup.sh &&\
     echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh &&\
     echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
-    echo 'ln -sf $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current || /bin/true' >> setup.sh &&\
+    echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current >> setup.sh &&\
     echo 'export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH' >> setup.sh &&\
     echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH' >> setup.sh &&\
     /bin/true
@@ -16,19 +17,24 @@ RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
 ########################
 FROM psyllid_common as psyllid_done
 
+COPY dripline-cpp /tmp_source/dripline-cpp
+COPY external /tmp_source/external
+COPY midge /tmp_source/midge
+COPY monarch /tmp_source/monarch
+COPY source /tmp_source/source
+COPY CMakeLists.txt /tmp_source/CMakeLists.txt
+COPY .git /tmp_source/.git
+
 # repeat the cmake command to get the change of install prefix to set correctly (a package_builder known issue)
 RUN source $PSYLLID_BUILD_PREFIX/setup.sh &&\
-    mkdir /tmp_install &&\
-    cd /tmp_install &&\
-    git clone https://github.com/project8/psyllid &&\
-    cd psyllid &&\
-    git fetch && git fetch --tags &&\
-    git checkout $PSYLLID_TAG &&\
-    git submodule update --init --recursive &&\
-    mkdir build &&\
-    cd build &&\
-    cmake -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX -D Psyllid_ENABLE_FPA=FALSE .. &&\
-    cmake -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX -D Psyllid_ENABLE_FPA=FALSE .. &&\
+    mkdir -p /tmp_install/build &&\
+    cd /tmp_install/build &&\
+    cmake .. &&\
+    cmake \
+      -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
+      -D Psyllid_ENABLE_FPA=FALSE \
+      .. &&\
+    #cmake -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX -D Psyllid_ENABLE_FPA=FALSE .. &&\
     make -j3 install &&\
     /bin/true
 
