@@ -19,8 +19,10 @@ matrix:
 
 jobs:
   include:
-    - stage: build
+    - stage: generate
       script:
+        - env
+        - echo ${BASE_USER}
         - echo docker build \
             --build-arg IMG_USER=${BASE_USER} \
             --build_arg IMG_REPO=${BASE_REPO} \
