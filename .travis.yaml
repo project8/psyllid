@@ -1,0 +1,33 @@
+language: cpp
+
+dist: xenial
+
+services:
+  - docker
+
+env:
+  - DOCKER_CLI_EXPERIMENTAL=enabled
+
+branches:
+  only:
+    - feature/docker-unified
+
+matrix:
+  include:
+    - env:
+      - BASE_USER=project8
+      - BASE_REPO=p8compute_dependencies
+      - BASE_TAG=v0.7.0
+      - PRODUCT_SUFFIX=p8compute
+    - env:
+      - BASE_USER=amd64
+      - BASE_REPO=debian
+      - BASE_TAG=9
+      - PRODUCT_SUFFIX=stretch
+
+jobs:
+  include:
+    - stage: build
+      script:
+        - export PRODUCT_TAG="`echo $TRAVIS_BRANCH | tr / _`-${PRODUCT_SUFFIX}"
+        - echo "output will be :${PRODUCT_TAG}"
