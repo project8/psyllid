@@ -14,16 +14,8 @@ branches:
 
 matrix:
   include:
-    - env:
-      - BASE_USER=project8
-      - BASE_REPO=p8compute_dependencies
-      - BASE_TAG=v0.7.0
-      - PRODUCT_SUFFIX=p8compute
-    - env:
-      - BASE_USER=amd64
-      - BASE_REPO=debian
-      - BASE_TAG=9
-      - PRODUCT_SUFFIX=stretch
+    - env: BASE_USER=project8 BASE_REPO=p8compute_dependencies BASE_TAG=v0.7.0 PRODUCT_SUFFIX=p8compute
+    - env: BASE_USER=amd64 BASE_REPO=debian BASE_TAG=9 PRODUCT_SUFFIX=stretch
 
 jobs:
   include:
@@ -32,6 +24,6 @@ jobs:
         - echo docker build \
             --build-arg IMG_USER=${BASE_USER} \
             --build_arg IMG_REPO=${BASE_REPO} \
-            --build-arg IMG_TAG=${BASE_TAG} \
+            --build-arg IMG_TAG=$BASE_TAG \
             -t project8/psyllid:`echo $TRAVIS_BRANCH | tr / _`-${PRODUCT_SUFFIX} \
             .
