@@ -1,39 +1,47 @@
-FROM project8/p8compute_dependencies:v0.2.0_psyllid as psyllid_common
+ARG IMG_USER=project8
+ARG IMG_REPO=p8compute_dependencies
+ARG IMG_TAG=v0.7.0
 
-ENV PSYLLID_TAG=v1.9.1
-ENV PSYLLID_BUILD_PREFIX=/usr/local/p8/psyllid/$PSYLLID_TAG
+FROM ${IMG_USER}/${IMG_REPO}:${IMG_TAG} as psyllid_common
 
+ARG PSYLLID_TAG=beta
+ENV PSYLLID_TAG=${PSYLLID_TAG}
+ARG PSYLLID_BUILD_PREFIX=/usr/local/p8/psyllid/$PSYLLID_TAG
+ENV PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}
+
+SHELL ["/bin/bash", "-c"]
 RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
-    chmod -R 777 $PSYLLID_BUILD_PREFIX/.. &&\
-    cd $PSYLLID_BUILD_PREFIX &&\
-    echo "source ${COMMON_BUILD_PREFIX}/setup.sh" > setup.sh &&\
-    echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh &&\
-    echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
-    echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current' >> setup.sh &&\
-    echo 'export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH' >> setup.sh &&\
-    echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH' >> setup.sh &&\
-    /bin/true
-
-########################
-FROM psyllid_common as rabbitmq_done
-RUN source $COMMON_BUILD_PREFIX/setup.sh &&\
-    mkdir -p /tmp_source/rabbitmq &&\
-    cd /tmp_source/rabbitmq &&\
-    wget https://github.com/alanxz/rabbitmq-c/archive/v0.9.0.tar.gz &&\
-    tar -xvzf v0.9.0.tar.gz &&\
-    mkdir rabbitmq-c-0.9.0/build &&\
-    cd rabbitmq-c-0.9.0/build &&\
-    cmake \
-        -D CMAKE_INSTALL_PREFIX=$COMMON_BUILD_PREFIX \
-        -D CMAKE_INSTALL_LIBDIR:PATH=lib \
-        -D ENABLE_SSL_SUPPORT:BOOL=FALSE \
-        .. &&\
-    make install
+    if [ -a /etc/centos-release ]; then \
+        ## build setup for p8compute base image
+        chmod -R 777 $PSYLLID_BUILD_PREFIX/.. &&\
+        cd $PSYLLID_BUILD_PREFIX &&\
+        echo "source ${COMMON_BUILD_PREFIX}/setup.sh" > setup.sh &&\
+        echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh &&\
+        echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
+        echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current' >> setup.sh &&\
+        echo 'export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH' >> setup.sh &&\
+        echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH' >> setup.sh;\
+    elif [ -a /etc/debian_version ]; then \
+        ## build setup for debian base image
+        cd $PSYLLID_BUILD_PREFIX &&\
+        echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
+        apt-get update && \
+        apt-get clean && \
+        apt-get --fix-missing -y install \
+            build-essential \
+            cmake \
+            libfftw3-3 \
+            libfftw3-dev \
+            gdb \
+            libboost-all-dev \
+            libhdf5-dev \
+            librabbitmq-dev \
+            wget &&\
+        /bin/true;\
+    fi
 
 ########################
 FROM psyllid_common as psyllid_done
-
-COPY --from=rabbitmq_done $COMMON_BUILD_PREFIX $COMMON_BUILD_PREFIX
 
 COPY dripline-cpp /tmp_source/dripline-cpp
 COPY external /tmp_source/external
@@ -43,27 +51,27 @@ COPY source /tmp_source/source
 COPY CMakeLists.txt /tmp_source/CMakeLists.txt
 COPY .git /tmp_source/.git
 
-# repeat the cmake command to get the change of install prefix to set correctly (a package_builder known issue)
-RUN mkdir -p /tmp_source/build
+## store cmake args because we'll need to run twice (known package_builder issue)
+## use EXTRA_CMAKE_ARGS to add or replace options at build time, CMAKE_CONFIG_ARGS_LIST are defaults
+ARG EXTRA_CMAKE_ARGS=""
+ENV CMAKE_CONFIG_ARGS_LIST="\
+      -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
+      -D Psyllid_ENABLE_FPA=FALSE \
+      ${EXTRA_CMAKE_ARGS}
+      "
+
 RUN source $PSYLLID_BUILD_PREFIX/setup.sh &&\
+    mkdir -p /tmp_source/build
     cd /tmp_source/build &&\
-    cmake \
-      -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
-      -D Psyllid_ENABLE_FPA=FALSE \
-      .. &&\
-    cmake \
-      -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
-      -D Psyllid_ENABLE_FPA=FALSE \
-      .. &&\
-    #cmake -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX -D Psyllid_ENABLE_FPA=FALSE .. &&\
-    make -j3 install &&\
+    cmake ${CMAKE_CONFIG_ARGS_LIST} .. &&\
+    cmake ${CMAKE_CONFIG_ARGS_LIST} .. &&\
+    make install &&\
     /bin/true
 
 ########################
 FROM psyllid_common
 
 # for now we must grab the extra dependency content as well as psyllid itself
-COPY --from=rabbitmq_done $COMMON_BUILD_PREFIX $COMMON_BUILD_PREFIX
 COPY --from=psyllid_done $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX
 
 # for a psyllid container, we need the environment to be configured, this is not desired for compute containers
