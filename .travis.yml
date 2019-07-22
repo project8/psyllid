@@ -17,12 +17,8 @@ matrix:
     - env: BASE_USER=project8 BASE_REPO=p8compute_dependencies BASE_TAG=v0.7.0 PRODUCT_SUFFIX=p8compute
     - env: BASE_USER=amd64 BASE_REPO=debian BASE_TAG=9 PRODUCT_SUFFIX=stretch
 
-#jobs:
-#  include:
-#    - stage: test
 script:
-        - echo ${BASE_USER}
-        - echo docker build \
+        - docker build \
             --build-arg IMG_USER=${BASE_USER} \
             --build_arg IMG_REPO=${BASE_REPO} \
             --build-arg IMG_TAG=$BASE_TAG \
