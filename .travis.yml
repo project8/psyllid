@@ -19,7 +19,7 @@ matrix:
 
 jobs:
   include:
-    - stage: generate
+    - stage: test
       script:
         - env
         - echo ${BASE_USER}
