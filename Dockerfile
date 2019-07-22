@@ -57,11 +57,11 @@ ARG EXTRA_CMAKE_ARGS=""
 ENV CMAKE_CONFIG_ARGS_LIST="\
       -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
       -D Psyllid_ENABLE_FPA=FALSE \
-      ${EXTRA_CMAKE_ARGS}
+      ${EXTRA_CMAKE_ARGS} \
       "
 
 RUN source $PSYLLID_BUILD_PREFIX/setup.sh &&\
-    mkdir -p /tmp_source/build
+    mkdir -p /tmp_source/build &&\
     cd /tmp_source/build &&\
     cmake ${CMAKE_CONFIG_ARGS_LIST} .. &&\
     cmake ${CMAKE_CONFIG_ARGS_LIST} .. &&\
