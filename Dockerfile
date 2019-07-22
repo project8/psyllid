@@ -1,3 +1,5 @@
+## Note that these IMG_* ARG values are defaults, but actual automated builds use
+## values which stored in the .travis.yaml file
 ARG IMG_USER=project8
 ARG IMG_REPO=p8compute_dependencies
 ARG IMG_TAG=v0.7.0
