@@ -31,7 +31,7 @@ namespace psyllid
 
     run_server::run_server() :
             scarab::cancelable(),
-            f_return( RETURN_ERROR ),
+            f_return( RETURN_SUCCESS ),
             f_request_receiver(),
             f_batch_executor(),
             f_daq_control(),

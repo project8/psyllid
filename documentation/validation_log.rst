@@ -43,6 +43,19 @@ Fixes:
 Log
 ---
 
+Version: 1.11.1
+~~~~~~~~~~~~~~~
+
+Release Date: July 21, 2019
+'''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Updated Dripline to v1.11.0
+* If butterfly house is being canceled, but streams do not cancel, then does a global cancel.
+
+
 Version: 1.11.0
 ~~~~~~~~~~~~~~~
 

@@ -537,6 +537,8 @@ namespace psyllid
         else if( f_stage == monarch_stage::writing )
         {
             t_monarch_lock.unlock(); // finish_stream() locks f_monarch_mutex, so it needs to be unlocked before calls on that can be processed
+            // we expect that streams are being cancelled from their respective writers
+            // here we wait for them to all be cancelled
             for( unsigned i_attempt = 0; i_attempt < 10 && ! f_stream_wraps.empty(); ++i_attempt)
             {
                 // give midge time to finish the streams before finishing the files
@@ -544,8 +546,23 @@ namespace psyllid
             }
             if( ! f_stream_wraps.empty() )
             {
-                throw error() << "Streams did not all finish after 5 seconds";
+                // perhaps we got here without midge being cancelled.
+                // let's call a global cancel and then wait for the streams to cancel again
+                LERROR( plog, "Streams were not cancelled as expected (via their writers). Attempting a global cancellation." );
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
+                for( unsigned i_attempt = 0; i_attempt < 10 && ! f_stream_wraps.empty(); ++i_attempt)
+                {
+                    // give midge time to finish the streams before finishing the files
+                    std::this_thread::sleep_for( std::chrono::milliseconds(500));
+                }
+                // check again that the streams are now empty
+                if( ! f_stream_wraps.empty() )
+                {
+                    // get out if the streams did not cancel because we can't finish the file correctly in that case
+                    throw error() << "Streams did not all finish after wait period and global cancellation";
+                }
             }
+            // re-lock so that the lock condition is the same once we exit this block
             t_monarch_lock.lock();
         }
         LINFO( plog, "Finished writing file <" << t_filename << ">" );
