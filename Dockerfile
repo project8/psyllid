@@ -1,48 +1,83 @@
-FROM debian:9
+## Note that these IMG_* ARG values are defaults, but actual automated builds use
+## values which stored in the .travis.yaml file
+ARG IMG_USER=project8
+ARG IMG_REPO=p8compute_dependencies
+ARG IMG_TAG=v0.7.0
 
-# Most dependencies
+FROM ${IMG_USER}/${IMG_REPO}:${IMG_TAG} as psyllid_common
 
-RUN apt-get update && \
-    apt-get clean && \
-    apt-get --fix-missing  -y install \
-        build-essential \
-        cmake \
-        libfftw3-3 \
-        libfftw3-dev \
-        gdb \
-        libboost-all-dev \
-        libhdf5-dev \
-        librabbitmq-dev \
-        wget && \
-    rm -rf /var/lib/apt/lists/*
+ARG PSYLLID_TAG=v1.12.0
+ENV PSYLLID_TAG=${PSYLLID_TAG}
+ARG PSYLLID_BUILD_PREFIX=/usr/local/p8/psyllid/$PSYLLID_TAG
+ENV PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}
 
-## CMake
-#ARG CMAKEVER=3.6
-#ARG CMAKEINSTALLER=cmake-3.6.2-Linux-x86_64.sh
-#RUN wget https://cmake.org/files/v$CMAKEVER/$CMAKEINSTALLER && \
-#    chmod u+x $CMAKEINSTALLER && \
-#    ./$CMAKEINSTALLER --skip-license --prefix=/usr/local && \
-#    rm $CMAKEINSTALLER
+SHELL ["/bin/bash", "-c"]
+RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
+    if [ -a /etc/centos-release ]; then \
+        ## build setup for p8compute base image
+        chmod -R 777 $PSYLLID_BUILD_PREFIX/.. &&\
+        cd $PSYLLID_BUILD_PREFIX &&\
+        echo "source ${COMMON_BUILD_PREFIX}/setup.sh" > setup.sh &&\
+        echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh &&\
+        echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
+        echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current' >> setup.sh &&\
+        echo 'export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH' >> setup.sh &&\
+        echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH' >> setup.sh;\
+    elif [ -a /etc/debian_version ]; then \
+        ## build setup for debian base image
+        cd $PSYLLID_BUILD_PREFIX &&\
+        echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
+        apt-get update && \
+        apt-get clean && \
+        apt-get --fix-missing -y install \
+            build-essential \
+            cmake \
+            libfftw3-3 \
+            libfftw3-dev \
+            gdb \
+            libboost-all-dev \
+            libhdf5-dev \
+            librabbitmq-dev \
+            wget &&\
+        /bin/true;\
+    fi
 
-#RUN mkdir /code
-#ADD psyllid /code/psyllid
+########################
+FROM psyllid_common as psyllid_done
 
-# note that the build dir is *not* in source, this is so that the source can me mounted onto the container without covering the build target
+COPY dripline-cpp /tmp_source/dripline-cpp
+COPY external /tmp_source/external
+COPY midge /tmp_source/midge
+COPY monarch /tmp_source/monarch
+COPY source /tmp_source/source
+COPY CMakeLists.txt /tmp_source/CMakeLists.txt
+COPY .git /tmp_source/.git
 
-COPY dripline-cpp /usr/local/src/dripline-cpp
-COPY examples /usr/local/src/examples
-COPY external /usr/local/src/external
-COPY monarch /usr/local/src/monarch
-COPY midge /usr/local/src/midge
-COPY source /usr/local/src/source
-COPY CMakeLists.txt /usr/local/src/CMakeLists.txt
+## store cmake args because we'll need to run twice (known package_builder issue)
+## use EXTRA_CMAKE_ARGS to add or replace options at build time, CMAKE_CONFIG_ARGS_LIST are defaults
+ARG EXTRA_CMAKE_ARGS=""
+ENV CMAKE_CONFIG_ARGS_LIST="\
+      -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
+      -D Psyllid_ENABLE_FPA=FALSE \
+      ${EXTRA_CMAKE_ARGS} \
+      "
 
-RUN cd /usr/local/src && \
-    mkdir -p build && \
-    cd build && \
-    cmake .. && \
-    # unclear while I have to run cmake twice
-    cmake -DCMAKE_BUILD_TYPE=RELEASE -DPsyllid_ENABLE_TESTING=TRUE -DCMAKE_INSTALL_PREFIX:PATH=/usr/local -DPsyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT=TRUE . && \
-    make -j2 install
+RUN source $PSYLLID_BUILD_PREFIX/setup.sh &&\
+    mkdir -p /tmp_source/build &&\
+    cd /tmp_source/build &&\
+    cmake ${CMAKE_CONFIG_ARGS_LIST} .. &&\
+    cmake ${CMAKE_CONFIG_ARGS_LIST} .. &&\
+    make install &&\
+    /bin/true
 
-RUN cp /usr/local/src/examples/str_1ch_fpa.yaml /etc/psyllid_config.yaml
+########################
+FROM psyllid_common
+
+# for now we must grab the extra dependency content as well as psyllid itself
+COPY --from=psyllid_done $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX
+
+# for a psyllid container, we need the environment to be configured, this is not desired for compute containers
+# (in which case the job should start with a bare shell and then do the exact setup desired)
+ENTRYPOINT ["/bin/bash", "-l", "-c"]
+CMD ["bash"]
+RUN ln -s $PSYLLID_BUILD_PREFIX/setup.sh /etc/profile.d/setup.sh

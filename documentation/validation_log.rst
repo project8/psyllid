@@ -43,6 +43,18 @@ Fixes:
 Log
 ---
 
+Version: 1.12.0
+~~~~~~~~~~~~~~~
+
+Release Date: July 25, 2019
+'''''''''''''''''''''''''''
+
+New Features:
+''''''''''''''
+
+* Unified Docker build, with automation through Travis CI
+
+
 Version: 1.11.1
 ~~~~~~~~~~~~~~~
 
