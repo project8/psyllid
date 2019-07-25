@@ -43,6 +43,18 @@ Fixes:
 Log
 ---
 
+Version: 1.12.1
+~~~~~~~~~~~~~~~
+
+Release Date: July 25, 2019
+'''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Version setting in .travis.yml
+
+
 Version: 1.12.0
 ~~~~~~~~~~~~~~~
 
