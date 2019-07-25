@@ -24,5 +24,5 @@ script:
     #- set -e
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     - docker pull ${BASE_USER}/${BASE_REPO}:${BASE_TAG}
-    - docker build --build-arg IMG_USER=${BASE_USER} --build-arg IMG_REPO=${BASE_REPO} --build-arg IMG_TAG=$BASE_TAG -t project8/psyllid:`echo $TRAVIS_BRANCH | tr / _`-${PRODUCT_SUFFIX} .
+    - docker build --build-arg IMG_USER=${BASE_USER} --build-arg IMG_REPO=${BASE_REPO} --build-arg IMG_TAG=$BASE_TAG --build-arg PSYLLID_BASE_PREFIX=$PSYLLID_BASE_PREFIX --build-arg PSYLLID_PREFIX_TAG=$PSYLLID_PREFIX_TAG -t project8/psyllid:`echo $TRAVIS_BRANCH | tr / _`-${PRODUCT_SUFFIX} .
     - docker push project8/psyllid:`echo $TRAVIS_BRANCH | tr / _`-${PRODUCT_SUFFIX}
