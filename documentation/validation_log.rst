@@ -43,6 +43,18 @@ Fixes:
 Log
 ---
 
+Version: 1.12.2
+~~~~~~~~~~~~~~~
+
+Release Date: August 27, 2019
+'''''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Updated Docker base image to p8compute_dependencies v0.9.0.
+
+
 Version: 1.12.1
 ~~~~~~~~~~~~~~~
 
