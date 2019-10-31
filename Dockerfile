@@ -21,7 +21,6 @@ RUN /bin/true &&\
     if [ -a /etc/centos-release ]; then \
         ## build setup for p8compute base image
         chmod -R 777 $PSYLLID_BUILD_PREFIX/.. &&\
-        cd $PSYLLID_BUILD_PREFIX &&\
         echo "source ${COMMON_BUILD_PREFIX}/setup.sh" > setup.sh &&\
         echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh &&\
         echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current' >> setup.sh &&\
