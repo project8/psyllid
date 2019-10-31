@@ -70,8 +70,7 @@ ENV CMAKE_CONFIG_ARGS_LIST="\
       ${EXTRA_CMAKE_ARGS} \
       "
 
-RUN which cmake \
-    && source $PSYLLID_BUILD_PREFIX/setup.sh \
+RUN source $PSYLLID_BUILD_PREFIX/setup.sh \
     && mkdir -p /tmp_source/build \
     && cd /tmp_source/build \
     && cmake ${CMAKE_CONFIG_ARGS_LIST} .. \
