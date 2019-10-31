@@ -13,21 +13,21 @@ ARG PSYLLID_BUILD_PREFIX=${PSYLLID_BASE_PREFIX}/${PSYLLID_PREFIX_TAG}
 ENV PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}
 
 SHELL ["/bin/bash", "-c"]
-RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
+
+RUN mkdir -p $PSYLLID_BUILD_PREFIX
+WORKDIR $PSYLLID_BUILD_PREFIX
+
+RUN /bin/true &&\
     if [ -a /etc/centos-release ]; then \
         ## build setup for p8compute base image
         chmod -R 777 $PSYLLID_BUILD_PREFIX/.. &&\
         cd $PSYLLID_BUILD_PREFIX &&\
         echo "source ${COMMON_BUILD_PREFIX}/setup.sh" > setup.sh &&\
         echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh &&\
-        echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
         echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current' >> setup.sh &&\
-        echo 'export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH' >> setup.sh &&\
-        echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH' >> setup.sh;\
+        /bin/true;\
     elif [ -a /etc/debian_version ]; then \
         ## build setup for debian base image
-        cd $PSYLLID_BUILD_PREFIX &&\
-        echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
         apt-get update && \
         apt-get clean && \
         apt-get --fix-missing -y install \
@@ -42,6 +42,10 @@ RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
             wget &&\
         /bin/true;\
     fi
+RUN echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
+    echo 'export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH' >> setup.sh &&\
+    echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH' >> setup.sh;
+WORKDIR /
 
 ########################
 FROM psyllid_common as psyllid_done
