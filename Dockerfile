@@ -23,7 +23,7 @@ RUN /bin/true &&\
         chmod -R 777 $PSYLLID_BUILD_PREFIX/.. &&\
         echo "source ${COMMON_BUILD_PREFIX}/setup.sh" > setup.sh &&\
         echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh &&\
-        echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current' >> setup.sh &&\
+        echo "ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current" >> setup.sh &&\
         /bin/true;\
     elif [ -a /etc/debian_version ]; then \
         ## build setup for debian base image
@@ -39,11 +39,13 @@ RUN /bin/true &&\
             libhdf5-dev \
             librabbitmq-dev \
             wget &&\
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/* && \
         /bin/true;\
     fi
 RUN echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
-    echo 'export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH' >> setup.sh &&\
-    echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH' >> setup.sh;
+    echo "export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH" >> setup.sh &&\
+    echo "export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH" >> setup.sh;
 WORKDIR /
 
 ########################
