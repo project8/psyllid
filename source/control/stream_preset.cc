@@ -131,9 +131,12 @@ namespace psyllid
         }
         const scarab::param_array& t_nodes_array = a_preset_node["nodes"].as_array();
 
+        // do this before the mutex lock because the constructor for runtime_stream_preset locks the mutex too
+        rsp_creator t_rsp_creator( t_preset_type );
+
         std::unique_lock< std::mutex > t_lock( s_runtime_presets_mutex );
 
-        auto t_rp_pair = s_runtime_presets.insert( runtime_presets::value_type( t_preset_type, rsp_creator( t_preset_type ) ) );
+        auto t_rp_pair = s_runtime_presets.insert( runtime_presets::value_type( t_preset_type, std::move(t_rsp_creator) ) );
         if( ! t_rp_pair.second )
         {
             LERROR( plog, "Unable to add new runtime preset <" << t_preset_type << ">" );
