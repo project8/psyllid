@@ -121,8 +121,16 @@ namespace psyllid
                 {
                     LWARN( plog, "Exception caught while resetting midge: " << e.what() );
                     LWARN( plog, "Returning to the \"deactivated\" state and awaiting further instructions" );
-                    f_msg_relay->slack_error( std::string("Psyllid could not be activated.\nDetails: ") + e.what() );
+                    f_msg_relay->slack_error( std::string("Psyllid could not be activated (non-fatal error).\nDetails: ") + e.what() );
                     set_status( status::deactivated );
+                    continue;
+                }
+                catch( fatal_error& e )
+                {
+                    LERROR( plog, "Exception caught while resetting midge: " << e.what() );
+                    LERROR( plog, "Setting an error state and exiting the application" );
+                    f_msg_relay->slack_error( std::string("Psyllid could not be activated (fatal error).\nDetails: ") + e.what() );
+                    set_status( status::error );
                     continue;
                 }
 
@@ -213,8 +221,8 @@ namespace psyllid
                 }
                 else if( get_status() == status::error )
                 {
-                    LERROR( plog, "Canceling due to midge error" );
-                    f_msg_relay->slack_error( "Psyllid has crashed due to an error while running.  Hopefully the details have already been reported." );
+                    LERROR( plog, "Canceling due to an error" );
+                    f_msg_relay->slack_error( "Psyllid is exiting due to an error.  Hopefully the details have already been reported." );
                     scarab::signal_handler::cancel_all( RETURN_ERROR );
                     continue;
                 }
