@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.1)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.9.1 )
+project( Psyllid VERSION 1.12.1 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
 include( PackageBuilder )
