@@ -43,6 +43,22 @@ Fixes:
 Log
 ---
 
+Version: 1.12.3
+~~~~~~~~~~~~~~~
+
+Release Date: October 31, 2019
+''''''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* travis build configuration now triggers on branches ending with "/build"
+    * this convention is needed to be able to test CI without actually creating a merge or pushing to a main branch
+* build details modified for more natural use in debian and consistency
+    * travis builds on debian now install to /usr/local
+    * setup.sh file is populated outside of the conditional blocks for each os (for lines that are common)
+    * setup.sh on debian now has sufficient variables (though they are also not needed per the new location above)
+
 Version: 1.12.2
 ~~~~~~~~~~~~~~~
 
