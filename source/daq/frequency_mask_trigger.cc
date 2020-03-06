@@ -743,8 +743,8 @@ namespace psyllid
                         t_array_size = t_freq_data->get_array_size();
                         t_loop_lower_limit = f_n_excluded_bins;
                         t_loop_upper_limit = t_array_size - f_n_excluded_bins;
-                        LDEBUG( plog, "Array size: "<<t_array_size );
-                        LDEBUG( plog, "Looping from "<<t_loop_lower_limit<<" to "<<t_loop_upper_limit-1 );
+                        //LDEBUG( plog, "Array size: "<<t_array_size );
+                        //LDEBUG( plog, "Looping from "<<t_loop_lower_limit<<" to "<<t_loop_upper_limit-1 );
 
                         if( a_ctx.f_first_packet_after_start )
                         {
