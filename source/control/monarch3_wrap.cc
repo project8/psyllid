@@ -64,19 +64,10 @@ namespace psyllid
         while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
         {
             {
-                LDEBUG(plog, "Wating for f_od_mutex");
                 unique_lock t_od_lock( f_od_mutex );
-                LDEBUG(plog, "Acquired f_od_mutex");
 
                 // wait on the condition variable
-                LDEBUG(plog, "Released f_od_mutex");
                 std::cv_status status = f_od_condition.wait_for( t_od_lock, std::chrono::milliseconds( 500 ) );
-
-                if(status == std::cv_status::timeout) {
-                    LDEBUG(plog, "Acquired f_od_mutex by timeout");
-                } else {
-                    LDEBUG(plog, "Acquired f_od_mutex regularly");
-                }
 
                 // this particular setup of the while on t_do_wait and the if-elseif-else structure
                 // is used so that any of the actions can be taken in any order without going through waiting on the condition.
@@ -95,11 +86,8 @@ namespace psyllid
                         else if( ! f_monarch_on_deck )
                         {
                             // then we need to make a new on-deck monarch
-                            LDEBUG( plog, "Wating for header lock");
                             unique_lock t_header_lock( f_monarch_wrap->get_header()->get_lock() );
-                            LDEBUG( plog, "Acquired header lock");
                             create_on_deck_nolock();
-                            LDEBUG( plog, "Released header lock");
                         }
                         else
                         {
@@ -113,7 +101,6 @@ namespace psyllid
                     scarab::signal_handler::cancel_all( RETURN_ERROR );
                 }
             }
-            LDEBUG(plog, "Released f_od_mutex");
         } // end while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
 
         LINFO( plog, "Monarch-on-deck manager is stopping" );
@@ -206,9 +193,7 @@ namespace psyllid
 
     void monarch_on_deck_manager::clear_on_deck()
     {
-        LDEBUG(plog, "Waiting f_od_mutex");
         f_od_mutex.lock();
-        LDEBUG(plog, "Acquired f_od_mutex");
         if( f_monarch_on_deck )
         {
             std::string t_filename( f_monarch_on_deck->GetHeader()->Filename() );
@@ -231,30 +216,20 @@ namespace psyllid
                 LWARN( plog, "File could not be removed: <" << t_filename << ">\n" << e.what() );
             }
         }
-        LDEBUG(plog, "Released f_od_mutex");
         f_od_mutex.unlock();
         return;
     }
 
     void monarch_on_deck_manager::finish_to_finish()
     {
-        //f_od_mutex.lock();
-        int count = 0;
-        while(!f_od_mutex.try_lock()) {
-            if(count<1000) {
-                LDEBUG( plog, "Wating for lock");
-                count++;
-            }
-        }
+        f_od_mutex.lock();
 
-        LDEBUG(plog, "Acquired f_od_mutex");
         if( f_monarch_to_finish )
         {
             LDEBUG( plog, "Finishing to-finish file" );
             finish_to_finish_nolock();
         }
         f_od_mutex.unlock();
-        LDEBUG(plog, "Released f_od_mutex");
         return;
     }
 
@@ -414,11 +389,7 @@ namespace psyllid
 
         unique_lock t_monarch_lock( f_monarch_mutex );
 
-        LDEBUG( plog, "Waiting for header lock");
-
         unique_lock t_header_lock( f_header_wrap->get_lock() );
-
-        LDEBUG(plog, "Acquired header lock");
 
         LDEBUG( plog, "Writing the header for file <" << f_header_wrap->header().Filename() );
         try
@@ -434,7 +405,6 @@ namespace psyllid
 
         t_header_lock.unlock();
 
-        LDEBUG(plog, "Released header lock");
 
         // prepare file-switching components
 
@@ -465,7 +435,6 @@ namespace psyllid
             unique_lock t_lock( f_monarch_mutex );
 
             // wait on the condition variable
-            //LDEBUG( plog, "Waiting for switch trigger");
             while( ! f_do_switch_flag.load() && ! is_canceled() )
             {
                 f_do_switch_trig.wait_for( t_lock, std::chrono::milliseconds( 500 ) );
@@ -475,7 +444,6 @@ namespace psyllid
 
             // f_monarch_mutex is locked at this point
 
-            //f_ok_to_write = false;
             f_do_switch_flag = false;
 
             LDEBUG( plog, "Switching egg files" );
@@ -489,7 +457,6 @@ namespace psyllid
                 scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
 
-            //f_do_switch_flag = false;
             f_ok_to_write = true;
             f_wait_to_write.notify_all();
 
@@ -502,14 +469,10 @@ namespace psyllid
 
     void monarch_wrapper::trigger_switch()
     {
-        if( f_do_switch_flag.load() ) {
-            //LDEBUG( plog, "Trigger flag still true");
-            return;
-        }
+        if( f_do_switch_flag.load() ) return;
         f_do_switch_flag = true;
         f_ok_to_write = false;
         f_do_switch_trig.notify_one();
-        //LDEBUG( plog, "Trigger switch");
         return;
     }
 
@@ -623,7 +586,6 @@ namespace psyllid
         {
             LDEBUG( plog, "Switching to new file; locking header mutex, and monarch mutex" );
             unique_lock t_header_lock( f_header_wrap->get_lock() );
-            LDEBUG( plog, "Acquired header lock" );
             //unique_lock t_monarch_lock( f_monarch_mutex ); // monarch mutex is already locked in the loop in execute_switch_loop
 
             // if the to-finish monarch is full for some reason, empty it
@@ -649,7 +611,6 @@ namespace psyllid
             // swap out the header pointer
             f_header_wrap->f_header = f_monarch->GetHeader();
             t_header_lock.unlock();
-            LDEBUG( plog, "Released header lock");
 
             LDEBUG( plog, "Switching stream pointers" );
 
