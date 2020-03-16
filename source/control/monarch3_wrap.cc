@@ -589,14 +589,14 @@ namespace psyllid
             //unique_lock t_monarch_lock( f_monarch_mutex ); // monarch mutex is already locked in the loop in execute_switch_loop
 
             // if the to-finish monarch is full for some reason, empty it
-            LDEBUG( plog, "Synchronous call to finish to-finish" );
+            LTRACE( plog, "Synchronous call to finish to-finish" );
             f_monarch_od_manager.finish_to_finish();
 
             // if the on-deck monarch doesn't exist, create it
-            LDEBUG( plog, "Synchronous call to create on-deck" );
+            LTRACE( plog, "Synchronous call to create on-deck" );
             f_monarch_od_manager.create_on_deck();
 
-            LDEBUG( plog, "Switching file pointers" );
+            LTRACE( plog, "Switching file pointers" );
 
             // move the old file to the to_finish pointer
             f_monarch_od_manager.set_as_to_finish( f_monarch );
@@ -606,13 +606,13 @@ namespace psyllid
 
             f_file_size_est_mb = 0.;
 
-            LDEBUG( plog, "Switching header pointer" );
+            LTRACE( plog, "Switching header pointer" );
 
             // swap out the header pointer
             f_header_wrap->f_header = f_monarch->GetHeader();
             t_header_lock.unlock();
 
-            LDEBUG( plog, "Switching stream pointers" );
+            LTRACE( plog, "Switching stream pointers" );
 
             // swap out the stream pointers
             for( std::map< unsigned, stream_wrap_ptr >::iterator t_stream_it = f_stream_wraps.begin(); t_stream_it != f_stream_wraps.end(); ++t_stream_it )
@@ -662,17 +662,13 @@ namespace psyllid
     inline bool monarch_wrapper::okay_to_write()
     {
         LTRACE( plog, "Checking ok to write" );
-        if( f_ok_to_write.load() ) {
-            //LDEBUG( plog, "Okay to write");
-            return f_monarch.operator bool();
-        }
+        if( f_ok_to_write.load() ) return f_monarch.operator bool();
         std::mutex t_wait_mutex;
         unique_lock t_wait_lock( t_wait_mutex );
         while( ! f_ok_to_write.load() )
         {
             f_wait_to_write.wait_for( t_wait_lock, std::chrono::milliseconds( 100 ) );
         }
-        //LDEBUG( plog, "Okay to write");
         return f_monarch.operator bool();
     }
 
