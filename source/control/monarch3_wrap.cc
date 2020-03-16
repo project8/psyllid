@@ -67,7 +67,7 @@ namespace psyllid
                 unique_lock t_od_lock( f_od_mutex );
 
                 // wait on the condition variable
-                std::cv_status status = f_od_condition.wait_for( t_od_lock, std::chrono::milliseconds( 500 ) );
+                f_od_condition.wait_for( t_od_lock, std::chrono::milliseconds( 500 ) );
 
                 // this particular setup of the while on t_do_wait and the if-elseif-else structure
                 // is used so that any of the actions can be taken in any order without going through waiting on the condition.
