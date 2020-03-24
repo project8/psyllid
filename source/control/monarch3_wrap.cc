@@ -63,43 +63,41 @@ namespace psyllid
 
         while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
         {
+            unique_lock t_od_lock( f_od_mutex );
+
+            // wait on the condition variable
+            f_od_condition.wait_for( t_od_lock, std::chrono::milliseconds( 500 ) );
+
+            // this particular setup of the while on t_do_wait and the if-elseif-else structure
+            // is used so that any of the actions can be taken in any order without going through waiting on the condition.
+            bool t_do_wait = false;
+            try
             {
-                unique_lock t_od_lock( f_od_mutex );
-
-                // wait on the condition variable
-                f_od_condition.wait_for( t_od_lock, std::chrono::milliseconds( 500 ) );
-
-                // this particular setup of the while on t_do_wait and the if-elseif-else structure
-                // is used so that any of the actions can be taken in any order without going through waiting on the condition.
-                bool t_do_wait = false;
-                try
+                while( ! t_do_wait )
                 {
-                    while( ! t_do_wait )
+                    if( f_monarch_to_finish )
                     {
-                        if( f_monarch_to_finish )
-                        {
-                            // then we need to finish a file
-                            // finish the old file
-                            LDEBUG( plog, "Finishing pre-existing to-finish file" );
-                            finish_to_finish_nolock();
-                        }
-                        else if( ! f_monarch_on_deck )
-                        {
-                            // then we need to make a new on-deck monarch
-                            unique_lock t_header_lock( f_monarch_wrap->get_header()->get_lock() );
-                            create_on_deck_nolock();
-                        }
-                        else
-                        {
-                            t_do_wait = true;
-                        }
-                    } // end while( ! to_do_wait )
-                }
-                catch( std::exception& e )
-                {
-                    LERROR( plog, "Exception caught in monarch-on-deck manager: " << e.what() );
-                    scarab::signal_handler::cancel_all( RETURN_ERROR );
-                }
+                        // then we need to finish a file
+                        // finish the old file
+                        LDEBUG( plog, "Finishing pre-existing to-finish file" );
+                        finish_to_finish_nolock();
+                    }
+                    else if( ! f_monarch_on_deck )
+                    {
+                        // then we need to make a new on-deck monarch
+                        unique_lock t_header_lock( f_monarch_wrap->get_header()->get_lock() );
+                        create_on_deck_nolock();
+                    }
+                    else
+                    {
+                        t_do_wait = true;
+                    }
+                } // end while( ! to_do_wait )
+            }
+            catch( std::exception& e )
+            {
+                LERROR( plog, "Exception caught in monarch-on-deck manager: " << e.what() );
+                scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
         } // end while( ! is_canceled() && f_monarch_wrap->f_stage != monarch_stage::finished )
 
