@@ -2,10 +2,11 @@
 //#include "M3Monarch.hh"
 
 #include "logger.hh"
+
+#include "monarch3_wrap.hh"
 #include "psyllid_error.hh"
 
 #include <cstring> // for strcmp
-#include "../control/monarch3_wrap.hh"
 
 using namespace monarch3;
 using namespace psyllid;

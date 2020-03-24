@@ -221,6 +221,7 @@ namespace psyllid
     void monarch_on_deck_manager::finish_to_finish()
     {
         f_od_mutex.lock();
+
         if( f_monarch_to_finish )
         {
             LDEBUG( plog, "Finishing to-finish file" );
@@ -385,6 +386,7 @@ namespace psyllid
         }
 
         unique_lock t_monarch_lock( f_monarch_mutex );
+
         unique_lock t_header_lock( f_header_wrap->get_lock() );
 
         LDEBUG( plog, "Writing the header for file <" << f_header_wrap->header().Filename() );
@@ -400,6 +402,7 @@ namespace psyllid
         set_stage( monarch_stage::writing );
 
         t_header_lock.unlock();
+
 
         // prepare file-switching components
 
@@ -439,7 +442,7 @@ namespace psyllid
 
             // f_monarch_mutex is locked at this point
 
-            f_ok_to_write = false;
+            f_do_switch_flag = false;
 
             LDEBUG( plog, "Switching egg files" );
             try
@@ -452,7 +455,6 @@ namespace psyllid
                 scarab::signal_handler::cancel_all( RETURN_ERROR );
             }
 
-            f_do_switch_flag = false;
             f_ok_to_write = true;
             f_wait_to_write.notify_all();
 
@@ -467,6 +469,7 @@ namespace psyllid
     {
         if( f_do_switch_flag.load() ) return;
         f_do_switch_flag = true;
+        f_ok_to_write = false;
         f_do_switch_trig.notify_one();
         return;
     }
