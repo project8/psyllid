@@ -51,7 +51,7 @@ namespace psyllid
             ssize_t t_size_received = 0;
 
             LINFO( plog, "Starting main loop; sending packets" );
-            unsigned count = 0;
+            //unsigned count = 0;
             while( ! is_canceled() )
             {
                 t_block = out_stream< 0 >().data();
