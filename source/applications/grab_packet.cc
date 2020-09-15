@@ -79,7 +79,7 @@ int main( int argc, char** argv )
         the_main.add_config_option< std::string >( "---packet-type", "packet-type", "Packet type" );
 
         // Package version
-        the_main.set_version( new psyllid::version() );
+        the_main.set_version( std::make_shared< psyllid::version >() );
 
         // The main execution callback
         the_main.callback( [&]() {
