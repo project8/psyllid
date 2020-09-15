@@ -2,7 +2,7 @@
  * butterfly_house.hh
  *
  *  Created on: Feb 11, 2016
- *      Author: nsoblath
+ *      Author: N.S. Oblath
  *
  *  Monarch stages:
  *    - initialized
@@ -26,8 +26,9 @@
 #ifndef PSYLLID_BUTTERFLY_HOUSE_HH_
 #define PSYLLID_BUTTERFLY_HOUSE_HH_
 
-#include "control_access.hh"
 #include "monarch3_wrap.hh"
+
+#include "control_access.hh"
 
 #include "member_variables.hh"
 #include "singleton.hh"
@@ -53,7 +54,7 @@ namespace psyllid
      butterfly_house gets the file size from the psyllid config file and the filename, run duration and description from daq_control.
      It adds this information to the file header.
      */
-    class butterfly_house : public scarab::singleton< butterfly_house >, public control_access
+    class butterfly_house : public scarab::singleton< butterfly_house >, public sandfly::control_access
     {
         public:
             mv_accessible( double, max_file_size_mb );
