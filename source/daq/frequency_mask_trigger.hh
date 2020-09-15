@@ -220,7 +220,7 @@ namespace psyllid
         return threshold_to_string( f_threshold_type );
     }
 
-    class frequency_mask_trigger_binding : public _node_binding< frequency_mask_trigger, frequency_mask_trigger_binding >
+    class frequency_mask_trigger_binding : public sandfly::_node_binding< frequency_mask_trigger, frequency_mask_trigger_binding >
     {
         public:
             frequency_mask_trigger_binding();

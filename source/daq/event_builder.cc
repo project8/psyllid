@@ -572,7 +572,7 @@ exit_outer_loop:
 
 
     event_builder_binding::event_builder_binding() :
-            _node_binding< event_builder, event_builder_binding >()
+            sandfly::_node_binding< event_builder, event_builder_binding >()
     {
     }
 

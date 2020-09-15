@@ -62,7 +62,7 @@ namespace psyllid
 
     };
 
-    class data_producer_binding : public _node_binding< data_producer, data_producer_binding >
+    class data_producer_binding : public sandfly::_node_binding< data_producer, data_producer_binding >
     {
         public:
             data_producer_binding();

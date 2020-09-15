@@ -100,7 +100,7 @@ namespace psyllid
     };
 
 
-    class triggered_writer_binding : public _node_binding< triggered_writer, triggered_writer_binding >
+    class triggered_writer_binding : public sandfly::_node_binding< triggered_writer, triggered_writer_binding >
     {
         public:
             triggered_writer_binding();

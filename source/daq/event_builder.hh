@@ -150,7 +150,7 @@ namespace psyllid
         return true;
     }
 
-    class event_builder_binding : public _node_binding< event_builder, event_builder_binding >
+    class event_builder_binding : public sandfly::_node_binding< event_builder, event_builder_binding >
     {
         public:
             event_builder_binding();

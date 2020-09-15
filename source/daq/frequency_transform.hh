@@ -98,7 +98,7 @@ namespace psyllid
 
     };
 
-    class frequency_transform_binding : public _node_binding< frequency_transform, frequency_transform_binding >
+    class frequency_transform_binding : public sandfly::_node_binding< frequency_transform, frequency_transform_binding >
     {
         public:
             frequency_transform_binding();

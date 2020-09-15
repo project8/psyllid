@@ -92,7 +92,7 @@ namespace psyllid
 
 
     terminator_time_data_binding::terminator_time_data_binding() :
-            _node_binding< terminator_time_data, terminator_time_data_binding >()
+            sandfly::_node_binding< terminator_time_data, terminator_time_data_binding >()
     {}
 
     terminator_time_data_binding::~terminator_time_data_binding()
@@ -175,7 +175,7 @@ namespace psyllid
 
 
     terminator_freq_data_binding::terminator_freq_data_binding() :
-            _node_binding< terminator_freq_data, terminator_freq_data_binding >()
+            sandfly::_node_binding< terminator_freq_data, terminator_freq_data_binding >()
     {}
 
     terminator_freq_data_binding::~terminator_freq_data_binding()
@@ -253,7 +253,7 @@ namespace psyllid
     }
 
     terminator_trigger_flag_binding::terminator_trigger_flag_binding() :
-            _node_binding< terminator_trigger_flag, terminator_trigger_flag_binding >()
+            sandfly::_node_binding< terminator_trigger_flag, terminator_trigger_flag_binding >()
     {}
 
     terminator_trigger_flag_binding::~terminator_trigger_flag_binding()

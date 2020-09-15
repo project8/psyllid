@@ -225,7 +225,7 @@ namespace psyllid
 
 
     packet_receiver_socket_binding::packet_receiver_socket_binding() :
-            _node_binding< packet_receiver_socket, packet_receiver_socket_binding >()
+            sandfly::_node_binding< packet_receiver_socket, packet_receiver_socket_binding >()
     {
     }
 

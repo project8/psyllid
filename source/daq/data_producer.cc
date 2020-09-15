@@ -111,7 +111,7 @@ namespace psyllid
     }
 
     data_producer_binding::data_producer_binding() :
-            _node_binding< data_producer, data_producer_binding >()
+            sandfly::_node_binding< data_producer, data_producer_binding >()
     {
     }
 

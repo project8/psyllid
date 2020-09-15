@@ -123,7 +123,7 @@ namespace psyllid
 
 
     roach_time_monitor_binding::roach_time_monitor_binding() :
-            _node_binding< roach_time_monitor, roach_time_monitor_binding >()
+            sandfly::_node_binding< roach_time_monitor, roach_time_monitor_binding >()
     {
     }
 
@@ -242,7 +242,7 @@ namespace psyllid
 
 
     roach_freq_monitor_binding::roach_freq_monitor_binding() :
-            _node_binding< roach_freq_monitor, roach_freq_monitor_binding >()
+            sandfly::_node_binding< roach_freq_monitor, roach_freq_monitor_binding >()
     {
     }
 

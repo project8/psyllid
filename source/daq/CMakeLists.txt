@@ -1,8 +1,10 @@
 #######
 # daq #
 #######
+
 set( headers
     data_producer.hh
+    egg_writer.hh
     egg3_reader.hh
     event_builder.hh
     #single_value_trigger.hh
@@ -18,6 +20,7 @@ set( headers
 
 set( sources
     data_producer.cc
+    egg_writer.cc
     egg3_reader.cc
     event_builder.cc
     #single_value_trigger.cc
@@ -43,8 +46,15 @@ if( Psyllid_ENABLE_FFTW )
 endif( Psyllid_ENABLE_FFTW )
 
 if( Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT )
-    set( headers ${sources} streaming_frequency_writer.hh )
-    set( sources ${sources} streaming_frequency_writer.cc )
+    set( headers 
+        ${sources} 
+        streaming_frequency_writer.hh 
+    )
+
+    set( sources 
+        ${sources} 
+        streaming_frequency_writer.cc 
+    )
 endif( Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT )
 
 if( Psyllid_BUILD_FPA )
@@ -60,14 +70,21 @@ if( Psyllid_BUILD_FPA )
 endif( Psyllid_BUILD_FPA )
 
 set( dependencies
-    PsyllidUtility
-    PsyllidData
     PsyllidControl
+    PsyllidData
+    PsyllidUtility
 )
 
 ###########
 # library #
 ###########
 
-midge_library( PsyllidDAQ sources dependencies )
+pbuilder_library(
+    TARGET PsyllidDAQ
+    SOURCES ${sources}
+    PROJECT_LIBRARIES ${dependencies}
+    PUBLIC_EXTERNAL_LIBRARIES ${PUBLIC_EXT_LIBS}
+    PRIVATE_EXTERNAL_LIBRARIES ${PRIVATE_EXT_LIBS}
+)
+
 pbuilder_install_headers( ${headers} )
