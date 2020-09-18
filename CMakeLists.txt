@@ -44,10 +44,8 @@ else( Psyllid_ENABLE_FPA AND UNIX AND NOT APPLE )
 endif( Psyllid_ENABLE_FPA AND UNIX AND NOT APPLE )
 
 # Control executable build
-if( PBUILDER_STANDALONE )
-    set( Midge_ENABLE_EXECUTABLES FALSE )
-    set( Sandfly_ENABLE_EXECUTABLES FALSE )
-endif()
+set_option( Midge_ENABLE_EXECUTABLES FALSE )
+set_option( Sandfly_ENABLE_EXECUTABLES FALSE )
 
 
 ################
@@ -122,4 +120,10 @@ if( Psyllid_ENABLE_TESTING )
     #add_subdirectory( source/test )
 endif()
 
+##################
+# package config #
+##################
 
+configure_file( ${PROJECT_SOURCE_DIR}/PsyllidConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/PsyllidConfig.cmake @ONLY )
+
+pbuilder_do_package_config()
