@@ -83,14 +83,14 @@ int main( int argc, char** argv )
 
         // The main execution callback
         the_main.callback( [&]() {
-            unsigned t_n_packets( the_main.master_config()["n"]().as_uint() );
-            std::string t_ip( the_main.master_config()["ip"]().as_string() );
-            unsigned t_port = the_main.master_config()["port"]().as_uint();
-            std::string t_interface( the_main.master_config()["interface"]().as_string() );
-            unsigned t_timeout_sec = the_main.master_config()["timeout"]().as_uint();
-            //bool t_use_fpa( the_main.master_config()["fpa"]().as_bool() );
-            unsigned t_max_packet_size = the_main.master_config()["max-packet-size"]().as_uint();
-            std::string t_packet_type( the_main.master_config()["packet-type"]().as_string() );
+            unsigned t_n_packets( the_main.primary_config()["n"]().as_uint() );
+            std::string t_ip( the_main.primary_config()["ip"]().as_string() );
+            unsigned t_port = the_main.primary_config()["port"]().as_uint();
+            std::string t_interface( the_main.primary_config()["interface"]().as_string() );
+            unsigned t_timeout_sec = the_main.primary_config()["timeout"]().as_uint();
+            //bool t_use_fpa( the_main.primary_config()["fpa"]().as_bool() );
+            unsigned t_max_packet_size = the_main.primary_config()["max-packet-size"]().as_uint();
+            std::string t_packet_type( the_main.primary_config()["packet-type"]().as_string() );
 
             bool (*t_proc_pkt_func)( uint8_t* ) = nullptr;
             if( t_packet_type == "roach" )
