@@ -3,7 +3,16 @@ cmake_minimum_required (VERSION 3.8)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.12.4 LANGUAGES CXX CUDA)
+project( Psyllid VERSION 1.12.4 LANGUAGES CXX)
+
+include(CheckLanguage)
+
+check_language(CUDA)
+if(CMAKE_CUDA_COMPILER)
+  enable_language(CUDA)
+else()
+  message(STATUS "Building without CUDA")
+endif()
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
 include( PackageBuilder )
