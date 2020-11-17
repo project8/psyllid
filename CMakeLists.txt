@@ -1,9 +1,9 @@
-# Minimum cmake verison 3.1 required for the variable CMAKE_CXX_STANDARD
-cmake_minimum_required (VERSION 3.1)
+# Minimum cmake verison 3.8 required for native CUDA C++ support
+cmake_minimum_required (VERSION 3.8)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.12.4 )
+project( Psyllid VERSION 1.12.4 LANGUAGES CXX CUDA)
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
 include( PackageBuilder )
