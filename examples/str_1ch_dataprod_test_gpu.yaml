@@ -1,0 +1,65 @@
+amqp:
+    broker: rabbit_broker
+    queue: psyllid
+    make-connection: false
+    
+on-startup:
+    
+  - type: get
+    rks: daq-status
+    payload: {}
+    sleep-for: 0
+  - type: wait-for
+    rks: daq-status
+    payload: {}
+    sleep-for: 1000
+  - type: wait-for
+    rks: daq-status
+    payload: {}
+    sleep-for: 100
+  - type: cmd
+    rks: start-run
+    payload: 
+        duration: 5000 
+        filenames: 
+          - "test.egg"
+
+post-to-slack: false
+
+daq:
+    activate-at-startup: true
+    n-files: 1
+    max-file-size-mb: 500
+
+streams:
+    ch0:
+        preset:  # this preset is identical to str-1ch; it's given like this as a demonstration of how to specify a preset in a configuration file
+            type: str-1ch-dataprod
+            nodes:
+              - { type: data-producer,          name: dprd }
+              - { type: tf-roach-receiver,      name: tfrr }
+#              - { type: term-freq-data,         name: termf }
+              - { type: gpu-test,               name: gt   }
+              - { type: term-time-data,         name: termt }
+            connections:
+              - "dprd.out_0:tfrr.in_0"
+#              - "tfrr.out_0:termt.in_0"
+              - "tfrr.out_0:gt.in_0"
+              - "tfrr.out_1:gt.in_1"
+              - "gt.out_0:termt.in_0"
+  
+        device:
+            n-channels: 1
+            bit-depth: 8
+            data-type-size: 1
+            sample-size: 2
+            record-size: 4096
+            acq-rate: 100 # MHz
+            v-offset: 0.0
+            v-range: 0.5
+  
+        dprd:
+            length: 10
+
+        strw:
+            file-num: 0
