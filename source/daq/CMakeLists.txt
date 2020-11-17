@@ -14,6 +14,7 @@ set( headers
     tf_roach_monitor.hh
     tf_roach_receiver.hh
     triggered_writer.hh
+    gpu_test.cuh
 )
 
 set( sources
@@ -29,6 +30,7 @@ set( sources
     tf_roach_monitor.cc
     tf_roach_receiver.cc
     triggered_writer.cc
+    gpu_test.cu
 )
 
 if( Psyllid_ENABLE_FFTW )
@@ -71,3 +73,10 @@ set( dependencies
 
 midge_library( PsyllidDAQ sources dependencies )
 pbuilder_install_headers( ${headers} )
+
+
+# All CUDA files in the 
+# library are to be built with -dc as the member functions 
+# could be called by other libraries and executables
+set_target_properties( PsyllidDAQ
+                       PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
