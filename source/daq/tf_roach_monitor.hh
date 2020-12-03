@@ -60,7 +60,7 @@ namespace psyllid
     };
 
 
-    class roach_time_monitor_binding : public _node_binding< roach_time_monitor, roach_time_monitor_binding >
+    class roach_time_monitor_binding : public sandfly::_node_binding< roach_time_monitor, roach_time_monitor_binding >
     {
         public:
             roach_time_monitor_binding();
@@ -114,7 +114,7 @@ namespace psyllid
     };
 
 
-    class roach_freq_monitor_binding : public _node_binding< roach_freq_monitor, roach_freq_monitor_binding >
+    class roach_freq_monitor_binding : public sandfly::_node_binding< roach_freq_monitor, roach_freq_monitor_binding >
     {
         public:
             roach_freq_monitor_binding();

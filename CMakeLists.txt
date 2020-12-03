@@ -1,15 +1,12 @@
-# Minimum cmake verison 3.1 required for the variable CMAKE_CXX_STANDARD
-cmake_minimum_required (VERSION 3.1)
+# Minimum cmake verison 3.9 required for Monarch
+cmake_minimum_required (VERSION 3.9)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
 project( Psyllid VERSION 1.12.4 )
 
-list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/scarab/cmake )
-include( PackageBuilder )
-
-list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/midge/cmake )
-include( MidgeUtility )
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/sandfly/cmake )
+include( sandfly )
 
 pbuilder_prepare_project()
 
@@ -46,24 +43,32 @@ else( Psyllid_ENABLE_FPA AND UNIX AND NOT APPLE )
     remove_definitions( -DBUILD_FPA )
 endif( Psyllid_ENABLE_FPA AND UNIX AND NOT APPLE )
 
+# Control executable build
+set_option( Midge_ENABLE_EXECUTABLES FALSE )
+set_option( Sandfly_ENABLE_EXECUTABLES FALSE )
+
+
 ################
 # dependencies #
 ################
 
+set( PUBLIC_EXT_LIBS )
+set( PRIVATE_EXT_LIBS )
+
 # FFTW
 if( Psyllid_ENABLE_FFTW)
-    find_package( FFTW REQUIRED )
+    find_package( FFTW REQUIRED MODULE )
 else ( Psyllid_ENABLE_FFTW )
     set( FFTW_FOUND FALSE )
 endif( Psyllid_ENABLE_FFTW )
 if ( FFTW_FOUND )
-    include_directories( ${FFTW_INCLUDE_DIR} )
+    #include_directories( ${FFTW_INCLUDE_DIR} )
     add_definitions( -DFFTW_FOUND )
-    pbuilder_add_ext_libraries( ${FFTW_LIBRARIES} )
+    list( APPEND PUBLIC_EXT_LIBS ${FFTW_LIBRARIES} )
     if( FFTW_THREADS_FOUND )
         set( FFTW_NTHREADS 1 CACHE STRING "Number of threads to use for FFTW processes" )
         add_definitions( -DFFTW_NTHREADS=${FFTW_NTHREADS} )
-        pbuilder_add_ext_libraries( ${FFTW_THREADS_LIBRARIES} )
+        list( APPEND PUBLIC_EXT_LIBS ${FFTW_THREADS_LIBRARIES} )
         message( STATUS "FFTW configured to use up to ${FFTW_NTHREADS} threads." )
     else( FFTW_THREADS_FOUND )
         remove_definitions( -DFFTW_NTHREADS=${FFTW_NTHREADS} )
@@ -77,23 +82,19 @@ endif( FFTW_FOUND )
 
 # Boost
 # Boost (1.48 required for container; scarab minimum is 1.46)
-find_package( Boost 1.48.0 REQUIRED )
+#find_package( Boost 1.48.0 REQUIRED )
 
-# Midge
-pbuilder_add_submodule( Midge midge )
-midge_process_options()
-
-# Dripline
+# Sandfly
 add_definitions( -DDRIPLINE_AUTH_FILE=~/.project8_authentications.json )
-pbuilder_add_submodule( Dripline dripline-cpp )
+pbuilder_add_submodule( Sandfly sandfly )
 
 # Monarch
 pbuilder_add_submodule( Monarch monarch )
-# we need the definitions for HAS_ATTR_IFC and HAS_GRP_IFC from Monarch to use the proper class interfaces in M3Header and M3Stream
-set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} APPEND PROPERTY COMPILE_DEFINITIONS ${Monarch_COMPILE_DEFINITIONS} )
 
-# tk_spline
-include_directories( BEFORE ${PROJECT_SOURCE_DIR}/external/tk_spline )
+# Included external dependencies
+# Including: tk_spline
+add_subdirectory( external )
+list( APPEND PRIVATE_EXT_LIBS TKSpline )
 
 
 ###########
@@ -103,17 +104,26 @@ include_directories( BEFORE ${PROJECT_SOURCE_DIR}/external/tk_spline )
 # add include directories
 include_directories( BEFORE
     source/control
-    source/data
     source/daq
+    source/data
     source/utility
 )
 
-
 # build this project
-add_subdirectory( source/utility )
-add_subdirectory( source/data )
-add_subdirectory( source/daq )
-add_subdirectory( source/control )
+add_subdirectory( source )
 
-add_subdirectory( source/applications )
-add_subdirectory( source/test )
+if( Psyllid_ENABLE_EXECUTABLES )
+    add_subdirectory( source/applications )
+endif()
+
+if( Psyllid_ENABLE_TESTING )
+    #add_subdirectory( source/test )
+endif()
+
+##################
+# package config #
+##################
+
+configure_file( ${PROJECT_SOURCE_DIR}/PsyllidConfig.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/PsyllidConfig.cmake @ONLY )
+
+pbuilder_do_package_config()

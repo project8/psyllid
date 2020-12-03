@@ -28,7 +28,10 @@ set( dependencies
 # library #
 ###########
 
-midge_library( PsyllidData sources dependencies )
+pbuilder_library(
+    TARGET PsyllidData
+    SOURCES ${sources}
+    PROJECT_LIBRARIES ${dependencies}
+)
+
 pbuilder_install_headers( ${headers} )
-
-

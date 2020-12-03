@@ -5,17 +5,20 @@
  *      Author: laroque
  */
 
-#include <chrono>
 
-#include "daq_control.hh"
 #include "egg3_reader.hh"
+
 #include "psyllid_error.hh"
 #include "time_data.hh"
+
 #include "M3Monarch.hh"
 
+#include "run_control.hh"
+
 #include "logger.hh"
-#include "M3Monarch.hh"
 #include "param.hh"
+
+#include <chrono>
 
 using midge::stream;
 
@@ -118,8 +121,8 @@ namespace psyllid
                     if ( !read_slice_ok || (f_read_n_records > 0 && t_records_read >= f_read_n_records) )
                     {
                         LINFO( plog, "breaking out of loop because record limit or end of file reached" );
-                        std::shared_ptr< daq_control > t_daq_control = use_daq_control();
-                        t_daq_control->stop_run();
+                        std::shared_ptr< sandfly::run_control > t_run_control = use_run_control();
+                        t_run_control->stop_run();
                     }
                     // add some sleep to try and not lap downstream nodes
                     std::this_thread::sleep_for(std::chrono::microseconds(100));
@@ -196,7 +199,7 @@ namespace psyllid
 
     // egg3_reader_binding methods
     egg3_reader_binding::egg3_reader_binding() :
-            _node_binding< egg3_reader, egg3_reader_binding >()
+            sandfly::_node_binding< egg3_reader, egg3_reader_binding >()
     {
     }
 

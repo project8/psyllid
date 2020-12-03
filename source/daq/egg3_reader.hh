@@ -48,7 +48,7 @@ namespace psyllid
     class time_data;
 
     // egg3_reader
-    class egg3_reader : public midge::_producer< midge::type_list<time_data> >, public control_access
+    class egg3_reader : public midge::_producer< midge::type_list<time_data> >, public sandfly::control_access
     {
         public:
             egg3_reader();
@@ -78,7 +78,7 @@ namespace psyllid
 
     };
 
-    class egg3_reader_binding : public _node_binding< egg3_reader, egg3_reader_binding >
+    class egg3_reader_binding : public sandfly::_node_binding< egg3_reader, egg3_reader_binding >
     {
         public:
             egg3_reader_binding();

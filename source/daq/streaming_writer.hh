@@ -86,7 +86,7 @@ namespace psyllid
     };
 
 
-    class streaming_writer_binding : public _node_binding< streaming_writer, streaming_writer_binding >
+    class streaming_writer_binding : public sandfly::_node_binding< streaming_writer, streaming_writer_binding >
     {
         public:
             streaming_writer_binding();

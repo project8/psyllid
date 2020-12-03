@@ -412,7 +412,7 @@ namespace psyllid
 
 
     triggered_writer_binding::triggered_writer_binding() :
-            _node_binding< triggered_writer, triggered_writer_binding >()
+            sandfly::_node_binding< triggered_writer, triggered_writer_binding >()
     {
     }
 

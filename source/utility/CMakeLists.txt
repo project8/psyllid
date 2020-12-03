@@ -4,14 +4,10 @@
 
 set( headers
     byte_swap.hh
-    locked_resource.hh
-    message_relayer.hh
-    psyllid_constants.hh
     psyllid_error.hh
     psyllid_version.hh
 )
 set( sources
-    message_relayer.cc
     psyllid_error.cc
 )
 
@@ -26,6 +22,9 @@ set( sources
 # library #
 ###########
 
-midge_library( PsyllidUtility sources dependencies )
-pbuilder_install_headers( ${headers} )
+pbuilder_library(
+    TARGET PsyllidUtility
+    SOURCES ${sources}
+)
 
+pbuilder_install_headers( ${headers} )

@@ -862,7 +862,7 @@ namespace psyllid
 
 
     frequency_mask_trigger_binding::frequency_mask_trigger_binding() :
-            _node_binding< frequency_mask_trigger, frequency_mask_trigger_binding >()
+            sandfly::_node_binding< frequency_mask_trigger, frequency_mask_trigger_binding >()
     {
     }
 

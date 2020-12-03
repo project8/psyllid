@@ -1,9 +1,6 @@
-[submodule "midge"]
-	path = midge
-	url = https://github.com/project8/midge
 [submodule "monarch"]
 	path = monarch
 	url = https://github.com/project8/monarch
-[submodule "dripline-cpp"]
-	path = dripline-cpp
-	url = https://github.com/driplineorg/dripline-cpp
+[submodule "sandfly"]
+	path = sandfly
+	url = https://github.com/project8/sandfly

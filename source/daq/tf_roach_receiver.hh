@@ -106,7 +106,7 @@ namespace psyllid
 
     };
 
-    class tf_roach_receiver_binding : public _node_binding< tf_roach_receiver, tf_roach_receiver_binding >
+    class tf_roach_receiver_binding : public sandfly::_node_binding< tf_roach_receiver, tf_roach_receiver_binding >
     {
         public:
             tf_roach_receiver_binding();

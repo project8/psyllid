@@ -2,7 +2,7 @@
 ## values which stored in the .travis.yaml file
 ARG IMG_USER=project8
 ARG IMG_REPO=p8compute_dependencies
-ARG IMG_TAG=v0.9.0
+ARG IMG_TAG=v1.0.0.beta
 
 FROM ${IMG_USER}/${IMG_REPO}:${IMG_TAG} as psyllid_common
 
@@ -52,19 +52,22 @@ WORKDIR /
 ########################
 FROM psyllid_common as psyllid_done
 
-COPY dripline-cpp /tmp_source/dripline-cpp
 COPY external /tmp_source/external
-COPY midge /tmp_source/midge
 COPY monarch /tmp_source/monarch
+COPY sandfly /tmp_source/sandfly
 COPY source /tmp_source/source
 COPY CMakeLists.txt /tmp_source/CMakeLists.txt
 COPY .git /tmp_source/.git
+COPY .gitmodules /tmp_source/.gitmodules
+COPY PsyllidConfig.cmake.in /tmp_source/PsyllidConfig.cmake.in
 
 ## store cmake args because we'll need to run twice (known package_builder issue)
 ## use EXTRA_CMAKE_ARGS to add or replace options at build time, CMAKE_CONFIG_ARGS_LIST are defaults
 ARG EXTRA_CMAKE_ARGS=""
 ENV CMAKE_CONFIG_ARGS_LIST="\
-      -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
+      -D RapidJSON_DIR=/usr/lib64/cmake \
+      -D CMAKE_LIBRARY_PATH=/usr/lib64 \
+      -D CMAKE_INSTALL_PREFIX:PATH=$SANDFLY_BUILD_PREFIX \
       -D Psyllid_ENABLE_FPA=FALSE \
       ${EXTRA_CMAKE_ARGS} \
       "
