@@ -6,7 +6,7 @@ cmake_policy( SET CMP0048 NEW ) # version in project()
 project( Psyllid VERSION 1.12.4 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/sandfly/cmake )
-include( Sandfly )
+include( sandfly )
 
 pbuilder_prepare_project()
 
