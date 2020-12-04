@@ -27,6 +27,7 @@ RUN /bin/true \
         && echo "source ${COMMON_BUILD_PREFIX}/setup.sh" >> setup.sh \
         && echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh \
         && echo "ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current" >> setup.sh \
+        && export OS_CMAKE_ARGS="-D RapidJSON_DIR=/usr/lib64/cmake -D CMAKE_LIBRARY_PATH=/usr/lib64" \
         && /bin/true;\
     elif [ -a /etc/debian_version ]; then \
         ## build setup for debian base image
@@ -65,11 +66,10 @@ COPY PsyllidConfig.cmake.in /tmp_source/PsyllidConfig.cmake.in
 ## use EXTRA_CMAKE_ARGS to add or replace options at build time, CMAKE_CONFIG_ARGS_LIST are defaults
 ARG EXTRA_CMAKE_ARGS=""
 ENV CMAKE_CONFIG_ARGS_LIST="\
-      -D RapidJSON_DIR=/usr/lib64/cmake \
-      -D CMAKE_LIBRARY_PATH=/usr/lib64 \
       -D CMAKE_INSTALL_PREFIX:PATH=$SANDFLY_BUILD_PREFIX \
       -D Psyllid_ENABLE_FPA=FALSE \
       ${EXTRA_CMAKE_ARGS} \
+      ${OS_CMAKE_ARGS} \
       "
 
 RUN source $PSYLLID_BUILD_PREFIX/setup.sh \
