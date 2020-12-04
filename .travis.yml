@@ -19,7 +19,7 @@ branches:
 matrix:
   include:
     - env: BASE_USER=project8 BASE_REPO=p8compute_dependencies BASE_TAG=v1.0.0.beta PRODUCT_SUFFIX=p8compute PSYLLID_PREFIX_TAG=v1.12.2 PSYLLID_BASE_PREFIX=/usr/local/p8/psyllid
-    - env: BASE_USER=amd64 BASE_REPO=debian BASE_TAG=9 PRODUCT_SUFFIX=debian PSYLLID_PREFIX_TAG="" PSYLLID_BASE_PREFIX=/usr/local
+    - env: BASE_USER=amd64 BASE_REPO=debian BASE_TAG=10 PRODUCT_SUFFIX=debian PSYLLID_PREFIX_TAG="" PSYLLID_BASE_PREFIX=/usr/local
 
 script:
     #- set -e
