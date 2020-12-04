@@ -11,7 +11,7 @@ env:
 branches:
   only:
     - develop
-    - master
+    - main
     - /^v\d+\.\d+\.\d+(-S*)?$/
     ## build any branch with a name ending in `/build` (not including the backticks)
     - /^.*\/build$/
