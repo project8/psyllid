@@ -379,7 +379,7 @@ New Features:
     * prior behavior was to start with the next packet received when unpaused; this feature adds a config option which will discard frequency data until the first time data is received (thus ensuring, in principle, that the output is always a matched pair)
     * documentation in doxygen output and node_configuration.rst
 * batch_executor control class
-    * allows a list of actions to be provided within the master configuration, which specifies a sequence of actions to execute at startup
+    * allows a list of actions to be provided within the primary configuration, which specifies a sequence of actions to execute at startup
     * control system modified to allow batch-only mode if the amqp configuration has `make-connection: false`, which will exit after completing batch commands
     * NOTE: currently does not do anything other than print return codes from commands; would be nice to upgrade to check those codes and crash if a command fails
     * tested using a configuration file which configures and uses a frequency mask trigger and event builder

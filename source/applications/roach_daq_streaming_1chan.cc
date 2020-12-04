@@ -75,10 +75,10 @@ int main( int argc, char** argv )
 
         // The main execution callback
         the_main.callback( [&]() {
-            std::string t_ip( the_main.master_config()["ip"]().as_string() );
-            unsigned t_port = the_main.master_config()["port"]().as_uint();
-            std::string t_interface( the_main.master_config()["interface"]().as_string() );
-            bool t_use_fpa( the_main.master_config().has( "fpa" ) );
+            std::string t_ip( the_main.primary_config()["ip"]().as_string() );
+            unsigned t_port = the_main.primary_config()["port"]().as_uint();
+            std::string t_interface( the_main.primary_config()["interface"]().as_string() );
+            bool t_use_fpa( the_main.primary_config().has( "fpa" ) );
 
             LINFO( plog, "Creating and configuring nodes" );
 

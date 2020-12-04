@@ -22,9 +22,9 @@ namespace psyllid
     data_producer::data_producer() :
             f_length( 10 ),
             f_data_size( 8224 ),
-            f_master_packet()
+            f_primary_packet()
     {
-        f_master_packet.set_freq_not_time( false );
+        f_primary_packet.set_freq_not_time( false );
     }
 
     data_producer::~data_producer()
@@ -105,7 +105,7 @@ namespace psyllid
         a_block->set_n_bytes_used( f_data_size );
 
         roach_packet* t_roach_packet = reinterpret_cast< roach_packet* >( a_block->block() );
-        ::memcpy( t_roach_packet, &f_master_packet.packet(), f_data_size );
+        ::memcpy( t_roach_packet, &f_primary_packet.packet(), f_data_size );
 
         return;
     }

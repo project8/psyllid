@@ -26,8 +26,8 @@ namespace psyllid
 {
     LOGGER( plog, "daq_control" );
 
-    daq_control::daq_control( const param_node& a_master_config, std::shared_ptr< sandfly::stream_manager > a_mgr ) :
-            sandfly::run_control( a_master_config, a_mgr ),
+    daq_control::daq_control( const param_node& a_primary_config, std::shared_ptr< sandfly::stream_manager > a_mgr ) :
+            sandfly::run_control( a_primary_config, a_mgr ),
             f_use_monarch( true )
     {
     }
