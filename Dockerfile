@@ -42,6 +42,9 @@ RUN /bin/true \
             libboost-all-dev \
             libhdf5-dev \
             librabbitmq-dev \
+            rapidjson-dev \
+            libyaml-cpp-dev \
+            pybind11-dev \
             wget \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
