@@ -69,7 +69,7 @@ COPY PsyllidConfig.cmake.in /tmp_source/PsyllidConfig.cmake.in
 ## use EXTRA_CMAKE_ARGS to add or replace options at build time, CMAKE_CONFIG_ARGS_LIST are defaults
 ARG EXTRA_CMAKE_ARGS=""
 ENV CMAKE_CONFIG_ARGS_LIST="\
-      -D CMAKE_INSTALL_PREFIX:PATH=$SANDFLY_BUILD_PREFIX \
+      -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
       -D Psyllid_ENABLE_FPA=FALSE \
       ${EXTRA_CMAKE_ARGS} \
       ${OS_CMAKE_ARGS} \
