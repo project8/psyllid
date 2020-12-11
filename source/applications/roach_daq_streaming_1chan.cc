@@ -71,7 +71,7 @@ int main( int argc, char** argv )
         the_main.add_config_flag< bool >( "-f,--fpa", "fpa", "Enable use of the FPA" );
 
         // Package version
-        the_main.set_version( new psyllid::version() );
+        the_main.set_version( std::make_shared< psyllid::version > () );
 
         // The main execution callback
         the_main.callback( [&]() {
