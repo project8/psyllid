@@ -26,6 +26,7 @@ option( Psyllid_ENABLE_ITERATOR_TIMING "Flag to enable iterator time profiling" 
 option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" ${default__fpa_flag} )
 option( Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT "Flag to enable building node for streaming frequency data (inproper monarch usage)" FALSE )
 option( Psyllid_ENABLE_FFTW "Flag to enable FFTW features" TRUE )
+option( Psyllid_ENABLE_EXAMPLES "Flag to enable building of examples" FALSE )
 
 # add an option to perform iterator time profiling
 if( Psyllid_ENABLE_ITERATOR_TIMING )
@@ -119,6 +120,11 @@ endif()
 if( Psyllid_ENABLE_TESTING )
     #add_subdirectory( source/test )
 endif()
+
+if( Psyllid_ENABLE_EXAMPLES )
+    add_subdirectory( examples )
+endif()
+
 
 ##################
 # package config #

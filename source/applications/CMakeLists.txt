@@ -15,16 +15,7 @@ set( psyllid_exe_PROGRAMS )
 # Non-psyllid executables
 set( programs
     grab_packet
-    #psyllid
 )
-
-if( Psyllid_BUILD_FPA )
-    set( programs
-            ${programs}
-            roach_daq_1chan
-            roach_daq_streaming_1chan
-    )
-endif( Psyllid_BUILD_FPA )
 
 pbuilder_executables( 
     SOURCES ${programs}
