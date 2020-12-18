@@ -1,9 +1,9 @@
 # Minimum cmake verison 3.9 required for Monarch
-cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required (VERSION 3.12)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.12.4 )
+project( Psyllid VERSION 2.0.0 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/sandfly/cmake )
 include( sandfly )
