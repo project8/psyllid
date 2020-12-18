@@ -2,6 +2,23 @@
 # examples #
 ############
 
+# example config files
+
+set( psyllid_CONFIGS
+    eb_fmt_1ch_fpa.yaml
+    eb_fmt_1ch_socket.yaml
+    fmt_1ch_fpa.yaml
+    fmt_1ch_socket.yaml
+    str_1ch_dataprod.yaml
+    str_1ch_fpa.yaml
+    str_1ch_socket_batch.yaml
+    str_1ch_socket_custom.yaml
+    str_1ch_socket.yaml
+    str_3ch_fpa.yaml
+)
+
+pbuilder_install_config( ${psyllid_CONFIGS} )
+
 
 # example executables
 
