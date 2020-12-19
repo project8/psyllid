@@ -43,6 +43,26 @@ Fixes:
 Log
 ---
 
+Version: 2.0.0
+~~~~~~~~~~~~~~~
+
+Release Date: December 18, 2020
+'''''''''''''''''''''''''''''''
+
+New Features:
+'''''''''''''
+
+* Master branch replaced by main
+* Reorganization of submodules
+    * Sandfly is a generic DAQ package based on the Midge framework and incorporating dripline-based controls
+    * Monarch remains a feature of Psyllid
+
+Fixes:
+''''''
+
+* Deadlock and stability issues fixed (in an un-logged v1.12.4)
+
+
 Version: 1.12.3
 ~~~~~~~~~~~~~~~
 

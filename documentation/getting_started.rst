@@ -76,7 +76,7 @@ psyllid will be set up according to whatever is specified in the file and overwr
 
 ::
 
-    amqp:
+    dripline:
         broker: localhost
         queue: psyllid
 

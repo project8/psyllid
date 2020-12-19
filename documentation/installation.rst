@@ -13,10 +13,10 @@ Psyllid can be installed on Linux and macOS systems.  Some functionality (e.g. t
 Dependencies
 ^^^^^^^^^^^^^
 
-* CMake 3.1 or higher
+* CMake 3.12 or higher
 * C++11 (gcc 4.9 or higher; or clang 3 or higher)
 * Boost 1.48 or higher
-* HDF5
+* HDF5 1.8 or 1.10
 * rabbitmqc
 
 These can all be installed from package managers (recommended) or by source.
@@ -24,9 +24,8 @@ These can all be installed from package managers (recommended) or by source.
 Submodules
 ^^^^^^^^^^^
 
-* midge
-* dripline-cpp
 * monarch
+* sandfly
 
 Basic Installation
 ------------------
