@@ -50,7 +50,7 @@ namespace psyllid
             mv_accessible( uint64_t, length );
             mv_accessible( uint32_t, data_size );
 
-            mv_referrable( roach_packet_data, master_packet );
+            mv_referrable( roach_packet_data, primary_packet );
 
         public:
             virtual void initialize();

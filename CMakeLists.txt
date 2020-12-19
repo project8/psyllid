@@ -1,9 +1,9 @@
 # Minimum cmake verison 3.9 required for Monarch
-cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required (VERSION 3.12)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 1.12.4 )
+project( Psyllid VERSION 2.0.0 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/sandfly/cmake )
 include( sandfly )
@@ -26,6 +26,7 @@ option( Psyllid_ENABLE_ITERATOR_TIMING "Flag to enable iterator time profiling" 
 option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" ${default__fpa_flag} )
 option( Psyllid_ENABLE_STREAMED_FREQUENCY_OUTPUT "Flag to enable building node for streaming frequency data (inproper monarch usage)" FALSE )
 option( Psyllid_ENABLE_FFTW "Flag to enable FFTW features" TRUE )
+option( Psyllid_ENABLE_EXAMPLES "Flag to enable building of examples" FALSE )
 
 # add an option to perform iterator time profiling
 if( Psyllid_ENABLE_ITERATOR_TIMING )
@@ -119,6 +120,11 @@ endif()
 if( Psyllid_ENABLE_TESTING )
     #add_subdirectory( source/test )
 endif()
+
+if( Psyllid_ENABLE_EXAMPLES )
+    add_subdirectory( examples )
+endif()
+
 
 ##################
 # package config #

@@ -25,16 +25,16 @@ The basic setup of the classes and the interactions between them is shown here:
   :width: 500
   :alt: Psyllid Diagram
 
-The main components and their responsibilities are:
+The main components (most coming from the Sandfly package) and their responsibilities are:
 
-* ``run_server`` --- creates and configures the main Psyllid components, and starts their threads;
-* ``batch_executor`` --- submits pre-configured commands after the main Psyllid components have started up;
-* ``request_receiver`` --- provides the dripline interface for user requests;
-* ``stream_manager`` --- creates and configures nodes;
-* ``daq_control`` --- starts and stops runs, and peforms active configurtion operations;
-* ``diptera`` --- owns and operates the DAQ nodes;
-* ``message_relayer`` --- sends message to Slack via dripline;
-* ``butterfly_house`` --- provides centralized interactions with the Monarch3 library, and deadtime-less file creation.
+* ``conductor`` (sandfly) --- creates and configures the main Psyllid components, and starts their threads;
+* ``batch_executor`` (sandfly) --- submits pre-configured commands after the main Psyllid components have started up;
+* ``request_receiver`` (sandfly) --- provides the dripline interface for user requests;
+* ``stream_manager`` (sandfly) --- creates and configures nodes;
+* ``run_control`` (sandfly) --- starts and stops runs, and peforms active configurtion operations;
+* ``diptera` (midge)` --- owns and operates the DAQ nodes;
+* ``message_relayer`` (sandfly) --- sends message to Slack via dripline;
+* ``butterfly_house`` (psyllid) --- provides centralized interactions with the Monarch3 library, and deadtime-less file creation.
 
 
 Data Acquisition
@@ -50,7 +50,7 @@ On Startup
 
 The user typically starts Psyllid with a YAML configuration file.  Several example configuration files can be found in the ``examples`` directory.  Most configuration files will include these top-level blocks:
 
-1. ``amqp`` --- AMQP broker information;
+1. ``dripline`` --- Dripline broker information;
 2. ``batch-actions`` --- commands to be submitted automatically after the components of Psyllid have started up;
 2. ``daq`` --- Information for the DAQ controller, such as how many files to prepare, maximum file size, and whether to activate the DAQ on startup;
 3. ``streams`` -- Definitions of the streams to be used.
@@ -62,20 +62,25 @@ Example Command Line Usage
 
 ::
 
-    > bin/psyllid config=my_config.yaml amqp.broker=my.amqp.broker
+    > bin/psyllid -c my_config.yaml -b my.amqp.broker
 
 Explanation:
 
 * ``bin/psyllid`` is the Psyllid executable
-* ``config=my_config.yaml`` specifies ``my_config.yaml`` as the file that will set most of the configuration values
-* ``amqp.broker=my.amqp.broker`` modifies this value in the configuration::
+* ``-c my_config.yaml`` specifies ``my_config.yaml`` as the file that will set most of the configuration values
+* ``-b my.amqp.broker`` modifies this value in the configuration::
 
-    amqp:
+    dripline:
       broker: my.amqp.broker
+
+For full usage documentation, use::
+
+    > bin/psyllid -h
+
 
 During Execution
 ''''''''''''''''
 
-User interaction with Psyllid during execution is performed via the dripline protocol.   Psyllid uses the ``dripline-cpp`` library to enable that interface.  The ``request_receiver`` class (a ``dripline::hub``) ties dripline commands to particular functions in the ``stream_manager``, ``daq_control``, and ``run_server`` classes.  
+User interaction with Psyllid during execution is performed via the dripline protocol.   Psyllid uses the ``dripline-cpp`` library to enable that interface.  The ``request_receiver`` class (a ``dripline::hub``) ties dripline commands to particular functions in the ``stream_manager``, ``daq_control``, and ``conductor`` classes.  
 
 See the :ref:`api-label` page for more information about the dripline API for Psyllid.
