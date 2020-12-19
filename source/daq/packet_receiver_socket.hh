@@ -75,7 +75,7 @@ namespace psyllid
 
     };
 
-    class packet_receiver_socket_binding : public _node_binding< packet_receiver_socket, packet_receiver_socket_binding >
+    class packet_receiver_socket_binding : public sandfly::_node_binding< packet_receiver_socket, packet_receiver_socket_binding >
     {
         public:
             packet_receiver_socket_binding();

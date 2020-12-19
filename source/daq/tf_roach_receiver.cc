@@ -481,7 +481,7 @@ namespace psyllid
     }
 
     tf_roach_receiver_binding::tf_roach_receiver_binding() :
-            _node_binding< tf_roach_receiver, tf_roach_receiver_binding >()
+            sandfly::_node_binding< tf_roach_receiver, tf_roach_receiver_binding >()
     {
     }
 

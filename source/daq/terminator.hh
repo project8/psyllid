@@ -30,7 +30,7 @@ namespace psyllid
                 virtual void execute( midge::diptera* a_midge = nullptr ); \
                 virtual void finalize() {}; \
         }; \
-        class terminator_##data_class##_binding : public _node_binding< terminator_##data_class, terminator_##data_class##_binding > \
+        class terminator_##data_class##_binding : public sandfly::_node_binding< terminator_##data_class, terminator_##data_class##_binding > \
         { \
             public: \
                 terminator_##data_class##_binding(); \
@@ -81,7 +81,7 @@ namespace psyllid
                 else throw; \
             } \
         } \
-        terminator_##data_class##_binding::terminator_##data_class##_binding() : _node_binding< terminator_##data_class, terminator_##data_class##_binding >() {} \
+        terminator_##data_class##_binding::terminator_##data_class##_binding() : sandfly::_node_binding< terminator_##data_class, terminator_##data_class##_binding >() {} \
         terminator_##data_class##_binding::~terminator_##data_class##_binding() {}
 
 
@@ -100,7 +100,7 @@ namespace psyllid
 
     };
 
-    class terminator_time_data_binding : public _node_binding< terminator_time_data, terminator_time_data_binding >
+    class terminator_time_data_binding : public sandfly::_node_binding< terminator_time_data, terminator_time_data_binding >
     {
         public:
             terminator_time_data_binding();
@@ -126,7 +126,7 @@ namespace psyllid
 
     };
 
-    class terminator_freq_data_binding : public _node_binding< terminator_freq_data, terminator_freq_data_binding >
+    class terminator_freq_data_binding : public sandfly::_node_binding< terminator_freq_data, terminator_freq_data_binding >
     {
         public:
             terminator_freq_data_binding();
@@ -154,7 +154,7 @@ namespace psyllid
 
     };
 
-    class terminator_trig_flag_data_binding : public _node_binding< terminator_trig_flag_data, terminator_trig_flag_data_binding >
+    class terminator_trig_flag_data_binding : public sandfly::_node_binding< terminator_trig_flag_data, terminator_trig_flag_data_binding >
     {
         public:
             terminator_trig_flag_data_binding();

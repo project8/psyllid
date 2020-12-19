@@ -8,6 +8,7 @@
 
 #include "frequency_transform.hh"
 
+#include "psyllid_error.hh"
 
 #include "logger.hh"
 #include "param.hh"
@@ -266,7 +267,7 @@ namespace psyllid
 
     // frequency_transform_binding methods
     frequency_transform_binding::frequency_transform_binding() :
-            _node_binding< frequency_transform, frequency_transform_binding >()
+            sandfly::_node_binding< frequency_transform, frequency_transform_binding >()
     {
     }
 

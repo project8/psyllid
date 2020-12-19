@@ -214,7 +214,7 @@ namespace psyllid
 
 
     streaming_writer_binding::streaming_writer_binding() :
-            _node_binding< streaming_writer, streaming_writer_binding >()
+            sandfly::_node_binding< streaming_writer, streaming_writer_binding >()
     {
     }
 

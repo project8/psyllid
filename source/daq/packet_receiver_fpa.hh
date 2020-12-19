@@ -146,7 +146,7 @@ namespace psyllid
             uint64_t f_bytes_total;
     };
 
-    class packet_receiver_fpa_binding : public _node_binding< packet_receiver_fpa, packet_receiver_fpa_binding >
+    class packet_receiver_fpa_binding : public sandfly::_node_binding< packet_receiver_fpa, packet_receiver_fpa_binding >
     {
         public:
             packet_receiver_fpa_binding();

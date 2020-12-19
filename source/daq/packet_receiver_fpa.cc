@@ -433,7 +433,7 @@ namespace psyllid
 
 
     packet_receiver_fpa_binding::packet_receiver_fpa_binding() :
-            _node_binding< packet_receiver_fpa, packet_receiver_fpa_binding >()
+            sandfly::_node_binding< packet_receiver_fpa, packet_receiver_fpa_binding >()
     {
     }
 

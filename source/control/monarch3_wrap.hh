@@ -2,7 +2,7 @@
  * monarch3_wrap.hh
  *
  *  Created on: Feb 11, 2016
- *      Author: nsoblath
+ *      Author: N.S. Oblath
  *
  *  Monarch stages:
  *    - initialized

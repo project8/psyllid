@@ -89,7 +89,7 @@ namespace psyllid
     };
 
 
-    class streaming_frequency_writer_binding : public _node_binding< streaming_frequency_writer, streaming_frequency_writer_binding >
+    class streaming_frequency_writer_binding : public sandfly::_node_binding< streaming_frequency_writer, streaming_frequency_writer_binding >
     {
         public:
             streaming_frequency_writer_binding();

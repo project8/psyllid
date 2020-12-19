@@ -7,14 +7,15 @@
 
 #include "butterfly_house.hh"
 
-#include "daq_control.hh"
 #include "egg_writer.hh"
+#include "psyllid_error.hh"
+
+#include "run_control.hh"
 
 #include "logger.hh"
 #include "param.hh"
 #include "time.hh"
 
-#include "psyllid_error.hh"
 
 namespace psyllid
 {
@@ -71,12 +72,12 @@ namespace psyllid
     {
         std::unique_lock< std::mutex > t_lock( f_house_mutex );
 
-        if( control_access::daq_control_expired() )
+        if( control_access::run_control_expired() )
         {
             LERROR( plog, "Unable to get access to the DAQ control" );
             throw error() << "Butterfly house is unable to get access to the DAQ control";
         }
-        unsigned t_run_duration = use_daq_control()->get_run_duration();
+        unsigned t_run_duration = use_run_control()->get_run_duration();
 
         LINFO( plog, "Starting egg3 files" );
         try

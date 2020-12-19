@@ -2,7 +2,7 @@
 ## values which stored in the .travis.yaml file
 ARG IMG_USER=project8
 ARG IMG_REPO=p8compute_dependencies
-ARG IMG_TAG=v0.9.0
+ARG IMG_TAG=v1.0.0.beta
 
 FROM ${IMG_USER}/${IMG_REPO}:${IMG_TAG} as psyllid_common
 
@@ -27,6 +27,7 @@ RUN /bin/true \
         && echo "source ${COMMON_BUILD_PREFIX}/setup.sh" >> setup.sh \
         && echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh \
         && echo "ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current" >> setup.sh \
+        && export OS_CMAKE_ARGS="-D RapidJSON_DIR=/usr/lib64/cmake -D CMAKE_LIBRARY_PATH=/usr/lib64" \
         && /bin/true;\
     elif [ -a /etc/debian_version ]; then \
         ## build setup for debian base image
@@ -41,6 +42,9 @@ RUN /bin/true \
             libboost-all-dev \
             libhdf5-dev \
             librabbitmq-dev \
+            rapidjson-dev \
+            libyaml-cpp-dev \
+            pybind11-dev \
             wget \
         && apt-get clean \
         && rm -rf /var/lib/apt/lists/* \
@@ -52,13 +56,14 @@ WORKDIR /
 ########################
 FROM psyllid_common as psyllid_done
 
-COPY dripline-cpp /tmp_source/dripline-cpp
 COPY external /tmp_source/external
-COPY midge /tmp_source/midge
 COPY monarch /tmp_source/monarch
+COPY sandfly /tmp_source/sandfly
 COPY source /tmp_source/source
 COPY CMakeLists.txt /tmp_source/CMakeLists.txt
 COPY .git /tmp_source/.git
+COPY .gitmodules /tmp_source/.gitmodules
+COPY PsyllidConfig.cmake.in /tmp_source/PsyllidConfig.cmake.in
 
 ## store cmake args because we'll need to run twice (known package_builder issue)
 ## use EXTRA_CMAKE_ARGS to add or replace options at build time, CMAKE_CONFIG_ARGS_LIST are defaults
@@ -67,6 +72,7 @@ ENV CMAKE_CONFIG_ARGS_LIST="\
       -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
       -D Psyllid_ENABLE_FPA=FALSE \
       ${EXTRA_CMAKE_ARGS} \
+      ${OS_CMAKE_ARGS} \
       "
 
 RUN source $PSYLLID_BUILD_PREFIX/setup.sh \
