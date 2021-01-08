@@ -242,6 +242,27 @@ namespace psyllid
     }
 
 
+    void daq_control::derived_register_handlers( std::shared_ptr< sandfly::request_receiver > a_receiver_ptr )
+    {
+        using namespace std::placeholders;
+
+        // set the run request handler
+        a_receiver_ptr->set_run_handler( std::bind( &daq_control::handle_start_run_request, this, _1 ) );
+
+        // add get request handlers
+        a_receiver_ptr->register_get_handler( "filename", std::bind( &daq_control::handle_get_filename_request, this, _1 ) );
+        a_receiver_ptr->register_get_handler( "description", std::bind( &daq_control::handle_get_description_request, this, _1 ) );
+        a_receiver_ptr->register_get_handler( "use-monarch", std::bind( &daq_control::handle_get_use_monarch_request, this, _1 ) );
+
+        // add set request handlers
+        a_receiver_ptr->register_set_handler( "filename", std::bind( &daq_control::handle_set_filename_request, this, _1 ) );
+        a_receiver_ptr->register_set_handler( "description", std::bind( &daq_control::handle_set_description_request, this, _1 ) );
+        a_receiver_ptr->register_set_handler( "use-monarch", std::bind( &daq_control::handle_set_use_monarch_request, this, _1 ) );
+
+        return;
+    }
+
+
     void daq_control::set_filename( const std::string& a_filename, unsigned a_file_num )
     {
         try
