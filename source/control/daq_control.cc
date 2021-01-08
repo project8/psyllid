@@ -30,6 +30,7 @@ namespace psyllid
             sandfly::run_control( a_primary_config, a_mgr ),
             f_use_monarch( true )
     {
+        set_use_monarch( f_daq_config.get_value( "use-monarch", get_use_monarch() ) );
     }
 
     daq_control::~daq_control()
