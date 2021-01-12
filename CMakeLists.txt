@@ -8,8 +8,6 @@ project( Psyllid VERSION 2.0.0 )
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/sandfly/cmake )
 include( sandfly )
 
-pbuilder_prepare_project()
-
 
 #########
 # flags #
@@ -87,15 +85,29 @@ endif( FFTW_FOUND )
 
 # Sandfly
 add_definitions( -DDRIPLINE_AUTH_FILE=~/.project8_authentications.json )
-pbuilder_add_submodule( Sandfly sandfly )
-
-# Monarch
-pbuilder_add_submodule( Monarch monarch )
 
 # Included external dependencies
 # Including: tk_spline
 add_subdirectory( external )
 list( APPEND PRIVATE_EXT_LIBS TKSpline )
+
+
+#####################
+# prepare for build #
+#####################
+
+pbuilder_prepare_project()
+
+
+##############
+# submodules #
+##############
+
+# Sandfly
+pbuilder_add_submodule( Sandfly sandfly )
+
+# Monarch
+pbuilder_add_submodule( Monarch monarch )
 
 
 ###########
