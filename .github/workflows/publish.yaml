@@ -65,6 +65,6 @@ jobs:
             IMG_REPO=p8compute_dependencies
             IMG_TAG=v1.0.0.beta
             PSYLLID_BASE_PREFIX=/usr/local/p8/psyllid
-            PSYLLID_PREFIX_TAG= ${{ env.RELEASE_VERSION }}
+            PSYLLID_PREFIX_TAG=${{ env.RELEASE_VERSION }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           platforms: linux/amd64,linux/arm/v7,linux/arm64
