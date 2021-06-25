@@ -2,6 +2,10 @@
 name: Publish
 
 on:
+
+  push:
+    branches: [ main, develop, feature/github-actions]
+    tags: 'v*.*.*'
   
   release:
     types: [published]
