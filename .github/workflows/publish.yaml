@@ -152,4 +152,3 @@ jobs:
             PSYLLID_PREFIX_TAG=${{ env.RELEASE_VERSION }}
             PSYLLID_BUILD_TYPE=${{needs.init.outputs.build_type}}
           tags: ${{ steps.docker_meta.outputs.tags }}
-          platforms: linux/amd64,linux/arm/v7,linux/arm64
