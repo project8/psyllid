@@ -11,12 +11,30 @@ on:
     types: [published]
 
   workflow_dispatch:
-  
-env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
 
 jobs:
+
+  init:
+    runs-on: ubuntu-latest
+    outputs:
+      build_type: ${{ steps.setvars.outputs.build_type }}
+
+    steps:
+      - name: Cancel previous workflow
+        uses: styfle/cancel-workflow-action@0.4.0
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Set variables
+        id: setvars
+        run: |
+          echo ${{github.base_ref}}
+          echo ${{github.ref}}
+          if [[ "${{github.base_ref}}" == "main" || "${{github.ref}}" == "refs/heads/main" ]]; then
+            echo "::set-output name=build_type::RELEASE"
+          else
+            echo "::set-output name=build_type::DEBUG"
+          fi
 
   #~ test_docker:
     #~ runs-on: ubuntu-latest
@@ -82,6 +100,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
    # needs: [test_docker, test_linux_gcc]
+    needs: init
     steps:
     
       - name: Check out the repo
@@ -131,5 +150,6 @@ jobs:
             IMG_TAG=v1.0.0.beta
             PSYLLID_BASE_PREFIX=/usr/local/p8/psyllid
             PSYLLID_PREFIX_TAG=${{ env.RELEASE_VERSION }}
+            PSYLLID_BUILD_TYPE=${{needs.init.outputs.build_type}}
           tags: ${{ steps.docker_meta.outputs.tags }}
           platforms: linux/amd64,linux/arm/v7,linux/arm64
