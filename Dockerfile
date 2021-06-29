@@ -2,7 +2,7 @@
 ## values which stored in the .travis.yaml file
 ARG IMG_USER=project8
 ARG IMG_REPO=p8compute_dependencies
-ARG IMG_TAG=v1.0.0.beta
+ARG IMG_TAG=v1.0.0
 
 FROM ${IMG_USER}/${IMG_REPO}:${IMG_TAG} as psyllid_common
 
