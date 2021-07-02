@@ -43,6 +43,18 @@ Fixes:
 Log
 ---
 
+Version: 2.1.0
+~~~~~~~~~~~~~~~
+
+Release Date: July 2, 2021
+'''''''''''''''''''''''''''''''
+
+New Features:
+'''''''''''''
+
+* GitHub Actions automated builds
+
+
 Version: 2.0.0
 ~~~~~~~~~~~~~~~
 
