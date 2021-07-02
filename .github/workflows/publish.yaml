@@ -185,5 +185,5 @@ jobs:
       
       - name: Build docs
         run: |
-          cd Documentation
+          cd documentation
           sphinx-build -M html . build --color
