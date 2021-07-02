@@ -101,6 +101,8 @@ jobs:
   publish:
     if: |
         (github.event_name == 'push' && contains(github.ref, 'refs/tags/') ) 
+        || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
         || github.event_name == 'release' 
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
