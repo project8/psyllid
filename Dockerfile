@@ -2,56 +2,36 @@
 ## values which stored in the .travis.yaml file
 ARG IMG_USER=project8
 ARG IMG_REPO=p8compute_dependencies
-ARG IMG_TAG=v1.0.0.beta
+ARG IMG_TAG=v1.0.0
 
 FROM ${IMG_USER}/${IMG_REPO}:${IMG_TAG} as psyllid_common
 
-ARG PSYLLID_PREFIX_TAG=beta
-ENV PSYLLID_PREFIX_TAG=${PSYLLID_PREFIX_TAG}
+ARG build_type=Release
+ENV PSYLLID_BUILD_TYPE=$build_type
+
+ARG PSYLLID_TAG=beta
+ENV PSYLLID_TAG=${PSYLLID_TAG}
 ARG PSYLLID_BASE_PREFIX=/usr/local/p8/psyllid
 ARG PSYLLID_BUILD_PREFIX=${PSYLLID_BASE_PREFIX}/${PSYLLID_PREFIX_TAG}
 ENV PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}
+ARG PSYLLID_BUILD_TYPE=RELEASE
 
-SHELL ["/bin/bash", "-c"]
+ARG CC_VAL=gcc
+ENV CC=${CC_VAL}
+ARG CXX_VAL=g++
+ENV CXX=${CXX_VAL}
 
-RUN mkdir -p $PSYLLID_BUILD_PREFIX
-WORKDIR $PSYLLID_BUILD_PREFIX
-
-RUN echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh \
-    && echo "export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH" >> setup.sh \
-    && echo "export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH" >> setup.sh;
-RUN /bin/true \
-    && if [ -a /etc/centos-release ]; then \
-        ## build setup for p8compute base image
-        chmod -R 777 $PSYLLID_BUILD_PREFIX/.. \
-        && echo "source ${COMMON_BUILD_PREFIX}/setup.sh" >> setup.sh \
-        && echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh \
-        && echo "ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current" >> setup.sh \
-        && export OS_CMAKE_ARGS="-D RapidJSON_DIR=/usr/lib64/cmake -D CMAKE_LIBRARY_PATH=/usr/lib64" \
-        && /bin/true;\
-    elif [ -a /etc/debian_version ]; then \
-        ## build setup for debian base image
-        apt-get update \
-        && apt-get clean \
-        && apt-get --fix-missing -y install \
-            build-essential \
-            cmake \
-            libfftw3-3 \
-            libfftw3-dev \
-            gdb \
-            libboost-all-dev \
-            libhdf5-dev \
-            librabbitmq-dev \
-            rapidjson-dev \
-            libyaml-cpp-dev \
-            pybind11-dev \
-            wget \
-        && apt-get clean \
-        && rm -rf /var/lib/apt/lists/* \
-        && /bin/true;\
-    fi
-
-WORKDIR /
+RUN mkdir -p $PSYLLID_BUILD_PREFIX &&\
+    chmod -R 777 $PSYLLID_BUILD_PREFIX/.. &&\
+    cd $PSYLLID_BUILD_PREFIX &&\
+    echo "source ${COMMON_BUILD_PREFIX}/setup.sh" > setup.sh &&\
+    echo "export PSYLLID_TAG=${PSYLLID_TAG}" >> setup.sh &&\
+    echo "export PSYLLID_BUILD_PREFIX=${PSYLLID_BUILD_PREFIX}" >> setup.sh &&\
+    echo 'ln -sfT $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX/../current' >> setup.sh &&\
+    echo 'export PATH=$PSYLLID_BUILD_PREFIX/bin:$PATH' >> setup.sh &&\
+    echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib:$LD_LIBRARY_PATH' >> setup.sh &&\
+    echo 'export LD_LIBRARY_PATH=$PSYLLID_BUILD_PREFIX/lib64:$LD_LIBRARY_PATH' >> setup.sh &&\
+    /bin/true
 
 ########################
 FROM psyllid_common as psyllid_done
@@ -69,6 +49,7 @@ COPY PsyllidConfig.cmake.in /tmp_source/PsyllidConfig.cmake.in
 ## use EXTRA_CMAKE_ARGS to add or replace options at build time, CMAKE_CONFIG_ARGS_LIST are defaults
 ARG EXTRA_CMAKE_ARGS=""
 ENV CMAKE_CONFIG_ARGS_LIST="\
+      -D CMAKE_BUILD_TYPE=$PSYLLID_BUILD_TYPE \
       -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
       -D Psyllid_ENABLE_FPA=FALSE \
       ${EXTRA_CMAKE_ARGS} \
