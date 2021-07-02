@@ -30,6 +30,8 @@ namespace psyllid
             sandfly::run_control( a_primary_config, a_mgr ),
             f_use_monarch( true )
     {
+        set_use_monarch( f_daq_config.get_value( "use-monarch", get_use_monarch() ) );
+        LDEBUG( plog, "Use-monarch set to: " << f_use_monarch );
     }
 
     daq_control::~daq_control()
@@ -38,7 +40,10 @@ namespace psyllid
 
     void daq_control::on_initialize()
     {
-        butterfly_house::get_instance()->prepare_files( f_daq_config );
+        if( f_use_monarch )
+        {
+            butterfly_house::get_instance()->prepare_files( f_daq_config );
+        }
         return;
     }
 
@@ -238,6 +243,27 @@ namespace psyllid
         t_payload_ptr->as_node().add( "values", t_values_array );
 
         return a_request->reply( dripline::dl_success(), "Use Monarch request completed", std::move(t_payload_ptr) );
+    }
+
+
+    void daq_control::derived_register_handlers( std::shared_ptr< sandfly::request_receiver > a_receiver_ptr )
+    {
+        using namespace std::placeholders;
+
+        // set the run request handler
+        a_receiver_ptr->set_run_handler( std::bind( &daq_control::handle_start_run_request, this, _1 ) );
+
+        // add get request handlers
+        a_receiver_ptr->register_get_handler( "filename", std::bind( &daq_control::handle_get_filename_request, this, _1 ) );
+        a_receiver_ptr->register_get_handler( "description", std::bind( &daq_control::handle_get_description_request, this, _1 ) );
+        a_receiver_ptr->register_get_handler( "use-monarch", std::bind( &daq_control::handle_get_use_monarch_request, this, _1 ) );
+
+        // add set request handlers
+        a_receiver_ptr->register_set_handler( "filename", std::bind( &daq_control::handle_set_filename_request, this, _1 ) );
+        a_receiver_ptr->register_set_handler( "description", std::bind( &daq_control::handle_set_description_request, this, _1 ) );
+        a_receiver_ptr->register_set_handler( "use-monarch", std::bind( &daq_control::handle_set_use_monarch_request, this, _1 ) );
+
+        return;
     }
 
 
