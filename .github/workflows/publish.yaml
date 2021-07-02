@@ -25,7 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build_type: ${{ steps.setvars.outputs.build_type }}
-      build_tests: ${{ steps.setvars.outputs.build_tests }}
       luna_version: ${{ steps.setversion.outputs.luna_version }}
 
     steps:
