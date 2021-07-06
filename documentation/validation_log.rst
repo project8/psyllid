@@ -43,7 +43,19 @@ Fixes:
 Log
 ---
 
-Version: 2.1.0
+Version: 2.1.1
+~~~~~~~~~~~~~~~
+
+Release Date: July 2, 2021
+'''''''''''''''''''''''''''''''
+
+Fixes:
+''''''
+
+* Returned dispatch triggers to the "publish" job
+
+
+VVersion: 2.1.0
 ~~~~~~~~~~~~~~~
 
 Release Date: July 2, 2021
