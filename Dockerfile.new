@@ -88,6 +88,5 @@ RUN apt-get update &&\
     rm -rf /var/lib/apt/lists/* &&\
     /bin/true
 
-
 # for now we must grab the extra dependency content as well as psyllid itself
 COPY --from=psyllid_build $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX
