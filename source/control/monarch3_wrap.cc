@@ -20,6 +20,7 @@
 
 #include <future>
 #include <signal.h>
+#include <thread>
 
 
 namespace psyllid

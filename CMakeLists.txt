@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.12)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 2.1.1 )
+project( Psyllid VERSION 2.2.0 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/sandfly/cmake )
 include( sandfly )
@@ -18,7 +18,7 @@ if( UNIX AND NOT APPLE )
     set( default__fpa_flag TRUE )
 endif( UNIX AND NOT APPLE )
 
-set_option( USE_CPP11 TRUE )
+set( CMAKE_CXX_STANDARD 17 )
 
 option( Psyllid_ENABLE_ITERATOR_TIMING "Flag to enable iterator time profiling" FALSE )
 option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" ${default__fpa_flag} )
@@ -46,6 +46,8 @@ endif( Psyllid_ENABLE_FPA AND UNIX AND NOT APPLE )
 set_option( Midge_ENABLE_EXECUTABLES FALSE )
 set_option( Sandfly_ENABLE_EXECUTABLES FALSE )
 
+# We don't need Python bindings
+set_option( Scarab_BUILD_PYTHON FALSE )
 
 ################
 # dependencies #
