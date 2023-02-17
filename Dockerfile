@@ -11,8 +11,6 @@ ARG psyllid_tag=beta
 ARG psyllid_subdir=psyllid
 ARG build_type=Release
 
-ENV PSYLLID_BUILD_TYPE=$build_type
-
 ENV P8_ROOT=/usr/local/p8
 ENV PSYLLID_TAG=${psyllid_tag}
 ENV PSYLLID_INSTALL_PREFIX=${P8_ROOT}/${psyllid_subdir}/${PSYLLID_TAG}
@@ -54,7 +52,7 @@ COPY PsyllidConfig.cmake.in /tmp_source/PsyllidConfig.cmake.in
 ## use `extra_cmake_args` to add or replace options at build time; CMAKE_CONFIG_ARGS_LIST are defaults
 ARG extra_cmake_args=""
 ENV CMAKE_CONFIG_ARGS_LIST="\
-      -D CMAKE_BUILD_TYPE=$PSYLLID_BUILD_TYPE \
+      -D CMAKE_BUILD_TYPE=$build_type \
       -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
       -D Psyllid_ENABLE_FPA=FALSE \
       ${extra_cmake_args} \

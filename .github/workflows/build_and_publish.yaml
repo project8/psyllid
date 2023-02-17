@@ -12,6 +12,7 @@ env:
   REGISTRY: ghcr.io
   BASE_IMG_REPO: ubuntu
   BASE_IMG_TAG: 22.04
+  NARG: 2
 
 jobs:
 
@@ -89,6 +90,7 @@ jobs:
             base_tag=${{ env.BASE_IMG_TAG }}
             psyllid_tag=${{ steps.tag_name.outputs.tag }}
             build_type=${{ matrix.build-type }}
+            narg=${{ env.NARG }}
           tags: ${{ steps.docker_meta.outputs.tags }}
           platforms: linux/amd64
 
