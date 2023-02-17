@@ -85,7 +85,7 @@ jobs:
           file: Dockerfile.new
           push: ${{ github.event_name == 'push' && ( contains(github.ref, 'refs/tags/') || github.ref == 'refs/heads/develop' ) }}
           build-args: |
-            base_image=$${{ env.BASE_IMG_REPO }}
+            base_image=${{ env.BASE_IMG_REPO }}
             base_tag=${{ env.BASE_IMG_TAG }}
             psyllid_tag=${{ steps.tag_name.outputs.tag }}
             build_type=${{ matrix.build-type }}
