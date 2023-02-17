@@ -18,7 +18,7 @@ if( UNIX AND NOT APPLE )
     set( default__fpa_flag TRUE )
 endif( UNIX AND NOT APPLE )
 
-set( CMAKE_CXX_STANDARD 11 )
+set( CMAKE_CXX_STANDARD 17 )
 
 option( Psyllid_ENABLE_ITERATOR_TIMING "Flag to enable iterator time profiling" FALSE )
 option( Psyllid_ENABLE_FPA "Flag to enable the fast-packet-acquisition interface (requires root)" ${default__fpa_flag} )

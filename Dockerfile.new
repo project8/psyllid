@@ -1,26 +1,26 @@
 ARG base_image=ubuntu
-ARG base_tag=20.04
+ARG base_tag=22.04
 
 # Base image with environment variables set
-FROM ${base_image}:${base_tag} AS psyllid_base
+FROM ${base_image}:${base_tag} AS base
 
 # Set bash as the default shell
 SHELL ["/bin/bash", "-c"]
 
+ARG psyllid_tag=beta
+ARG psyllid_subdir=psyllid
 ARG build_type=Release
+
 ENV PSYLLID_BUILD_TYPE=$build_type
 
-ARG psyllid_tag=beta
-ENV PSYLLID_TAG=${psyllid_tag}
 ENV P8_ROOT=/usr/local/p8
-ARG psyllid_base_prefix=${P8_ROOT}/psyllid
-ARG psyllid_install_prefix=${psyllid_base_prefix}/${PSYLLID_TAG}
-ENV PSYLLID_INSTALL_PREFIX=${psyllid_install_prefix}
+ENV PSYLLID_TAG=${psyllid_tag}
+ENV PSYLLID_INSTALL_PREFIX=${P8_ROOT}/${psyllid_subdir}/${PSYLLID_TAG}
 
 ENV PATH="${PATH}:${PSYLLID_INSTALL_PREFIX}"
 
 # Build image with dev dependencies
-FROM psyllid_base AS psyllid_build
+FROM base AS build
 
 RUN apt-get update &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -69,19 +69,19 @@ RUN mkdir -p /tmp_source/build &&\
     /bin/true
 
 # Final production image
-FROM psyllid_base
+FROM base
 
 RUN apt-get update &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
         build-essential \
-        openssl \
+        libssl3 \
         libfftw3-double3 \
-        libboost-chrono1.71.0 \
-        libboost-filesystem1.71.0 \
-        libboost-system1.71.0 \
+        libboost-chrono1.74.0 \
+        libboost-filesystem1.74.0 \
+        libboost-system1.74.0 \
         libhdf5-cpp-103 \
         librabbitmq4 \
-        libyaml-cpp0.6 \
+        libyaml-cpp0.7 \
         rapidjson-dev \
         &&\
     apt-get clean &&\
@@ -89,4 +89,4 @@ RUN apt-get update &&\
     /bin/true
 
 # for now we must grab the extra dependency content as well as psyllid itself
-COPY --from=psyllid_build $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX
+COPY --from=build $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX
