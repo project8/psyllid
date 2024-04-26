@@ -1,6 +1,6 @@
 {
     "amqp": {
-        "host": "rabbit_broker",
+        "broker": "localhost",
         "username": "guest",
         "password": "guest"
     }
