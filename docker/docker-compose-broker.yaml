@@ -1,0 +1,11 @@
+# This compose file lauches a RabbitMQ broker with both the HTTP port (15672) and the broker communication port (5672) mapped to the host.
+# Use this file if you want to run Psyllid on the host with a broker running in a container.
+
+services:
+    # a rabbit broker
+    rabbit-broker:
+        image: rabbitmq:3-management
+        ports:
+          - "5672:5672"
+          - "15672:15672"
+
