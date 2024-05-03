@@ -39,14 +39,7 @@ RUN apt-get update &&\
     rm -rf /var/lib/apt/lists/* &&\
     /bin/true
 
-COPY external /tmp_source/external
-COPY monarch /tmp_source/monarch
-COPY sandfly /tmp_source/sandfly
-COPY source /tmp_source/source
-COPY CMakeLists.txt /tmp_source/CMakeLists.txt
-COPY .git /tmp_source/.git
-COPY .gitmodules /tmp_source/.gitmodules
-COPY PsyllidConfig.cmake.in /tmp_source/PsyllidConfig.cmake.in
+COPY . /tmp_source
 
 ## store cmake args because we'll need to run twice (known package_builder issue)
 ## use `extra_cmake_args` to add or replace options at build time; CMAKE_CONFIG_ARGS_LIST are defaults
