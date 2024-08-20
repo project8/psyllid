@@ -1,0 +1,38 @@
+# This compose file lauches a RabbitMQ broker with both the HTTP port (15672) and the broker communication port (5672) mapped to the host.
+# Use this file if you want to run Psyllid on the host with a broker running in a container.
+
+services:
+  # a rabbit broker
+  rabbit-broker:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -u guest:guest http://rabbit-broker:15672/api/overview &> /dev/null || exit 1"]
+
+  psyllid:
+    image: ghcr.io/project8/psyllid:${IMG_TAG:-latest}
+    depends_on:
+      rabbit-broker:
+        condition: service_healthy
+    volumes:
+      - ./str_1ch_dataprod.yaml:/configs/str_1ch_dataprod.yaml
+    command: >
+      bash -c "psyllid -vv --auth-file /auths.json -c /configs/str_1ch_dataprod.yaml"
+#      bash -c "psyllid -vv --auth-file /auths.json -c /configs/str_1ch_dataprod.yaml dripline.broker=rabbit-broker"
+    configs:
+      - auths.json
+
+#  tester:
+#    image: ghcr.io/driplineorg/dripline:latest
+#    depends_on:
+#      - psyllid
+#    command: >
+#      bash -c "dl-agent --auth-file /auths.json "
+
+configs:
+  auths.json:
+    file: ../docker/authentications.json
+
+

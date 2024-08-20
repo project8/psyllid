@@ -1,0 +1,53 @@
+dripline:
+#    broker: rabbit-broker
+    queue: psyllid
+
+post-to-slack: false
+
+#on-startup:
+#    - type: set
+#      key: filename
+#      payload:
+#          values: ["test_output.egg"]
+#    - type: cmd
+#      key: start-run
+#      payload:
+#            blah:
+
+daq:
+    activate-at-startup: true
+    n-files: 1
+    max-file-size-mb: 500
+
+streams:
+    ch0:
+        preset:
+            type: str-1ch-dataprod
+            nodes:
+              - { type: data-producer,          name: dprd }
+              - { type: tf-roach-receiver,      name: tfrr }
+              - { type: streaming-writer,       name: strw }
+              - { type: term-freq-data,         name: termf }
+#              - { type: term-time-data,         name: termt }
+            connections:
+              - "dprd.out_0:tfrr.in_0"
+#              - "tfrr.out_0:termt.in_0"
+              - "tfrr.out_0:strw.in_0"
+              - "tfrr.out_1:termf.in_0"
+  
+        device:
+            n-channels: 1
+            bit-depth: 8
+            data-type-size: 1
+            sample-size: 2
+            record-size: 4096
+            acq-rate: 100 # MHz
+            v-offset: 0.0
+            v-range: 0.5
+  
+        dprd:
+            length: 10
+
+        strw:
+            file-num: 0
+           
