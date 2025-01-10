@@ -14,7 +14,7 @@ set( psyllid_exe_PROGRAMS )
 
 # Non-psyllid executables
 set( programs
-    grab_packet
+    grab_packet.cc
 )
 
 pbuilder_executables( 

@@ -362,6 +362,6 @@ All `command` requests are lockable.
     Put in its deactivated state, in which it is not immediately ready to take data.  Psyllid must be in its activated state before this call.
 
 .. toggle-header::
-    :header: ``quit-psyllid``
+    :header: ``quit``
 
     Instruct the Psyllid executable to exit.
