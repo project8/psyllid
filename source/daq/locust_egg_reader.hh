@@ -33,7 +33,7 @@ namespace psyllid
 
      Parameter setting is not thread-safe.  Executing is thread-safe.
 
-     Node type: "egg3-reader" TODO: CHANGE NODE NAME, NEED TO ADD TO OTHER FILES
+     Node type: "locust-egg-reader" TODO: CHANGE NODE NAME, NEED TO ADD TO OTHER FILES
 
      Available configuration values: TODO: CHANGE PARAMETERS. WHAT PARAMETERS ARE USEFUL? 
      - "egg-path": string -- resolvable path to the egg file from which to read data

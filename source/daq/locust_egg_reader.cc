@@ -24,7 +24,7 @@ using midge::stream;
 
 namespace psyllid
 {
-    REGISTER_NODE_AND_BUILDER( locust_egg_reader, "egg3-reader", locust_egg_reader_binding );
+    REGISTER_NODE_AND_BUILDER( locust_egg_reader, "locust-egg-reader", locust_egg_reader_binding );
 
     LOGGER( plog, "locust_egg_reader" );
 
@@ -138,7 +138,7 @@ namespace psyllid
             LWARN( plog, "got an exception, throwing" );
             a_midge->throw_ex( std::current_exception() );
         }
-        LDEBUG( plog, "at the end of egg3 execute" );
+        LDEBUG( plog, "at the end of locust egg execute" );
     }
 
     void locust_egg_reader::finalize()
