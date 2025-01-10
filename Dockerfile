@@ -42,6 +42,18 @@ RUN apt-get update &&\
     rm -rf /var/lib/apt/lists/* &&\
     /bin/true
     
+# use quill_checkout to specify a tag or branch name to checkout
+ARG quill_checkout=v7.3.0
+RUN cd /usr/local && \
+    git clone https://github.com/odygrd/quill.git && \
+    cd quill && \
+    git checkout ${quill_checkout} && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j${narg} install && \
+    cd / && \
+    rm -rf /usr/local/quill
 
 # Build psyllid in the deps image
 FROM deps AS build
