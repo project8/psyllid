@@ -35,6 +35,7 @@ int main( int argc, char** argv )
             "\t\t _/                        _/                              \n" <<
             "\t\t_/                    _/_/                                 \n\n");
 
+    unsigned return_val;
     try
     {
         // The application
@@ -51,7 +52,7 @@ int main( int argc, char** argv )
                 auto t_cwrap = scarab::wrap_cancelable( the_conductor );
                 t_sig_hand.add_cancelable( t_cwrap );
 
-                the_conductor.execute( the_main.primary_config() ); 
+                the_conductor.execute( the_main.primary_config(), the_main.auth() ); 
             } );
 
         // Command line options
@@ -63,34 +64,36 @@ int main( int argc, char** argv )
         // Parse CL options and run the application
         CLI11_PARSE( the_main, argc, argv );
 
-        return the_conductor.get_return();
+        return_val = the_conductor.get_return();
 
     }
     catch( scarab::error& e )
     {
         LERROR( plog, "configuration error: " << e.what() );
-        return RETURN_ERROR;
+        return_val = RETURN_ERROR;
     }
     catch( psyllid::error& e )
     {
         LERROR( plog, "psyllid error: " << e.what() );
-        return RETURN_ERROR;
+        return_val = RETURN_ERROR;
     }
     catch( sandfly::error& e )
     {
         LERROR( plog, "sandfly error: " << e.what() );
-        return RETURN_ERROR;
+        return_val = RETURN_ERROR;
     }
     catch( std::exception& e )
     {
         LERROR( plog, "std::exception caught: " << e.what() );
-        return RETURN_ERROR;
+        return_val = RETURN_ERROR;
     }
     catch( ... )
     {
         LERROR( plog, "unknown exception caught" );
-        return RETURN_ERROR;
+        return_val = RETURN_ERROR;
     }
 
-    return RETURN_ERROR;
+    STOP_LOGGING;
+
+    return return_val;
 }

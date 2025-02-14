@@ -201,12 +201,15 @@ int main( int argc, char** argv )
         // Parse CL options and run the application
         CLI11_PARSE( the_main, argc, argv );
 
+        STOP_LOGGING;
+
         return RETURN_SUCCESS;
     }
     catch( std::exception& e )
     {
         LERROR( plog, "Caught an exception: " << e.what() );
     }
+    STOP_LOGGING;
     return RETURN_ERROR;
 }
 
