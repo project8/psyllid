@@ -10,15 +10,22 @@ SHELL ["/bin/bash", "-c"]
 ARG psyllid_tag=beta
 ARG psyllid_subdir=psyllid
 ARG build_type=Release
+ARG narg=2
+
 
 ENV P8_ROOT=/usr/local/p8
 ENV PSYLLID_TAG=${psyllid_tag}
 ENV PSYLLID_INSTALL_PREFIX=${P8_ROOT}/${psyllid_subdir}/${PSYLLID_TAG}
+ENV NARG=${narg}
 
 ENV PATH="${PATH}:${PSYLLID_INSTALL_PREFIX}"
 
 # Build image with dev dependencies
-FROM base AS build
+FROM base AS deps
+
+# use quill_checkout to specify a tag or branch name to checkout
+ARG quill_checkout=v7.3.0
+ENV QUILL_CHECKOUT=${quill_checkout}
 
 RUN apt-get update &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -37,7 +44,20 @@ RUN apt-get update &&\
         &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/* &&\
+    cd /usr/local &&\
+    git clone https://github.com/odygrd/quill.git &&\
+    cd quill &&\
+    git checkout ${QUILL_CHECKOUT} &&\
+    mkdir build &&\
+    cd build &&\
+    cmake .. &&\
+    make -j${narg} install &&\
+    cd / &&\
+    rm -rf /usr/local/quill &&\
     /bin/true
+
+# Build psyllid in the deps image
+FROM deps AS build
 
 COPY . /tmp_source
 
@@ -46,17 +66,16 @@ COPY . /tmp_source
 ARG extra_cmake_args=""
 ENV CMAKE_CONFIG_ARGS_LIST="\
       -D CMAKE_BUILD_TYPE=$build_type \
-      -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_BUILD_PREFIX \
+      -D CMAKE_INSTALL_PREFIX:PATH=$PSYLLID_INSTALL_PREFIX \
       -D Psyllid_ENABLE_FPA=FALSE \
       ${extra_cmake_args} \
-      ${OS_CMAKE_ARGS} \
       "
 
 RUN mkdir -p /tmp_source/build &&\
     cd /tmp_source/build &&\
     cmake ${CMAKE_CONFIG_ARGS_LIST} .. &&\
     cmake ${CMAKE_CONFIG_ARGS_LIST} .. &&\
-    make install &&\
+    make -j${NARG} install &&\
     /bin/true
 
 # Final production image
@@ -80,4 +99,5 @@ RUN apt-get update &&\
     /bin/true
 
 # for now we must grab the extra dependency content as well as psyllid itself
-COPY --from=build $PSYLLID_BUILD_PREFIX $PSYLLID_BUILD_PREFIX
+COPY --from=build /usr/local/lib /usr/local/lib
+COPY --from=build $PSYLLID_INSTALL_PREFIX $PSYLLID_INSTALL_PREFIX

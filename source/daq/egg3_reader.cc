@@ -5,13 +5,13 @@
  *      Author: laroque
  */
 
+// ordering note: this is before egg3_reader.hh so that the Monarch operator<<'s are defined before logger.hh is included
+#include "M3Monarch.hh"
 
 #include "egg3_reader.hh"
 
 #include "psyllid_error.hh"
 #include "time_data.hh"
-
-#include "M3Monarch.hh"
 
 #include "run_control.hh"
 

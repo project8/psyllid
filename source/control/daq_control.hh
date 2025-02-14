@@ -28,7 +28,7 @@ namespace psyllid
     {
 
         public:
-            daq_control( const scarab::param_node& a_primary_config, std::shared_ptr< sandfly::stream_manager > a_mgr );
+            daq_control( const scarab::param_node& a_primary_config, std::shared_ptr< sandfly::stream_manager > a_mgr, std::shared_ptr< sandfly::message_relayer > a_relay );
             virtual ~daq_control();
 
         protected:

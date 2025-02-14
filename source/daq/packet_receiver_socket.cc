@@ -173,7 +173,7 @@ namespace psyllid
                     }
                     else  // t_size_received < 0 && f_last_errno != EWOULDBLOCK && f_last_errno != EAGAIN
                     {
-                        LWARN( "Unable to receive; error message: " << strerror( f_last_errno ) );
+                        LWARN( plog, "Unable to receive; error message: " << strerror( f_last_errno ) );
                     }
                 }
             }
