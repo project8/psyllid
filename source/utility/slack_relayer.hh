@@ -10,6 +10,7 @@
 
 #include "message_relayer.hh"
 
+#include "param_fwd.hh"
 
 namespace psyllid
 {
@@ -31,8 +32,14 @@ namespace psyllid
             void send_error( const std::string& a_msg_text ) const override;
             void send_critical( const std::string& a_msg_text ) const override;
 
+            void send_notice( scarab::param_ptr_t&& a_payload ) const override;
+            void send_warn( scarab::param_ptr_t&& a_payload ) const override;
+            void send_error( scarab::param_ptr_t&& a_payload ) const override;
+            void send_critical( scarab::param_ptr_t&& a_payload ) const override;
+
         protected:
             void send_to_slack( const std::string& a_msg_text, const std::string& a_rk_root ) const;
+            void send_to_slack( scarab::param_ptr_t&& a_payload, const std::string& a_rk_root ) const;
     };
 
 } /* namespace psyllid */
