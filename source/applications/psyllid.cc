@@ -44,7 +44,9 @@ int main( int argc, char** argv )
         conductor the_conductor;
 
         // Default configuration
+        // Same as sandfly, but change the name
         the_main.default_config() = server_config();
+        the_main.default_config()["name"]() = "psyllid";
 
         // The main execution callback
         the_main.callback( [&](){ 
