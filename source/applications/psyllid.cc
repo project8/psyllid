@@ -42,7 +42,6 @@ int main( int argc, char** argv )
         // The application
         scarab::main_app the_main;
         conductor the_conductor;
-        the_conductor.set_rc_creator< daq_control >();
 
         // Default configuration
         the_main.default_config() = server_config();
@@ -53,9 +52,8 @@ int main( int argc, char** argv )
                 auto t_cwrap = scarab::wrap_cancelable( the_conductor );
                 t_sig_hand.add_cancelable( t_cwrap );
 
-                the_conductor.execute( the_main.primary_config(), the_main.auth(), 
-//                                       std::shared_ptr< message_relayer >(new slack_relayer( the_main.primary_config(), the_main.auth() )) );
-                                       std::make_shared< slack_relayer >(the_main.primary_config(), the_main.auth()) ); 
+                the_conductor.execute< daq_control >( the_main.primary_config(), the_main.auth(), 
+                                                      std::make_shared< slack_relayer >(the_main.primary_config(), the_main.auth()) ); 
             } );
 
         // Command line options
