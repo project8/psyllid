@@ -12,6 +12,7 @@
 #include "conductor.hh"
 #include "sandfly_error.hh"
 #include "server_config.hh"
+#include "slack_relayer.hh"
 
 #include "application.hh"
 #include "logger.hh"
@@ -52,7 +53,9 @@ int main( int argc, char** argv )
                 auto t_cwrap = scarab::wrap_cancelable( the_conductor );
                 t_sig_hand.add_cancelable( t_cwrap );
 
-                the_conductor.execute( the_main.primary_config(), the_main.auth() ); 
+                the_conductor.execute( the_main.primary_config(), the_main.auth(), 
+//                                       std::shared_ptr< message_relayer >(new slack_relayer( the_main.primary_config(), the_main.auth() )) );
+                                       std::make_shared< slack_relayer >(the_main.primary_config(), the_main.auth()) ); 
             } );
 
         // Command line options
