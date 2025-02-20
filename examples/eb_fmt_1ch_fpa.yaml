@@ -1,8 +1,7 @@
-dripline:
+dripline_mesh:
     broker: localhost
-    queue: psyllid
 
-post-to-slack: false
+use-relayer: false
 
 daq:
     activate-at-startup: true
