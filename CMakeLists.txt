@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.12)
 
 # Define the project
 cmake_policy( SET CMP0048 NEW ) # version in project()
-project( Psyllid VERSION 2.2.1 )
+project( Psyllid VERSION 2.2.3 )
 
 list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/sandfly/cmake )
 include( sandfly )
@@ -84,9 +84,6 @@ endif( FFTW_FOUND )
 # Boost
 # Boost (1.48 required for container; scarab minimum is 1.46)
 #find_package( Boost 1.48.0 REQUIRED )
-
-# Sandfly
-add_definitions( -DDRIPLINE_AUTH_FILE=~/.project8_authentications.json )
 
 # Included external dependencies
 # Including: tk_spline

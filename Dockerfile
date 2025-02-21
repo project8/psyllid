@@ -24,7 +24,7 @@ ENV PATH="${PATH}:${PSYLLID_INSTALL_PREFIX}"
 FROM base AS deps
 
 # use quill_checkout to specify a tag or branch name to checkout
-ARG quill_checkout=v7.3.0
+ARG quill_checkout=v8.1.1
 ENV QUILL_CHECKOUT=${quill_checkout}
 
 RUN apt-get update &&\
