@@ -38,7 +38,9 @@ namespace psyllid
             f_start_paused( true ),
             f_paused( true ),
             f_record_length( 0 ),
-            f_pkt_id_offset( 0 )
+            f_pkt_id_offset( 0 ), 
+            f_slice_length( 4096 ), 
+            f_write_n_slices( 0 )
     {
     }
 
@@ -85,6 +87,7 @@ namespace psyllid
             }
 
             uint64_t t_records_read = 0;
+            uint64_t t_slice_offset = 0;
 
             // starting execution loop
             while (! is_canceled() )
@@ -114,11 +117,8 @@ namespace psyllid
                 if ( ! f_paused )
                 {
                     //if ( !read_slice(t_data, t_stream, t_record) ) break;
-                    bool read_slice_ok = read_slice(t_data, t_stream, t_record);
-                    if (read_slice_ok) {
-                        t_records_read++;
-                    }
-                    if ( !read_slice_ok || (f_read_n_records > 0 && t_records_read >= f_read_n_records) )
+                    bool write_slice_ok = write_slice(t_data, t_stream, t_record, &t_slice_offset, &t_records_read);
+                    if ( !write_slice_ok || (f_read_n_records > 0 && t_records_read >= f_read_n_records) )
                     {
                         LINFO( plog, "breaking out of loop because record limit or end of file reached" );
                         std::shared_ptr< sandfly::run_control > t_run_control = use_run_control();
@@ -183,6 +183,125 @@ namespace psyllid
             return false;
         }
         return true;
+    }
+
+    bool locust_egg-reader::read_record(const monarch3::M3Stream* t_stream) 
+    {
+        LDEBUG( plog, "attempting to read a record")
+        if ( !t_stream->ReadRecord() )
+        {
+            if ( !f_repeat_egg )
+            {
+                LDEBUG( plog, "reached end of file, stopping" );
+                return false;
+            }
+            else
+            {
+                LDEBUG( plog, "reached end of file, restarting" );
+                t_stream->ReadRecord( -1 * int(t_stream->GetRecordCountInFile()) );
+                // when we loop back, we want the record ID to increment and have a gap relative to the end of the file
+                f_pkt_id_offset += 1 + t_stream->GetNRecordsInFile();
+            }
+        }
+        return true;
+    }
+
+    void locust_egg_reader::packet_logic(time_data* t_data)
+    {
+        // packet ID logic
+        //TODO do this pkt ID logic reasonable?
+        t_data->set_pkt_in_batch( t_record->GetRecordId() + f_pkt_id_offset );
+        t_data->set_pkt_in_session( t_record->GetRecordId() + f_pkt_id_offset );
+    }
+
+    bool locust_egg_reader::check_stream()
+    {
+        if ( !out_stream< 0 >().set( stream::s_run ) )
+        {
+            LERROR( plog, "egg reader exiting due to stream error" );
+            return false;
+        }
+        return true;
+    }
+
+    bool locust_egg_reader::write_slice(time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record, uint* t_slice_offset, uint* t_records_read)
+    {
+        LDEBUG( plog, "writing a slice" );
+        if ( f_slice_length > f_record_length)
+        {
+            LERROR( plog, "slice length is longer than record length")
+        }
+
+        // update t_data to point to the next slot in the output stream. 
+        t_data = out_stream< 0 >().data();
+
+        if( *t_slice_offset == 0)
+        {
+            // read record
+            if ( !read_record(t_stream) )
+            {
+                return false;
+            }
+            else
+            {
+                *t_records_read++;
+            }
+            // copy the part of the new record
+            std::copy(&t_record->GetData()[*t_slice_offset], &t_record->GetData()[f_slice_length], &t_data->get_array()[0][0]);
+            // packet logic
+            packet_logic(t_data);
+            // check stream
+            if ( !check_stream() )
+            {
+                return false;
+            }
+            // increment t_slice_offset by f_slice_length
+            *t_slice_offset += f_slice_length;
+        }
+        else
+        {
+            if ( *t_slice_offset + f_slice_length < f_record_length ) 
+            {
+                // copy from record we have opened to output stream
+                std::copy(&t_record->GetData()[*t_slice_offset], &t_record->GetData()[*t_slice_offset + f_slice_length], &t_data->get_array()[0][0]);
+                // packet logic
+                packet_logic(t_data);
+                // check stream
+                if ( !check_stream() )
+                {
+                    return false;
+                }
+                // increment t_slice_offset by f_slice_length
+                *t_slice_offset += f_slice_length;
+            }
+            elif ( *t_slice_offset + f_slice_length > f_record_length )
+            {
+                // copy remainder of to output
+                std::copy(&t_record->GetData()[*t_slice_offset], &t_record->GetData()[f_record_length], &t_data->get_array()[0][0]);
+                // read record
+                if ( !read_record(t_stream) )
+                {
+                    return false;
+                }
+                else
+                {
+                    *t_records_read++;
+                }
+                // copy beginning of new record to output
+                std::copy(&t_record->GetData()[0], &t_record->GetData()[*t_slice_offset + f_slice_length - f_record_length], &t_data->get_array()[0][0]);
+                // packet logic
+                packet_logic(t_data);
+                // check stream
+                if ( !check_stream() )
+                {
+                    return false;
+                }
+                // increment t_slice_offset by f_slice_length, mod f_record_length
+                *t_slice_offset += f_slice_length - f_record_length;
+            }
+        }
+        return true;
+
     }
 
     void locust_egg_reader::cleanup_file()
