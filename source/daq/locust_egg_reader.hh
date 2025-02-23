@@ -74,7 +74,11 @@ namespace psyllid
             virtual void finalize();
 
         private:
-            bool read_slice( time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record);
+            bool read_slice( time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record );
+            bool read_record( const monarch3::M3Stream* t_stream );
+            void packet_logic( time_data* t_data, const monarch3::M3Record* t_record );
+            bool check_stream();
+            bool write_slice( time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record, uint64_t* t_slice_offset, uint64_t* t_records_read );
             void cleanup_file();
 
     };

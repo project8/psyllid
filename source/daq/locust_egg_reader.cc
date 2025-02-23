@@ -35,12 +35,11 @@ namespace psyllid
             f_read_n_records( 0 ),
             f_repeat_egg( false ),
             f_length( 10 ),
-            f_start_paused( true ),
+            f_start_paused( true ), 
+            f_slice_length( 4096 ),
             f_paused( true ),
             f_record_length( 0 ),
-            f_pkt_id_offset( 0 ), 
-            f_slice_length( 4096 ), 
-            f_write_n_slices( 0 )
+            f_pkt_id_offset( 0 )
     {
     }
 
@@ -185,7 +184,7 @@ namespace psyllid
         return true;
     }
 
-    bool locust_egg-reader::read_record(const monarch3::M3Stream* t_stream) 
+    bool locust_egg_reader::read_record( const monarch3::M3Stream* t_stream ) 
     {
         LDEBUG( plog, "attempting to read a record")
         if ( !t_stream->ReadRecord() )
@@ -206,7 +205,7 @@ namespace psyllid
         return true;
     }
 
-    void locust_egg_reader::packet_logic(time_data* t_data)
+    void locust_egg_reader::packet_logic( time_data* t_data, const monarch3::M3Record* t_record )
     {
         // packet ID logic
         //TODO do this pkt ID logic reasonable?
@@ -224,10 +223,10 @@ namespace psyllid
         return true;
     }
 
-    bool locust_egg_reader::write_slice(time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record, uint* t_slice_offset, uint* t_records_read)
+    bool locust_egg_reader::write_slice( time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record, uint64_t* t_slice_offset, uint64_t* t_records_read )
     {
         LDEBUG( plog, "writing a slice" );
-        if ( f_slice_length > f_record_length)
+        if ( f_slice_length > f_record_length )
         {
             LERROR( plog, "slice length is longer than record length")
         }
@@ -235,10 +234,10 @@ namespace psyllid
         // update t_data to point to the next slot in the output stream. 
         t_data = out_stream< 0 >().data();
 
-        if( *t_slice_offset == 0)
+        if( *t_slice_offset == 0 )
         {
             // read record
-            if ( !read_record(t_stream) )
+            if ( !read_record( t_stream ) )
             {
                 return false;
             }
@@ -249,7 +248,7 @@ namespace psyllid
             // copy the part of the new record
             std::copy(&t_record->GetData()[*t_slice_offset], &t_record->GetData()[f_slice_length], &t_data->get_array()[0][0]);
             // packet logic
-            packet_logic(t_data);
+            packet_logic( t_data, t_record );
             // check stream
             if ( !check_stream() )
             {
@@ -265,7 +264,7 @@ namespace psyllid
                 // copy from record we have opened to output stream
                 std::copy(&t_record->GetData()[*t_slice_offset], &t_record->GetData()[*t_slice_offset + f_slice_length], &t_data->get_array()[0][0]);
                 // packet logic
-                packet_logic(t_data);
+                packet_logic( t_data, t_record );
                 // check stream
                 if ( !check_stream() )
                 {
@@ -274,12 +273,12 @@ namespace psyllid
                 // increment t_slice_offset by f_slice_length
                 *t_slice_offset += f_slice_length;
             }
-            elif ( *t_slice_offset + f_slice_length > f_record_length )
+            else if ( *t_slice_offset + f_slice_length > f_record_length )
             {
                 // copy remainder of to output
                 std::copy(&t_record->GetData()[*t_slice_offset], &t_record->GetData()[f_record_length], &t_data->get_array()[0][0]);
                 // read record
-                if ( !read_record(t_stream) )
+                if ( !read_record( t_stream ) )
                 {
                     return false;
                 }
@@ -290,7 +289,7 @@ namespace psyllid
                 // copy beginning of new record to output
                 std::copy(&t_record->GetData()[0], &t_record->GetData()[*t_slice_offset + f_slice_length - f_record_length], &t_data->get_array()[0][0]);
                 // packet logic
-                packet_logic(t_data);
+                packet_logic( t_data, t_record );
                 // check stream
                 if ( !check_stream() )
                 {
