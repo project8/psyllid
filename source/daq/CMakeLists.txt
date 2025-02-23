@@ -9,6 +9,7 @@ set( headers
     event_builder.hh
     #single_value_trigger.hh
     frequency_mask_trigger.hh
+    locust_egg_reader.hh
     packet_receiver_socket.hh
     roach_config.hh
     streaming_writer.hh
@@ -25,6 +26,7 @@ set( sources
     event_builder.cc
     #single_value_trigger.cc
     frequency_mask_trigger.cc
+    locust_egg_reader.cc
     packet_receiver_socket.cc
     roach_config.cc
     streaming_writer.cc
