@@ -14,7 +14,7 @@ Dependencies
 ^^^^^^^^^^^^^
 
 * CMake 3.12 or higher
-* C++11 (gcc 4.9 or higher; or clang 3 or higher)
+* C++17
 * Boost 1.48 or higher
 * HDF5 1.8 or 1.10
 * rabbitmqc
