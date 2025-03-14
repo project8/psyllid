@@ -6,9 +6,11 @@ set( headers
     byte_swap.hh
     psyllid_error.hh
     psyllid_version.hh
+    slack_relayer.hh
 )
 set( sources
     psyllid_error.cc
+    slack_relayer.cc
 )
 
 configure_file( psyllid_version.cc.in ${CMAKE_CURRENT_BINARY_DIR}/psyllid_version.cc )

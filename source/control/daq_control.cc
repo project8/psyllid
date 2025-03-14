@@ -59,7 +59,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Unable to start files: " << e.what() );
-                f_msg_relay->slack_error( std::string("Unable to start files: ") + e.what() );
+                f_msg_relay->send_error( std::string("Unable to start files: ") + e.what() );
                 set_status( status::error );
                 LDEBUG( plog, "Canceling midge" );
                 if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();
@@ -81,7 +81,7 @@ namespace psyllid
             catch( std::exception& e )
             {
                 LERROR( plog, "Unable to finish files: " << e.what() );
-                f_msg_relay->slack_error( std::string("Unable to finish files: ") + e.what() );
+                f_msg_relay->send_error( std::string("Unable to finish files: ") + e.what() );
                 set_status( status::error );
                 LDEBUG( plog, "Canceling midge" );
                 if( f_midge_pkg.have_lock() ) f_midge_pkg->cancel();

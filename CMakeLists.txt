@@ -85,9 +85,6 @@ endif( FFTW_FOUND )
 # Boost (1.48 required for container; scarab minimum is 1.46)
 #find_package( Boost 1.48.0 REQUIRED )
 
-# Sandfly
-add_definitions( -DDRIPLINE_AUTH_FILE=~/.project8_authentications.json )
-
 # Included external dependencies
 # Including: tk_spline
 add_subdirectory( external )

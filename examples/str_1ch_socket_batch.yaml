@@ -1,4 +1,6 @@
-post-to-slack: false
+name: psyllid
+
+use-relayer: false
 
 daq:
     activate-at-startup: true
