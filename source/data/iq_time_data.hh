@@ -32,6 +32,7 @@ namespace psyllid
 
             const iq_t* get_array() const;
             iq_t* get_array();
+            const iq_t* get_array_ptr() const;
             iq_t* get_array_ptr();
             void set_array_ptr( iq_t* array );
             size_t get_array_size() const;
@@ -56,6 +57,16 @@ namespace psyllid
     inline iq_time_data::iq_t* iq_time_data::get_array()
     {
         return f_array;
+    }
+
+    const inline iq_time_data::iq_t* iq_time_data::get_array_ptr() const
+    {
+        return f_array_ptr;
+    }
+
+    inline iq_time_data::iq_t* iq_time_data::get_array_ptr()
+    {
+        return f_array_ptr;
     }
 
     inline void iq_time_data::set_array_ptr( iq_time_data::iq_t* array)
