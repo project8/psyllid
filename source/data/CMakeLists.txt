@@ -9,6 +9,8 @@ set( headers
     roach_packet.hh
     time_data.hh
     trigger_flag.hh
+    iq_time_data.hh
+    roach_time_data.hh
 )
 
 set( sources
@@ -18,6 +20,8 @@ set( sources
     roach_packet.cc
     time_data.cc
     trigger_flag.cc
+    iq_time_data.cc
+    roach_time_data.cc
 )
 
 set( dependencies
