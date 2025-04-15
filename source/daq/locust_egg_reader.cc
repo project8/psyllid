@@ -19,6 +19,7 @@
 #include "param.hh"
 
 #include <chrono>
+#include <bitset>
 
 using midge::stream;
 
@@ -39,7 +40,8 @@ namespace psyllid
             f_slice_length( 4096 ),
             f_paused( true ),
             f_record_length( 0 ),
-            f_pkt_id_offset( 0 )
+            f_pkt_id_offset( 0 ),
+            f_uint_to_int( false )
     {
     }
 
@@ -223,6 +225,23 @@ namespace psyllid
         return true;
     }
 
+    void locust_egg_reader::convert_uint8_to_int8( uint8_t* t_source, int8_t* t_target, int t_data_len, bool t_convert )
+    {
+        uint8_t t_128 = 128;
+        if( t_convert )
+        {
+            for(int i = 0; i < t_data_len; i++ )
+            {
+                t_target[i] = t_source[i] ^ t_128;
+            }
+        }
+        else
+        {
+            std::copy(t_source, &t_source[t_data_len], t_target);
+        }
+
+    }
+
     bool locust_egg_reader::write_slice( time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record, uint64_t* t_slice_offset, uint64_t* t_records_read )
     {
         LDEBUG( plog, "writing a slice" );
@@ -233,6 +252,8 @@ namespace psyllid
 
         // update t_data to point to the next slot in the output stream. 
         t_data = out_stream< 0 >().data();
+
+        // 
 
         if( *t_slice_offset == 0 )
         {
@@ -246,7 +267,7 @@ namespace psyllid
                 *t_records_read++;
             }
             // copy the part of the new record
-            std::copy(&t_record->GetData()[*t_slice_offset], &t_record->GetData()[f_slice_length], &t_data->get_array()[0][0]);
+            convert_uint8_to_int8(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], f_slice_length, f_uint_to_int);
             // packet logic
             packet_logic( t_data, t_record );
             // check stream
@@ -262,7 +283,7 @@ namespace psyllid
             if ( *t_slice_offset + f_slice_length < f_record_length ) 
             {
                 // copy from record we have opened to output stream
-                std::copy(&t_record->GetData()[*t_slice_offset], &t_record->GetData()[*t_slice_offset + f_slice_length], &t_data->get_array()[0][0]);
+                convert_uint8_to_int8(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], f_slice_length, f_uint_to_int);
                 // packet logic
                 packet_logic( t_data, t_record );
                 // check stream
@@ -275,8 +296,10 @@ namespace psyllid
             }
             else if ( *t_slice_offset + f_slice_length > f_record_length )
             {
+                int t_pre_split = f_record_length - *t_slice_offset;
+                int t_post_split = f_slice_length - t_pre_split;
                 // copy remainder of to output
-                std::copy(&t_record->GetData()[*t_slice_offset], &t_record->GetData()[f_record_length], &t_data->get_array()[0][0]);
+                convert_uint8_to_int8(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], t_pre_split, f_uint_to_int);
                 // read record
                 if ( !read_record( t_stream ) )
                 {
@@ -287,7 +310,7 @@ namespace psyllid
                     *t_records_read++;
                 }
                 // copy beginning of new record to output
-                std::copy(&t_record->GetData()[0], &t_record->GetData()[*t_slice_offset + f_slice_length - f_record_length], &t_data->get_array()[0][0]);
+                convert_uint8_to_int8(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][t_pre_split], t_post_split, f_uint_to_int);
                 // packet logic
                 packet_logic( t_data, t_record );
                 // check stream

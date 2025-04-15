@@ -62,6 +62,7 @@ namespace psyllid
             mv_accessible( uint64_t, length );
             mv_accessible( bool, start_paused );
             mv_accessible( uint64_t, slice_length);
+            mv_accessible( bool, uint_to_int)
 
         private:
             bool f_paused;
