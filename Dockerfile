@@ -18,7 +18,7 @@ ENV PSYLLID_TAG=${psyllid_tag}
 ENV PSYLLID_INSTALL_PREFIX=${P8_ROOT}/${psyllid_subdir}/${PSYLLID_TAG}
 ENV NARG=${narg}
 
-ENV PATH="${PATH}:${PSYLLID_INSTALL_PREFIX}"
+ENV PATH="${PATH}:${PSYLLID_INSTALL_PREFIX}/bin"
 
 # Build image with dev dependencies
 FROM base AS deps

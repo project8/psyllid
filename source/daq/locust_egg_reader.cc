@@ -74,6 +74,7 @@ namespace psyllid
         try
         {
             LDEBUG( plog, "Executing the locust_egg_reader" );
+            LDEBUG( plog, "Uint to int conversion: [" << f_uint_to_int << "]")
             //TODO  use header to loop streams so we can send more than one?
             //const monarch3::M3Header *t_egg_header = f_egg->GetHeader();
             const monarch3::M3Stream* t_stream = f_egg->GetStream( 0 );
@@ -225,7 +226,7 @@ namespace psyllid
         return true;
     }
 
-    void locust_egg_reader::convert_uint8_to_int8( uint8_t* t_source, int8_t* t_target, int t_data_len, bool t_convert )
+    void locust_egg_reader::convert_uint8_to_int8( const u_char* t_source, int8_t* t_target, int t_data_len, bool t_convert )
     {
         uint8_t t_128 = 128;
         if( t_convert )
@@ -356,6 +357,8 @@ namespace psyllid
         a_node->set_repeat_egg( a_config.get_value( "repeat-egg", a_node->get_repeat_egg() ) );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
         a_node->set_start_paused( a_config.get_value( "start-paused", a_node->get_start_paused() ) );
+        a_node->set_slice_length( a_config.get_value( "slice-length", a_node->get_slice_length() ) );
+        a_node->set_uint_to_int( a_config.get_value( "uint-to-int", a_node->get_uint_to_int() ) );
         return;
     }
 
@@ -367,6 +370,8 @@ namespace psyllid
         a_config.add( "repeat-egg", scarab::param_value( a_node->get_repeat_egg() ) );
         a_config.add( "length", scarab::param_value( a_node->get_length() ) );
         a_config.add( "start-paused", scarab::param_value( a_node->get_length() ) );
+        a_config.add( "slice-length", scarab::param_value( a_node->get_slice_length() ) );
+        a_config.add( "uint-to-int", scarab::param_value( a_node->get_uint_to_int() ) );
         return;
     }
 
