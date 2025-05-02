@@ -64,7 +64,7 @@ namespace psyllid
      - "threshold-power-snr": float -- The threshold SNR, given as a power SNR
      - "threshold-power-snr-high": float -- A second SNR threshold, given as power SNR
      - "threshold-dB": float -- The threshold SNR, given as a dB factor
-     - "trigger-mode": string -- The trigger mode, can be set to "single-level-trigger" or "two-level-trigger"
+     - "trigger-mode": string -- The trigger mode, can be set to "single-level" or "two-level"
      - "n-spline-points": uint -- The number of points to have in the spline fit for the trigger mask
      - "mask-configuration": string || node -- If a string, path to a yaml file with mask and mask-data arrays to populate the respective vectors; if a node, then contains those arrays of floats.
 
