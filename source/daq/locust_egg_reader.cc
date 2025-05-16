@@ -226,12 +226,12 @@ namespace psyllid
         return true;
     }
 
-    void locust_egg_reader::convert_uint8_to_int8( const u_char* t_source, int8_t* t_target, int t_data_len, bool t_convert )
+    void locust_egg_reader::convert_uiq_to_iq( const u_char* t_source, int8_t* t_target, int t_data_len, bool t_convert )
     {
         uint8_t t_128 = 128;
         if( t_convert )
         {
-            for(int i = 0; i < t_data_len; i++ )
+            for(int i = 0; i < t_data_len * 2; i++ )
             {
                 t_target[i] = t_source[i] ^ t_128;
             }
