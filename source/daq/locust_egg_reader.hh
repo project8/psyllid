@@ -81,7 +81,7 @@ namespace psyllid
             bool check_stream();
             bool write_slice( time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record, uint64_t* t_slice_offset, uint64_t* t_records_read );
             void cleanup_file();
-            void convert_uiq_to_iq( const u_char* t_source, iq* t_target, int t_data_len, bool t_convert );
+            void convert_uiq_to_iq( const u_char* t_source, int8_t* t_target, int t_data_len, bool t_convert );
 
     };
 

@@ -268,7 +268,7 @@ namespace psyllid
                 *t_records_read++;
             }
             // copy the part of the new record
-            convert_uint8_to_int8(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], f_slice_length, f_uint_to_int);
+            convert_uiq_to_iq(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], f_slice_length, f_uint_to_int);
             // packet logic
             packet_logic( t_data, t_record );
             // check stream
@@ -284,7 +284,7 @@ namespace psyllid
             if ( *t_slice_offset + f_slice_length < f_record_length ) 
             {
                 // copy from record we have opened to output stream
-                convert_uint8_to_int8(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], f_slice_length, f_uint_to_int);
+                convert_uiq_to_iq(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], f_slice_length, f_uint_to_int);
                 // packet logic
                 packet_logic( t_data, t_record );
                 // check stream
@@ -300,7 +300,7 @@ namespace psyllid
                 int t_pre_split = f_record_length - *t_slice_offset;
                 int t_post_split = f_slice_length - t_pre_split;
                 // copy remainder of to output
-                convert_uint8_to_int8(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], t_pre_split, f_uint_to_int);
+                convert_uiq_to_iq(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], t_pre_split, f_uint_to_int);
                 // read record
                 if ( !read_record( t_stream ) )
                 {
@@ -311,7 +311,7 @@ namespace psyllid
                     *t_records_read++;
                 }
                 // copy beginning of new record to output
-                convert_uint8_to_int8(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][t_pre_split], t_post_split, f_uint_to_int);
+                convert_uiq_to_iq(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][t_pre_split], t_post_split, f_uint_to_int);
                 // packet logic
                 packet_logic( t_data, t_record );
                 // check stream
