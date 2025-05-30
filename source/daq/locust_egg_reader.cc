@@ -40,6 +40,7 @@ namespace psyllid
             f_slice_length( 4096 ),
             f_paused( true ),
             f_record_length( 0 ),
+            f_sample_size( 0 ),
             f_pkt_id_offset( 0 ),
             f_uint_to_int( false )
     {
@@ -65,6 +66,7 @@ namespace psyllid
         LDEBUG( plog, *t_egg_header );
         //TODO this should probably not assume single-channel mode...
         f_record_length = t_egg_header->ChannelHeaders()[0].GetRecordSize();
+        f_sample_size = t_egg_header->ChannelHeaders()[0].GetSampleSize();
         return;
 
     }
@@ -231,7 +233,7 @@ namespace psyllid
         uint8_t t_128 = 128;
         if( t_convert )
         {
-            for(int i = 0; i < t_data_len; i++ )
+            for(int i = 0; i < t_data_len * f_sample_size; i++ )
             {
                 t_target[i] = t_source[i] ^ t_128;
             }
