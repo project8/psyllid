@@ -67,6 +67,7 @@ namespace psyllid
         private:
             bool f_paused;
             uint32_t f_record_length;
+            uint32_t f_sample_size;
             uint64_t f_pkt_id_offset;
 
        public:

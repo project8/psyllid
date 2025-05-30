@@ -231,7 +231,7 @@ namespace psyllid
         uint8_t t_128 = 128;
         if( t_convert )
         {
-            for(int i = 0; i < t_data_len * 2; i++ )
+            for(int i = 0; i < t_data_len; i++ )
             {
                 t_target[i] = t_source[i] ^ t_128;
             }
