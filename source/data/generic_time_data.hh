@@ -12,6 +12,8 @@
 
 #include "member_variables.hh"
 
+#include "KTVarTypePhysicalArray.hh"
+
 
 namespace psyllid
 {
@@ -41,6 +43,7 @@ namespace psyllid
         private:
             byte_type* f_byte_array;
             size_t f_byte_array_size;
+            KTVarTypePhysicalArray< uint64_t > f_data_array;
     };
 
     inline const generic_time_data::byte_type* generic_time_data::get_byte_array() const
