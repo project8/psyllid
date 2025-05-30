@@ -29,8 +29,6 @@ namespace psyllid
             iq_time_data( iq_time_data&& a_orig );
             virtual ~iq_time_data();
 
-            void initialize( size_t a_size, iq_time_data::iq_t* a_external_array = nullptr );
-
             iq_time_data& operator=( const iq_time_data& a_orig );
             iq_time_data& operator=( iq_time_data&& a_orig );
 
@@ -40,14 +38,16 @@ namespace psyllid
             const iq_t* get_array() const;
             iq_t* get_array();
             const iq_t* get_array_ptr() const;
-            //iq_t* get_array_ptr();
-            //void set_array_ptr( iq_t* array );
+            iq_t* get_array_ptr();
+            void set_array_ptr( iq_t* array );
             size_t get_array_size() const;
             const bool get_has_data() const;
 
             mv_accessible( uint64_t, pkt_in_session );
             mv_accessible( bool, owns_data );
 
+        public:
+            void initialize( size_t a_size, iq_time_data::iq_t* a_external_array);
         
         private:
             iq_t* f_array;

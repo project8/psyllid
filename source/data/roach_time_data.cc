@@ -16,7 +16,7 @@
  
      roach_time_data::roach_time_data() :
              roach_packet_data(), 
-             iq_time_data( false ) 
+             iq_time_data() 
      {
         set_array_ptr( reinterpret_cast<iq_t*>( f_packet.f_data ) );
      }
