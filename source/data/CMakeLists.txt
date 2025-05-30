@@ -11,6 +11,10 @@ set( headers
     trigger_flag.hh
     iq_time_data.hh
     roach_time_data.hh
+    KTVarTypePhysicalArray.hh
+    KTAxisProperties.hh
+    KTAxisProperties_GetNBins.hh
+    KTConstants.hh
 )
 
 set( sources
@@ -22,6 +26,8 @@ set( sources
     trigger_flag.cc
     iq_time_data.cc
     roach_time_data.cc
+    KTVarTypePhysicalArray.cc
+    KTAxisProperties.cc
 )
 
 set( dependencies

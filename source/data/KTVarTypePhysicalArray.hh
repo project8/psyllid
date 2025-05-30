@@ -8,10 +8,14 @@
 #ifndef KTVARTYPEPHYSICALARRAY_HH_
 #define KTVARTYPEPHYSICALARRAY_HH_
 
+// includes carried over from katydid
 #include "KTAxisProperties.hh"
 
 #include "KTConstants.hh"
-#include "KTException.hh"
+// #include "KTException.hh"
+
+// includes from psyllid
+#include "logger.hh"
 
 #include <cstring> // for memcpy
 

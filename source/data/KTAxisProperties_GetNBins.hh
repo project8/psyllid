@@ -8,7 +8,10 @@
 #ifndef KTAXISPROPERTIES_GETNBINS_HH_
 #define KTAXISPROPERTIES_GETNBINS_HH_
 
-#include "KTLogger.hh"
+// #include "KTLogger.hh"
+
+// replacement from psyllid
+#include "logger.hh"
 
 #include <cmath>
 
