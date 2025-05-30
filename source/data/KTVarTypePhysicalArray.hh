@@ -12,10 +12,6 @@
 #include "KTAxisProperties.hh"
 
 #include "KTConstants.hh"
-// #include "KTException.hh"
-
-// includes from psyllid
-#include "logger.hh"
 
 #include <cstring> // for memcpy
 
@@ -294,7 +290,7 @@ namespace Psyllid
         {
             SetInterface( KTVTPATypeInfo< XDataType >::Size(), KTVTPATypeInfo< XDataType >::DataFormat() );
         }
-        catch( Nymph::KTException& e ) {throw e;}
+        catch( std::exception& e ) {throw e;}
         SetNBinsFunc(new KTNBinsInArray< 1, FixedSize >(nBins));
     }
 
@@ -325,7 +321,7 @@ namespace Psyllid
         {
             SetInterfaceFunctions( dataTypeSize, dataFormat );
         }
-        catch( Nymph::KTException& e ) {throw e;}
+        catch( std::exception& e ) {throw e;}
         SetNBinsFunc(new KTNBinsInArray< 1, FixedSize >(nBins));
     }
 
@@ -412,7 +408,7 @@ namespace Psyllid
             }
             else
             {
-                throw Nymph::KTException() << "Unable to make a digitized unsigned data interface with data type size " << aDataTypeSize;
+                throw std::exception( "Unable to make a digitized unsigned data interface with data type size " + std::to_string( aDataTypeSize ) );
             }
         }
         else if( aDataFormat == sDigitizedS )
@@ -439,7 +435,7 @@ namespace Psyllid
             }
             else
             {
-                throw Nymph::KTException() << "Unable to make a digitized signed data interface with data type size " << aDataTypeSize;
+                throw std::exception( "Unable to make a digitized signed data interface with data type size " + std::to_string( aDataTypeSize ) );
             }
         }
         else if( aDataFormat == sAnalog )
@@ -456,12 +452,12 @@ namespace Psyllid
             }
             else
             {
-                throw Nymph::KTException() << "Unable to make a analog data interface with data type size " << aDataTypeSize;
+                throw std::exception( "Unable to make a analog data interface with data type size " + std::to_string( aDataTypeSize ) );
             }
         }
         else
         {
-            throw Nymph::KTException() << "Invalid combination of data format <" << aDataFormat << ">, data type size <" << aDataTypeSize << ">";
+            throw std::exception( "Invalid combination of data format <" + std::to_string( aDataFormat ) + ">, data type size <" + std::to_string( aDataTypeSize ) + ">" );
         }
         return;
     }

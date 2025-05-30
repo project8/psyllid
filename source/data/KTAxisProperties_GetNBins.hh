@@ -18,7 +18,7 @@
 namespace Psyllid
 {
     
-    KTLOGGER(utillog_getnbins, "KTAxisProperties_GetNBins");
+    LOGGER(utillog_getnbins, "KTAxisProperties_GetNBins");
 
     template< size_t NDims >
     class KTNBinsFunctor
@@ -124,7 +124,7 @@ namespace Psyllid
                 {
                     return new KTNBinsInArray< NDims, XArrayType >(fPtrToArray, fArrayOfGetNBinsPtrs);
                 }
-                KTERROR(utillog_getnbins, "Error in KTNBinsFunctor< " << NDims << " >::Clone: unknown NBins mode");
+                LERROR(utillog_getnbins, "Error in KTNBinsFunctor< " << NDims << " >::Clone: unknown NBins mode");
                 return NULL;
             }
 
