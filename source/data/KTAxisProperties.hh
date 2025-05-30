@@ -14,7 +14,7 @@
 #include <cmath>
 #include <sys/types.h>
 
-namespace Katydid
+namespace Psyllid
 {
     
     /*!
@@ -321,14 +321,14 @@ namespace Katydid
     }
 
 
-} /* namespace Katydid */
+} /* namespace Psyllid */
 
 
 //********************************
 // specialization for 1 dimension
 //********************************
 
-namespace Katydid
+namespace Psyllid
 {
     
     /*!
@@ -400,6 +400,6 @@ namespace Katydid
             //ClassDef(KTAxisProperties< 1 >, 1);
 
     };
-} /* namespace Katydid */
+} /* namespace Psyllid */
 
 #endif /* KTAXISPROPERTIES_HH_ */

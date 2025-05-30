@@ -5,7 +5,7 @@
 //ClassImp(Katydid::KTAxisProperties< 1 >);
 //ClassImp(Katydid::KTAxisProperties< 2 >);
 
-namespace Katydid
+namespace Psyllid
 {
     KTAxisProperties< 1 >::KTAxisProperties() :
             fGetNBinsFunc(new KTDefaultNBins< 1 >()),
@@ -152,5 +152,5 @@ namespace Katydid
         return;
     }
 
-} /* namespace Katydid */
+} /* namespace Psyllid */
 

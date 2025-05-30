@@ -12,7 +12,7 @@
 
 #include <cmath>
 
-namespace Katydid
+namespace Psyllid
 {
     
     KTLOGGER(utillog_getnbins, "KTAxisProperties_GetNBins");
@@ -273,7 +273,7 @@ namespace Katydid
 
 
 
-} /* namespace Katydid */
+} /* namespace Psyllid */
 
 
 #endif /* KTAXISPROPERTIES_HH_ */

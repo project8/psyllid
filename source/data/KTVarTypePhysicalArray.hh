@@ -15,7 +15,7 @@
 
 #include <cstring> // for memcpy
 
-namespace Katydid
+namespace Psyllid
 {
     
     //*************************
@@ -635,5 +635,5 @@ namespace Katydid
         fF8BytesData[ index ] = value;
     }
 
-} /* namespace Katydid */
+} /* namespace Psyllid */
 #endif /* KTVARTYPEPHYSICALARRAY_HH_ */
