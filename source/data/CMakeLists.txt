@@ -12,10 +12,6 @@ set( headers
     iq_time_data.hh
     roach_time_data.hh
     generic_time_data.hh
-    KTVarTypePhysicalArray.hh
-    KTAxisProperties.hh
-    KTAxisProperties_GetNBins.hh
-    KTConstants.hh
 )
 
 set( sources
@@ -28,8 +24,6 @@ set( sources
     iq_time_data.cc
     roach_time_data.cc
     generic_time_data.cc
-    KTVarTypePhysicalArray.cc
-    KTAxisProperties.cc
 )
 
 set( dependencies
