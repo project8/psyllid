@@ -1,25 +1,40 @@
 /*
- * time_data.cc
+ * generic_time_data.cc
  *
- *  Created on: Dec 28, 2015
- *      Author: nsoblath
+ *  Created on: May 30, 2025
+ *      Author: pkolbeck
  */
 
-#include "time_data.hh"
+#include "generic_time_data.hh"
 
 namespace psyllid
 {
 
-    time_data::time_data() :
-            roach_packet_data(),
-            f_pkt_in_session( 0 ),
-            f_array( reinterpret_cast< iq_t* >( f_packet.f_data ) ),
-            f_array_size( PAYLOAD_SIZE / 2 )
+    generic_time_data::generic_time_data() :
+            f_pkt_in_session( 0 )
     {
     }
 
-    time_data::~time_data()
+    // generic_time_data::generic_time_data(
+    //     uint32_t record_size,
+    //     uint32_t sample_number,
+    //     uint32_t data_type_size,
+    //     uint32_t data_format_type,
+    //     uint32_t data_type_sign
+    // ) : 
+    // f_data_format.record_size
+    // {
+
+    // }
+
+    generic_time_data::~generic_time_data()
     {
+        
+    }
+
+    void generic_time_data::initialize()
+    {
+
     }
 
 } /* namespace psyllid */

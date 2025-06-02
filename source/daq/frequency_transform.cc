@@ -63,7 +63,7 @@ namespace psyllid
     void frequency_transform::initialize()
     {
         out_buffer< 0 >().initialize( f_time_length );
-        out_buffer< 0 >().call( iq_time_data::initialize( f_fft_size ) );
+        // out_buffer< 0 >().call( iq_time_data::initialize( f_fft_size ) );
         out_buffer< 1 >().initialize( f_freq_length );
 
         // fftw stuff

@@ -11,6 +11,7 @@ set( headers
     trigger_flag.hh
     iq_time_data.hh
     roach_time_data.hh
+    generic_time_data.hh
     KTVarTypePhysicalArray.hh
     KTAxisProperties.hh
     KTAxisProperties_GetNBins.hh
@@ -26,6 +27,7 @@ set( sources
     trigger_flag.cc
     iq_time_data.cc
     roach_time_data.cc
+    generic_time_data.cc
     KTVarTypePhysicalArray.cc
     KTAxisProperties.cc
 )
