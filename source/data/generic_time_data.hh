@@ -50,6 +50,7 @@ namespace psyllid
 
             template< typename x_type >
             void initialize();
+            void initialize();
 
         public:
             typedef uint8_t byte_type;
@@ -84,67 +85,87 @@ namespace psyllid
             size_t f_byte_array_size;
             monarch3::M3Header f_egg_header;
             current_data_format f_data_format;
+            bool f_has_data;
 
     };
+
+    void generic_time_data::initialize()
+    {
+        if( f_has_data )
+        {
+            delete [] f_byte_array;
+        }
+        f_byte_array = new byte_type[ f_data_format.record_size * f_data_format.sample_number * f_data_format.data_type_size ];
+    }
 
     template<>
     void generic_time_data::initialize< uint8_t >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 1, 0, 0 } );
+        generic_time_data::initialize();
     }
 
     template<>
     void generic_time_data::initialize< uint16_t >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 2, 0, 0 } );
+        generic_time_data::initialize();
     }
 
     template<>
     void generic_time_data::initialize< uint32_t >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 4, 0, 0 } );
+        generic_time_data::initialize();
     }
 
     template<>
     void generic_time_data::initialize< uint64_t >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 8, 0, 0 } );
+        generic_time_data::initialize();
     }
 
     template<>
     void generic_time_data::initialize< int8_t >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 1, 0, 1 } );
+        generic_time_data::initialize();
     }
 
     template<>
     void generic_time_data::initialize< int16_t >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 2, 0, 1 } );
+        generic_time_data::initialize();
     }
 
     template<>
     void generic_time_data::initialize< int32_t >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 4, 0, 1 } );
+        generic_time_data::initialize();
     }
 
     template<>
     void generic_time_data::initialize< int64_t >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 8, 0, 1 } );
+        generic_time_data::initialize();
     }
 
     template<>
     void generic_time_data::initialize< float >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 4, 1, 0 } );
+        generic_time_data::initialize();
     }
 
     template<>
     void generic_time_data::initialize< double >()
     {
         generic_time_data::f_data_format = current_data_format( { 4096, 2, 8, 1, 0 } );
+        generic_time_data::initialize();
     }
 
     inline const generic_time_data::byte_type* generic_time_data::get_byte_array() const

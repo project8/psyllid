@@ -19,7 +19,8 @@ namespace psyllid
                     0, 
                     0 
                 } 
-                ) 
+                ),
+            f_has_data( false )
     {
     }
 
@@ -47,7 +48,7 @@ namespace psyllid
 
     generic_time_data::~generic_time_data()
     {
-        
+        delete [] f_byte_array;
     }
 
     // void generic_time_data::initialize()
