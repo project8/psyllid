@@ -11,30 +11,48 @@ namespace psyllid
 {
 
     generic_time_data::generic_time_data() :
-            f_pkt_in_session( 0 )
+            f_data_format( 
+                { 
+                    4096, 
+                    2, 
+                    1, 
+                    0, 
+                    0 
+                } 
+                ) 
     {
     }
 
-    // generic_time_data::generic_time_data(
-    //     uint32_t record_size,
-    //     uint32_t sample_number,
-    //     uint32_t data_type_size,
-    //     uint32_t data_format_type,
-    //     uint32_t data_type_sign
-    // ) : 
-    // f_data_format.record_size
-    // {
+    generic_time_data::generic_time_data(
+        uint32_t record_size,
+        uint32_t sample_number,
+        size_t data_type_size,
+        uint32_t data_type_format,
+        uint32_t data_type_sign
+    ) : 
+            f_data_format( 
+                { 
+                    record_size, 
+                    sample_number, 
+                    data_type_size, 
+                    data_type_format, 
+                    data_type_sign 
+                } 
+                )
+    {
 
-    // }
+    }
+
+
 
     generic_time_data::~generic_time_data()
     {
         
     }
 
-    void generic_time_data::initialize()
-    {
+    // void generic_time_data::initialize()
+    // {
 
-    }
+    // }
 
 } /* namespace psyllid */

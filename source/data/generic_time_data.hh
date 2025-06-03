@@ -23,8 +23,8 @@ namespace psyllid
     {
             uint32_t record_size;
             uint32_t sample_number;
-            uint32_t data_type_size;
-            uint32_t data_format_type;
+            size_t data_type_size;
+            uint32_t data_type_format;
             uint32_t data_type_sign;
     };
 
@@ -41,12 +41,14 @@ namespace psyllid
             generic_time_data(
                 uint32_t record_size,
                 uint32_t sample_number,
-                uint32_t data_type_size,
-                uint32_t data_format_type,
+                size_t data_type_size,
+                uint32_t data_type_format,
                 uint32_t data_type_sign
             );
+            
             virtual ~generic_time_data();
 
+            template< typename x_type >
             void initialize();
 
         public:
@@ -58,11 +60,21 @@ namespace psyllid
             size_t get_byte_array_size() const;
 
             // functions to return the byte array, reinterpret cast
+            template< typename x_type >
+            const x_type* get_array() const;
+            template< typename x_type >
+            x_type* get_array();
+            template< typename x_type >
+            constexpr size_t get_array_size() const;
             
             // functions to return the data entries themselves, static cast
+            template< typename x_type >
+            const x_type get_at_as( size_t index ) const;
 
             // returning data characteristics
             mv_accessible( uint64_t, pkt_in_session );
+
+            const current_data_format get_data_format() const;
 
 
 
@@ -71,9 +83,69 @@ namespace psyllid
             byte_type* f_byte_array;
             size_t f_byte_array_size;
             monarch3::M3Header f_egg_header;
-            const current_data_format f_data_format;
+            current_data_format f_data_format;
 
     };
+
+    template<>
+    void generic_time_data::initialize< uint8_t >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 1, 0, 0 } );
+    }
+
+    template<>
+    void generic_time_data::initialize< uint16_t >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 2, 0, 0 } );
+    }
+
+    template<>
+    void generic_time_data::initialize< uint32_t >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 4, 0, 0 } );
+    }
+
+    template<>
+    void generic_time_data::initialize< uint64_t >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 8, 0, 0 } );
+    }
+
+    template<>
+    void generic_time_data::initialize< int8_t >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 1, 0, 1 } );
+    }
+
+    template<>
+    void generic_time_data::initialize< int16_t >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 2, 0, 1 } );
+    }
+
+    template<>
+    void generic_time_data::initialize< int32_t >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 4, 0, 1 } );
+    }
+
+    template<>
+    void generic_time_data::initialize< int64_t >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 8, 0, 1 } );
+    }
+
+    template<>
+    void generic_time_data::initialize< float >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 4, 1, 0 } );
+    }
+
+    template<>
+    void generic_time_data::initialize< double >()
+    {
+        generic_time_data::f_data_format = current_data_format( { 4096, 2, 8, 1, 0 } );
+    }
 
     inline const generic_time_data::byte_type* generic_time_data::get_byte_array() const
     {
@@ -90,23 +162,86 @@ namespace psyllid
         return f_byte_array_size;
     }
 
-    // template< typename type_t >
-    // const generic_time_data::type_t* generic_time_data::get_array() const
-    // {
-    //     return reinterpret_cast< type_t* >( f_byte_array );
-    // }
+    template< typename x_type >
+    inline const x_type* generic_time_data::get_array() const
+    {
+        return reinterpret_cast< x_type* >( f_byte_array );
+    }
 
-    // template< typename type_t >
-    // generic_time_data::type_t* generic_time_data::get_array()
-    // {
-    //     return reinterpret_cast< type_t* >( f_byte_array );
-    // }
+    template< typename x_type >
+    inline x_type* generic_time_data::get_array()
+    {
+        return reinterpret_cast< x_type* >( f_byte_array );
+    }
 
-    // template< typename type_t >
-    // constexpr size_t generic_time_data::get_array_size() const
-    // {
-    //     return f_byte_array_size / sizeof(type_t);
-    // }
+    template< typename x_type >
+    inline constexpr size_t generic_time_data::get_array_size() const
+    {
+        return f_byte_array_size / sizeof( x_type );
+    }
+
+    template< typename x_type >
+    inline const x_type generic_time_data::get_at_as( size_t index ) const
+    {
+        if( f_data_format.data_type_format == 0 )
+        {
+            if( f_data_format.data_type_sign == 0 )
+            {
+                if( f_data_format.data_type_size == 1)
+                {
+                    return static_cast< x_type >( get_array< uint8_t >()[ index ] );
+                }
+                else if( f_data_format.data_type_size == 2 )
+                {
+                    return static_cast< x_type >( get_array< uint16_t >()[ index ] );
+                }
+                else if( f_data_format.data_type_size == 4 )
+                {
+                    return static_cast< x_type >( get_array< uint32_t >()[ index ] );
+                }
+                else if( f_data_format.data_type_size == 8 )
+                {
+                    return static_cast< x_type >( get_array< uint64_t >()[ index ] );
+                }
+            }
+            else
+            {
+                if( f_data_format.data_type_size == 1)
+                {
+                    return static_cast< x_type >( get_array< int8_t >()[ index ] );
+                }
+                else if( f_data_format.data_type_size == 2 )
+                {
+                    return static_cast< x_type >( get_array< int16_t >()[ index ] );
+                }
+                else if( f_data_format.data_type_size == 4 )
+                {
+                    return static_cast< x_type >( get_array< int32_t >()[ index ] );
+                }
+                else if( f_data_format.data_type_size == 8 )
+                {
+                    return static_cast< x_type >( get_array< int64_t >()[ index ] );
+                }
+            }
+        }
+        else
+        {
+            if( f_data_format.data_type_size == 4 )
+            {
+                return static_cast< x_type >( get_array< float >()[ index ] );
+            }
+            else if( f_data_format.data_type_size == 8 )
+            {
+                return static_cast< x_type >( get_array< double >()[ index ] );
+            }
+        }
+        
+    }
+
+    inline const current_data_format generic_time_data::get_data_format() const
+    {
+        return f_data_format;
+    }
 
 } /* namespace psyllid */
 
