@@ -45,6 +45,9 @@ namespace psyllid
                 uint32_t data_type_format,
                 uint32_t data_type_sign
             );
+            generic_time_data(
+                monarch3::M3Header* egg_header
+            );
             
             virtual ~generic_time_data();
 
@@ -83,7 +86,7 @@ namespace psyllid
         private:
             byte_type* f_byte_array;
             size_t f_byte_array_size;
-            monarch3::M3Header f_egg_header;
+            const monarch3::M3Header* f_egg_header;
             current_data_format f_data_format;
             bool f_has_data;
 
@@ -96,6 +99,7 @@ namespace psyllid
             delete [] f_byte_array;
         }
         f_byte_array = new byte_type[ f_data_format.record_size * f_data_format.sample_number * f_data_format.data_type_size ];
+        f_has_data = true;
     }
 
     template<>

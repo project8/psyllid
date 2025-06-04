@@ -11,6 +11,7 @@ namespace psyllid
 {
 
     generic_time_data::generic_time_data() :
+            f_egg_header( nullptr )
             f_data_format( 
                 { 
                     4096, 
@@ -31,6 +32,7 @@ namespace psyllid
         uint32_t data_type_format,
         uint32_t data_type_sign
     ) : 
+            f_egg_header( nullptr )
             f_data_format( 
                 { 
                     record_size, 
@@ -39,9 +41,26 @@ namespace psyllid
                     data_type_format, 
                     data_type_sign 
                 } 
-                )
+                ),
+            f_has_data( false )
     {
+    }
 
+    generic_time_data::generic_time_data(
+        monarch3::M3Header* egg_header
+    ) : 
+            f_egg_header( egg_header ),
+            f_data_format( 
+                { 
+                    4096, 
+                    2, 
+                    1, 
+                    0, 
+                    0 
+                } 
+                ),
+            f_has_data( false )
+    {
     }
 
 
