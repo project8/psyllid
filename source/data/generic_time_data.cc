@@ -81,6 +81,10 @@ namespace psyllid
     generic_time_data& generic_time_data::operator=( const generic_time_data& a_orig )
     {
         // malloc can be expensive. 
+        if( f_has_data && a_orig.f_has_data && ( f_byte_array_size == a_orig.f_byte_array_size ))
+        {
+            
+        }
         return *this;
     }
 

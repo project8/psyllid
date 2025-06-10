@@ -41,7 +41,7 @@ namespace psyllid
             struct current_data_format
             {
                 size_t record_size;
-                uint32_t sample_number;
+                size_t sample_size;
                 DataType data_type;
             };
 
@@ -55,7 +55,7 @@ namespace psyllid
             generic_time_data();
             generic_time_data(
                 size_t record_size,
-                uint32_t sample_number,
+                size_t sample_size,
                 DataType data_type
             );
             generic_time_data(
@@ -63,7 +63,7 @@ namespace psyllid
             );
             generic_time_data(
                 size_t record_size,
-                uint32_t sample_number,
+                size_t sample_size,
                 DataType data_type,
                 monarch3::M3Header egg_header
             );
@@ -73,7 +73,7 @@ namespace psyllid
             generic_time_data& operator=( generic_time_data&& a_orig );
 
             template< typename x_type >
-            void initialize( size_t record_size, uint32_t sample_number );
+            void initialize( size_t record_size, size_t sample_size );
 
         public:
             typedef uint8_t byte_type;
@@ -216,78 +216,78 @@ namespace psyllid
         {
             delete [] f_byte_array;
         }
-        f_byte_array_size = f_data_format.record_size * f_data_format.sample_number * generic_time_data::get_data_size();
+        f_byte_array_size = f_data_format.record_size * f_data_format.sample_size * generic_time_data::get_data_size();
         f_byte_array = new byte_type[ f_byte_array_size ];
         f_has_data = true;
     }
 
     template<>
-    void generic_time_data::initialize< uint8_t >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< uint8_t >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_UINT8 } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_UINT8 } );
         generic_time_data::initialize();
     }
 
     template<>
-    void generic_time_data::initialize< uint16_t >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< uint16_t >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_UINT16 } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_UINT16 } );
         generic_time_data::initialize();
     }
 
     template<>
-    void generic_time_data::initialize< uint32_t >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< uint32_t >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_UINT32 } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_UINT32 } );
         generic_time_data::initialize();
     }
 
     template<>
-    void generic_time_data::initialize< uint64_t >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< uint64_t >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_UINT64 } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_UINT64 } );
         generic_time_data::initialize();
     }
 
     template<>
-    void generic_time_data::initialize< int8_t >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< int8_t >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_INT8 } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_INT8 } );
         generic_time_data::initialize();
     }
 
     template<>
-    void generic_time_data::initialize< int16_t >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< int16_t >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_INT16 } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_INT16 } );
         generic_time_data::initialize();
     }
 
     template<>
-    void generic_time_data::initialize< int32_t >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< int32_t >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_INT32 } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_INT32 } );
         generic_time_data::initialize();
     }
 
     template<>
-    void generic_time_data::initialize< int64_t >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< int64_t >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_INT64 } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_INT64 } );
         generic_time_data::initialize();
     }
 
     template<>
-    void generic_time_data::initialize< float >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< float >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_FLOAT } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_FLOAT } );
         generic_time_data::initialize();
     }
 
     template<>
-    void generic_time_data::initialize< double >( size_t record_size, uint32_t sample_number )
+    void generic_time_data::initialize< double >( size_t record_size, uint32_t sample_size )
     {
-        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_number , DT_DOUBLE } );
+        generic_time_data::f_data_format = generic_time_data::current_data_format( { record_size, sample_size , DT_DOUBLE } );
         generic_time_data::initialize();
     }
 
