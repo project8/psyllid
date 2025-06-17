@@ -129,7 +129,7 @@ namespace psyllid
                         t_run_control->stop_run();
                     }
                     // add some sleep to try and not lap downstream nodes
-                    std::this_thread::sleep_for(std::chrono::microseconds(100));t
+                    std::this_thread::sleep_for(std::chrono::microseconds(100));
                 }
                 else
                 {
