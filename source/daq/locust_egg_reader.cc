@@ -37,7 +37,7 @@ namespace psyllid
             f_repeat_egg( false ),
             f_length( 10 ),
             f_start_paused( true ), 
-            f_slice_length( 4096 ),
+            f_slice_length( PAYLOAD_SIZE ),
             f_paused( true ),
             f_record_length( 0 ),
             f_sample_size( 0 ),
@@ -129,7 +129,7 @@ namespace psyllid
                         t_run_control->stop_run();
                     }
                     // add some sleep to try and not lap downstream nodes
-                    std::this_thread::sleep_for(std::chrono::microseconds(100));
+                    std::this_thread::sleep_for(std::chrono::microseconds(100));t
                 }
                 else
                 {
@@ -233,7 +233,7 @@ namespace psyllid
         uint8_t t_128 = 128;
         if( t_convert )
         {
-            for(int i = 0; i < t_data_len * f_sample_size; i++ )
+            for(int i = 0; i < t_data_len; i++ )
             {
                 t_target[i] = t_source[i] ^ t_128;
             }
@@ -247,28 +247,35 @@ namespace psyllid
 
     bool locust_egg_reader::write_slice( time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record, uint64_t* t_slice_offset, uint64_t* t_records_read )
     {
+        uint32_t t_num_samples = f_record_length * f_sample_size;
         LDEBUG( plog, "writing a slice" );
-        if ( f_slice_length > f_record_length )
+        if ( f_slice_length > t_num_samples)
         {
-            LERROR( plog, "slice length is longer than record length")
+            LERROR( plog, "slice length is longer than record length * sample size");
+            return false;
         }
 
         // update t_data to point to the next slot in the output stream. 
         t_data = out_stream< 0 >().data();
 
-        // 
 
-        if( *t_slice_offset == 0 )
+
+        // starting
+        if( *t_records_read == 0 )
         {
             // read record
             if ( !read_record( t_stream ) )
             {
+                // end of file
                 return false;
             }
-            else
-            {
-                *t_records_read++;
-            }
+        
+        }
+
+
+        if( *t_slice_offset + f_slice_length <= t_num_samples )
+        {
+            // don't have to read data from the next record yet. 
             // copy the part of the new record
             convert_uiq_to_iq(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], f_slice_length, f_uint_to_int);
             // packet logic
@@ -283,48 +290,45 @@ namespace psyllid
         }
         else
         {
-            if ( *t_slice_offset + f_slice_length < f_record_length ) 
+            // have to read data from the next record if want to continue
+
+            // have gotten to the end of the current record
+            *t_records_read++;
+
+            if( *t_records_read >= f_read_n_records )
             {
-                // copy from record we have opened to output stream
-                convert_uiq_to_iq(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], f_slice_length, f_uint_to_int);
-                // packet logic
-                packet_logic( t_data, t_record );
-                // check stream
-                if ( !check_stream() )
-                {
-                    return false;
-                }
-                // increment t_slice_offset by f_slice_length
-                *t_slice_offset += f_slice_length;
+                // we've reached the specified max number of records to read
+                return false;
             }
-            else if ( *t_slice_offset + f_slice_length > f_record_length )
+
+            // keep pointer to current record
+            const monarch3::M3Record* t_old_record = t_record;
+            // read new record
+            if( !read_record( t_stream ) )
             {
-                int t_pre_split = f_record_length - *t_slice_offset;
-                int t_post_split = f_slice_length - t_pre_split;
-                // copy remainder of to output
-                convert_uiq_to_iq(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], t_pre_split, f_uint_to_int);
-                // read record
-                if ( !read_record( t_stream ) )
-                {
-                    return false;
-                }
-                else
-                {
-                    *t_records_read++;
-                }
-                // copy beginning of new record to output
-                convert_uiq_to_iq(&t_record->GetData()[*t_slice_offset], &t_data->get_array()[0][t_pre_split], t_post_split, f_uint_to_int);
-                // packet logic
-                packet_logic( t_data, t_record );
-                // check stream
-                if ( !check_stream() )
-                {
-                    return false;
-                }
-                // increment t_slice_offset by f_slice_length, mod f_record_length
-                *t_slice_offset += f_slice_length - f_record_length;
+                // end of file
+                return false; 
             }
+
+            // get amount left in current record
+            uint64_t t_num_samples_left = t_num_samples - *t_slice_offset;
+            // copy rest of current data
+            convert_uiq_to_iq(&t_old_record->GetData()[*t_slice_offset], &t_data->get_array()[0][0], t_num_samples_left, f_uint_to_int);
+            // update slice offset
+            *t_slice_offset = f_slice_length - t_num_samples_left;
+            // copy new data
+            convert_uiq_to_iq(&t_record->GetData()[0], &t_data->get_array()[0][t_num_samples_left], *t_slice_offset, f_uint_to_int);
+
+            // packet logic
+            packet_logic( t_data, t_record );
+            // check stream
+            if ( !check_stream() )
+            {
+                return false;
+            }
+
         }
+
         return true;
 
     }
@@ -359,7 +363,7 @@ namespace psyllid
         a_node->set_repeat_egg( a_config.get_value( "repeat-egg", a_node->get_repeat_egg() ) );
         a_node->set_length( a_config.get_value( "length", a_node->get_length() ) );
         a_node->set_start_paused( a_config.get_value( "start-paused", a_node->get_start_paused() ) );
-        a_node->set_slice_length( a_config.get_value( "slice-length", a_node->get_slice_length() ) );
+        // a_node->set_slice_length( a_config.get_value( "slice-length", a_node->get_slice_length() ) );
         a_node->set_uint_to_int( a_config.get_value( "uint-to-int", a_node->get_uint_to_int() ) );
         return;
     }
@@ -372,7 +376,7 @@ namespace psyllid
         a_config.add( "repeat-egg", scarab::param_value( a_node->get_repeat_egg() ) );
         a_config.add( "length", scarab::param_value( a_node->get_length() ) );
         a_config.add( "start-paused", scarab::param_value( a_node->get_length() ) );
-        a_config.add( "slice-length", scarab::param_value( a_node->get_slice_length() ) );
+        // a_config.add( "slice-length", scarab::param_value( a_node->get_slice_length() ) );
         a_config.add( "uint-to-int", scarab::param_value( a_node->get_uint_to_int() ) );
         return;
     }
