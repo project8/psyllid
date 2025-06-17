@@ -248,7 +248,6 @@ namespace psyllid
     bool locust_egg_reader::write_slice( time_data* t_data, const monarch3::M3Stream* t_stream, const monarch3::M3Record* t_record, uint64_t* t_slice_offset, uint64_t* t_records_read )
     {
         uint32_t t_num_samples = f_record_length * f_sample_size;
-        LDEBUG( plog, "writing a slice" );
         if ( f_slice_length > t_num_samples)
         {
             LERROR( plog, "slice length is longer than record length * sample size");
@@ -268,13 +267,13 @@ namespace psyllid
             if ( !read_record( t_stream ) )
             {
                 // end of file
+                LDEBUG( plog, "reached end of file" );
                 return false;
             }
-            // have started reading another record
-            *t_records_read++;
+            // have started reading another record.
+            (*t_records_read)++;
         
         }
-
 
         LDEBUG( plog,  "writing slice of length [" << f_slice_length << "] at offset [" << *t_slice_offset << "] in record with [" << t_num_samples << "] numbers");
         if( *t_slice_offset + f_slice_length <= t_num_samples )
@@ -313,7 +312,7 @@ namespace psyllid
                 return false; 
             }
             // have started reading another record
-            *t_records_read++;
+            (*t_records_read)++;
 
             LDEBUG( plog, "switching to new record" );
             // get amount left in current record
