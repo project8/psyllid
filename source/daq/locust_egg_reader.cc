@@ -263,16 +263,20 @@ namespace psyllid
         // starting
         if( *t_records_read == 0 )
         {
+            LDEBUG( plog, "starting to read the first record" );
             // read record
             if ( !read_record( t_stream ) )
             {
                 // end of file
                 return false;
             }
+            // have started reading another record
+            *t_records_read++;
         
         }
 
 
+        LDEBUG( plog,  "writing slice of length [" << f_slice_length << "] at offset [" << *t_slice_offset << "] in record with [" << t_num_samples << "] numbers");
         if( *t_slice_offset + f_slice_length <= t_num_samples )
         {
             // don't have to read data from the next record yet. 
@@ -292,12 +296,10 @@ namespace psyllid
         {
             // have to read data from the next record if want to continue
 
-            // have gotten to the end of the current record
-            *t_records_read++;
-
             if( *t_records_read >= f_read_n_records )
             {
                 // we've reached the specified max number of records to read
+                LDEBUG( plog, "reached max records" );
                 return false;
             }
 
@@ -307,9 +309,13 @@ namespace psyllid
             if( !read_record( t_stream ) )
             {
                 // end of file
+                LDEBUG( plog, "reached end of file" );
                 return false; 
             }
+            // have started reading another record
+            *t_records_read++;
 
+            LDEBUG( plog, "switching to new record" );
             // get amount left in current record
             uint64_t t_num_samples_left = t_num_samples - *t_slice_offset;
             // copy rest of current data
