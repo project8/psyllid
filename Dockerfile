@@ -1,5 +1,5 @@
 ARG base_image=ubuntu
-ARG base_tag=22.04
+ARG base_tag=24.04
 
 # Base image with environment variables set
 FROM ${base_image}:${base_tag} AS base
