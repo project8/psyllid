@@ -72,12 +72,12 @@ RUN apt-get update &&\
         build-essential \
         libssl3 \
         libfftw3-double3 \
-        libboost-chrono1.74.0 \
-        libboost-filesystem1.74.0 \
-        libboost-system1.74.0 \
-        libhdf5-cpp-103 \
+        libboost-chrono1.83.0t64 \
+        libboost-filesystem1.83.0 \
+        libboost-system1.83.0 \
+        libhdf5-cpp-103-1t64 \
         librabbitmq4 \
-        libyaml-cpp0.7 \
+        libyaml-cpp0.8 \
         rapidjson-dev \
         &&\
     apt-get clean &&\
