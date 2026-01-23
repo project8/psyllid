@@ -1,5 +1,5 @@
 ARG base_image=ubuntu
-ARG base_tag=22.04
+ARG base_tag=24.04
 
 # Base image with environment variables set
 FROM ${base_image}:${base_tag} AS base
@@ -23,10 +23,6 @@ ENV PATH="${PATH}:${PSYLLID_INSTALL_PREFIX}"
 # Build image with dev dependencies
 FROM base AS deps
 
-# use quill_checkout to specify a tag or branch name to checkout
-ARG quill_checkout=v8.1.1
-ENV QUILL_CHECKOUT=${quill_checkout}
-
 RUN apt-get update &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
         build-essential \
@@ -44,16 +40,6 @@ RUN apt-get update &&\
         &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/* &&\
-    cd /usr/local &&\
-    git clone https://github.com/odygrd/quill.git &&\
-    cd quill &&\
-    git checkout ${QUILL_CHECKOUT} &&\
-    mkdir build &&\
-    cd build &&\
-    cmake .. &&\
-    make -j${narg} install &&\
-    cd / &&\
-    rm -rf /usr/local/quill &&\
     /bin/true
 
 # Build psyllid in the deps image
@@ -86,12 +72,12 @@ RUN apt-get update &&\
         build-essential \
         libssl3 \
         libfftw3-double3 \
-        libboost-chrono1.74.0 \
-        libboost-filesystem1.74.0 \
-        libboost-system1.74.0 \
-        libhdf5-cpp-103 \
+        libboost-chrono1.83.0t64 \
+        libboost-filesystem1.83.0 \
+        libboost-system1.83.0 \
+        libhdf5-cpp-103-1t64 \
         librabbitmq4 \
-        libyaml-cpp0.7 \
+        libyaml-cpp0.8 \
         rapidjson-dev \
         &&\
     apt-get clean &&\

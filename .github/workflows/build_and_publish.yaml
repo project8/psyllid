@@ -11,7 +11,7 @@ on:
 env:
   REGISTRY: ghcr.io
   BASE_IMG_REPO: ubuntu
-  BASE_IMG_TAG: 22.04
+  BASE_IMG_TAG: 24.04
   NARG: 2
 
 jobs:
